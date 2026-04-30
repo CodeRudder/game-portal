@@ -604,6 +604,69 @@
       "state": "completed",
       "isInitial": false,
       "isFinal": true
+    },
+    {
+      "id": "building:max-level",
+      "entity": "building",
+      "state": "max-level",
+      "isInitial": false,
+      "isFinal": true
+    },
+    {
+      "id": "hero:injured",
+      "entity": "hero",
+      "state": "injured",
+      "isInitial": false,
+      "isFinal": false
+    },
+    {
+      "id": "hero:recovering",
+      "entity": "hero",
+      "state": "recovering",
+      "isInitial": false,
+      "isFinal": false
+    },
+    {
+      "id": "quest:abandoned",
+      "entity": "quest",
+      "state": "abandoned",
+      "isInitial": false,
+      "isFinal": true
+    },
+    {
+      "id": "alliance:rejected",
+      "entity": "alliance",
+      "state": "rejected",
+      "isInitial": false,
+      "isFinal": false
+    },
+    {
+      "id": "tech:paused",
+      "entity": "tech",
+      "state": "paused",
+      "isInitial": false,
+      "isFinal": false
+    },
+    {
+      "id": "equipment:locked",
+      "entity": "equipment",
+      "state": "locked",
+      "isInitial": true,
+      "isFinal": false
+    },
+    {
+      "id": "activity:task-expired",
+      "entity": "activity",
+      "state": "task-expired",
+      "isInitial": false,
+      "isFinal": true
+    },
+    {
+      "id": "stage:sweeping",
+      "entity": "campaign-stage",
+      "state": "sweeping",
+      "isInitial": false,
+      "isFinal": false
     }
   ],
   "transitions": [
@@ -612,231 +675,313 @@
       "to": "building:idle",
       "trigger": "unlock",
       "condition": "主城等级 >= 建筑解锁等级",
-      "sideEffects": ["建筑解锁动画", "新手引导触发"]
+      "sideEffects": [
+        "建筑解锁动画",
+        "新手引导触发"
+      ]
     },
     {
       "from": "building:idle",
       "to": "building:upgrading",
       "trigger": "startUpgrade",
       "condition": "资源充足 && 队列有空位",
-      "sideEffects": ["扣除升级资源", "开始倒计时"]
+      "sideEffects": [
+        "扣除升级资源",
+        "开始倒计时"
+      ]
     },
     {
       "from": "building:upgrading",
       "to": "building:idle",
       "trigger": "upgradeComplete",
       "condition": "倒计时结束",
-      "sideEffects": ["建筑等级+1", "产出提升", "解锁新功能"]
+      "sideEffects": [
+        "建筑等级+1",
+        "产出提升",
+        "解锁新功能"
+      ]
     },
     {
       "from": "building:upgrading",
       "to": "building:idle",
       "trigger": "cancelUpgrade",
       "condition": "玩家主动取消",
-      "sideEffects": ["返还部分资源"]
+      "sideEffects": [
+        "返还部分资源"
+      ]
     },
     {
       "from": "hero:locked",
       "to": "hero:available",
       "trigger": "unlockHero",
       "condition": "完成解锁条件(剧情/声望等级)",
-      "sideEffects": ["武将出现在招贤池"]
+      "sideEffects": [
+        "武将出现在招贤池"
+      ]
     },
     {
       "from": "hero:available",
       "to": "hero:recruited",
       "trigger": "recruit",
       "condition": "招贤令/铜钱充足",
-      "sideEffects": ["扣除招贤令", "武将加入阵容"]
+      "sideEffects": [
+        "扣除招贤令",
+        "武将加入阵容"
+      ]
     },
     {
       "from": "hero:recruited",
       "to": "hero:dispatched",
       "trigger": "dispatch",
       "condition": "远征/派遣任务可用",
-      "sideEffects": ["武将进入派遣状态", "不可出战"]
+      "sideEffects": [
+        "武将进入派遣状态",
+        "不可出战"
+      ]
     },
     {
       "from": "hero:dispatched",
       "to": "hero:recruited",
       "trigger": "dispatchComplete",
       "condition": "派遣任务完成",
-      "sideEffects": ["获得派遣奖励"]
+      "sideEffects": [
+        "获得派遣奖励"
+      ]
     },
     {
       "from": "hero:recruited",
       "to": "hero:awakening",
       "trigger": "startAwakening",
       "condition": "武将突破满星 && 觉醒材料充足",
-      "sideEffects": ["扣除觉醒材料"]
+      "sideEffects": [
+        "扣除觉醒材料"
+      ]
     },
     {
       "from": "hero:awakening",
       "to": "hero:awakened",
       "trigger": "awakeningComplete",
       "condition": "觉醒流程完成",
-      "sideEffects": ["武将属性大幅提升", "解锁觉醒技能"]
+      "sideEffects": [
+        "武将属性大幅提升",
+        "解锁觉醒技能"
+      ]
     },
     {
       "from": "quest:locked",
       "to": "quest:available",
       "trigger": "unlockQuest",
       "condition": "前置任务完成 && 等级达标",
-      "sideEffects": ["任务出现在列表", "红点提示"]
+      "sideEffects": [
+        "任务出现在列表",
+        "红点提示"
+      ]
     },
     {
       "from": "quest:available",
       "to": "quest:active",
       "trigger": "acceptQuest",
       "condition": "玩家接取任务",
-      "sideEffects": ["任务追踪开始"]
+      "sideEffects": [
+        "任务追踪开始"
+      ]
     },
     {
       "from": "quest:active",
       "to": "quest:completed",
       "trigger": "completeObjective",
       "condition": "任务目标达成",
-      "sideEffects": ["任务标记完成", "红点提示领奖"]
+      "sideEffects": [
+        "任务标记完成",
+        "红点提示领奖"
+      ]
     },
     {
       "from": "quest:active",
       "to": "quest:failed",
       "trigger": "failQuest",
       "condition": "任务失败条件触发",
-      "sideEffects": ["任务标记失败"]
+      "sideEffects": [
+        "任务标记失败"
+      ]
     },
     {
       "from": "quest:active",
       "to": "quest:expired",
       "trigger": "expireQuest",
       "condition": "任务超时",
-      "sideEffects": ["任务标记过期"]
+      "sideEffects": [
+        "任务标记过期"
+      ]
     },
     {
       "from": "quest:completed",
       "to": "quest:claimed",
       "trigger": "claimReward",
       "condition": "玩家领取奖励",
-      "sideEffects": ["发放奖励资源", "关闭任务"]
+      "sideEffects": [
+        "发放奖励资源",
+        "关闭任务"
+      ]
     },
     {
       "from": "tech:locked",
       "to": "tech:available",
       "trigger": "unlockTech",
       "condition": "前置科技已研究完成 && 非互斥锁定",
-      "sideEffects": ["科技节点高亮"]
+      "sideEffects": [
+        "科技节点高亮"
+      ]
     },
     {
       "from": "tech:available",
       "to": "tech:researching",
       "trigger": "startResearch",
       "condition": "科技点充足",
-      "sideEffects": ["扣除科技点", "开始研究倒计时"]
+      "sideEffects": [
+        "扣除科技点",
+        "开始研究倒计时"
+      ]
     },
     {
       "from": "tech:researching",
       "to": "tech:completed",
       "trigger": "researchComplete",
       "condition": "研究倒计时结束",
-      "sideEffects": ["科技效果生效", "解锁后续科技"]
+      "sideEffects": [
+        "科技效果生效",
+        "解锁后续科技"
+      ]
     },
     {
       "from": "tech:researching",
       "to": "tech:available",
       "trigger": "cancelResearch",
       "condition": "玩家取消研究",
-      "sideEffects": ["返还部分科技点"]
+      "sideEffects": [
+        "返还部分科技点"
+      ]
     },
     {
       "from": "fusion-tech:locked",
       "to": "fusion-tech:available",
       "trigger": "unlockFusionTech",
       "condition": "双路径科技均已完成",
-      "sideEffects": ["融合科技节点解锁"]
+      "sideEffects": [
+        "融合科技节点解锁"
+      ]
     },
     {
       "from": "fusion-tech:available",
       "to": "fusion-tech:researching",
       "trigger": "startFusionResearch",
       "condition": "科技点充足",
-      "sideEffects": ["扣除科技点"]
+      "sideEffects": [
+        "扣除科技点"
+      ]
     },
     {
       "from": "fusion-tech:researching",
       "to": "fusion-tech:completed",
       "trigger": "fusionResearchComplete",
       "condition": "研究完成",
-      "sideEffects": ["融合科技效果生效"]
+      "sideEffects": [
+        "融合科技效果生效"
+      ]
     },
     {
       "from": "stage:locked",
       "to": "stage:available",
       "trigger": "unlockStage",
       "condition": "前置关卡已通关",
-      "sideEffects": ["关卡解锁动画"]
+      "sideEffects": [
+        "关卡解锁动画"
+      ]
     },
     {
       "from": "stage:available",
       "to": "stage:cleared",
       "trigger": "clearStage",
       "condition": "战斗胜利(1-2星)",
-      "sideEffects": ["发放通关奖励", "解锁下一关"]
+      "sideEffects": [
+        "发放通关奖励",
+        "解锁下一关"
+      ]
     },
     {
       "from": "stage:available",
       "to": "stage:threeStar",
       "trigger": "threeStarClear",
       "condition": "战斗胜利(3星) && 存活≥4 && 回合≤6",
-      "sideEffects": ["发放三星奖励", "解锁扫荡功能"]
+      "sideEffects": [
+        "发放三星奖励",
+        "解锁扫荡功能"
+      ]
     },
     {
       "from": "stage:cleared",
       "to": "stage:threeStar",
       "trigger": "improveStars",
       "condition": "重新挑战达到3星条件",
-      "sideEffects": ["补发三星奖励差值"]
+      "sideEffects": [
+        "补发三星奖励差值"
+      ]
     },
     {
       "from": "battle:init",
       "to": "battle:in-progress",
       "trigger": "startBattle",
       "condition": "双方队伍就绪",
-      "sideEffects": ["初始化战斗状态", "排序行动顺序"]
+      "sideEffects": [
+        "初始化战斗状态",
+        "排序行动顺序"
+      ]
     },
     {
       "from": "battle:in-progress",
       "to": "battle:finished",
       "trigger": "battleEnd",
       "condition": "一方全灭 或 回合耗尽",
-      "sideEffects": ["计算星级评定", "生成战斗结果"]
+      "sideEffects": [
+        "计算星级评定",
+        "生成战斗结果"
+      ]
     },
     {
       "from": "equipment:unequipped",
       "to": "equipment:equipped",
       "trigger": "equip",
       "condition": "武将有空槽位 && 装备部位匹配",
-      "sideEffects": ["装备属性加成生效"]
+      "sideEffects": [
+        "装备属性加成生效"
+      ]
     },
     {
       "from": "equipment:equipped",
       "to": "equipment:unequipped",
       "trigger": "unequip",
       "condition": "玩家主动卸下",
-      "sideEffects": ["移除装备属性加成"]
+      "sideEffects": [
+        "移除装备属性加成"
+      ]
     },
     {
       "from": "equipment:equipped",
       "to": "equipment:enhancing",
       "trigger": "startEnhance",
       "condition": "强化材料充足",
-      "sideEffects": ["扣除强化材料"]
+      "sideEffects": [
+        "扣除强化材料"
+      ]
     },
     {
       "from": "equipment:enhancing",
       "to": "equipment:enhanced",
       "trigger": "enhanceComplete",
       "condition": "强化结果确定",
-      "sideEffects": ["装备属性提升/不变/降级"]
+      "sideEffects": [
+        "装备属性提升/不变/降级"
+      ]
     },
     {
       "from": "equipment:enhanced",
@@ -850,343 +995,588 @@
       "to": "equipment:decomposed",
       "trigger": "decompose",
       "condition": "玩家确认分解",
-      "sideEffects": ["返还分解材料", "装备销毁"]
+      "sideEffects": [
+        "返还分解材料",
+        "装备销毁"
+      ]
     },
     {
       "from": "alliance-task:active",
       "to": "alliance-task:completed",
       "trigger": "completeTask",
       "condition": "任务进度 >= 目标数量",
-      "sideEffects": ["任务标记完成", "通知联盟成员"]
+      "sideEffects": [
+        "任务标记完成",
+        "通知联盟成员"
+      ]
     },
     {
       "from": "alliance-task:completed",
       "to": "alliance-task:claimed",
       "trigger": "claimReward",
       "condition": "玩家领取奖励",
-      "sideEffects": ["发放公会币", "发放联盟经验"]
+      "sideEffects": [
+        "发放公会币",
+        "发放联盟经验"
+      ]
     },
     {
       "from": "prestige:initial",
       "to": "prestige:leveling",
       "trigger": "gainPrestigePoints",
       "condition": "首次获得声望点数",
-      "sideEffects": ["声望等级提升"]
+      "sideEffects": [
+        "声望等级提升"
+      ]
     },
     {
       "from": "prestige:leveling",
       "to": "prestige:max-level",
       "trigger": "reachMaxLevel",
       "condition": "声望等级达到上限",
-      "sideEffects": ["解锁转生功能"]
+      "sideEffects": [
+        "解锁转生功能"
+      ]
     },
     {
       "from": "prestige:leveling",
       "to": "prestige:leveling",
       "trigger": "levelUp",
       "condition": "声望点数达到升级阈值",
-      "sideEffects": ["声望等级+1", "解锁新特权"]
+      "sideEffects": [
+        "声望等级+1",
+        "解锁新特权"
+      ]
     },
     {
       "from": "rebirth:ready",
       "to": "rebirth:in-progress",
       "trigger": "startRebirth",
       "condition": "声望达到转生要求 && 确认转生",
-      "sideEffects": ["重置进度", "保留传承项"]
+      "sideEffects": [
+        "重置进度",
+        "保留传承项"
+      ]
     },
     {
       "from": "rebirth:in-progress",
       "to": "rebirth:completed",
       "trigger": "rebirthComplete",
       "condition": "转生流程完成",
-      "sideEffects": ["发放转生初始礼物", "应用加速加成"]
+      "sideEffects": [
+        "发放转生初始礼物",
+        "应用加速加成"
+      ]
     },
     {
       "from": "rebirth:completed",
       "to": "rebirth:ready",
       "trigger": "resetForNextRebirth",
       "condition": "进入新一轮游戏",
-      "sideEffects": ["转生次数+1"]
+      "sideEffects": [
+        "转生次数+1"
+      ]
     },
     {
       "from": "alliance:none",
       "to": "alliance:applied",
       "trigger": "applyToAlliance",
       "condition": "未加入任何联盟",
-      "sideEffects": ["发送申请"]
+      "sideEffects": [
+        "发送申请"
+      ]
     },
     {
       "from": "alliance:applied",
       "to": "alliance:member",
       "trigger": "applicationApproved",
       "condition": "联盟官员批准",
-      "sideEffects": ["加入联盟", "解锁联盟功能"]
+      "sideEffects": [
+        "加入联盟",
+        "解锁联盟功能"
+      ]
     },
     {
       "from": "alliance:none",
       "to": "alliance:leader",
       "trigger": "createAlliance",
       "condition": "资源充足 && 未加入联盟",
-      "sideEffects": ["创建联盟", "成为盟主"]
+      "sideEffects": [
+        "创建联盟",
+        "成为盟主"
+      ]
     },
     {
       "from": "alliance:member",
       "to": "alliance:officer",
       "trigger": "promote",
       "condition": "盟主/副盟主提拔",
-      "sideEffects": ["获得管理权限"]
+      "sideEffects": [
+        "获得管理权限"
+      ]
     },
     {
       "from": "alliance:officer",
       "to": "alliance:leader",
       "trigger": "transferLeadership",
       "condition": "盟主转让",
-      "sideEffects": ["获得全部管理权限"]
+      "sideEffects": [
+        "获得全部管理权限"
+      ]
     },
     {
       "from": "alliance:member",
       "to": "alliance:dismissed",
       "trigger": "leaveOrKick",
       "condition": "主动退出 或 被踢出",
-      "sideEffects": ["失去联盟权限"]
+      "sideEffects": [
+        "失去联盟权限"
+      ]
     },
     {
       "from": "alliance:officer",
       "to": "alliance:dismissed",
       "trigger": "leaveOrKick",
       "condition": "主动退出 或 被踢出",
-      "sideEffects": ["失去联盟权限"]
+      "sideEffects": [
+        "失去联盟权限"
+      ]
     },
     {
       "from": "alliance:dismissed",
       "to": "alliance:none",
       "trigger": "resetStatus",
       "condition": "退出后冷却结束",
-      "sideEffects": ["可重新申请联盟"]
+      "sideEffects": [
+        "可重新申请联盟"
+      ]
     },
     {
       "from": "expedition:idle",
       "to": "expedition:dispatching",
       "trigger": "selectTeam",
       "condition": "选择远征队伍",
-      "sideEffects": ["进入编队选择"]
+      "sideEffects": [
+        "进入编队选择"
+      ]
     },
     {
       "from": "expedition:dispatching",
       "to": "expedition:in-progress",
       "trigger": "confirmDispatch",
       "condition": "队伍战力满足要求",
-      "sideEffects": ["武将进入派遣状态", "开始远征倒计时"]
+      "sideEffects": [
+        "武将进入派遣状态",
+        "开始远征倒计时"
+      ]
     },
     {
       "from": "expedition:in-progress",
       "to": "expedition:returned",
       "trigger": "expeditionComplete",
       "condition": "远征倒计时结束",
-      "sideEffects": ["计算远征奖励", "武将恢复空闲"]
+      "sideEffects": [
+        "计算远征奖励",
+        "武将恢复空闲"
+      ]
     },
     {
       "from": "expedition:returned",
       "to": "expedition:idle",
       "trigger": "collectReward",
       "condition": "玩家领取远征奖励",
-      "sideEffects": ["发放远征奖励"]
+      "sideEffects": [
+        "发放远征奖励"
+      ]
     },
     {
       "from": "arena:idle",
       "to": "arena:matching",
       "trigger": "selectOpponent",
       "condition": "挑战次数 > 0",
-      "sideEffects": ["锁定挑战次数"]
+      "sideEffects": [
+        "锁定挑战次数"
+      ]
     },
     {
       "from": "arena:matching",
       "to": "arena:fighting",
       "trigger": "startArenaBattle",
       "condition": "双方队伍就绪",
-      "sideEffects": ["进入战斗场景"]
+      "sideEffects": [
+        "进入战斗场景"
+      ]
     },
     {
       "from": "arena:fighting",
       "to": "arena:cooldown",
       "trigger": "arenaBattleEnd",
       "condition": "战斗结束",
-      "sideEffects": ["更新排名", "发放竞技币"]
+      "sideEffects": [
+        "更新排名",
+        "发放竞技币"
+      ]
     },
     {
       "from": "arena:cooldown",
       "to": "arena:idle",
       "trigger": "cooldownEnd",
       "condition": "冷却时间结束 或 使用挑战次数",
-      "sideEffects": ["恢复可挑战状态"]
+      "sideEffects": [
+        "恢复可挑战状态"
+      ]
     },
     {
       "from": "achievement:locked",
       "to": "achievement:in-progress",
       "trigger": "unlockAchievement",
       "condition": "成就条件开始追踪",
-      "sideEffects": ["成就出现在列表"]
+      "sideEffects": [
+        "成就出现在列表"
+      ]
     },
     {
       "from": "achievement:in-progress",
       "to": "achievement:completed",
       "trigger": "completeAchievement",
       "condition": "成就目标达成",
-      "sideEffects": ["成就标记完成", "红点提示"]
+      "sideEffects": [
+        "成就标记完成",
+        "红点提示"
+      ]
     },
     {
       "from": "achievement:completed",
       "to": "achievement:claimed",
       "trigger": "claimAchievementReward",
       "condition": "玩家领取奖励",
-      "sideEffects": ["发放成就奖励"]
+      "sideEffects": [
+        "发放成就奖励"
+      ]
     },
     {
       "from": "activity:inactive",
       "to": "activity:active",
       "trigger": "activityStart",
       "condition": "活动开启时间到达",
-      "sideEffects": ["活动面板解锁"]
+      "sideEffects": [
+        "活动面板解锁"
+      ]
     },
     {
       "from": "activity:active",
       "to": "activity:task-incomplete",
       "trigger": "viewTask",
       "condition": "查看活动任务",
-      "sideEffects": ["显示任务进度"]
+      "sideEffects": [
+        "显示任务进度"
+      ]
     },
     {
       "from": "activity:task-incomplete",
       "to": "activity:task-completed",
       "trigger": "completeActivityTask",
       "condition": "任务目标达成",
-      "sideEffects": ["任务标记完成"]
+      "sideEffects": [
+        "任务标记完成"
+      ]
     },
     {
       "from": "activity:task-completed",
       "to": "activity:task-claimed",
       "trigger": "claimActivityReward",
       "condition": "玩家领取奖励",
-      "sideEffects": ["发放活动奖励"]
+      "sideEffects": [
+        "发放活动奖励"
+      ]
     },
     {
       "from": "activity:active",
       "to": "activity:expired",
       "trigger": "activityEnd",
       "condition": "活动结束时间到达",
-      "sideEffects": ["活动关闭"]
+      "sideEffects": [
+        "活动关闭"
+      ]
     },
     {
       "from": "map-city:neutral",
       "to": "map-city:contested",
       "trigger": "attackCity",
       "condition": "选择可攻击城池 && 编队就绪",
-      "sideEffects": ["进入攻城战斗"]
+      "sideEffects": [
+        "进入攻城战斗"
+      ]
     },
     {
       "from": "map-city:contested",
       "to": "map-city:owned",
       "trigger": "captureCity",
       "condition": "攻城战斗胜利",
-      "sideEffects": ["城池归属变更", "驻军系统激活"]
+      "sideEffects": [
+        "城池归属变更",
+        "驻军系统激活"
+      ]
     },
     {
       "from": "map-city:contested",
       "to": "map-city:neutral",
       "trigger": "attackFailed",
       "condition": "攻城战斗失败",
-      "sideEffects": ["城池保持中立"]
+      "sideEffects": [
+        "城池保持中立"
+      ]
     },
     {
       "from": "map-city:owned",
       "to": "map-city:lost",
       "trigger": "cityLost",
       "condition": "被敌方攻占",
-      "sideEffects": ["失去城池产出", "驻军撤退"]
+      "sideEffects": [
+        "失去城池产出",
+        "驻军撤退"
+      ]
     },
     {
       "from": "map-city:lost",
       "to": "map-city:neutral",
       "trigger": "resetCity",
       "condition": "城池重置",
-      "sideEffects": ["城池恢复中立"]
+      "sideEffects": [
+        "城池恢复中立"
+      ]
     },
     {
       "from": "bond:inactive",
       "to": "bond:partial",
       "trigger": "collectBondHeroes",
       "condition": "拥有部分羁绊武将",
-      "sideEffects": ["部分羁绊效果生效"]
+      "sideEffects": [
+        "部分羁绊效果生效"
+      ]
     },
     {
       "from": "bond:partial",
       "to": "bond:active",
       "trigger": "completeBond",
       "condition": "集齐所有羁绊武将",
-      "sideEffects": ["完整羁绊加成生效"]
+      "sideEffects": [
+        "完整羁绊加成生效"
+      ]
     },
     {
       "from": "vip:level-0",
       "to": "vip:leveling",
       "trigger": "gainVipExp",
       "condition": "充值获得VIP经验",
-      "sideEffects": ["VIP等级提升"]
+      "sideEffects": [
+        "VIP等级提升"
+      ]
     },
     {
       "from": "vip:leveling",
       "to": "vip:leveling",
       "trigger": "gainVipExp",
       "condition": "VIP经验达到升级阈值",
-      "sideEffects": ["VIP等级+1", "解锁新特权"]
+      "sideEffects": [
+        "VIP等级+1",
+        "解锁新特权"
+      ]
     },
     {
       "from": "vip:leveling",
       "to": "vip:max-level",
       "trigger": "reachMaxVipLevel",
       "condition": "VIP等级达到上限",
-      "sideEffects": ["解锁全部VIP特权"]
+      "sideEffects": [
+        "解锁全部VIP特权"
+      ]
     },
     {
       "from": "season:preparation",
       "to": "season:active",
       "trigger": "seasonStart",
       "condition": "赛季开始时间到达",
-      "sideEffects": ["赛季任务刷新", "排行榜重置"]
+      "sideEffects": [
+        "赛季任务刷新",
+        "排行榜重置"
+      ]
     },
     {
       "from": "season:active",
       "to": "season:settlement",
       "trigger": "seasonEnd",
       "condition": "赛季结束时间到达",
-      "sideEffects": ["锁定排行榜", "计算赛季奖励"]
+      "sideEffects": [
+        "锁定排行榜",
+        "计算赛季奖励"
+      ]
     },
     {
       "from": "season:settlement",
       "to": "season:ended",
       "trigger": "distributeRewards",
       "condition": "结算完成",
-      "sideEffects": ["发放赛季奖励"]
+      "sideEffects": [
+        "发放赛季奖励"
+      ]
     },
     {
       "from": "season:ended",
       "to": "season:preparation",
       "trigger": "newSeason",
       "condition": "新赛季开始",
-      "sideEffects": ["重置赛季进度"]
+      "sideEffects": [
+        "重置赛季进度"
+      ]
     },
     {
       "from": "tutorial:not-started",
       "to": "tutorial:in-progress",
       "trigger": "startTutorial",
       "condition": "首次进入游戏",
-      "sideEffects": ["显示引导遮罩"]
+      "sideEffects": [
+        "显示引导遮罩"
+      ]
     },
     {
       "from": "tutorial:in-progress",
       "to": "tutorial:completed",
       "trigger": "completeTutorial",
       "condition": "所有引导步骤完成",
-      "sideEffects": ["关闭引导", "解锁全部功能"]
+      "sideEffects": [
+        "关闭引导",
+        "解锁全部功能"
+      ]
+    },
+    {
+      "from": "building:idle",
+      "to": "building:max-level",
+      "trigger": "reachMaxLevel",
+      "condition": "建筑等级达到上限",
+      "sideEffects": [
+        "建筑标记满级",
+        "解锁满级特效"
+      ]
+    },
+    {
+      "from": "hero:recruited",
+      "to": "hero:injured",
+      "trigger": "takeDamage",
+      "condition": "战斗中HP降为0",
+      "sideEffects": [
+        "武将标记受伤",
+        "不可出战"
+      ]
+    },
+    {
+      "from": "hero:dispatched",
+      "to": "hero:injured",
+      "trigger": "expeditionDefeated",
+      "condition": "远征失败武将受伤",
+      "sideEffects": [
+        "武将标记受伤"
+      ]
+    },
+    {
+      "from": "hero:injured",
+      "to": "hero:recovering",
+      "trigger": "startRecovery",
+      "condition": "使用恢复道具或等待",
+      "sideEffects": [
+        "开始恢复倒计时"
+      ]
+    },
+    {
+      "from": "hero:recovering",
+      "to": "hero:recruited",
+      "trigger": "recoveryComplete",
+      "condition": "恢复倒计时结束",
+      "sideEffects": [
+        "武将恢复可出战"
+      ]
+    },
+    {
+      "from": "quest:active",
+      "to": "quest:abandoned",
+      "trigger": "abandonQuest",
+      "condition": "玩家主动放弃任务",
+      "sideEffects": [
+        "任务关闭",
+        "无奖励"
+      ]
+    },
+    {
+      "from": "alliance:applied",
+      "to": "alliance:rejected",
+      "trigger": "applicationRejected",
+      "condition": "联盟官员拒绝申请",
+      "sideEffects": [
+        "申请被退回"
+      ]
+    },
+    {
+      "from": "alliance:rejected",
+      "to": "alliance:none",
+      "trigger": "acknowledgeRejection",
+      "condition": "玩家确认被拒绝",
+      "sideEffects": [
+        "可重新申请其他联盟"
+      ]
+    },
+    {
+      "from": "tech:researching",
+      "to": "tech:paused",
+      "trigger": "pauseResearch",
+      "condition": "玩家暂停研究",
+      "sideEffects": [
+        "研究进度暂停"
+      ]
+    },
+    {
+      "from": "tech:paused",
+      "to": "tech:researching",
+      "trigger": "resumeResearch",
+      "condition": "玩家恢复研究",
+      "sideEffects": [
+        "研究继续倒计时"
+      ]
+    },
+    {
+      "from": "equipment:locked",
+      "to": "equipment:unequipped",
+      "trigger": "unlockEquipment",
+      "condition": "关卡掉落或商店购买",
+      "sideEffects": [
+        "装备进入背包"
+      ]
+    },
+    {
+      "from": "activity:task-incomplete",
+      "to": "activity:task-expired",
+      "trigger": "activityTaskExpire",
+      "condition": "活动任务超时未完成",
+      "sideEffects": [
+        "任务标记过期"
+      ]
+    },
+    {
+      "from": "stage:threeStar",
+      "to": "stage:sweeping",
+      "trigger": "startSweep",
+      "condition": "已三星通关 && 扫荡券充足",
+      "sideEffects": [
+        "开始扫荡倒计时"
+      ]
+    },
+    {
+      "from": "stage:sweeping",
+      "to": "stage:threeStar",
+      "trigger": "sweepComplete",
+      "condition": "扫荡完成",
+      "sideEffects": [
+        "发放扫荡奖励"
+      ]
     }
   ]
 }

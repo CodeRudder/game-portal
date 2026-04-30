@@ -1,31 +1,253 @@
 {
   "dagId": "three-kingdoms-state-v1",
   "dagType": "state",
-  "nodeCount": 87,
-  "edgeCount": 84,
-  "totalPaths": 46,
+  "nodeCount": 95,
+  "edgeCount": 97,
+  "totalPaths": 171,
   "criticalPaths": [
     [
-      "alliance:none",
-      "alliance:applied",
-      "alliance:member",
-      "alliance:officer",
-      "alliance:dismissed",
-      "alliance:none",
-      "alliance:applied",
-      "alliance:member",
-      "alliance:officer",
-      "alliance:leader"
+      "hero:locked",
+      "hero:available",
+      "hero:recruited",
+      "hero:dispatched",
+      "hero:injured",
+      "hero:recovering",
+      "hero:recruited"
+    ],
+    [
+      "hero:locked",
+      "hero:available",
+      "hero:recruited",
+      "hero:injured",
+      "hero:recovering",
+      "hero:recruited",
+      "hero:dispatched"
+    ],
+    [
+      "hero:locked",
+      "hero:available",
+      "hero:recruited",
+      "hero:injured",
+      "hero:recovering",
+      "hero:recruited",
+      "hero:awakening"
+    ],
+    [
+      "hero:locked",
+      "hero:available",
+      "hero:recruited",
+      "hero:injured",
+      "hero:recovering",
+      "hero:recruited",
+      "hero:injured"
+    ],
+    [
+      "equipment:unequipped",
+      "equipment:equipped",
+      "equipment:enhancing",
+      "equipment:enhanced",
+      "equipment:equipped",
+      "equipment:unequipped",
+      "equipment:decomposed"
     ]
   ],
   "paths": [
+    [
+      "building:locked"
+    ],
+    [
+      "hero:locked"
+    ],
+    [
+      "quest:locked"
+    ],
+    [
+      "tech:locked"
+    ],
+    [
+      "fusion-tech:locked"
+    ],
+    [
+      "stage:locked"
+    ],
+    [
+      "battle:init"
+    ],
+    [
+      "equipment:unequipped"
+    ],
+    [
+      "alliance-task:active"
+    ],
+    [
+      "prestige:initial"
+    ],
+    [
+      "rebirth:ready"
+    ],
+    [
+      "alliance:none"
+    ],
+    [
+      "expedition:idle"
+    ],
+    [
+      "arena:idle"
+    ],
+    [
+      "achievement:locked"
+    ],
+    [
+      "activity:inactive"
+    ],
+    [
+      "map-city:neutral"
+    ],
+    [
+      "bond:inactive"
+    ],
+    [
+      "vip:level-0"
+    ],
+    [
+      "season:preparation"
+    ],
+    [
+      "tutorial:not-started"
+    ],
+    [
+      "equipment:locked"
+    ],
+    [
+      "building:locked",
+      "building:idle"
+    ],
+    [
+      "hero:locked",
+      "hero:available"
+    ],
+    [
+      "quest:locked",
+      "quest:available"
+    ],
+    [
+      "tech:locked",
+      "tech:available"
+    ],
+    [
+      "fusion-tech:locked",
+      "fusion-tech:available"
+    ],
+    [
+      "stage:locked",
+      "stage:available"
+    ],
+    [
+      "battle:init",
+      "battle:in-progress"
+    ],
+    [
+      "equipment:unequipped",
+      "equipment:equipped"
+    ],
     [
       "equipment:unequipped",
       "equipment:decomposed"
     ],
     [
+      "alliance-task:active",
+      "alliance-task:completed"
+    ],
+    [
+      "prestige:initial",
+      "prestige:leveling"
+    ],
+    [
+      "rebirth:ready",
+      "rebirth:in-progress"
+    ],
+    [
+      "alliance:none",
+      "alliance:applied"
+    ],
+    [
       "alliance:none",
       "alliance:leader"
+    ],
+    [
+      "expedition:idle",
+      "expedition:dispatching"
+    ],
+    [
+      "arena:idle",
+      "arena:matching"
+    ],
+    [
+      "achievement:locked",
+      "achievement:in-progress"
+    ],
+    [
+      "activity:inactive",
+      "activity:active"
+    ],
+    [
+      "map-city:neutral",
+      "map-city:contested"
+    ],
+    [
+      "bond:inactive",
+      "bond:partial"
+    ],
+    [
+      "vip:level-0",
+      "vip:leveling"
+    ],
+    [
+      "season:preparation",
+      "season:active"
+    ],
+    [
+      "tutorial:not-started",
+      "tutorial:in-progress"
+    ],
+    [
+      "equipment:locked",
+      "equipment:unequipped"
+    ],
+    [
+      "building:locked",
+      "building:idle",
+      "building:upgrading"
+    ],
+    [
+      "building:locked",
+      "building:idle",
+      "building:max-level"
+    ],
+    [
+      "hero:locked",
+      "hero:available",
+      "hero:recruited"
+    ],
+    [
+      "quest:locked",
+      "quest:available",
+      "quest:active"
+    ],
+    [
+      "tech:locked",
+      "tech:available",
+      "tech:researching"
+    ],
+    [
+      "fusion-tech:locked",
+      "fusion-tech:available",
+      "fusion-tech:researching"
+    ],
+    [
+      "stage:locked",
+      "stage:available",
+      "stage:cleared"
     ],
     [
       "stage:locked",
@@ -38,6 +260,11 @@
       "battle:finished"
     ],
     [
+      "equipment:unequipped",
+      "equipment:equipped",
+      "equipment:enhancing"
+    ],
+    [
       "alliance-task:active",
       "alliance-task:completed",
       "alliance-task:claimed"
@@ -48,9 +275,54 @@
       "prestige:max-level"
     ],
     [
+      "prestige:initial",
+      "prestige:leveling",
+      "prestige:leveling"
+    ],
+    [
+      "rebirth:ready",
+      "rebirth:in-progress",
+      "rebirth:completed"
+    ],
+    [
+      "alliance:none",
+      "alliance:applied",
+      "alliance:member"
+    ],
+    [
+      "alliance:none",
+      "alliance:applied",
+      "alliance:rejected"
+    ],
+    [
+      "expedition:idle",
+      "expedition:dispatching",
+      "expedition:in-progress"
+    ],
+    [
+      "arena:idle",
+      "arena:matching",
+      "arena:fighting"
+    ],
+    [
+      "achievement:locked",
+      "achievement:in-progress",
+      "achievement:completed"
+    ],
+    [
+      "activity:inactive",
+      "activity:active",
+      "activity:task-incomplete"
+    ],
+    [
       "activity:inactive",
       "activity:active",
       "activity:expired"
+    ],
+    [
+      "map-city:neutral",
+      "map-city:contested",
+      "map-city:owned"
     ],
     [
       "bond:inactive",
@@ -60,7 +332,17 @@
     [
       "vip:level-0",
       "vip:leveling",
+      "vip:leveling"
+    ],
+    [
+      "vip:level-0",
+      "vip:leveling",
       "vip:max-level"
+    ],
+    [
+      "season:preparation",
+      "season:active",
+      "season:settlement"
     ],
     [
       "tutorial:not-started",
@@ -68,9 +350,38 @@
       "tutorial:completed"
     ],
     [
-      "tutorial:not-started",
-      "tutorial:in-progress",
-      "tutorial:skipped"
+      "equipment:locked",
+      "equipment:unequipped",
+      "equipment:equipped"
+    ],
+    [
+      "equipment:locked",
+      "equipment:unequipped",
+      "equipment:decomposed"
+    ],
+    [
+      "hero:locked",
+      "hero:available",
+      "hero:recruited",
+      "hero:dispatched"
+    ],
+    [
+      "hero:locked",
+      "hero:available",
+      "hero:recruited",
+      "hero:awakening"
+    ],
+    [
+      "hero:locked",
+      "hero:available",
+      "hero:recruited",
+      "hero:injured"
+    ],
+    [
+      "quest:locked",
+      "quest:available",
+      "quest:active",
+      "quest:completed"
     ],
     [
       "quest:locked",
@@ -85,10 +396,22 @@
       "quest:expired"
     ],
     [
+      "quest:locked",
+      "quest:available",
+      "quest:active",
+      "quest:abandoned"
+    ],
+    [
       "tech:locked",
       "tech:available",
       "tech:researching",
       "tech:completed"
+    ],
+    [
+      "tech:locked",
+      "tech:available",
+      "tech:researching",
+      "tech:paused"
     ],
     [
       "fusion-tech:locked",
@@ -103,10 +426,16 @@
       "stage:threeStar"
     ],
     [
+      "stage:locked",
+      "stage:available",
+      "stage:threeStar",
+      "stage:sweeping"
+    ],
+    [
       "equipment:unequipped",
       "equipment:equipped",
-      "equipment:unequipped",
-      "equipment:decomposed"
+      "equipment:enhancing",
+      "equipment:enhanced"
     ],
     [
       "prestige:initial",
@@ -115,10 +444,64 @@
       "prestige:max-level"
     ],
     [
+      "rebirth:ready",
+      "rebirth:in-progress",
+      "rebirth:completed",
+      "rebirth:ready"
+    ],
+    [
+      "alliance:none",
+      "alliance:applied",
+      "alliance:member",
+      "alliance:officer"
+    ],
+    [
+      "alliance:none",
+      "alliance:applied",
+      "alliance:member",
+      "alliance:dismissed"
+    ],
+    [
+      "alliance:none",
+      "alliance:applied",
+      "alliance:rejected",
+      "alliance:none"
+    ],
+    [
+      "expedition:idle",
+      "expedition:dispatching",
+      "expedition:in-progress",
+      "expedition:returned"
+    ],
+    [
+      "arena:idle",
+      "arena:matching",
+      "arena:fighting",
+      "arena:cooldown"
+    ],
+    [
       "achievement:locked",
       "achievement:in-progress",
       "achievement:completed",
       "achievement:claimed"
+    ],
+    [
+      "activity:inactive",
+      "activity:active",
+      "activity:task-incomplete",
+      "activity:task-completed"
+    ],
+    [
+      "activity:inactive",
+      "activity:active",
+      "activity:task-incomplete",
+      "activity:task-expired"
+    ],
+    [
+      "map-city:neutral",
+      "map-city:contested",
+      "map-city:owned",
+      "map-city:lost"
     ],
     [
       "vip:level-0",
@@ -127,18 +510,23 @@
       "vip:max-level"
     ],
     [
-      "building:locked",
-      "building:idle",
-      "building:upgrading",
-      "building:idle",
-      "building:upgrading"
+      "season:preparation",
+      "season:active",
+      "season:settlement",
+      "season:ended"
     ],
     [
-      "building:locked",
-      "building:idle",
-      "building:upgrading",
-      "building:idle",
-      "building:upgrading"
+      "equipment:locked",
+      "equipment:unequipped",
+      "equipment:equipped",
+      "equipment:enhancing"
+    ],
+    [
+      "hero:locked",
+      "hero:available",
+      "hero:recruited",
+      "hero:dispatched",
+      "hero:injured"
     ],
     [
       "hero:locked",
@@ -148,11 +536,39 @@
       "hero:awakened"
     ],
     [
+      "hero:locked",
+      "hero:available",
+      "hero:recruited",
+      "hero:injured",
+      "hero:recovering"
+    ],
+    [
       "quest:locked",
       "quest:available",
       "quest:active",
       "quest:completed",
       "quest:claimed"
+    ],
+    [
+      "stage:locked",
+      "stage:available",
+      "stage:cleared",
+      "stage:threeStar",
+      "stage:sweeping"
+    ],
+    [
+      "equipment:unequipped",
+      "equipment:equipped",
+      "equipment:enhancing",
+      "equipment:enhanced",
+      "equipment:equipped"
+    ],
+    [
+      "rebirth:ready",
+      "rebirth:in-progress",
+      "rebirth:completed",
+      "rebirth:ready",
+      "rebirth:in-progress"
     ],
     [
       "alliance:none",
@@ -162,6 +578,48 @@
       "alliance:leader"
     ],
     [
+      "alliance:none",
+      "alliance:applied",
+      "alliance:member",
+      "alliance:officer",
+      "alliance:dismissed"
+    ],
+    [
+      "alliance:none",
+      "alliance:applied",
+      "alliance:member",
+      "alliance:dismissed",
+      "alliance:none"
+    ],
+    [
+      "alliance:none",
+      "alliance:applied",
+      "alliance:rejected",
+      "alliance:none",
+      "alliance:applied"
+    ],
+    [
+      "alliance:none",
+      "alliance:applied",
+      "alliance:rejected",
+      "alliance:none",
+      "alliance:leader"
+    ],
+    [
+      "expedition:idle",
+      "expedition:dispatching",
+      "expedition:in-progress",
+      "expedition:returned",
+      "expedition:idle"
+    ],
+    [
+      "arena:idle",
+      "arena:matching",
+      "arena:fighting",
+      "arena:cooldown",
+      "arena:idle"
+    ],
+    [
       "activity:inactive",
       "activity:active",
       "activity:task-incomplete",
@@ -169,28 +627,57 @@
       "activity:task-claimed"
     ],
     [
-      "hero:locked",
-      "hero:available",
-      "hero:recruited",
-      "hero:dispatched",
-      "hero:recruited",
-      "hero:dispatched"
+      "map-city:neutral",
+      "map-city:contested",
+      "map-city:owned",
+      "map-city:lost",
+      "map-city:neutral"
     ],
     [
-      "tech:locked",
-      "tech:available",
-      "tech:researching",
-      "tech:available",
-      "tech:researching",
-      "tech:completed"
+      "season:preparation",
+      "season:active",
+      "season:settlement",
+      "season:ended",
+      "season:preparation"
     ],
     [
-      "equipment:unequipped",
-      "equipment:equipped",
+      "equipment:locked",
       "equipment:unequipped",
       "equipment:equipped",
       "equipment:enhancing",
       "equipment:enhanced"
+    ],
+    [
+      "hero:locked",
+      "hero:available",
+      "hero:recruited",
+      "hero:dispatched",
+      "hero:injured",
+      "hero:recovering"
+    ],
+    [
+      "hero:locked",
+      "hero:available",
+      "hero:recruited",
+      "hero:injured",
+      "hero:recovering",
+      "hero:recruited"
+    ],
+    [
+      "equipment:unequipped",
+      "equipment:equipped",
+      "equipment:enhancing",
+      "equipment:enhanced",
+      "equipment:equipped",
+      "equipment:unequipped"
+    ],
+    [
+      "equipment:unequipped",
+      "equipment:equipped",
+      "equipment:enhancing",
+      "equipment:enhanced",
+      "equipment:equipped",
+      "equipment:enhancing"
     ],
     [
       "rebirth:ready",
@@ -204,26 +691,117 @@
       "alliance:none",
       "alliance:applied",
       "alliance:member",
+      "alliance:officer",
+      "alliance:dismissed",
+      "alliance:none"
+    ],
+    [
+      "alliance:none",
+      "alliance:applied",
+      "alliance:member",
+      "alliance:dismissed",
+      "alliance:none",
+      "alliance:applied"
+    ],
+    [
+      "alliance:none",
+      "alliance:applied",
+      "alliance:member",
       "alliance:dismissed",
       "alliance:none",
       "alliance:leader"
     ],
     [
-      "map-city:neutral",
-      "map-city:contested",
+      "alliance:none",
+      "alliance:applied",
+      "alliance:rejected",
+      "alliance:none",
+      "alliance:applied",
+      "alliance:member"
+    ],
+    [
+      "alliance:none",
+      "alliance:applied",
+      "alliance:rejected",
+      "alliance:none",
+      "alliance:applied",
+      "alliance:rejected"
+    ],
+    [
+      "expedition:idle",
+      "expedition:dispatching",
+      "expedition:in-progress",
+      "expedition:returned",
+      "expedition:idle",
+      "expedition:dispatching"
+    ],
+    [
+      "arena:idle",
+      "arena:matching",
+      "arena:fighting",
+      "arena:cooldown",
+      "arena:idle",
+      "arena:matching"
+    ],
+    [
       "map-city:neutral",
       "map-city:contested",
       "map-city:owned",
-      "map-city:lost"
+      "map-city:lost",
+      "map-city:neutral",
+      "map-city:contested"
+    ],
+    [
+      "season:preparation",
+      "season:active",
+      "season:settlement",
+      "season:ended",
+      "season:preparation",
+      "season:active"
+    ],
+    [
+      "equipment:locked",
+      "equipment:unequipped",
+      "equipment:equipped",
+      "equipment:enhancing",
+      "equipment:enhanced",
+      "equipment:equipped"
     ],
     [
       "hero:locked",
       "hero:available",
       "hero:recruited",
       "hero:dispatched",
+      "hero:injured",
+      "hero:recovering",
+      "hero:recruited"
+    ],
+    [
+      "hero:locked",
+      "hero:available",
       "hero:recruited",
-      "hero:awakening",
-      "hero:awakened"
+      "hero:injured",
+      "hero:recovering",
+      "hero:recruited",
+      "hero:dispatched"
+    ],
+    [
+      "hero:locked",
+      "hero:available",
+      "hero:recruited",
+      "hero:injured",
+      "hero:recovering",
+      "hero:recruited",
+      "hero:awakening"
+    ],
+    [
+      "hero:locked",
+      "hero:available",
+      "hero:recruited",
+      "hero:injured",
+      "hero:recovering",
+      "hero:recruited",
+      "hero:injured"
     ],
     [
       "equipment:unequipped",
@@ -250,6 +828,15 @@
       "alliance:officer",
       "alliance:dismissed",
       "alliance:none",
+      "alliance:applied"
+    ],
+    [
+      "alliance:none",
+      "alliance:applied",
+      "alliance:member",
+      "alliance:officer",
+      "alliance:dismissed",
+      "alliance:none",
       "alliance:leader"
     ],
     [
@@ -259,7 +846,207 @@
       "alliance:dismissed",
       "alliance:none",
       "alliance:applied",
+      "alliance:member"
+    ],
+    [
+      "alliance:none",
+      "alliance:applied",
       "alliance:member",
+      "alliance:dismissed",
+      "alliance:none",
+      "alliance:applied",
+      "alliance:rejected"
+    ],
+    [
+      "alliance:none",
+      "alliance:applied",
+      "alliance:rejected",
+      "alliance:none",
+      "alliance:applied",
+      "alliance:member",
+      "alliance:officer"
+    ],
+    [
+      "alliance:none",
+      "alliance:applied",
+      "alliance:rejected",
+      "alliance:none",
+      "alliance:applied",
+      "alliance:member",
+      "alliance:dismissed"
+    ],
+    [
+      "expedition:idle",
+      "expedition:dispatching",
+      "expedition:in-progress",
+      "expedition:returned",
+      "expedition:idle",
+      "expedition:dispatching",
+      "expedition:in-progress"
+    ],
+    [
+      "arena:idle",
+      "arena:matching",
+      "arena:fighting",
+      "arena:cooldown",
+      "arena:idle",
+      "arena:matching",
+      "arena:fighting"
+    ],
+    [
+      "map-city:neutral",
+      "map-city:contested",
+      "map-city:owned",
+      "map-city:lost",
+      "map-city:neutral",
+      "map-city:contested",
+      "map-city:owned"
+    ],
+    [
+      "season:preparation",
+      "season:active",
+      "season:settlement",
+      "season:ended",
+      "season:preparation",
+      "season:active",
+      "season:settlement"
+    ],
+    [
+      "equipment:locked",
+      "equipment:unequipped",
+      "equipment:equipped",
+      "equipment:enhancing",
+      "equipment:enhanced",
+      "equipment:equipped",
+      "equipment:unequipped"
+    ],
+    [
+      "equipment:locked",
+      "equipment:unequipped",
+      "equipment:equipped",
+      "equipment:enhancing",
+      "equipment:enhanced",
+      "equipment:equipped",
+      "equipment:enhancing"
+    ],
+    [
+      "hero:locked",
+      "hero:available",
+      "hero:recruited",
+      "hero:dispatched",
+      "hero:injured",
+      "hero:recovering",
+      "hero:recruited",
+      "hero:dispatched"
+    ],
+    [
+      "hero:locked",
+      "hero:available",
+      "hero:recruited",
+      "hero:dispatched",
+      "hero:injured",
+      "hero:recovering",
+      "hero:recruited",
+      "hero:awakening"
+    ],
+    [
+      "hero:locked",
+      "hero:available",
+      "hero:recruited",
+      "hero:dispatched",
+      "hero:injured",
+      "hero:recovering",
+      "hero:recruited",
+      "hero:injured"
+    ],
+    [
+      "hero:locked",
+      "hero:available",
+      "hero:recruited",
+      "hero:injured",
+      "hero:recovering",
+      "hero:recruited",
+      "hero:dispatched",
+      "hero:injured"
+    ],
+    [
+      "hero:locked",
+      "hero:available",
+      "hero:recruited",
+      "hero:injured",
+      "hero:recovering",
+      "hero:recruited",
+      "hero:awakening",
+      "hero:awakened"
+    ],
+    [
+      "hero:locked",
+      "hero:available",
+      "hero:recruited",
+      "hero:injured",
+      "hero:recovering",
+      "hero:recruited",
+      "hero:injured",
+      "hero:recovering"
+    ],
+    [
+      "alliance:none",
+      "alliance:applied",
+      "alliance:member",
+      "alliance:officer",
+      "alliance:dismissed",
+      "alliance:none",
+      "alliance:applied",
+      "alliance:member"
+    ],
+    [
+      "alliance:none",
+      "alliance:applied",
+      "alliance:member",
+      "alliance:officer",
+      "alliance:dismissed",
+      "alliance:none",
+      "alliance:applied",
+      "alliance:rejected"
+    ],
+    [
+      "alliance:none",
+      "alliance:applied",
+      "alliance:member",
+      "alliance:dismissed",
+      "alliance:none",
+      "alliance:applied",
+      "alliance:member",
+      "alliance:officer"
+    ],
+    [
+      "alliance:none",
+      "alliance:applied",
+      "alliance:member",
+      "alliance:dismissed",
+      "alliance:none",
+      "alliance:applied",
+      "alliance:member",
+      "alliance:dismissed"
+    ],
+    [
+      "alliance:none",
+      "alliance:applied",
+      "alliance:rejected",
+      "alliance:none",
+      "alliance:applied",
+      "alliance:member",
+      "alliance:officer",
+      "alliance:leader"
+    ],
+    [
+      "alliance:none",
+      "alliance:applied",
+      "alliance:rejected",
+      "alliance:none",
+      "alliance:applied",
+      "alliance:member",
+      "alliance:officer",
       "alliance:dismissed"
     ],
     [
@@ -303,64 +1090,27 @@
       "season:ended"
     ],
     [
-      "alliance:none",
-      "alliance:applied",
-      "alliance:member",
-      "alliance:officer",
-      "alliance:dismissed",
-      "alliance:none",
-      "alliance:applied",
-      "alliance:member",
-      "alliance:dismissed"
+      "equipment:locked",
+      "equipment:unequipped",
+      "equipment:equipped",
+      "equipment:enhancing",
+      "equipment:enhanced",
+      "equipment:equipped",
+      "equipment:unequipped",
+      "equipment:decomposed"
     ],
     [
-      "alliance:none",
-      "alliance:applied",
-      "alliance:member",
-      "alliance:dismissed",
-      "alliance:none",
-      "alliance:applied",
-      "alliance:member",
-      "alliance:officer",
-      "alliance:leader"
-    ],
-    [
-      "alliance:none",
-      "alliance:applied",
-      "alliance:member",
-      "alliance:dismissed",
-      "alliance:none",
-      "alliance:applied",
-      "alliance:member",
-      "alliance:officer",
-      "alliance:dismissed"
-    ],
-    [
-      "alliance:none",
-      "alliance:applied",
-      "alliance:member",
-      "alliance:officer",
-      "alliance:dismissed",
-      "alliance:none",
-      "alliance:applied",
-      "alliance:member",
-      "alliance:officer",
-      "alliance:leader"
-    ],
-    [
-      "alliance:none",
-      "alliance:applied",
-      "alliance:member",
-      "alliance:officer",
-      "alliance:dismissed",
-      "alliance:none",
-      "alliance:applied",
-      "alliance:member",
-      "alliance:officer",
-      "alliance:dismissed"
+      "equipment:locked",
+      "equipment:unequipped",
+      "equipment:equipped",
+      "equipment:enhancing",
+      "equipment:enhanced",
+      "equipment:equipped",
+      "equipment:enhancing",
+      "equipment:enhanced"
     ]
   ],
-  "avgPathLength": 5.39,
-  "maxPathLength": 10,
-  "minPathLength": 2
+  "avgPathLength": 4.181286549707602,
+  "maxPathLength": 8,
+  "minPathLength": 1
 }

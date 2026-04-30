@@ -295,7 +295,7 @@
       "entity": "prestige",
       "state": "max-level",
       "isInitial": false,
-      "isFinal": true
+      "isFinal": false
     },
     {
       "id": "rebirth:ready",
@@ -606,11 +606,67 @@
       "isFinal": true
     },
     {
-      "id": "tutorial:skipped",
-      "entity": "tutorial",
-      "state": "skipped",
+      "id": "building:max-level",
+      "entity": "building",
+      "state": "max-level",
       "isInitial": false,
       "isFinal": true
+    },
+    {
+      "id": "hero:injured",
+      "entity": "hero",
+      "state": "injured",
+      "isInitial": false,
+      "isFinal": false
+    },
+    {
+      "id": "hero:recovering",
+      "entity": "hero",
+      "state": "recovering",
+      "isInitial": false,
+      "isFinal": false
+    },
+    {
+      "id": "quest:abandoned",
+      "entity": "quest",
+      "state": "abandoned",
+      "isInitial": false,
+      "isFinal": true
+    },
+    {
+      "id": "alliance:rejected",
+      "entity": "alliance",
+      "state": "rejected",
+      "isInitial": false,
+      "isFinal": false
+    },
+    {
+      "id": "tech:paused",
+      "entity": "tech",
+      "state": "paused",
+      "isInitial": false,
+      "isFinal": false
+    },
+    {
+      "id": "equipment:locked",
+      "entity": "equipment",
+      "state": "locked",
+      "isInitial": true,
+      "isFinal": false
+    },
+    {
+      "id": "activity:task-expired",
+      "entity": "activity",
+      "state": "task-expired",
+      "isInitial": false,
+      "isFinal": true
+    },
+    {
+      "id": "stage:sweeping",
+      "entity": "campaign-stage",
+      "state": "sweeping",
+      "isInitial": false,
+      "isFinal": false
     }
   ],
   "transitions": [
@@ -1394,14 +1450,132 @@
       ]
     },
     {
-      "from": "tutorial:in-progress",
-      "to": "tutorial:skipped",
-      "trigger": "skipTutorial",
-      "condition": "玩家主动跳过引导",
+      "from": "building:idle",
+      "to": "building:max-level",
+      "trigger": "reachMaxLevel",
+      "condition": "建筑等级达到上限",
       "sideEffects": [
-        "关闭引导",
-        "解锁全部功能",
-        "不发放引导奖励"
+        "建筑标记满级",
+        "解锁满级特效"
+      ]
+    },
+    {
+      "from": "hero:recruited",
+      "to": "hero:injured",
+      "trigger": "takeDamage",
+      "condition": "战斗中HP降为0",
+      "sideEffects": [
+        "武将标记受伤",
+        "不可出战"
+      ]
+    },
+    {
+      "from": "hero:dispatched",
+      "to": "hero:injured",
+      "trigger": "expeditionDefeated",
+      "condition": "远征失败武将受伤",
+      "sideEffects": [
+        "武将标记受伤"
+      ]
+    },
+    {
+      "from": "hero:injured",
+      "to": "hero:recovering",
+      "trigger": "startRecovery",
+      "condition": "使用恢复道具或等待",
+      "sideEffects": [
+        "开始恢复倒计时"
+      ]
+    },
+    {
+      "from": "hero:recovering",
+      "to": "hero:recruited",
+      "trigger": "recoveryComplete",
+      "condition": "恢复倒计时结束",
+      "sideEffects": [
+        "武将恢复可出战"
+      ]
+    },
+    {
+      "from": "quest:active",
+      "to": "quest:abandoned",
+      "trigger": "abandonQuest",
+      "condition": "玩家主动放弃任务",
+      "sideEffects": [
+        "任务关闭",
+        "无奖励"
+      ]
+    },
+    {
+      "from": "alliance:applied",
+      "to": "alliance:rejected",
+      "trigger": "applicationRejected",
+      "condition": "联盟官员拒绝申请",
+      "sideEffects": [
+        "申请被退回"
+      ]
+    },
+    {
+      "from": "alliance:rejected",
+      "to": "alliance:none",
+      "trigger": "acknowledgeRejection",
+      "condition": "玩家确认被拒绝",
+      "sideEffects": [
+        "可重新申请其他联盟"
+      ]
+    },
+    {
+      "from": "tech:researching",
+      "to": "tech:paused",
+      "trigger": "pauseResearch",
+      "condition": "玩家暂停研究",
+      "sideEffects": [
+        "研究进度暂停"
+      ]
+    },
+    {
+      "from": "tech:paused",
+      "to": "tech:researching",
+      "trigger": "resumeResearch",
+      "condition": "玩家恢复研究",
+      "sideEffects": [
+        "研究继续倒计时"
+      ]
+    },
+    {
+      "from": "equipment:locked",
+      "to": "equipment:unequipped",
+      "trigger": "unlockEquipment",
+      "condition": "关卡掉落或商店购买",
+      "sideEffects": [
+        "装备进入背包"
+      ]
+    },
+    {
+      "from": "activity:task-incomplete",
+      "to": "activity:task-expired",
+      "trigger": "activityTaskExpire",
+      "condition": "活动任务超时未完成",
+      "sideEffects": [
+        "任务标记过期"
+      ]
+    },
+    {
+      "from": "stage:threeStar",
+      "to": "stage:sweeping",
+      "trigger": "startSweep",
+      "condition": "已三星通关 && 扫荡券充足",
+      "sideEffects": [
+        "开始扫荡倒计时"
+      ]
+    },
+    {
+      "from": "stage:sweeping",
+      "to": "stage:threeStar",
+      "trigger": "sweepComplete",
+      "condition": "扫荡完成",
+      "sideEffects": [
+        "发放扫荡奖励"
       ]
     }
   ]
