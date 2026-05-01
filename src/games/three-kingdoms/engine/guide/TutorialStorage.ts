@@ -139,11 +139,15 @@ export class TutorialStorage implements ISubsystem {
 
   /**
    * 恢复引导进度到状态机（断点续引）
+   *
+   * FIX-003: 加载失败时自动清除损坏数据，避免永久阻塞。
    */
   restore(): StorageResult {
     const result = this.load();
     if (!result.success) {
-      return { success: false, reason: result.reason };
+      // FIX-003: 自动清理损坏数据
+      this.storageRemove(STORAGE_KEY);
+      return { success: false, reason: `存档损坏已清除: ${result.reason}` };
     }
     if (!result.data) {
       // 无存档数据，不恢复
@@ -350,13 +354,19 @@ export class TutorialStorage implements ISubsystem {
     return this.usingMemoryFallback;
   }
 
-  /** 验证存档数据格式 */
+  /** 验证存档数据格式 — FIX-002: 增强校验 */
   private validateSaveData(data: TutorialSaveData): boolean {
     if (!data || typeof data !== 'object') return false;
     if (typeof data.version !== 'number') return false;
     if (!Array.isArray(data.completedSteps)) return false;
     if (!Array.isArray(data.completedEvents)) return false;
     if (typeof data.currentPhase !== 'string') return false;
+    // FIX-002: 校验 currentPhase 合法值
+    const validPhases = ['not_started', 'core_guiding', 'free_explore', 'free_play', 'mini_tutorial'];
+    if (!validPhases.includes(data.currentPhase)) return false;
+    // FIX-002: 校验数组元素类型
+    if (!data.completedSteps.every((s: unknown) => typeof s === 'string')) return false;
+    if (!data.completedEvents.every((e: unknown) => typeof e === 'string')) return false;
     return true;
   }
 

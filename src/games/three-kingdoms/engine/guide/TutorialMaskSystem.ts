@@ -288,9 +288,9 @@ export class TutorialMaskSystem implements ISubsystem {
     };
   }
 
-  /** 应用内边距到高亮区域 */
+  /** 应用内边距到高亮区域 — FIX-005: 防止负数padding */
   private applyPadding(bounds: HighlightBounds): HighlightBounds {
-    const padding = this.state.maskConfig.padding;
+    const padding = Math.max(0, this.state.maskConfig.padding);
     return {
       x: bounds.x - padding,
       y: bounds.y - padding,

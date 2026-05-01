@@ -283,16 +283,30 @@ export class TutorialStateMachine implements ISubsystem {
 
   /**
    * 从存档数据恢复
+   *
+   * FIX-001: 添加字段校验，防止恶意/损坏存档导致状态机崩溃。
+   * null数组回退为空数组，非法phase回退为 not_started。
    */
   loadSaveData(data: TutorialSaveData): void {
-    this.state.currentPhase = data.currentPhase;
-    this.state.completedSteps = [...data.completedSteps];
-    this.state.completedEvents = [...data.completedEvents];
-    this.state.currentStepId = data.currentStepId;
-    this.state.currentSubStepIndex = data.currentSubStepIndex;
-    this.state.tutorialStartTime = data.tutorialStartTime;
-    this.state.transitionLogs = [...data.transitionLogs];
-    this.state.protectionStartTime = data.protectionStartTime;
+    const validPhases: TutorialPhase[] = ['not_started', 'core_guiding', 'free_explore', 'free_play', 'mini_tutorial'];
+    this.state.currentPhase = validPhases.includes(data.currentPhase as TutorialPhase)
+      ? data.currentPhase
+      : 'not_started';
+    this.state.completedSteps = Array.isArray(data.completedSteps)
+      ? [...data.completedSteps]
+      : [];
+    this.state.completedEvents = Array.isArray(data.completedEvents)
+      ? [...data.completedEvents]
+      : [];
+    this.state.currentStepId = data.currentStepId ?? null;
+    this.state.currentSubStepIndex = typeof data.currentSubStepIndex === 'number'
+      ? data.currentSubStepIndex
+      : 0;
+    this.state.tutorialStartTime = data.tutorialStartTime ?? null;
+    this.state.transitionLogs = Array.isArray(data.transitionLogs)
+      ? [...data.transitionLogs]
+      : [];
+    this.state.protectionStartTime = data.protectionStartTime ?? null;
   }
 
   /**

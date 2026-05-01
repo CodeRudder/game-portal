@@ -154,9 +154,19 @@ export class FirstLaunchDetector implements ISubsystem {
     // 步骤3: 权限申请
     this.state.flowState.currentStep = 'request_permissions';
     if (permissionRequester) {
-      this.state.flowState.permissionStatus = await permissionRequester(
-        DEFAULT_FIRST_LAUNCH_CONFIG.requiredPermissions,
-      );
+      try {
+        this.state.flowState.permissionStatus = await permissionRequester(
+          DEFAULT_FIRST_LAUNCH_CONFIG.requiredPermissions,
+        );
+      } catch {
+        // FIX-007: 权限请求失败时使用默认值（全部未授权），不中断流程
+        this.state.flowState.permissionStatus = {
+          storage: false,
+          network: false,
+          notification: false,
+          location: false,
+        };
+      }
     } else {
       // 无权限请求回调时，标记默认权限为已授权
       for (const perm of DEFAULT_FIRST_LAUNCH_CONFIG.requiredPermissions) {
@@ -328,20 +338,21 @@ export class FirstLaunchDetector implements ISubsystem {
     return this.languageDetector();
   }
 
-  /** 检测画质 (#17) */
+  /** 检测画质 (#17) — FIX-004: 添加0.1容差避免边界值降级 */
   private detectGraphicsQuality(): GraphicsQuality {
     const hw = this.hardwareInfoProvider();
+    const memGB = hw.memoryGB;
 
     if (
       hw.cpuCores >= QUALITY_THRESHOLDS.high.minCores &&
-      hw.memoryGB >= QUALITY_THRESHOLDS.high.minMemory
+      memGB >= QUALITY_THRESHOLDS.high.minMemory - 0.1
     ) {
       return 'high';
     }
 
     if (
       hw.cpuCores >= QUALITY_THRESHOLDS.medium.minCores &&
-      hw.memoryGB >= QUALITY_THRESHOLDS.medium.minMemory
+      memGB >= QUALITY_THRESHOLDS.medium.minMemory - 0.1
     ) {
       return 'medium';
     }
