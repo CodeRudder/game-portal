@@ -129,6 +129,11 @@ export class SeasonSystem implements ISubsystem {
    * @returns 新创建的赛季信息
    */
   createSeason(name: string, durationDays: number = DEFAULT_SEASON_DURATION_DAYS): SeasonInfo {
+    // FIX-S03: 校验 durationDays，防止 NaN/Infinity/非正值导致 endTime 异常
+    if (!Number.isFinite(durationDays) || durationDays <= 0) {
+      durationDays = DEFAULT_SEASON_DURATION_DAYS;
+    }
+
     // 如果有进行中的赛季，先结算
     if (this.state.currentSeason && this.isSeasonActive(this.state.currentSeason)) {
       this.settleSeason();
@@ -192,7 +197,8 @@ export class SeasonSystem implements ISubsystem {
    */
   addScore(heroId: string, score: number): void {
     this.ensureActiveSeason();
-    if (score <= 0) return;
+    // FIX-S01: 使用 Number.isFinite 防止 NaN/Infinity 绕过 (BR-01/BR-06)
+    if (!Number.isFinite(score) || score <= 0) return;
 
     const existing = this.state.scores.find(s => s.heroId === heroId);
     if (existing) {
@@ -210,6 +216,8 @@ export class SeasonSystem implements ISubsystem {
    */
   setScore(heroId: string, score: number): void {
     this.ensureActiveSeason();
+    // FIX-S02: 拒绝 NaN/Infinity/负数 (BR-20: 与 addScore 对称修复)
+    if (!Number.isFinite(score) || score < 0) return;
 
     const existing = this.state.scores.find(s => s.heroId === heroId);
     if (existing) {
@@ -373,10 +381,15 @@ export class SeasonSystem implements ISubsystem {
    * 加载存档数据
    */
   loadSaveData(data: SeasonSaveData): void {
-    if (data.version !== SEASON_SAVE_VERSION) return;
+    // FIX-S04: null/undefined 输入防护
+    if (!data || data.version !== SEASON_SAVE_VERSION) return;
+    if (!data.state) return;
     this.state = {
       currentSeason: data.state.currentSeason ? { ...data.state.currentSeason } : null,
-      scores: data.state.scores.map(s => ({ ...s })),
+      // FIX-S05: 过滤无效 score（NaN/Infinity/负数），防止损坏数据恢复
+      scores: data.state.scores
+        .filter(s => s && Number.isFinite(s.score) && s.score >= 0)
+        .map(s => ({ ...s })),
       history: data.state.history.map(h => ({ ...h })),
       settledSeasonIds: [...data.state.settledSeasonIds],
     };
