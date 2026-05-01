@@ -55,6 +55,10 @@ export class BorrowHeroHelper {
     now: number,
     calculateFriendshipEarned: (state: SocialState, basePoints: number) => number,
   ): { state: SocialState; powerRatio: number } {
+    // FIX-R2-P0-05: 校验 now 必须为有限数
+    if (!Number.isFinite(now)) {
+      throw new Error('无效的时间参数: now 必须为有限数');
+    }
     if (state.dailyBorrowCount >= this.interactionConfig.borrowDailyLimit) {
       throw new Error('今日借将次数已达上限');
     }

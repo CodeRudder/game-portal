@@ -149,6 +149,13 @@ export interface SaveContext {
   readonly allianceTaskSystem?: import('./alliance/AllianceTaskSystem').AllianceTaskSystem;
   readonly allianceBossSystem?: import('./alliance/AllianceBossSystem').AllianceBossSystem;
   readonly allianceShopSystem?: import('./alliance/AllianceShopSystem').AllianceShopSystem;
+  // ── 社交系统 v6.0+ (FIX-R2-P0-01: Social R2 存档接入) ──
+  readonly friendSystem?: import('./social/FriendSystem').FriendSystem;
+  readonly socialLeaderboardSystem?: import('./social/LeaderboardSystem').LeaderboardSystem;
+  /** 当前社交状态（FriendSystem 纯函数模式需要外部持有） */
+  socialState?: import('../core/social/social.types').SocialState;
+  /** 社交状态写回函数 */
+  setSocialState?: (state: import('../core/social/social.types').SocialState) => void;
 }
 
 // ─────────────────────────────────────────────
@@ -243,6 +250,9 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     alliance: ctx.allianceSystem?.serialize(ctx.allianceSystem.getPlayerState(), ctx.allianceSystem.getAlliance()),
     allianceTask: ctx.allianceTaskSystem?.serialize(),
     allianceShop: ctx.allianceShopSystem?.serialize(),
+    // ── 社交系统 v6.0+ (FIX-R2-P0-01: Social R2 存档序列化) ──
+    social: ctx.friendSystem?.serialize(ctx.socialState ?? ctx.friendSystem.getState()),
+    leaderboard: ctx.socialLeaderboardSystem?.serialize(),
   };
 }
 
@@ -812,12 +822,14 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
     gameLog.info('[Save] v13.0 存档迁移：无联盟商店数据，自动初始化默认商店状态');
   }
 
-  // ── 社交系统 v6.0+ (FIX-P0-01: Social R1 存档接入) ──
+  // ── 社交系统 v6.0+ (FIX-R2-P0-02: Social R2 存档状态写回) ──
   if (data.social && ctx.friendSystem) {
     const socialState = ctx.friendSystem.deserialize(data.social);
-    // 将恢复的状态通过 getState 返回的默认状态合并
-    // 注意：FriendSystem 使用纯函数模式，state 通过参数传递
-    // 这里需要将反序列化的状态写回
+    // FIX-R2-P0-02: 将反序列化的状态写回引擎上下文
+    // FriendSystem 纯函数模式 → 需要外部持有当前 state
+    if (ctx.setSocialState) {
+      ctx.setSocialState(socialState);
+    }
     gameLog.info('[Save] 社交系统存档恢复成功');
   } else {
     gameLog.info('[Save] v6.0 存档迁移：无社交数据，自动初始化默认社交状态');

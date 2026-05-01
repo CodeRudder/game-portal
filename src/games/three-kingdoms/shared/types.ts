@@ -326,6 +326,11 @@ export interface GameSaveData {
   allianceShop?: { items: Array<{ id: string; purchased: number }> };
   /** 材料经济系统数据（可选） */
   materialEconomy?: import('../engine/resource/material-economy-system').MaterialEconomySaveData;
+  // ── 社交系统 v6.0+ (FIX-R2-P0-01: Social R2 存档接入) ──
+  /** 社交系统数据（可选，v6.0+） */
+  social?: import('../core/social/social.types').SocialSaveData;
+  /** 排行榜系统数据（可选，v6.0+） */
+  leaderboard?: import('../engine/social/leaderboard-types').LeaderboardState;
 }
 
 // ─────────────────────────────────────────────

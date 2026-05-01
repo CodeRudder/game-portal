@@ -75,6 +75,10 @@ export class FriendSystem implements ISubsystem {
    * 删除好友
    */
   removeFriend(state: SocialState, playerId: string, now: number): SocialState {
+    // FIX-R2-P0-04: 校验 now 必须为有限数
+    if (!Number.isFinite(now)) {
+      throw new Error('无效的时间参数: now 必须为有限数');
+    }
     if (!state.friends[playerId]) {
       throw new Error('不是好友');
     }
@@ -124,6 +128,10 @@ export class FriendSystem implements ISubsystem {
     toPlayerId: string,
     now: number,
   ): SocialState {
+    // FIX-R2-P0-04: 校验 now 必须为有限数
+    if (!Number.isFinite(now)) {
+      throw new Error('无效的时间参数: now 必须为有限数');
+    }
     if (state.dailyRequestsSent >= this.friendConfig.dailyRequestLimit) {
       throw new Error('今日申请次数已达上限');
     }

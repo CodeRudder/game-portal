@@ -217,6 +217,10 @@ export class ChatSystem implements ISubsystem {
     reason: string,
     now: number,
   ): SocialState {
+    // FIX-R2-P0-03: 校验 now 必须为有限数
+    if (!Number.isFinite(now)) {
+      throw new Error('无效的时间参数: now 必须为有限数');
+    }
     const duration = MUTE_DURATIONS[level];
     const record: MuteRecord = {
       playerId,
@@ -254,6 +258,10 @@ export class ChatSystem implements ISubsystem {
    * 解除禁言
    */
   unmutePlayer(state: SocialState, playerId: string, now: number): SocialState {
+    // FIX-R2-P0-03: 校验 now 必须为有限数
+    if (!Number.isFinite(now)) {
+      throw new Error('无效的时间参数: now 必须为有限数');
+    }
     return {
       ...state,
       muteRecords: state.muteRecords.map((r) =>
@@ -277,6 +285,10 @@ export class ChatSystem implements ISubsystem {
     reportType: ReportType,
     now: number,
   ): { state: SocialState; isFalseReport: boolean } {
+    // FIX-R2-P0-03: 校验 now 必须为有限数
+    if (!Number.isFinite(now)) {
+      throw new Error('无效的时间参数: now 必须为有限数');
+    }
     // 检查是否恶意举报
     const falseReportCount = state.falseReportCounts[reporterId] || 0;
     const isFalseReport = falseReportCount >= 3;
@@ -331,6 +343,10 @@ export class ChatSystem implements ISubsystem {
    * 清理过期消息
    */
   cleanExpiredMessages(state: SocialState, now: number): SocialState {
+    // FIX-R2-P0-03: 校验 now 必须为有限数
+    if (!Number.isFinite(now)) {
+      throw new Error('无效的时间参数: now 必须为有限数');
+    }
     const cleanedMessages: Record<string, ChatMessage[]> = {};
 
     for (const channel of Object.values(CC)) {
