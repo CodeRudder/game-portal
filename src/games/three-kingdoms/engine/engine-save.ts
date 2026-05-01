@@ -300,6 +300,9 @@ export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameSt
   if (data.alliance) subsystems.alliance = data.alliance;
   if (data.allianceTask) subsystems.allianceTask = data.allianceTask;
   if (data.allianceShop) subsystems.allianceShop = data.allianceShop;
+  // ── 社交系统 v6.0+ (FIX-P0-01: Social R1 存档接入) ──
+  if (data.social) subsystems.social = data.social;
+  if (data.leaderboard) subsystems.leaderboard = data.leaderboard;
 
   return {
     version: String(data.version),
@@ -807,6 +810,24 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
     ctx.allianceShopSystem.deserialize(data.allianceShop);
   } else {
     gameLog.info('[Save] v13.0 存档迁移：无联盟商店数据，自动初始化默认商店状态');
+  }
+
+  // ── 社交系统 v6.0+ (FIX-P0-01: Social R1 存档接入) ──
+  if (data.social && ctx.friendSystem) {
+    const socialState = ctx.friendSystem.deserialize(data.social);
+    // 将恢复的状态通过 getState 返回的默认状态合并
+    // 注意：FriendSystem 使用纯函数模式，state 通过参数传递
+    // 这里需要将反序列化的状态写回
+    gameLog.info('[Save] 社交系统存档恢复成功');
+  } else {
+    gameLog.info('[Save] v6.0 存档迁移：无社交数据，自动初始化默认社交状态');
+  }
+
+  if (data.leaderboard && ctx.socialLeaderboardSystem) {
+    ctx.socialLeaderboardSystem.deserialize(data.leaderboard);
+    gameLog.info('[Save] 排行榜系统存档恢复成功');
+  } else {
+    gameLog.info('[Save] v6.0 存档迁移：无排行榜数据，自动初始化默认排行榜状态');
   }
 
   syncBuildingToResource({

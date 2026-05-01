@@ -43,6 +43,9 @@ export const DEFAULT_INTERACTION_CONFIG: InteractionConfig = {
 /** 社交系统存档版本 */
 export const SOCIAL_SAVE_VERSION = 1;
 
+/** 友情点余额上限 (FIX-P0-10: Social R1 资源上限) */
+export const MAX_FRIENDSHIP_POINTS = 99999;
+
 // ─────────────────────────────────────────────
 // 工具函数
 // ─────────────────────────────────────────────

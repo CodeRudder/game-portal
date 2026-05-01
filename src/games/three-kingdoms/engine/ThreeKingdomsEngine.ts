@@ -850,6 +850,9 @@ export class ThreeKingdomsEngine {
       equipment: this.r11.equipmentSystem,
       equipmentForge: this.r11.equipmentForgeSystem,
       equipmentEnhance: this.r11.equipmentEnhanceSystem,
+      // FIX-805: R1 存档接入 — trade + caravan
+      trade: this.r11.tradeSystem,
+      caravan: this.r11.caravanSystem,
       arena: this.r11.arenaSystem,
       arenaShop: this.r11.arenaShopSystem,
       ranking: this.r11.rankingSystem,

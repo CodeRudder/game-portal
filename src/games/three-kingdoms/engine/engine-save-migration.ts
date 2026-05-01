@@ -53,6 +53,9 @@ export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameSt
   if (data.eventChain) subsystems.eventChain = data.eventChain;
   if (data.eventLog) subsystems.eventLog = data.eventLog;
   if (data.offlineEvent) subsystems.offlineEvent = data.offlineEvent;
+  // ── 社交系统 v6.0+ (FIX-P0-01: Social R1 存档接入) ──
+  if (data.social) subsystems.social = data.social;
+  if (data.leaderboard) subsystems.leaderboard = data.leaderboard;
 
   return {
     version: String(data.version),
@@ -97,6 +100,9 @@ export function fromIGameState(state: IGameState): GameSaveData {
     eventChain: s.eventChain as import('./event/EventChainSystem').EventChainSaveData | undefined,
     eventLog: s.eventLog as import('./event/EventLogSystem').EventLogSaveData | undefined,
     offlineEvent: s.offlineEvent as { version: number; offlineQueue: unknown[]; autoRules: unknown[] } | undefined,
+    // ── 社交系统 v6.0+ (FIX-P0-01: Social R1 存档接入) ──
+    social: s.social as import('../core/social/social.types').SocialSaveData | undefined,
+    leaderboard: s.leaderboard as import('./social/leaderboard-types').LeaderboardState | undefined,
   };
 }
 
