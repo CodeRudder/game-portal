@@ -103,6 +103,7 @@ export class CurrencySystem implements ISubsystem {
 
   /** 检查是否有足够货币 */
   hasEnough(type: CurrencyType, amount: number): boolean {
+    if (!Number.isFinite(amount) || amount < 0) return false;
     return this.wallet[type] >= amount;
   }
 
@@ -115,7 +116,7 @@ export class CurrencySystem implements ISubsystem {
 
   /** 增加货币（受上限约束） */
   addCurrency(type: CurrencyType, amount: number): number {
-    if (amount <= 0) return 0;
+    if (!Number.isFinite(amount) || amount <= 0) return 0;
 
     const cap = CURRENCY_CAPS[type];
     const before = this.wallet[type];
@@ -135,7 +136,7 @@ export class CurrencySystem implements ISubsystem {
 
   /** 消耗货币（余额不足时抛出异常） */
   spendCurrency(type: CurrencyType, amount: number): number {
-    if (amount <= 0) return 0;
+    if (!Number.isFinite(amount) || amount <= 0) return 0;
 
     const current = this.wallet[type];
     if (current < amount) {
@@ -153,6 +154,10 @@ export class CurrencySystem implements ISubsystem {
 
   /** 设置货币数量（用于加载存档） */
   setCurrency(type: CurrencyType, amount: number): void {
+    if (!Number.isFinite(amount)) {
+      gameLog.warn(`CurrencySystem.setCurrency: 无效金额 ${amount}，忽略`);
+      return;
+    }
     const cap = CURRENCY_CAPS[type];
     const clamped = Math.max(0, amount);
     this.wallet[type] = cap !== null ? Math.min(clamped, cap) : clamped;
@@ -177,7 +182,7 @@ export class CurrencySystem implements ISubsystem {
 
     // 先处理指定货币的消耗
     for (const [currency, amount] of Object.entries(costs)) {
-      if (amount <= 0) continue;
+      if (!Number.isFinite(amount) || amount <= 0) continue;
 
       const balance = this.wallet[currency as CurrencyType] ?? 0;
       const toSpend = Math.min(amount, balance);
@@ -237,12 +242,13 @@ export class CurrencySystem implements ISubsystem {
 
   /** 获取货币不足信息 */
   getShortage(currency: CurrencyType, required: number): CurrencyShortage {
+    const safeRequired = Number.isFinite(required) ? required : 0;
     const current = this.wallet[currency];
-    const gap = Math.max(0, required - current);
+    const gap = Math.max(0, safeRequired - current);
 
     return {
       currency,
-      required,
+      required: safeRequired,
       current,
       gap,
       acquireHints: CURRENCY_ACQUIRE_HINTS[currency],
@@ -257,7 +263,7 @@ export class CurrencySystem implements ISubsystem {
     const shortages: CurrencyShortage[] = [];
 
     for (const [currency, amount] of Object.entries(costs)) {
-      if (amount <= 0) continue;
+      if (!Number.isFinite(amount) || amount <= 0) continue;
       const balance = this.wallet[currency as CurrencyType] ?? 0;
       if (balance < amount) {
         shortages.push(this.getShortage(currency as CurrencyType, amount));
@@ -293,6 +299,10 @@ export class CurrencySystem implements ISubsystem {
   /** 执行汇率转换 */
   exchange(request: ExchangeRequest): ExchangeResult {
     const { from, to, amount } = request;
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return { success: false, spent: 0, received: 0, reason: '无效转换数量' };
+    }
 
     if (from === to) {
       return { success: true, spent: 0, received: 0 };

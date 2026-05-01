@@ -677,4 +677,186 @@ describe('CurrencySystem', () => {
       expect(cs.getBalance('copper')).toBe(1000);
     });
   });
+
+  // ═══════════════════════════════════════════
+  // 14. R1 对抗式测试 — NaN/Infinity 防护验证
+  // ═══════════════════════════════════════════
+  describe('R1 对抗测试 — NaN/Infinity 防护 (FIX-501~508)', () => {
+    // ─── addCurrency (FIX-501) ───────────────
+    it('addCurrency NaN 返回0，钱包不变', () => {
+      const added = cs.addCurrency('copper', NaN);
+      expect(added).toBe(0);
+      expect(cs.getBalance('copper')).toBe(1000);
+      expect(Number.isFinite(cs.getBalance('copper'))).toBe(true);
+    });
+
+    it('addCurrency Infinity 返回0，钱包不变', () => {
+      const added = cs.addCurrency('copper', Infinity);
+      expect(added).toBe(0);
+      expect(cs.getBalance('copper')).toBe(1000);
+    });
+
+    it('addCurrency -Infinity 返回0，钱包不变', () => {
+      const added = cs.addCurrency('copper', -Infinity);
+      expect(added).toBe(0);
+      expect(cs.getBalance('copper')).toBe(1000);
+    });
+
+    // ─── spendCurrency (FIX-502) ─────────────
+    it('spendCurrency NaN 返回0，钱包不变', () => {
+      const spent = cs.spendCurrency('copper', NaN);
+      expect(spent).toBe(0);
+      expect(cs.getBalance('copper')).toBe(1000);
+      expect(Number.isFinite(cs.getBalance('copper'))).toBe(true);
+    });
+
+    it('spendCurrency Infinity 返回0，钱包不变', () => {
+      const spent = cs.spendCurrency('copper', Infinity);
+      expect(spent).toBe(0);
+      expect(cs.getBalance('copper')).toBe(1000);
+    });
+
+    // ─── setCurrency (FIX-503) ──────────────
+    it('setCurrency NaN 忽略，钱包不变', () => {
+      cs.setCurrency('copper', NaN);
+      expect(cs.getBalance('copper')).toBe(1000);
+      expect(Number.isFinite(cs.getBalance('copper'))).toBe(true);
+    });
+
+    it('setCurrency Infinity 忽略，钱包不变', () => {
+      cs.setCurrency('copper', Infinity);
+      expect(cs.getBalance('copper')).toBe(1000);
+    });
+
+    it('setCurrency -Infinity 忽略，钱包不变', () => {
+      cs.setCurrency('copper', -Infinity);
+      expect(cs.getBalance('copper')).toBe(1000);
+    });
+
+    // ─── spendByPriority (FIX-506) ──────────
+    it('spendByPriority costs含NaN 跳过该项', () => {
+      const result = cs.spendByPriority('normal', { copper: NaN });
+      expect(result).toEqual({});
+      expect(cs.getBalance('copper')).toBe(1000);
+    });
+
+    it('spendByPriority costs含Infinity 跳过该项', () => {
+      const result = cs.spendByPriority('normal', { copper: Infinity });
+      expect(result).toEqual({});
+      expect(cs.getBalance('copper')).toBe(1000);
+    });
+
+    // ─── checkAffordability (FIX-505) ───────
+    it('checkAffordability costs含NaN 跳过该项', () => {
+      const result = cs.checkAffordability({ copper: NaN });
+      expect(result.canAfford).toBe(true);
+      expect(result.shortages).toHaveLength(0);
+    });
+
+    it('checkAffordability costs含Infinity 跳过该项', () => {
+      const result = cs.checkAffordability({ copper: Infinity });
+      expect(result.canAfford).toBe(true);
+      expect(result.shortages).toHaveLength(0);
+    });
+
+    // ─── hasEnough (FIX-507) ────────────────
+    it('hasEnough NaN 返回 false', () => {
+      expect(cs.hasEnough('copper', NaN)).toBe(false);
+    });
+
+    it('hasEnough Infinity 返回 false', () => {
+      expect(cs.hasEnough('copper', Infinity)).toBe(false);
+    });
+
+    it('hasEnough 负数 返回 false', () => {
+      expect(cs.hasEnough('copper', -1)).toBe(false);
+    });
+
+    // ─── exchange (FIX-504) ─────────────────
+    it('exchange NaN amount 返回失败', () => {
+      const result = cs.exchange({ from: 'copper', to: 'copper', amount: NaN });
+      expect(result.success).toBe(false);
+      expect(result.reason).toBe('无效转换数量');
+    });
+
+    it('exchange Infinity amount 返回失败', () => {
+      const result = cs.exchange({ from: 'copper', to: 'copper', amount: Infinity });
+      expect(result.success).toBe(false);
+      expect(result.reason).toBe('无效转换数量');
+    });
+
+    it('exchange 0 amount 返回失败', () => {
+      const result = cs.exchange({ from: 'mandate', to: 'copper', amount: 0 });
+      expect(result.success).toBe(false);
+      expect(result.reason).toBe('无效转换数量');
+    });
+
+    it('exchange 负数 amount 返回失败', () => {
+      const result = cs.exchange({ from: 'mandate', to: 'copper', amount: -5 });
+      expect(result.success).toBe(false);
+      expect(result.reason).toBe('无效转换数量');
+    });
+
+    // ─── getShortage (FIX-508) ──────────────
+    it('getShortage NaN required → gap=0', () => {
+      const shortage = cs.getShortage('copper', NaN);
+      expect(shortage.required).toBe(0);
+      expect(shortage.gap).toBe(0);
+      expect(Number.isFinite(shortage.gap)).toBe(true);
+    });
+
+    it('getShortage Infinity required → gap=Infinity → Math.max(0, ∞-1000)=∞', () => {
+      const shortage = cs.getShortage('copper', Infinity);
+      expect(shortage.required).toBe(0); // Infinity is not finite → safeRequired=0
+      expect(shortage.gap).toBe(0);
+    });
+
+    // ─── deserialize 端到端防护 ─────────────
+    it('deserialize wallet含NaN 被setCurrency防护', () => {
+      const data = {
+        wallet: { copper: NaN, mandate: 100, recruit: 0, summon: 0, expedition: 0, guild: 0, reputation: 0, ingot: 0 },
+        version: CURRENCY_SAVE_VERSION,
+      };
+      cs.deserialize(data as unknown as CurrencySaveData);
+      expect(cs.getBalance('copper')).toBe(1000); // NaN被忽略，保持原值
+      expect(cs.getBalance('mandate')).toBe(100);
+      expect(Number.isFinite(cs.getBalance('copper'))).toBe(true);
+    });
+
+    it('deserialize wallet含Infinity 被setCurrency防护', () => {
+      const data = {
+        wallet: { copper: Infinity, mandate: 0, recruit: 0, summon: 0, expedition: 0, guild: 0, reputation: 0, ingot: 0 },
+        version: CURRENCY_SAVE_VERSION,
+      };
+      cs.deserialize(data as unknown as CurrencySaveData);
+      expect(cs.getBalance('copper')).toBe(1000); // Infinity被忽略，保持原值
+      expect(Number.isFinite(cs.getBalance('copper'))).toBe(true);
+    });
+
+    // ─── 组合攻击验证 ──────────────────────
+    it('NaN注入后所有操作正常', () => {
+      // 尝试各种NaN注入
+      cs.addCurrency('copper', NaN);
+      cs.spendCurrency('copper', NaN);
+      cs.setCurrency('copper', NaN);
+
+      // 验证钱包未被污染
+      expect(Number.isFinite(cs.getBalance('copper'))).toBe(true);
+      expect(cs.getBalance('copper')).toBe(1000);
+
+      // 正常操作仍可用
+      cs.addCurrency('copper', 500);
+      expect(cs.getBalance('copper')).toBe(1500);
+      cs.spendCurrency('copper', 200);
+      expect(cs.getBalance('copper')).toBe(1300);
+    });
+
+    it('Infinity注入后所有操作正常', () => {
+      cs.addCurrency('copper', Infinity);
+      cs.setCurrency('copper', Infinity);
+
+      expect(Number.isFinite(cs.getBalance('copper'))).toBe(true);
+      expect(cs.getBalance('copper')).toBe(1000);
+    });
+  });
 });
