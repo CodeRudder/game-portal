@@ -110,6 +110,11 @@ export class BattleTurnExecutor implements ISubsystem {
     state: BattleState,
     actor: BattleUnit,
   ): BattleAction | null {
+    // DEF-024: actor null/undefined 防护
+    if (!actor || !actor.isAlive) {
+      return null;
+    }
+
     // 1. 处理持续伤害（DOT）
     const dotDamage = this.damageCalculator.calculateDotDamage(actor);
     if (dotDamage > 0) {

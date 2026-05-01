@@ -60,6 +60,11 @@ export function deserializeProgress(
   data: CampaignSaveData,
   dataProvider: ICampaignDataProvider,
 ): CampaignProgress {
+  // DEF-017: null/undefined 防护，防止空存档导致崩溃
+  if (!data || !data.progress || !data.progress.stageStates) {
+    return createInitialProgress(dataProvider);
+  }
+
   if (data.version !== SAVE_VERSION) {
     throw new Error(
       `[CampaignProgress] 存档版本不兼容: 期望 ${SAVE_VERSION}, 实际 ${data.version}`,

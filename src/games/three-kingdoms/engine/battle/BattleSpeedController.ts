@@ -121,6 +121,10 @@ export class BattleSpeedController implements ISubsystem {
       timestamp: Date.now(),
     };
     this.changeHistory.push(event);
+    // DEF-038: 限制 changeHistory 长度，防止无限增长
+    if (this.changeHistory.length > 100) {
+      this.changeHistory.shift();
+    }
 
     // 通知监听器
     this.notifyListeners(event);

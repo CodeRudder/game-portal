@@ -40,11 +40,18 @@ export function calculateFragmentRewards(
     return {};
   }
 
+  // DEF-026: 防护 enemyTeam 为空
+  if (!enemyTeam || !enemyTeam.units) {
+    return {};
+  }
+
   const fragments: Record<string, number> = {};
 
   // PRD v3.0 §4.3a：首通时关联武将碎片必掉（100%概率）
   if (isFirstClear) {
     for (const unit of enemyTeam.units) {
+      // DEF-040: 跳过空ID单位，防止 simpleHash("") = 0 导致必掉碎片
+      if (!unit || !unit.id) continue;
       fragments[unit.id] = (fragments[unit.id] ?? 0) + 1;
     }
     return fragments;
@@ -54,6 +61,8 @@ export function calculateFragmentRewards(
   const baseDropRate = 0.1;
 
   for (const unit of enemyTeam.units) {
+    // DEF-040: 跳过空ID单位
+    if (!unit || !unit.id) continue;
     const hash = simpleHash(unit.id);
     if ((hash % 100) < Math.floor(baseDropRate * 100)) {
       fragments[unit.id] = (fragments[unit.id] ?? 0) + 1;

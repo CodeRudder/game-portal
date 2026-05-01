@@ -334,14 +334,18 @@ export class SweepSystem implements ISubsystem {
   }
 
   deserialize(data: SweepSaveData): void {
+    // DEF-017: null/undefined 防护，防止空存档导致崩溃
+    if (!data) {
+      return;
+    }
     if (data.version !== SAVE_VERSION) {
       throw new Error(
         `[SweepSystem] 存档版本不兼容: 期望 ${SAVE_VERSION}, 实际 ${data.version}`,
       );
     }
-    this.ticketCount = data.ticketCount;
-    this.dailyTicketClaimed = data.dailyTicketClaimed;
-    this.lastDailyTicketDate = data.lastDailyTicketDate;
+    this.ticketCount = data.ticketCount ?? 0;
+    this.dailyTicketClaimed = data.dailyTicketClaimed ?? false;
+    this.lastDailyTicketDate = data.lastDailyTicketDate ?? null;
   }
 
   // ─────────────────────────────────────────────

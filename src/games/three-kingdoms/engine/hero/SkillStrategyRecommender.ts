@@ -78,6 +78,10 @@ export class SkillStrategyRecommender implements ISubsystem {
    * @returns 策略推荐结果
    */
   recommendStrategy(enemyType: EnemyType): StrategyRecommendation {
+    // DEF-035: 无效输入防护，返回默认策略
+    if (!enemyType || !STRATEGY_CONFIG[enemyType]) {
+      return { ...STRATEGY_CONFIG['physical'] };
+    }
     return { ...STRATEGY_CONFIG[enemyType] };
   }
 
@@ -97,6 +101,10 @@ export class SkillStrategyRecommender implements ISubsystem {
    * @returns 技能类型优先级列表
    */
   getPrioritySkillTypes(enemyType: EnemyType): SkillType[] {
+    // DEF-035: 无效输入防护
+    if (!enemyType || !STRATEGY_CONFIG[enemyType]) {
+      return [...STRATEGY_CONFIG['physical'].prioritySkillTypes];
+    }
     return [...STRATEGY_CONFIG[enemyType].prioritySkillTypes];
   }
 
@@ -107,6 +115,10 @@ export class SkillStrategyRecommender implements ISubsystem {
    * @returns 属性侧重列表
    */
   getFocusStats(enemyType: EnemyType): string[] {
+    // DEF-035: 无效输入防护
+    if (!enemyType || !STRATEGY_CONFIG[enemyType]) {
+      return [...STRATEGY_CONFIG['physical'].focusStats];
+    }
     return [...STRATEGY_CONFIG[enemyType].focusStats];
   }
 }

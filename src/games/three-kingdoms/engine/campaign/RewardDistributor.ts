@@ -352,8 +352,11 @@ export class RewardDistributor implements ISubsystem {
         continue;
       }
 
-      // 概率判定
-      if (this.rng() > entry.probability) continue;
+      // DEF-015/DEF-029: 概率判定 — 钳制 rng 返回值到 [0, 1)，
+      // 防止异常值（>1, <0, NaN, Infinity）导致掉落逻辑错误
+      const rngVal = this.rng();
+      const clampedRng = Number.isFinite(rngVal) ? Math.min(1, Math.max(0, rngVal)) : 0;
+      if (clampedRng > entry.probability) continue;
 
       // 随机数量
       const amount = randomInt(entry.minAmount, entry.maxAmount, this.rng);

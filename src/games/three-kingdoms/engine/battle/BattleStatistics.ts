@@ -103,13 +103,15 @@ export function calculateBattleStats(state: BattleState): BattleStats {
     const isAlly = action.actorSide === 'ally';
 
     for (const [, result] of Object.entries(action.damageResults)) {
+      // DEF-037: NaN 防护，防止 NaN damage 累积导致统计全 NaN
+      const dmg = Number.isFinite(result.damage) ? result.damage : 0;
       if (isAlly) {
-        allyTotalDamage += result.damage;
+        allyTotalDamage += dmg;
       } else {
-        enemyTotalDamage += result.damage;
+        enemyTotalDamage += dmg;
       }
 
-      maxSingleDamage = Math.max(maxSingleDamage, result.damage);
+      maxSingleDamage = Math.max(maxSingleDamage, dmg);
 
       // 连击统计（连续暴击）
       if (result.isCritical) {

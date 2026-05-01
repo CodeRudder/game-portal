@@ -68,13 +68,17 @@ export function buildRewardDeps(
     addResource: (type, amount) => resource.addResource(type, amount),
     addFragment: (generalId, count) => hero.addFragment(generalId, count),
     addExp: (exp: number) => {
-      // 将经验平均分给所有已拥有的武将
+      // DEF-022: 将经验平均分给所有已拥有的武将
+      // 修复整数截断：先分配整数部分，剩余1点按顺序分给前面的武将
       const generals = hero.getAllGenerals();
       if (generals.length === 0) return;
       const perHero = Math.floor(exp / generals.length);
-      if (perHero <= 0) return;
-      for (const g of generals) {
-        hero.addExp(g.id, perHero);
+      const remainder = exp - perHero * generals.length;
+      if (perHero <= 0 && remainder <= 0) return;
+      for (let i = 0; i < generals.length; i++) {
+        const bonus = i < remainder ? 1 : 0;
+        const total = perHero + bonus;
+        if (total > 0) hero.addExp(generals[i].id, total);
       }
     },
   };
@@ -97,6 +101,10 @@ export function buildAllyTeam(
   hero: HeroSystem,
   getTotalStats?: (generalId: string) => GeneralStats | undefined,
 ): BattleTeam {
+  // DEF-026: 防护 formation 为 null/undefined 的情况
+  if (!formation) {
+    return { units: [], side: 'ally' };
+  }
   const active = formation.getActiveFormation();
   const slots = active?.slots ?? [];
   const units: BattleUnit[] = [];

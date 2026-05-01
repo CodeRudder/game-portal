@@ -223,7 +223,17 @@ export class AwakeningSystem implements ISubsystem {
     }
 
     // 执行资源消耗
-    this.spendResources(heroId);
+    const spentOk = this.spendResources(heroId);
+    if (!spentOk) {
+      return {
+        success: false,
+        generalId: heroId,
+        costSpent: null,
+        awakenedStats: null,
+        skillUnlocked: null,
+        reason: '资源消耗失败（并发竞争或资源不足）',
+      };
+    }
 
     // 更新觉醒状态
     this.state.heroes[heroId] = {
@@ -438,13 +448,47 @@ export class AwakeningSystem implements ISubsystem {
     return failures;
   }
 
-  /** 执行资源消耗 */
-  private spendResources(heroId: string): void {
-    if (!this.deps) return;
-    this.deps.spendResource('gold', AWAKENING_COST.copper);
-    this.deps.spendResource('breakthroughStone', AWAKENING_COST.breakthroughStones);
-    this.deps.spendResource('skillBook', AWAKENING_COST.skillBooks);
-    this.deps.spendResource('awakeningStone', AWAKENING_COST.awakeningStones);
-    this.heroSystem.useFragments(heroId, AWAKENING_COST.fragments);
+  /** 执行资源消耗（DEF-021: 原子性消耗，任一失败则回滚已消耗资源） */
+  private spendResources(heroId: string): boolean {
+    if (!this.deps) return false;
+
+    // DEF-021: 逐个消耗，记录已消耗的资源以便回滚
+    const spent: Array<{ type: string; amount: number }> = [];
+
+    const trySpend = (type: string, amount: number): boolean => {
+      if (amount <= 0) return true;
+      const ok = this.deps!.spendResource(type, amount);
+      if (ok) {
+        spent.push({ type, amount });
+      }
+      return ok;
+    };
+
+    if (!trySpend('gold', AWAKENING_COST.copper)) { this.rollbackSpent(spent); return false; }
+    if (!trySpend('breakthroughStone', AWAKENING_COST.breakthroughStones)) { this.rollbackSpent(spent); return false; }
+    if (!trySpend('skillBook', AWAKENING_COST.skillBooks)) { this.rollbackSpent(spent); return false; }
+    if (!trySpend('awakeningStone', AWAKENING_COST.awakeningStones)) { this.rollbackSpent(spent); return false; }
+
+    const fragOk = this.heroSystem.useFragments(heroId, AWAKENING_COST.fragments);
+    if (!fragOk) {
+      // 回滚已消耗的其他资源（碎片未消耗，不需要回滚碎片）
+      this.rollbackSpent(spent);
+      return false;
+    }
+
+    return true;
+  }
+
+  /** 回滚已消耗的资源 */
+  private rollbackSpent(spent: Array<{ type: string; amount: number }>): void {
+    for (const { type, amount } of spent) {
+      try {
+        if (this.deps?.addResource) {
+          (this.deps as { addResource?: (type: string, amount: number) => void }).addResource?.(type, amount);
+        }
+      } catch {
+        gameLog.error?.(`[AwakeningSystem] rollback failed: ${type}×${amount}`);
+      }
+    }
   }
 }

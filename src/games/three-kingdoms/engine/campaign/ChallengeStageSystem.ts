@@ -13,6 +13,7 @@
 
 import type { ISubsystem, ISystemDeps } from '../../core/types/subsystem';
 import { DEFAULT_CHALLENGE_STAGES } from './challenge-stages';
+import { gameLog } from '../../core/logger';
 
 // ─────────────────────────────────────────────
 // 类型定义
@@ -318,17 +319,23 @@ export class ChallengeStageSystem implements ISubsystem {
     const check = this.checkCanChallenge(stageId);
     if (!check.canChallenge) return false;
 
-    // 检查是否已有预锁
+    // DEF-016: 检查是否已有预锁（防止重复预锁导致资源泄漏）
     if (this.preLockedResources[stageId]) return false;
 
-    // 预锁（实际扣减，但记录以便失败时返还）
-    const armyOk = this.deps.consumeResource('troops', config.armyCost);
-    const mandateOk = this.deps.consumeResource('mandate', config.staminaCost);
+    // DEF-016: 原子性预锁 — 先验证资源充足再扣减
+    const armyAmount = this.deps.getResourceAmount('troops');
+    const mandateAmount = this.deps.getResourceAmount('mandate');
+    if (armyAmount < config.armyCost || mandateAmount < config.staminaCost) {
+      return false;
+    }
 
-    if (!armyOk || !mandateOk) {
-      // 回滚
-      if (armyOk) this.deps.addResource('troops', config.armyCost);
-      if (mandateOk) this.deps.addResource('mandate', config.staminaCost);
+    const armyOk = this.deps.consumeResource('troops', config.armyCost);
+    if (!armyOk) return false;
+
+    // DEF-016: 如果第二步扣减失败，立即退还第一步
+    const mandateOk = this.deps.consumeResource('mandate', config.staminaCost);
+    if (!mandateOk) {
+      this.deps.addResource('troops', config.armyCost);
       return false;
     }
 
@@ -379,14 +386,20 @@ export class ChallengeStageSystem implements ISubsystem {
       // 计算奖励
       const rewards = this.calculateRewards(config, firstClear);
 
-      // 发放奖励
+      // DEF-018: 原子性奖励发放 — 先收集所有奖励，再逐个发放。
+      // 如果发放过程中出错，已发放的奖励不回滚（已入账），但记录错误日志
       for (const reward of rewards) {
-        if (reward.type.startsWith('fragment_')) {
-          // 碎片奖励
-          const heroId = reward.type.replace('fragment_', '');
-          this.deps.addFragment(heroId, reward.amount);
-        } else {
-          this.deps.addResource(reward.type, reward.amount);
+        try {
+          if (reward.type.startsWith('fragment_')) {
+            // 碎片奖励
+            const heroId = reward.type.replace('fragment_', '');
+            this.deps.addFragment(heroId, reward.amount);
+          } else {
+            this.deps.addResource(reward.type, reward.amount);
+          }
+        } catch (err) {
+          // DEF-018: 奖励发放失败不阻断后续奖励，记录错误日志
+          gameLog?.error?.(`[ChallengeStageSystem] reward distribution failed: type=${reward.type}, amount=${reward.amount}, error=${err}`) ;
         }
       }
 

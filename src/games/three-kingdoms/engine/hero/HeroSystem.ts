@@ -30,6 +30,7 @@ import {
 import { getStarMultiplier } from './star-up-config';
 import { createEmptyState, cloneGeneral, serializeHeroState, deserializeHeroState } from './HeroSerializer';
 import type { ISubsystem, ISystemDeps } from '../../core/types';
+import { gameLog } from '../../core/logger';
 
 /**
  * 武将系统 — 管理玩家的武将集合、碎片背包、战力计算
@@ -134,6 +135,8 @@ export class HeroSystem implements ISubsystem {
     if (!general) return null;
     const removed = cloneGeneral(general);
     delete this.state.generals[generalId];
+    // DEF-020: 级联清理 — 移除武将时同步清理碎片数据，防止悬空引用
+    delete this.state.fragments[generalId];
     return removed;
   }
 
@@ -405,7 +408,13 @@ export class HeroSystem implements ISubsystem {
     const general = this.state.generals[generalId];
     if (!general) return null;
     const maxLevel = this.getMaxLevel(generalId);
-    if (general.level >= maxLevel) return null;
+    if (general.level >= maxLevel) {
+      // DEF-034: 满级后溢出经验记录日志（可观测性）
+      if (exp > 0) {
+        gameLog?.info?.(`[HeroSystem] ${generalId} 已满级(Lv${maxLevel})，${exp}经验被丢弃`);
+      }
+      return null;
+    }
 
     let levelsGained = 0;
     let remainingExp = exp;

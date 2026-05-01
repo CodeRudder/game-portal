@@ -126,9 +126,12 @@ export class HeroStarSystem implements ISubsystem {
     const config = SHOP_FRAGMENT_EXCHANGE.find((c) => c.generalId === generalId);
     if (!config) return { success: false, generalId, count: 0, goldSpent: 0 };
 
-    // DEF-001 fix: 跟踪每日已兑换次数，剩余可购 = dailyLimit - dailyExchangeCount
+    // DEF-042: 支持运行时覆盖 dailyLimit（活动期间加倍等场景）
+    const effectiveDailyLimit = this.dailyLimitOverrides[generalId] ?? config.dailyLimit;
+
+    // DEF-001 fix: 跟踪每日已兑换次数，剩余可购 = effectiveDailyLimit - dailyExchangeCount
     const alreadyExchanged = this.state.dailyExchangeCount[generalId] ?? 0;
-    const remaining = config.dailyLimit - alreadyExchanged;
+    const remaining = effectiveDailyLimit - alreadyExchanged;
     if (remaining <= 0) return { success: false, generalId, count: 0, goldSpent: 0 };
 
     const actualCount = Math.min(count, remaining);
@@ -154,6 +157,25 @@ export class HeroStarSystem implements ISubsystem {
   /** 重置所有武将的商店碎片每日已兑换次数（跨日调用） */
   resetDailyExchangeLimits(): void {
     this.state.dailyExchangeCount = {};
+  }
+
+  // DEF-042: 运行时修改每日限购数量（活动期间加倍等场景）
+  private dailyLimitOverrides: Record<string, number> = {};
+
+  /** 设置指定武将的每日限购数量（运行时覆盖静态配置） */
+  setDailyLimitOverride(generalId: string, newLimit: number): void {
+    if (!Number.isFinite(newLimit) || newLimit < 0) return;
+    this.dailyLimitOverrides[generalId] = newLimit;
+  }
+
+  /** 清除指定武将的每日限购覆盖（恢复静态配置） */
+  clearDailyLimitOverride(generalId: string): void {
+    delete this.dailyLimitOverrides[generalId];
+  }
+
+  /** 清除所有每日限购覆盖 */
+  clearAllDailyLimitOverrides(): void {
+    this.dailyLimitOverrides = {};
   }
 
   // ═══════════════════════════════════════════
