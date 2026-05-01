@@ -231,6 +231,8 @@ export class TutorialSystem implements ISubsystem {
    * 跳过后不能再完成任何步骤，也不会获得跳过奖励。
    */
   skipTutorial(): void {
+    // FIX-T07 (R2): 未初始化时安全返回（与 FIX-T03 对称）
+    if (!this.deps) return;
     // FIX-T06: 防止重复跳过和重复emit
     if (this.state.skipped) return;
     if (this.isTutorialComplete()) return;
