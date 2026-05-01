@@ -858,5 +858,60 @@ describe('CurrencySystem', () => {
       expect(Number.isFinite(cs.getBalance('copper'))).toBe(true);
       expect(cs.getBalance('copper')).toBe(1000);
     });
+
+    // ─── deserialize null/undefined 防护 (FIX-CU-007) ──────────────
+    it('deserialize null → 重置为默认钱包', () => {
+      cs.addCurrency('copper', 5000);
+      expect(cs.getBalance('copper')).toBe(6000);
+
+      cs.deserialize(null as unknown as CurrencySaveData);
+      expect(cs.getBalance('copper')).toBe(INITIAL_WALLET.copper);
+    });
+
+    it('deserialize undefined → 重置为默认钱包', () => {
+      cs.addCurrency('copper', 5000);
+      cs.deserialize(undefined as unknown as CurrencySaveData);
+      expect(cs.getBalance('copper')).toBe(INITIAL_WALLET.copper);
+    });
+
+    it('deserialize { wallet: null } → 重置为默认钱包', () => {
+      cs.addCurrency('copper', 5000);
+      cs.deserialize({ wallet: null, version: CURRENCY_SAVE_VERSION } as unknown as CurrencySaveData);
+      expect(cs.getBalance('copper')).toBe(INITIAL_WALLET.copper);
+    });
+
+    it('deserialize {} → 重置为默认钱包', () => {
+      cs.addCurrency('copper', 5000);
+      cs.deserialize({} as unknown as CurrencySaveData);
+      expect(cs.getBalance('copper')).toBe(INITIAL_WALLET.copper);
+    });
+
+    // ─── checkAffordability NaN 防护验证 (FIX-CU-005) ──────────────
+    it('checkAffordability NaN costs → canAfford=true（NaN被跳过）', () => {
+      const result = cs.checkAffordability({ copper: NaN });
+      expect(result.canAfford).toBe(true);
+      expect(result.shortages).toHaveLength(0);
+    });
+
+    it('checkAffordability Infinity costs → canAfford=true（Infinity被跳过）', () => {
+      // !Number.isFinite(Infinity) → true → skip
+      const result = cs.checkAffordability({ copper: Infinity });
+      expect(result.canAfford).toBe(true);
+      expect(result.shortages).toHaveLength(0);
+    });
+
+    // ─── spendByPriority NaN 防护验证 (FIX-CU-008) ──────────────
+    it('spendByPriority NaN costs → 静默跳过', () => {
+      const result = cs.spendByPriority('normal', { copper: NaN });
+      expect(result).toEqual({});
+      expect(cs.getBalance('copper')).toBe(1000);
+    });
+
+    it('spendByPriority Infinity costs → 静默跳过', () => {
+      // !Number.isFinite(Infinity) → true → skip
+      const result = cs.spendByPriority('normal', { copper: Infinity });
+      expect(result).toEqual({});
+      expect(cs.getBalance('copper')).toBe(1000);
+    });
   });
 });
