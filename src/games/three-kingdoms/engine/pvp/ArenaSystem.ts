@@ -32,13 +32,15 @@ import {
 import {
   selectByFactionBalance,
   calculatePower,
+  MAX_ARENA_COINS,
+  addArenaCoins,
 } from './ArenaSystem.helpers';
 
 // 向后兼容重导出（外部测试直接 import from './ArenaSystem'）
 export {
   DEFAULT_MATCH_CONFIG, DEFAULT_REFRESH_CONFIG, DEFAULT_CHALLENGE_CONFIG,
   ARENA_SAVE_VERSION, createDefaultArenaPlayerState, createDefaultDefenseFormation,
-  selectByFactionBalance, calculatePower,
+  selectByFactionBalance, calculatePower, MAX_ARENA_COINS, addArenaCoins,
 };
 
 // ── ArenaSystem 类 ──────────────────────────

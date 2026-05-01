@@ -50,6 +50,8 @@ export {
   createDefaultArenaPlayerState,
   selectByFactionBalance,
   calculatePower,
+  MAX_ARENA_COINS,
+  addArenaCoins,
 } from './ArenaSystem.helpers';
 
 // PvPBattleSystem

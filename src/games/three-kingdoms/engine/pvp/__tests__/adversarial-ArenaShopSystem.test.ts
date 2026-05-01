@@ -31,19 +31,18 @@ describe('ArenaShopSystem 对抗式测试', () => {
   describe('buyItem — 恶意购买攻击', () => {
     it('A-001: 购买数量为0应抛异常', () => {
       const player = createPlayer();
-      expect(() => shop.buyItem(player, 'fragment_liubei', 0)).toThrow('购买数量必须大于0');
+      expect(() => shop.buyItem(player, 'fragment_liubei', 0)).toThrow('购买数量必须为正整数');
     });
 
     it('A-002: 购买数量为负数应抛异常', () => {
       const player = createPlayer();
-      expect(() => shop.buyItem(player, 'fragment_liubei', -1)).toThrow('购买数量必须大于0');
+      expect(() => shop.buyItem(player, 'fragment_liubei', -1)).toThrow('购买数量必须为正整数');
     });
 
-    it('A-003: 购买数量为NaN不应抛异常（BUG记录：NaN<=0为false绕过校验）', () => {
+    it('A-003: 购买数量为NaN应抛异常（已修复：Number.isInteger(NaN)=false）', () => {
       const player = createPlayer();
-      // BUG: NaN <= 0 is false, so the check `if (count <= 0)` doesn't catch NaN
-      // This leads to NaN propagating through calculations
-      expect(() => shop.buyItem(player, 'fragment_liubei', NaN)).not.toThrow();
+      // FIX-R1: Number.isInteger(NaN) = false, so the check now catches NaN
+      expect(() => shop.buyItem(player, 'fragment_liubei', NaN)).toThrow('购买数量必须为正整数');
     });
 
     it('A-004: 不存在的商品应抛异常', () => {
@@ -229,25 +228,24 @@ describe('ArenaShopSystem 对抗式测试', () => {
       expect(emptyShop.getAllItems()).toEqual([]);
     });
 
-    it('F-002: 负数价格的商品应导致负数扣款', () => {
+    it('F-002: 负数价格的商品应拒绝购买（已修复：totalCost<=0检查）', () => {
       const maliciousItems: ArenaShopItem[] = [
         { itemId: 'hack', itemName: '黑客道具', itemType: 'hero_fragment', arenaCoinCost: -100, weeklyLimit: 0, purchased: 0 },
       ];
       const hackShop = new ArenaShopSystem(maliciousItems);
       const player = createPlayer(100);
-      const result = hackShop.buyItem(player, 'hack', 1);
-      // 负数价格 → 负数扣款 → 竞技币增加！BUG！
-      expect(result.state.arenaCoins).toBe(200); // 100 - (-100) = 200
+      // FIX-R1: totalCost = -100, !Number.isFinite(-100) || -100 <= 0 → true → throw
+      expect(() => hackShop.buyItem(player, 'hack', 1)).toThrow('商品价格异常');
     });
 
-    it('F-003: 价格为0的商品应免费获得', () => {
+    it('F-003: 价格为0的商品应拒绝购买（已修复：totalCost<=0检查）', () => {
       const freeItems: ArenaShopItem[] = [
         { itemId: 'free', itemName: '免费道具', itemType: 'hero_fragment', arenaCoinCost: 0, weeklyLimit: 0, purchased: 0 },
       ];
       const freeShop = new ArenaShopSystem(freeItems);
       const player = createPlayer(0);
-      const result = freeShop.buyItem(player, 'free', 1);
-      expect(result.state.arenaCoins).toBe(0);
+      // FIX-R1: totalCost = 0, 0 <= 0 → true → throw
+      expect(() => freeShop.buyItem(player, 'free', 1)).toThrow('商品价格异常');
     });
 
     it('F-004: weeklyLimit为负数时应可无限购买', () => {

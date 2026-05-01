@@ -12,6 +12,7 @@
 
 import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type { ArenaShopItem, ArenaPlayerState } from '../../core/pvp/pvp.types';
+import { addArenaCoins } from './ArenaSystem.helpers';
 
 // ─────────────────────────────────────────────
 // 常量
@@ -132,14 +133,20 @@ export class ArenaShopSystem implements ISubsystem {
 
     const item = this.items[itemIdx];
 
-    // 检查限购
-    if (item.weeklyLimit > 0 && item.purchased + count > item.weeklyLimit) {
-      throw new Error(`每周限购${item.weeklyLimit}个，已购${item.purchased}个`);
+    // 检查限购（防护 purchased 为 NaN 的情况）
+    if (item.weeklyLimit > 0) {
+      const purchased = Number.isFinite(item.purchased) ? item.purchased : 0;
+      if (purchased + count > item.weeklyLimit) {
+        throw new Error(`每周限购${item.weeklyLimit}个，已购${purchased}个`);
+      }
     }
 
-    // 检查竞技币
+    // 检查竞技币（防护 NaN/Infinity）
     const totalCost = item.arenaCoinCost * count;
-    if (playerState.arenaCoins < totalCost) {
+    if (!Number.isFinite(totalCost) || totalCost <= 0) {
+      throw new Error('商品价格异常');
+    }
+    if (!Number.isFinite(playerState.arenaCoins) || playerState.arenaCoins < totalCost) {
       throw new Error('竞技币不足');
     }
 
@@ -150,7 +157,7 @@ export class ArenaShopSystem implements ISubsystem {
     };
 
     // 最后才修改内部商品状态（确保无异常路径导致不一致）
-    this.items[itemIdx] = { ...item, purchased: item.purchased + count };
+    this.items[itemIdx] = { ...item, purchased: (Number.isFinite(item.purchased) ? item.purchased : 0) + count };
 
     return { state: newState, item: { ...this.items[itemIdx] } };
   }
@@ -170,10 +177,17 @@ export class ArenaShopSystem implements ISubsystem {
     if (!Number.isInteger(count) || count <= 0) {
       return { canBuy: false, reason: '购买数量必须为正整数' };
     }
-    if (item.weeklyLimit > 0 && item.purchased + count > item.weeklyLimit) {
-      return { canBuy: false, reason: '超出周限购数量' };
+    if (item.weeklyLimit > 0) {
+      const purchased = Number.isFinite(item.purchased) ? item.purchased : 0;
+      if (purchased + count > item.weeklyLimit) {
+        return { canBuy: false, reason: '超出周限购数量' };
+      }
     }
-    if (playerState.arenaCoins < item.arenaCoinCost * count) {
+    const totalCost = item.arenaCoinCost * count;
+    if (!Number.isFinite(totalCost) || totalCost <= 0) {
+      return { canBuy: false, reason: '商品价格异常' };
+    }
+    if (!Number.isFinite(playerState.arenaCoins) || playerState.arenaCoins < totalCost) {
       return { canBuy: false, reason: '竞技币不足' };
     }
     return { canBuy: true, reason: '' };

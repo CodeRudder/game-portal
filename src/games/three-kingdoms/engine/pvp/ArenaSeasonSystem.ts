@@ -18,6 +18,7 @@ import type {
   ArenaPlayerState,
 } from '../../core/pvp/pvp.types';
 import { RANK_LEVELS, RANK_LEVEL_MAP } from './PvPBattleSystem';
+import { DEFAULT_CHALLENGE_CONFIG, MAX_ARENA_COINS, addArenaCoins } from './ArenaSystem.helpers';
 
 // ─────────────────────────────────────────────
 // 常量
@@ -63,6 +64,16 @@ export const SEASON_REWARDS: SeasonReward[] = [
 const SEASON_REWARD_MAP = new Map<string, SeasonReward>(
   SEASON_REWARDS.map((r) => [r.rankId, r]),
 );
+
+// ── 启动时配置一致性校验（BR-02/BR-18） ──
+if (SEASON_REWARDS.length !== RANK_LEVELS.length) {
+  throw new Error('[ArenaSeasonSystem] SEASON_REWARDS 与 RANK_LEVELS 数量不匹配');
+}
+for (const reward of SEASON_REWARDS) {
+  if (!RANK_LEVEL_MAP.has(reward.rankId)) {
+    throw new Error(`[ArenaSeasonSystem] SEASON_REWARDS 包含无效 rankId: ${reward.rankId}`);
+  }
+}
 
 // ─────────────────────────────────────────────
 // ArenaSeasonSystem 类
@@ -179,9 +190,9 @@ export class ArenaSeasonSystem implements ISubsystem {
     const newState: ArenaPlayerState = {
       ...playerState,
       score: resetScore,
-      arenaCoins: playerState.arenaCoins + reward.arenaCoin,
-      // 重置每日数据
-      dailyChallengesLeft: 5,
+      arenaCoins: addArenaCoins(playerState.arenaCoins, reward.arenaCoin),
+      // 重置每日数据（使用配置常量，避免硬编码）
+      dailyChallengesLeft: DEFAULT_CHALLENGE_CONFIG.dailyFreeChallenges,
       dailyBoughtChallenges: 0,
       dailyManualRefreshes: 0,
       opponents: [],
@@ -226,7 +237,7 @@ export class ArenaSeasonSystem implements ISubsystem {
     return {
       state: {
         ...playerState,
-        arenaCoins: playerState.arenaCoins + reward.arenaCoin,
+        arenaCoins: addArenaCoins(playerState.arenaCoins, reward.arenaCoin),
       },
       reward,
     };
@@ -241,7 +252,10 @@ export class ArenaSeasonSystem implements ISubsystem {
     playerState: ArenaPlayerState,
     cost: number,
   ): ArenaPlayerState {
-    if (playerState.arenaCoins < cost) {
+    if (!Number.isFinite(cost) || cost <= 0) {
+      throw new Error('无效的购买价格');
+    }
+    if (!Number.isFinite(playerState.arenaCoins) || playerState.arenaCoins < cost) {
       throw new Error('竞技币不足');
     }
     return {

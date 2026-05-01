@@ -314,8 +314,8 @@ describe('竞技场对抗测试 — F-Boundary', () => {
       const pool = Array.from({ length: 30 }, (_, i) => opp({ playerId: `p${i}`, power: 9000, ranking: 9990 + i, score: 100 }));
       expect(Array.isArray(arena.generateOpponents(ps({ score: 500, ranking: NaN }), pool))).toBe(true);
     });
-    it('NaN 积分的战力计算返回 NaN（已知行为 Math.max(0,NaN)=NaN）', () => {
-      expect(calculatePower(ps({ score: NaN }))).toBeNaN();
+    it('NaN 积分的战力计算返回安全默认值（已修复：NaN→0）', () => {
+      expect(calculatePower(ps({ score: NaN }))).toBe(5000); // 0*10 + 0*1000 + 5000
     });
     it('负积分段位为 BRONZE_V', () => {
       expect(createEnv().battle.getRankIdForScore(-100)).toBe('BRONZE_V');

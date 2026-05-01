@@ -15,4 +15,6 @@ export {
   ARENA_SAVE_VERSION,
   createDefaultDefenseFormation,
   createDefaultArenaPlayerState,
+  MAX_ARENA_COINS,
+  addArenaCoins,
 } from './ArenaSystem.helpers';

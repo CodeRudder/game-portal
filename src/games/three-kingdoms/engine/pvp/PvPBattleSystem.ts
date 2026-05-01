@@ -24,6 +24,7 @@ import type {
   SeasonData,
 } from '../../core/pvp/pvp.types';
 import { RankDivision, PvPBattleMode } from '../../core/pvp/pvp.types';
+import { addArenaCoins } from './ArenaSystem.helpers';
 
 // ─────────────────────────────────────────────
 // 常量
@@ -274,11 +275,11 @@ export class PvPBattleSystem implements ISubsystem {
   ): ArenaPlayerState {
     const newState = this.applyScoreChange(attackerState, result.scoreChange);
 
-    // 添加竞技币奖励
+    // 添加竞技币奖励（使用 addArenaCoins 防护溢出）
     const coinReward = result.attackerWon ? 20 : 5;
     return {
       ...newState,
-      arenaCoins: newState.arenaCoins + coinReward,
+      arenaCoins: addArenaCoins(newState.arenaCoins, coinReward),
     };
   }
 

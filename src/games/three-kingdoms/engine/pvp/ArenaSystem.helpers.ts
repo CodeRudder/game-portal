@@ -129,7 +129,28 @@ export function selectByFactionBalance(
  * 公式：基础5000 + 积分 × 10 + 阵容武将数 × 1000
  * 注：返回值保证 ≥ 0，防止异常积分导致负战力影响匹配
  */
+/** 竞技币上限 */
+export const MAX_ARENA_COINS = 999999;
+
+/**
+ * 安全增加竞技币
+ *
+ * 防护 NaN/负数/Infinity，确保结果在 [0, MAX_ARENA_COINS] 范围内。
+ */
+export function addArenaCoins(current: number, amount: number): number {
+  if (!Number.isFinite(current)) return 0;
+  if (!Number.isFinite(amount) || amount <= 0) return current;
+  return Math.min(MAX_ARENA_COINS, Math.max(0, current + amount));
+}
+
+/**
+ * 计算玩家战力（简化版，基于积分和阵容）
+ *
+ * 公式：基础5000 + 积分 × 10 + 阵容武将数 × 1000
+ * 注：返回值保证 ≥ 0 且为有限数，防止 NaN/Infinity 影响匹配
+ */
 export function calculatePower(playerState: ArenaPlayerState): number {
+  const score = Number.isFinite(playerState.score) ? playerState.score : 0;
   const heroCount = playerState.defenseFormation.slots.filter((s) => s !== '').length;
-  return Math.max(0, playerState.score * 10 + heroCount * 1000 + 5000);
+  return Math.max(0, score * 10 + heroCount * 1000 + 5000);
 }
