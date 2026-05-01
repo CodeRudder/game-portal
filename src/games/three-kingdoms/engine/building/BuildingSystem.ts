@@ -216,22 +216,37 @@ export class BuildingSystem implements ISubsystem {
     const check = this.checkUpgrade(type, resources);
     if (!check.canUpgrade) throw new Error(`无法升级 ${type}：${check.reasons.join('；')}`);
 
-    const cost = this.getUpgradeCost(type)!;
+    const cost = this.getUpgradeCost(type);
+    if (!cost) throw new Error(`无法获取 ${type} 升级费用`);
+
     const state = this.buildings[type];
     const now = Date.now();
 
     // FIX-405: 升级计时NaN防护
     const timeSeconds = Number.isFinite(cost.timeSeconds) ? cost.timeSeconds : 0;
 
-    state.status = 'upgrading';
-    state.upgradeStartTime = now;
-    state.upgradeEndTime = now + timeSeconds * 1000;
+    // 保存快照用于回滚
+    const prevStatus = state.status;
+    const prevStartTime = state.upgradeStartTime;
+    const prevEndTime = state.upgradeEndTime;
 
-    this.upgradeQueue.push({
-      buildingType: type,
-      startTime: now,
-      endTime: state.upgradeEndTime,
-    });
+    try {
+      state.status = 'upgrading';
+      state.upgradeStartTime = now;
+      state.upgradeEndTime = now + timeSeconds * 1000;
+
+      this.upgradeQueue.push({
+        buildingType: type,
+        startTime: now,
+        endTime: state.upgradeEndTime,
+      });
+    } catch (e) {
+      // 回滚状态
+      state.status = prevStatus;
+      state.upgradeStartTime = prevStartTime;
+      state.upgradeEndTime = prevEndTime;
+      throw e;
+    }
 
     return { ...cost };
   }
@@ -245,9 +260,9 @@ export class BuildingSystem implements ISubsystem {
     if (!cost) return null;
 
     const refund: UpgradeCost = {
-      grain: Math.round(cost.grain * CANCEL_REFUND_RATIO),
-      gold: Math.round(cost.gold * CANCEL_REFUND_RATIO),
-      troops: Math.round(cost.troops * CANCEL_REFUND_RATIO),
+      grain: Math.floor(cost.grain * CANCEL_REFUND_RATIO),
+      gold: Math.floor(cost.gold * CANCEL_REFUND_RATIO),
+      troops: Math.floor(cost.troops * CANCEL_REFUND_RATIO),
       timeSeconds: 0,
     };
 
@@ -384,7 +399,25 @@ export class BuildingSystem implements ISubsystem {
     }
 
     for (const t of BUILDING_TYPES) {
-      if (data.buildings[t]) this.buildings[t] = { ...data.buildings[t] };
+      if (data.buildings[t]) {
+        const saved = data.buildings[t];
+        // FIX-404: 校验 level/status 一致性
+        if (saved.status === 'upgrading' && (saved.level < 0 || !saved.upgradeEndTime)) {
+          gameLog.warn(`BuildingSystem: ${t} upgrading状态异常，修正为idle`);
+          saved.status = 'idle';
+          saved.upgradeStartTime = null;
+          saved.upgradeEndTime = null;
+        }
+        if (saved.status === 'locked' && saved.level > 0) {
+          gameLog.warn(`BuildingSystem: ${t} locked但level=${saved.level}，修正为idle`);
+          saved.status = 'idle';
+        }
+        if (saved.status === 'idle' && saved.level <= 0 && saved.level !== 0) {
+          gameLog.warn(`BuildingSystem: ${t} idle但level=${saved.level}，修正为locked`);
+          saved.status = 'locked';
+        }
+        this.buildings[t] = { ...saved };
+      }
     }
 
     // 重建队列 & 处理离线期间完成的升级

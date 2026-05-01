@@ -149,7 +149,7 @@ describe('HeroFormation', () => {
 
     it('should trim slots exceeding MAX_SLOTS_PER_FORMATION', () => {
       formation.createFormation('1');
-      const tooMany = Array(MAX_SLOTS_PER_FORMATION + 3).fill('hero');
+      const tooMany = Array.from({ length: MAX_SLOTS_PER_FORMATION + 3 }, (_, i) => `hero${i}`);
       const f = formation.setFormation('1', tooMany);
       expect(f!.slots).toHaveLength(MAX_SLOTS_PER_FORMATION);
     });

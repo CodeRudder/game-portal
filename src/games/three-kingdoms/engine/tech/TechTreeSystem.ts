@@ -145,6 +145,8 @@ export class TechTreeSystem implements ISubsystem {
     if (!state) return;
     // FIX-501: NaN防护
     if (!Number.isFinite(startTime) || !Number.isFinite(endTime)) return;
+    // FIX-502: 已完成状态守卫，禁止将已完成节点重新设为研究中
+    if (state.status === 'completed') return;
     state.status = 'researching';
     state.researchStartTime = startTime;
     state.researchEndTime = endTime;
@@ -345,11 +347,19 @@ export class TechTreeSystem implements ISubsystem {
 
   /** 反序列化 */
   deserialize(data: Pick<TechSaveData, 'completedTechIds' | 'chosenMutexNodes'>): void {
-    this.nodes = createAllNodeStates();
-    this.chosenMutexNodes = {};
-
-    // 恢复已完成节点
+    // FIX-503: 合并语义 — 保留运行时已有的 completed 节点，合并存档数据
+    // 不再重置 nodes，而是将存档中的 completed 状态合并进来
     const completedSet = new Set(data.completedTechIds);
+
+    // 先收集运行时已完成的节点
+    const runtimeCompleted = new Set<string>();
+    for (const def of TECH_NODE_DEFS) {
+      if (this.nodes[def.id]?.status === 'completed') {
+        runtimeCompleted.add(def.id);
+      }
+    }
+
+    // 合并：存档中的 completed 也标记为 completed
     for (const id of completedSet) {
       if (this.nodes[id]) {
         this.nodes[id].status = 'completed';
@@ -358,7 +368,7 @@ export class TechTreeSystem implements ISubsystem {
 
     // 恢复互斥选择
     if (data.chosenMutexNodes) {
-      this.chosenMutexNodes = { ...data.chosenMutexNodes };
+      this.chosenMutexNodes = { ...this.chosenMutexNodes, ...data.chosenMutexNodes };
     }
 
     // 刷新可用性

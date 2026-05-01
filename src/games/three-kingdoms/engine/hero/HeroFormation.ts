@@ -140,6 +140,22 @@ export class HeroFormation implements ISubsystem {
     const validIds = generalIds.filter((gid): gid is string => typeof gid === 'string' && gid !== '');
     // 限制最多6个
     const trimmed = validIds.slice(0, MAX_SLOTS_PER_FORMATION);
+
+    // FIX-303: 武将唯一性校验 — 同一武将不可出现在多个编队中
+    // 先检查 trimmed 自身是否有重复
+    const seen = new Set<string>();
+    for (const gid of trimmed) {
+      if (seen.has(gid)) return null; // 自身重复
+      seen.add(gid);
+    }
+    // 再检查是否已在其他编队中
+    for (const gid of trimmed) {
+      for (const [fid, f] of Object.entries(this.state.formations)) {
+        if (fid === id) continue; // 跳过当前编队
+        if (f.slots.includes(gid)) return null; // 已在其他编队中
+      }
+    }
+
     formation.slots = Array(MAX_SLOTS_PER_FORMATION).fill('');
     trimmed.forEach((gid, i) => {
       formation.slots[i] = gid;

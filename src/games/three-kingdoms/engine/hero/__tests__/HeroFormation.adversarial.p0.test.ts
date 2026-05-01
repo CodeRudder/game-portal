@@ -23,34 +23,35 @@ describe('HeroFormation — R2 Adversarial P0 Fixes', () => {
   // P0-1: setFormation绕过互斥检查
   // ═══════════════════════════════════════════
   describe('P0-1: setFormation bypasses mutual exclusion', () => {
-    it('should allow same hero in multiple formations via setFormation (BUG)', () => {
+    it('should reject duplicate hero across formations via setFormation (FIXED)', () => {
       formation.createFormation('1');
       formation.addToFormation('1', 'hero1');
 
       formation.createFormation('2');
       const result = formation.setFormation('2', ['hero1']);
 
-      expect(result).not.toBeNull();
-      expect(result!.slots[0]).toBe('hero1');
+      // FIX-303: setFormation 现在校验武将唯一性，重复武将返回 null
+      expect(result).toBeNull();
 
+      // hero1 仍在编队1中，编队2未改变
       const f1 = formation.getFormation('1')!;
-      const f2 = formation.getFormation('2')!;
       expect(f1.slots).toContain('hero1');
-      expect(f2.slots).toContain('hero1');
-
       const containing = formation.getFormationsContainingGeneral('hero1');
-      expect(containing).toHaveLength(2);
+      expect(containing).toHaveLength(1);
     });
 
-    it('should detect cross-formation duplication after setFormation', () => {
+    it('should reject cross-formation duplication via setFormation (FIXED)', () => {
       formation.createFormation('1');
       formation.createFormation('2');
 
       formation.setFormation('1', ['heroA', 'heroB']);
-      formation.setFormation('2', ['heroB', 'heroC']);
+      // heroB 已在编队1中，setFormation 编队2 包含 heroB 应被拒绝
+      const result = formation.setFormation('2', ['heroB', 'heroC']);
+
+      expect(result).toBeNull();
 
       const heroBFormations = formation.getFormationsContainingGeneral('heroB');
-      expect(heroBFormations.length).toBeGreaterThan(1);
+      expect(heroBFormations).toHaveLength(1);
     });
   });
 
