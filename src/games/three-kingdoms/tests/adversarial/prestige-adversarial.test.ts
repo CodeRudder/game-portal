@@ -85,13 +85,14 @@ describe('F-Error: 声望获取异常路径', () => {
   it('空字符串来源返回0', () => {
     expect(sys.addPrestigePoints('' as PrestigeSourceType, 100)).toBe(0);
   });
-  it('NaN声望值污染状态为NaN — P0-001 CONFIRMED BUG', () => {
+  it('NaN声望值被拒绝，不污染状态 — P0-001 FIXED', () => {
     sys.addPrestigePoints('battle_victory', NaN);
     const state = sys.getState();
-    // ⚠️ CONFIRMED BUG: NaN + number = NaN, 污染 currentPoints/totalPoints/dailyGained
-    // 修复建议: addPrestigePoints 入口增加 Number.isFinite(basePoints) 校验
-    expect(Number.isNaN(state.currentPoints)).toBe(true); // BUG: 应为 false
-    expect(Number.isNaN(state.totalPoints)).toBe(true);   // BUG: 应为 false
+    // ✅ FIXED (FIX-501): Number.isFinite(basePoints) 校验拒绝 NaN
+    expect(Number.isNaN(state.currentPoints)).toBe(false);
+    expect(Number.isNaN(state.totalPoints)).toBe(false);
+    expect(state.currentPoints).toBe(0);
+    expect(state.totalPoints).toBe(0);
   });
   it('负数声望值可能绕过每日上限 — P0 BUG', () => {
     sys.addPrestigePoints('battle_victory', 200); // 达到上限
@@ -158,13 +159,14 @@ describe('F-Error: 声望商店异常路径', () => {
     expect(r.success).toBe(false);
     expect(r.reason).toContain('上限');
   });
-  it('负数购买数量增加声望 — P0-003 CONFIRMED BUG', () => {
+  it('负数购买数量被拒绝，不增加声望 — P0-003 FIXED', () => {
     shop.updatePrestigeInfo(99999, 5);
     const before = shop.getState().prestigePoints;
+    const result = shop.buyGoods('psg-001', -1);
     expect(() => shop.buyGoods('psg-001', -1)).not.toThrow();
-    // ⚠️ CONFIRMED BUG: totalCost = 50 * -1 = -50, prestigePoints -= -50 → 增加50
-    // 修复建议: buyGoods 入口增加 quantity <= 0 校验
-    expect(shop.getState().prestigePoints).toBeGreaterThan(before); // BUG: 应 <= before
+    // ✅ FIXED (FIX-505): quantity <= 0 校验拒绝负数
+    expect(result.success).toBe(false);
+    expect(shop.getState().prestigePoints).toBe(before);
   });
   it('零购买数量安全处理', () => {
     shop.updatePrestigeInfo(99999, 5);
@@ -576,10 +578,9 @@ describe('F-Boundary: 转生倍率边界', () => {
   it('calcRebirthMultiplierFromConfig支持diminishing曲线', () => {
     expect(calcRebirthMultiplierFromConfig(5, { curveType: 'diminishing', decayFactor: 0.8 })).toBeGreaterThan(1.0);
   });
-  it('calcRebirthMultiplierFromConfig NaN输入返回NaN — P0-009 CONFIRMED BUG', () => {
-    // ⚠️ CONFIRMED BUG: NaN <= 0 为 false，跳过 count<=0 保护，进入对数计算
-    // 修复建议: 增加 Number.isFinite(count) 校验
-    expect(Number.isNaN(calcRebirthMultiplierFromConfig(NaN))).toBe(true); // BUG: 应返回 1.0
+  it('calcRebirthMultiplierFromConfig NaN输入返回1.0 — P0-009 FIXED', () => {
+    // ✅ FIXED (FIX-503): Number.isFinite(count) 校验拒绝 NaN，返回安全默认值 1.0
+    expect(calcRebirthMultiplierFromConfig(NaN)).toBe(1.0);
   });
   it('getNextMultiplier大于当前倍率', () => {
     const sys = createRebirth();
@@ -897,15 +898,16 @@ describe('F-Normal: 转生初始赠送', () => {
 // P0 问题记录
 // ═══════════════════════════════════════════════
 describe('P0 Issue: 声望系统已确认问题', () => {
-  it('P0-001: NaN声望值污染currentPoints和totalPoints为NaN [CONFIRMED]', () => {
+  it('P0-001: NaN声望值被拒绝，不污染状态 [FIXED]', () => {
     const sys = createPrestige();
     sys.addPrestigePoints('battle_victory', NaN);
     const state = sys.getState();
-    // CONFIRMED: NaN + number = NaN，所有后续操作失效
-    expect(Number.isNaN(state.currentPoints)).toBe(true);
-    expect(Number.isNaN(state.totalPoints)).toBe(true);
-    expect(Number.isNaN(state.dailyGained['battle_victory'])).toBe(true);
-    // 修复: addPrestigePoints 入口增加 Number.isFinite(basePoints) 校验
+    // ✅ FIXED (FIX-501): Number.isFinite(basePoints) 校验拒绝 NaN
+    expect(Number.isNaN(state.currentPoints)).toBe(false);
+    expect(Number.isNaN(state.totalPoints)).toBe(false);
+    expect(Number.isNaN(state.dailyGained['battle_victory'])).toBe(false);
+    expect(state.currentPoints).toBe(0);
+    expect(state.totalPoints).toBe(0);
   });
   it('P0-002: 负数声望值绕过每日上限', () => {
     const sys = createPrestige();
@@ -915,14 +917,14 @@ describe('P0 Issue: 声望系统已确认问题', () => {
     const state = sys.getState();
     expect(state.dailyGained['battle_victory']).toBeGreaterThanOrEqual(200);
   });
-  it('P0-003: PrestigeShopSystem.buyGoods负数购买增加声望 [CONFIRMED]', () => {
+  it('P0-003: PrestigeShopSystem.buyGoods负数购买被拒绝 [FIXED]', () => {
     const shop = createShop();
     shop.updatePrestigeInfo(99999, 5);
     const before = shop.getState().prestigePoints;
-    shop.buyGoods('psg-001', -1);
-    // CONFIRMED: totalCost = 50 * -1 = -50, prestigePoints -= -50 → 增加50
-    expect(shop.getState().prestigePoints).toBeGreaterThan(before);
-    // 修复: buyGoods 入口增加 quantity <= 0 校验
+    const result = shop.buyGoods('psg-001', -1);
+    // ✅ FIXED (FIX-505): quantity <= 0 校验拒绝负数，声望不变
+    expect(result.success).toBe(false);
+    expect(shop.getState().prestigePoints).toBe(before);
   });
   it('P0-004: 商店扣减独立prestigePoints不同步回PrestigeSystem', () => {
     const pSys = createPrestige();
