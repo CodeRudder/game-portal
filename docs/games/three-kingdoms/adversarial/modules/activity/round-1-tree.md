@@ -1,454 +1,524 @@
-# Activity（活动域）流程分支树 — Round 1
+# Activity R1 — Builder 流程树
 
-> Builder: TreeBuilder | Time: 2026-05-01 | Phase: R1 对抗式测试
-> 源文件: engine/activity/ 目录下 10 个 TypeScript 文件（2162行）
-> 子系统: ActivitySystem, SignInSystem, TokenShopSystem, TimedActivitySystem, SeasonHelper, ActivityOfflineCalculator, ActivityFactory
+> 版本: v1.0 | Builder规则: v1.9 | 生成时间: 2026-05-01
+> 模块: `engine/activity/` | 公开API: 62个 | 辅助函数: 11个
 
-## 总体统计
+## 标注说明
 
-| 指标 | ActivitySystem | SignInSystem | TokenShopSystem | TimedActivitySystem | Helper/Factory/Config | 合计 |
-|------|---------------|-------------|-----------------|--------------------|-----------------------|------|
-| 源文件数 | 1 | 1 | 1 | 1 | 5 | 9 |
-| 公开API数 | 18 | 10 | 16 | 14 | 8 | 66 |
-| 总节点数 | 72 | 45 | 62 | 58 | 28 | 265 |
-| P0节点 | 14 | 12 | 15 | 11 | 5 | 57 |
-| P1节点 | 28 | 18 | 22 | 24 | 12 | 104 |
-| P2节点 | 30 | 15 | 25 | 23 | 11 | 104 |
+- `covered` — 已有测试覆盖（标注测试文件）
+- `todo` — 需要补充测试
+- `uncovered` — 完全未覆盖
+- `N/A` — 不适用（纯返回/无分支）
 
 ---
 
-## A. ActivitySystem（活动管理系统）
+## 1. ActivitySystem
 
-### A1. 活动列表管理
+### 1.1 init(deps)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| F-N-001 | 正常注入deps | covered | TimedActivitySystem.test.ts L34 |
+| F-E-001 | deps=null 无throw（存储null） | todo | 源码L80无null guard |
 
-#### F-Normal: startActivity
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| ACT-001 | F-Normal: startActivity正常流程 | P1 | 传入有效ActivityDef+taskDefs+milestones+now，创建活动实例 | ✅ ActivitySystem-p1.test.ts |
-| ACT-002 | F-Boundary: startActivity-maxTotal已达上限 | P0 | 活动总数=maxTotal时，canStartActivity返回false | ✅ ActivitySystem-p1.test.ts |
-| ACT-003 | F-Boundary: startActivity-concurrencyConfig全满 | P1 | 各类型活动数分别达到maxSeason/maxLimitedTime等上限 | ✅ ActivitySystem-p1.test.ts |
-| ACT-004 | F-Error: startActivity-null state | P0 | state=null时崩溃风险（无null guard） | ❌ 无防护 |
-| ACT-005 | F-Error: startActivity-null def | P0 | def=null时createActivityInstance崩溃 | ❌ 无防护 |
-| ACT-006 | F-Error: startActivity-empty taskDefs | P2 | taskDefs=[]时创建无任务活动，功能正常但可能无意义 | ✅ 允许 |
+### 1.2 update(dt)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| F-N-002 | 调用不报错（空操作） | N/A | 无分支 |
 
-#### F-Normal: canStartActivity
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| ACT-007 | F-Normal: canStart-未达上限 | P2 | 活动数未达上限，返回canStart=true | ✅ |
-| ACT-008 | F-Boundary: canStart-已达maxTotal | P0 | totalActive >= maxTotal时返回false+reason | ✅ |
-| ACT-009 | F-Error: canStart-未检查类型限制 | **P0** | canStartActivity只检查总上限，未按ActivityType检查分类型上限(maxSeason/maxLimitedTime等) | ❌ 逻辑缺陷 |
-| ACT-010 | F-Boundary: canStart-maxTotal=NaN | P0 | concurrencyConfig.maxTotal=NaN时，NaN>=NaN=false，绕过上限检查 | ❌ NaN绕过 |
+### 1.3 getState()
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| F-N-003 | 返回配置快照 | covered | TokenShopSystem.test.ts L41 |
 
-#### F-Normal: updateActivityStatus
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| ACT-011 | F-Normal: 活动到期自动结束 | P1 | now >= endTime时状态变为ENDED | ✅ ActivitySystem-p1.test.ts |
-| ACT-012 | F-Normal: 活动未到期保持ACTIVE | P2 | now < endTime时状态不变 | ✅ |
-| ACT-013 | F-Error: activityId不存在 | P1 | 不存在的activityId直接返回原state | ✅ |
-| ACT-014 | F-Error: now=NaN | P0 | now=NaN时，NaN >= endTime 为 false，活动永远不会到期 | ❌ NaN绕过 |
+### 1.4 reset()
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| F-N-004 | 重置并发配置和离线效率 | covered | TokenShopSystem.test.ts L194 |
 
-#### F-Normal: getActiveActivities
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| ACT-015 | F-Normal: 返回所有ACTIVE活动 | P2 | 正常过滤 | ✅ |
-| ACT-016 | F-Boundary: 无ACTIVE活动 | P2 | 返回空数组 | ✅ |
+### 1.5 canStartActivity(state, type)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| F-N-005 | 未达上限 canStart=true | covered | ActivitySystem-p1.test.ts L259 |
+| F-N-006 | 达到总上限 canStart=false | covered | ActivitySystem-p1.test.ts L265 |
+| F-B-001 | maxTotal=NaN reason='并行配置异常' | uncovered | FIX-ACT-001 |
+| F-B-002 | maxTotal<=0 reason='并行配置异常' | uncovered | FIX-ACT-001 |
+| F-B-003 | 分类型达上限（如赛季x1） canStart=false | todo | 源码L122-132 |
+| F-B-004 | 分类型未达上限 canStart=true | todo | 5种类型各需验证 |
 
-### A2. 活动任务系统
+### 1.6 startActivity(state, def, tasks, milestones, now)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| F-N-007 | 正常启动活动 | covered | ActivitySystem-p1.test.ts L203 |
+| F-E-002 | def=null throw | covered | FIX-ACT-005 |
+| F-E-003 | now=NaN throw | todo | FIX-ACT-005 |
+| F-B-005 | tasks=null 空数组 | todo | 源码L165 taskDefs ?? [] |
+| F-B-006 | milestones=null 空数组 | todo | 源码L166 milestones ?? [] |
 
-#### F-Normal: updateTaskProgress
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| ACT-017 | F-Normal: 正常增加进度 | P1 | currentProgress += progress | ✅ ActivitySystem-p2.test.ts |
-| ACT-018 | F-Boundary: 进度恰好达标 | P1 | newProgress == targetCount → COMPLETED | ✅ |
-| ACT-019 | F-Boundary: 进度超出上限 | P1 | Math.min(newProgress, targetCount) 截断 | ✅ |
-| ACT-020 | F-Error: progress=NaN | **P0** | progress=NaN时，currentProgress+NaN=NaN，NaN>=targetCount=false，任务永远无法完成 | ❌ NaN绕过 |
-| ACT-021 | F-Error: progress=负值 | P0 | progress<0时，currentProgress减少，可倒刷任务进度 | ❌ 无负值检查 |
-| ACT-022 | F-Error: 已CLAIMED任务仍可增加进度 | P1 | status=CLAIMED时直接return t，正确 | ✅ |
-| ACT-023 | F-Error: activityId不存在 | P1 | 返回原state | ✅ |
-| ACT-024 | F-Error: taskDefId不存在 | P2 | 所有task都不匹配defId，返回原tasks | ✅ |
+### 1.7 updateActivityStatus(state, activityId, now, endTime)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| F-N-008 | now>=endTime ENDED | covered | ActivitySystem-p1.test.ts L231 |
+| F-N-009 | now<endTime 保持ACTIVE | covered | ActivitySystem-p1.test.ts L239 |
+| F-N-010 | activityId不存在 返回原state | covered | ActivitySystem-p1.test.ts L246 |
+| F-B-007 | now=NaN 返回原state（不执行变更） | uncovered | FIX-ACT-026 |
+| F-B-008 | endTime=NaN 返回原state | uncovered | FIX-ACT-026 |
 
-#### F-Normal: claimTaskReward
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| ACT-025 | F-Normal: 正常领取 | P1 | 任务COMPLETED→CLAIMED，积分+代币累加 | ✅ ActivitySystem-p2.test.ts |
-| ACT-026 | F-Error: 活动不存在throw | P1 | throw Error('活动不存在') | ✅ |
-| ACT-027 | F-Error: 任务不存在throw | P1 | throw Error('任务不存在') | ✅ |
-| ACT-028 | F-Error: 已领取throw | P1 | throw Error('已领取') | ✅ |
-| ACT-029 | F-Error: 任务未完成throw | P1 | throw Error('任务未完成') | ✅ |
-| ACT-030 | F-Boundary: pointReward=NaN | **P0** | instance.points + NaN = NaN，积分变为NaN | ❌ NaN传播 |
-| ACT-031 | F-Boundary: tokenReward=NaN | **P0** | instance.tokens + NaN = NaN，代币变为NaN | ❌ NaN传播 |
-| ACT-032 | F-Cross: claimTaskReward后checkMilestones联动 | P1 | 领取任务后积分增加，应触发里程碑检查 | ❌ 需外部调用 |
+### 1.8 getActiveActivities(state)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| F-N-011 | 返回所有ACTIVE活动 | covered | ActivitySystem-p1.test.ts L209 |
+| F-N-012 | ENDED活动不包含 | covered | ActivitySystem-p1.test.ts L252 |
 
-#### F-Normal: resetDailyTasks
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| ACT-033 | F-Normal: 重置每日任务 | P1 | dailyTaskDefs中的任务被重置 | ✅ ActivitySystem-p2.test.ts |
-| ACT-034 | F-Error: activityId不存在 | P2 | 返回原state | ✅ |
-| ACT-035 | F-Error: dailyTaskDefs为空 | P2 | 无任务被重置 | ✅ |
+### 1.9 updateTaskProgress(state, actId, taskDefId, progress)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| F-N-013 | 增加进度 | covered | ActivitySystem-p1.test.ts L359 |
+| F-N-014 | 达到目标 COMPLETED | covered | ActivitySystem-p1.test.ts L366 |
+| F-N-015 | 进度不超过targetCount | covered | ActivitySystem-p1.test.ts L373 |
+| F-N-016 | 已CLAIMED任务不再更新 | covered | ActivitySystem-p1.test.ts L379 |
+| F-N-017 | actId不存在 原state | covered | ActivitySystem-p1.test.ts L392 |
+| F-B-009 | progress=NaN 原state | uncovered | FIX-ACT-002 |
+| F-B-010 | progress<=0 原state | uncovered | FIX-ACT-003 |
+| F-B-011 | progress=Infinity 原state | todo | !Number.isFinite检查 |
 
-### A3. 里程碑奖励
+### 1.10 claimTaskReward(state, actId, taskDefId)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| F-N-018 | 领取COMPLETED任务奖励 | covered | ActivitySystem-p1.test.ts L405 |
+| F-N-019 | 积分和代币累加 | covered | ActivitySystem-p1.test.ts L416 |
+| F-E-004 | actId不存在 throw | covered | ActivitySystem-p1.test.ts L447 |
+| F-E-005 | taskDefId不存在 throw | covered | ActivitySystem-p1.test.ts L453 |
+| F-E-006 | 已CLAIMED throw | covered | ActivitySystem-p1.test.ts L439 |
+| F-E-007 | 未COMPLETED throw | covered | ActivitySystem-p1.test.ts L433 |
+| F-B-012 | pointReward=NaN safePointReward=0 | uncovered | FIX-ACT-004 |
+| F-B-013 | tokenReward=NaN safeTokenReward=0 | uncovered | FIX-ACT-004 |
+| F-B-014 | 多次领取累积积分代币 | covered | ActivitySystem-p1.test.ts L423 |
 
-#### F-Normal: checkMilestones
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| ACT-036 | F-Normal: 积分达标解锁 | P1 | points >= requiredPoints → UNLOCKED | ✅ ActivitySystem-p2.test.ts |
-| ACT-037 | F-Normal: 积分不足保持LOCKED | P2 | points < requiredPoints → 不变 | ✅ |
-| ACT-038 | F-Boundary: points=NaN | **P0** | NaN >= requiredPoints = false，里程碑永远无法解锁 | ❌ NaN阻断 |
-| ACT-039 | F-Error: 已UNLOCKED/CLAIMED不重复检查 | P2 | status !== LOCKED直接return | ✅ |
+### 1.11 resetDailyTasks(state, actId, dailyTaskDefs)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| F-N-020 | 重置每日任务进度 | covered | ActivitySystem-p1.test.ts L460 |
+| F-N-021 | actId不存在 原state | todo | 源码L262 |
+| F-B-015 | dailyTaskDefs为空 无重置 | todo | 空Set场景 |
 
-#### F-Normal: claimMilestone
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| ACT-040 | F-Normal: 正常领取 | P1 | UNLOCKED→CLAIMED，返回rewards | ✅ ActivitySystem-p2.test.ts |
-| ACT-041 | F-Error: 活动不存在throw | P1 | throw Error | ✅ |
-| ACT-042 | F-Error: 里程碑不存在throw | P1 | throw Error | ✅ |
-| ACT-043 | F-Error: 里程碑LOCKED throw | P1 | throw Error('里程碑未解锁') | ✅ |
-| ACT-044 | F-Error: 已领取throw | P1 | throw Error('已领取') | ✅ |
+### 1.12 checkMilestones(state, actId)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| F-N-022 | 积分足够 UNLOCKED | covered | ActivitySystem-p2.test.ts L129 |
+| F-N-023 | 积分不足 保持LOCKED | covered | ActivitySystem-p2.test.ts L142 |
+| F-N-024 | 已CLAIMED 不变 | covered | ActivitySystem-p2.test.ts L179 |
+| F-N-025 | actId不存在 原state | covered | ActivitySystem-p2.test.ts L195 |
+| F-B-016 | points=NaN 不解锁 | uncovered | FIX-ACT-005 |
 
-### A4. 离线进度
+### 1.13 claimMilestone(state, actId, milestoneId)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| F-N-026 | 领取UNLOCKED里程碑 | covered | ActivitySystem-p2.test.ts L200 |
+| F-E-008 | 未UNLOCKED throw | covered | ActivitySystem-p2.test.ts L214 |
+| F-E-009 | 已CLAIMED throw | covered | ActivitySystem-p2.test.ts L220 |
+| F-E-010 | actId不存在 throw | covered | ActivitySystem-p2.test.ts L236 |
+| F-E-011 | milestoneId不存在 throw | covered | ActivitySystem-p2.test.ts L242 |
 
-#### F-Normal: calculateOfflineProgress / applyOfflineProgress
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| ACT-045 | F-Normal: 正常计算离线进度 | P1 | 按效率计算积分和代币 | ✅ ActivityOfflineCalculator.test.ts |
-| ACT-046 | F-Boundary: offlineDurationMs=0 | P2 | durationSeconds=0，pointsEarned=0 | ✅ |
-| ACT-047 | F-Boundary: offlineDurationMs=NaN | **P0** | NaN/1000=NaN，Math.floor(NaN*0.1)=NaN，pointsEarned=NaN | ❌ NaN传播 |
-| ACT-048 | F-Boundary: offlineDurationMs=负值 | P0 | 负值/1000=负秒数，Math.floor(负数*0.1)可能为负 | ❌ 无负值检查 |
-| ACT-049 | F-Error: 无ACTIVE活动 | P2 | 返回空数组 | ✅ |
-| ACT-050 | F-Cross: applyOfflineProgress后checkMilestones | P1 | 离线积分可能解锁里程碑 | ❌ 需外部调用 |
+### 1.14 calculateOfflineProgress(state, duration)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| F-N-027 | 活跃活动计算离线积分 | covered | ActivitySystem-p2.test.ts L265 |
+| F-N-028 | 已结束活动不产生进度 | covered | ActivitySystem-p2.test.ts L273 |
+| F-N-029 | 不同类型效率不同 | covered | ActivitySystem-p2.test.ts L280 |
 
-### A5. 存档序列化
+### 1.15 applyOfflineProgress(state, results)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| F-N-030 | 应用离线进度到状态 | covered | ActivitySystem-p2.test.ts L298 |
+| F-N-031 | 空结果不改变状态 | covered | ActivitySystem-p2.test.ts L307 |
+| F-N-032 | 不存在的活动跳过 | covered | ActivitySystem-p2.test.ts L313 |
 
-#### F-Normal: serialize / deserialize
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| ACT-051 | F-Normal: 正常序列化/反序列化 | P1 | round-trip一致性 | ✅ ActivitySystem-p3.test.ts |
-| ACT-052 | F-Error: deserialize-null | P0 | data=null时崩溃（createDefaultActivityState兜底） | ✅ 有兜底 |
-| ACT-053 | F-Error: deserialize-version不匹配 | P1 | version不匹配时返回默认状态 | ✅ |
-| ACT-054 | F-Boundary: activities包含NaN属性 | **P0** | points/tokens=NaN时序列化后NaN→null(JSON)，反序列化null→崩溃或undefined | ❌ NaN序列化风险 |
-| ACT-055 | F-Lifecycle: serialize/deserialize是否被engine-save调用 | P0 | 需验证ActivitySystem.serialize()是否在buildSaveData中被引用 | ❌ 需验证 |
+### 1.16 serialize(state)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| F-N-033 | 正确序列化结构 | covered | ActivitySystem-p3.test.ts L153 |
+| F-N-034 | 往返一致（空状态） | covered | ActivitySystem-p3.test.ts L161 |
+| F-N-035 | 往返一致（有活动） | covered | ActivitySystem-p3.test.ts L168 |
+| F-B-017 | points=NaN 清洗为0 | uncovered | FIX-ACT-024 |
+| F-B-018 | tokens=NaN 清洗为0 | uncovered | FIX-ACT-024 |
+| F-B-019 | currentProgress=NaN 清洗为0 | uncovered | FIX-ACT-024 |
+| F-B-020 | targetCount=NaN 清洗为0 | uncovered | FIX-ACT-024 |
 
-### A6. ISubsystem接口
+### 1.17 deserialize(data)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| F-N-036 | 正确反序列化 | covered | ActivitySystem-p3.test.ts L161 |
+| F-B-021 | data=null 返回默认状态 | covered | ActivitySystem-p3.test.ts L185 |
+| F-B-022 | version不匹配 返回默认状态 | covered | ActivitySystem-p3.test.ts L180 |
+| F-B-023 | data=undefined 返回默认状态 | covered | ActivitySystem-p3.test.ts L185 |
 
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| ACT-056 | F-Normal: init注入deps | P2 | 正常注入 | ✅ |
-| ACT-057 | F-Normal: update空操作 | P2 | 无帧更新逻辑 | ✅ |
-| ACT-058 | F-Error: reset不重置state | P1 | reset只重置config，不重置外部ActivityState | ✅ 设计如此 |
+### 1.18 getConcurrencyConfig()
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| F-N-037 | 返回默认配置 | covered | ActivitySystem-p3.test.ts L119 |
+| F-N-038 | 自定义配置生效 | covered | ActivitySystem-p3.test.ts L129 |
 
----
-
-## B. SignInSystem（签到系统）
-
-### B1. 签到操作
-
-#### F-Normal: signIn
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| SIGN-001 | F-Normal: 首次签到 | P1 | consecutiveDays=1, cycleDay=1 | ✅ SignInSystem-p1.test.ts |
-| SIGN-002 | F-Normal: 连续签到 | P1 | isConsecutiveDay=true, consecutiveDays+1 | ✅ |
-| SIGN-003 | F-Normal: 断签重置 | P1 | 非连续非同天, consecutiveDays=1 | ✅ |
-| SIGN-004 | F-Boundary: 7天循环重置 | P1 | consecutiveDays=8→cycleDay=1 | ✅ |
-| SIGN-005 | F-Boundary: 连续3天加成 | P1 | bonusPercent=20% | ✅ |
-| SIGN-006 | F-Boundary: 连续7天加成 | P1 | bonusPercent=50% | ✅ |
-| SIGN-007 | F-Error: 重复签到throw | P1 | todaySigned=true && isSameDay → throw | ✅ |
-| SIGN-008 | F-Error: now=NaN | **P0** | new Date(NaN) → Invalid Date, isSameDay/getWeekNumber异常 | ❌ NaN崩溃 |
-| SIGN-009 | F-Boundary: lastSignInTime=0首次 | P1 | 特殊处理，consecutiveDays=1 | ✅ |
-| SIGN-010 | F-Error: rewards数组越界 | P2 | day=0或day>7时，Math.max/min截断 | ✅ |
-
-#### F-Normal: retroactive（补签）
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| SIGN-011 | F-Normal: 正常补签 | P1 | 扣元宝，连续天数+1 | ✅ SignInSystem-p1.test.ts |
-| SIGN-012 | F-Error: 今日已签到无需补签 | P1 | throw Error | ✅ |
-| SIGN-013 | F-Error: 本周补签次数用完 | P1 | weeklyCount >= limit → throw | ✅ |
-| SIGN-014 | F-Error: 元宝不足 | P1 | goldAvailable < cost → throw | ✅ |
-| SIGN-015 | F-Boundary: 跨周补签重置 | P1 | currentWeek !== lastResetWeek → count=0 | ✅ |
-| SIGN-016 | F-Error: retroactive不恢复断签连续性 | **P0** | 补签后consecutiveDays=data.consecutiveDays+1，但若已断签多天，+1不等于真正连续 | ❌ 逻辑缺陷 |
-| SIGN-017 | F-Boundary: goldAvailable=NaN | **P0** | NaN < cost = false，绕过元宝检查，免费补签 | ❌ NaN绕过 |
-| SIGN-018 | F-Boundary: goldAvailable=负值 | P1 | 负值 < cost → throw，正确拦截 | ✅ |
-
-### B2. 状态查询
-
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| SIGN-019 | F-Normal: canSignIn | P2 | !todaySigned | ✅ |
-| SIGN-020 | F-Normal: canRetroactive | P2 | 综合检查 | ✅ |
-| SIGN-021 | F-Error: getRemainingRetroactive-now=NaN | P0 | getWeekNumber(NaN)异常 | ❌ NaN |
-| SIGN-022 | F-Normal: getConsecutiveBonus | P2 | 3天/7天阈值 | ✅ |
-| SIGN-023 | F-Normal: getCycleDay | P2 | 7天循环计算 | ✅ |
-| SIGN-024 | F-Boundary: consecutiveDays=0 | P2 | getCycleDay返回1 | ✅ |
-
-### B3. ISubsystem & 配置
-
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| SIGN-025 | F-Normal: init/update/reset | P2 | 标准ISubsystem | ✅ |
-| SIGN-026 | F-Error: reset不重置外部SignInData | P1 | reset只重置内部config/rewards | ✅ |
-| SIGN-027 | F-Lifecycle: SignInData持久化路径 | P0 | SignInData在ActivityState.signIn中，需验证serialize覆盖 | ❌ 需验证 |
+### 1.19 getOfflineEfficiency()
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| F-N-039 | 返回默认效率 | covered | ActivitySystem-p3.test.ts L134 |
+| F-N-040 | 自定义效率生效 | covered | ActivitySystem-p3.test.ts L143 |
 
 ---
 
-## C. TokenShopSystem（代币兑换商店）
+## 2. TimedActivitySystem
 
-### C1. 商品查询
+### 2.1 init / update / getState / reset
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| T-N-001 | init不报错 | covered | TimedActivitySystem.test.ts L34 |
+| T-N-002 | getState返回状态 | covered | TimedActivitySystem.test.ts L42 |
+| T-N-003 | reset清除所有状态 | covered | TimedActivitySystem.test.ts L48 |
 
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| SHOP-001 | F-Normal: getAllItems | P2 | 返回所有商品 | ✅ TokenShopSystem.test.ts |
-| SHOP-002 | F-Normal: getAvailableItems | P1 | 过滤available=false和已售罄 | ✅ |
-| SHOP-003 | F-Normal: getItem | P2 | 按ID获取 | ✅ |
-| SHOP-004 | F-Normal: getItemsByRarity | P2 | 按稀有度过滤 | ✅ |
-| SHOP-005 | F-Normal: getItemsByActivity | P2 | 按活动ID过滤 | ✅ |
-| SHOP-006 | F-Boundary: 空商店 | P2 | items为空Map | ✅ |
+### 2.2 createTimedActivityFlow(id, start, end)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| T-N-004 | 正常创建4阶段流程 | covered | TimedActivitySystem.test.ts L59 |
+| T-E-001 | start=NaN throw | todo | FIX-TIMED-016 |
+| T-E-002 | end=NaN throw | todo | FIX-TIMED-016 |
+| T-E-003 | end<=start throw | todo | 源码L155 |
+| T-B-001 | previewStart = activeStart - 24h | covered | TimedActivitySystem.test.ts L71 |
 
-### C2. 购买操作
+### 2.3 updatePhase(id, now)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| T-N-005 | preview阶段 | covered | TimedActivitySystem.test.ts L71 |
+| T-N-006 | active阶段 | covered | TimedActivitySystem.test.ts L79 |
+| T-N-007 | settlement阶段 | covered | TimedActivitySystem.test.ts L86 |
+| T-N-008 | closed阶段 | covered | TimedActivitySystem.test.ts L94 |
+| T-N-009 | id不存在 'closed' | covered | 源码L173 |
+| T-B-002 | now=NaN phase='closed' | uncovered | FIX-TIMED-010 |
 
-#### F-Normal: purchaseItem
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| SHOP-007 | F-Normal: 正常购买 | P1 | 扣代币、增购计数、返回奖励 | ✅ TokenShopSystem.test.ts |
-| SHOP-008 | F-Error: 商品不存在 | P1 | reason='商品不存在' | ✅ |
-| SHOP-009 | F-Error: 商品已下架 | P1 | reason='商品已下架' | ✅ |
-| SHOP-010 | F-Error: 超出限购 | P1 | reason含剩余数量 | ✅ |
-| SHOP-011 | F-Error: 代币不足 | P1 | reason含需要和当前数量 | ✅ |
-| SHOP-012 | F-Boundary: quantity=NaN | **P0** | item.tokenPrice * NaN = NaN, NaN < NaN=false，绕过余额检查 | ❌ NaN绕过 |
-| SHOP-013 | F-Boundary: quantity=0 | P0 | totalCost=0, 0<0=false通过检查，item.purchased不变但返回success=true | ❌ 零值漏洞 |
-| SHOP-014 | F-Boundary: quantity=负值 | **P0** | tokenPrice*负值=负数, tokenBalance >= 负数=true，代币增加而非减少 | ❌ 负值漏洞 |
-| SHOP-015 | F-Boundary: tokenPrice=0 | P1 | totalCost=0，免费购买 | ✅ 配置问题 |
-| SHOP-016 | F-Boundary: purchaseLimit=0（无限购） | P2 | purchaseLimit=0时不检查限购 | ✅ |
-| SHOP-017 | F-Error: rewards.resourceChanges为undefined | P1 | Object.entries(undefined as Record) → 运行时错误 | ❌ 无防护 |
-| SHOP-018 | F-Cross: purchaseItem后tokenBalance可能为负 | P0 | quantity=负值时tokenBalance -= 负数 = 增加 | ❌ 与SHOP-014同根 |
+### 2.4 canParticipate(id, now)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| T-N-010 | active阶段 true | covered | TimedActivitySystem.test.ts L102 |
+| T-N-011 | 非active阶段 false | covered | TimedActivitySystem.test.ts L102 |
+| T-N-012 | id不存在 false | covered | 源码L200 |
 
-### C3. 代币管理
+### 2.5 getRemainingTime(id, now)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| T-N-013 | 返回剩余时间 | covered | TimedActivitySystem.test.ts L111 |
+| T-N-014 | id不存在 0 | covered | TimedActivitySystem.test.ts L120 |
+| T-B-003 | now>activeEnd 0 (Math.max) | todo | 已过期场景 |
 
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| SHOP-019 | F-Normal: addTokens | P2 | 增加代币 | ✅ |
-| SHOP-020 | F-Normal: spendTokens成功 | P2 | 扣除代币 | ✅ |
-| SHOP-021 | F-Error: spendTokens余额不足 | P2 | success=false | ✅ |
-| SHOP-022 | F-Boundary: addTokens(NaN) | **P0** | tokenBalance += NaN → NaN，代币永久损坏 | ❌ NaN传播 |
-| SHOP-023 | F-Boundary: addTokens(负值) | P0 | tokenBalance += 负值 → 代币减少 | ❌ 无负值检查 |
-| SHOP-024 | F-Boundary: spendTokens(NaN) | **P0** | NaN < amount = false，绕过余额检查，tokenBalance -= NaN = NaN | ❌ NaN双重绕过 |
-| SHOP-025 | F-Boundary: tokenBalance无上限 | P1 | 累积无MAX限制（模式22） | ❌ 无上限 |
+### 2.6 updateLeaderboard(id, entries)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| T-N-015 | 按积分降序排序并重新排名 | covered | TimedActivitySystem.test.ts L134 |
+| T-B-004 | entries含NaN points 排到最后 | uncovered | FIX-TIMED-017 |
+| T-B-005 | 超过maxEntries 截断 | todo | 源码L234 |
+| T-B-006 | 积分相同按tokens排序 | todo | 源码L223 |
 
-### C4. 商品管理
+### 2.7 getLeaderboard(id) / getPlayerRank(id, playerId)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| T-N-016 | 获取排行榜 | covered | TimedActivitySystem.test.ts L142 |
+| T-N-017 | 获取玩家排名 | covered | TimedActivitySystem.test.ts L142 |
+| T-N-018 | 未上榜 0 | covered | TimedActivitySystem.test.ts L148 |
 
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| SHOP-026 | F-Normal: addItem | P2 | 添加商品 | ✅ |
-| SHOP-027 | F-Normal: removeItem | P2 | 移除商品 | ✅ |
-| SHOP-028 | F-Normal: refreshShop | P1 | 重置purchased计数 | ✅ |
-| SHOP-029 | F-Normal: dailyRefresh | P1 | 重置+可选更新列表 | ✅ |
-| SHOP-030 | F-Normal: setItemAvailability | P2 | 上架/下架 | ✅ |
-| SHOP-031 | F-Error: addItem-null item | P1 | item.id可能为undefined | ❌ |
-| SHOP-032 | F-Error: setItemAvailability-不存在ID | P2 | 返回false | ✅ |
+### 2.8 calculateRankRewards(rank)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| T-N-019 | 第1名奖励 | covered | TimedActivitySystem.test.ts L152 |
+| T-N-020 | 第2-3名奖励 | covered | TimedActivitySystem.test.ts L157 |
+| T-N-021 | 未匹配排名 空奖励 | covered | TimedActivitySystem.test.ts L162 |
+| T-B-007 | rank=NaN 空奖励 | todo | NaN比较 |
+| T-B-008 | rank=0 空奖励 | todo | 边界 |
 
-### C5. 序列化
+### 2.9 节日活动框架
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| T-N-022 | getFestivalTemplate 存在的类型 | covered | TimedActivitySystem.test.ts L171 |
+| T-N-023 | getFestivalTemplate 不存在 undefined | covered | TimedActivitySystem.test.ts L177 |
+| T-N-024 | getAllFestivalTemplates | covered | TimedActivitySystem.test.ts L181 |
+| T-N-025 | createFestivalActivity 正常创建 | covered | TimedActivitySystem.test.ts L186 |
+| T-B-009 | createFestivalActivity 不存在类型 null | todo | 源码L304 |
 
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| SHOP-033 | F-Normal: serialize/deserialize | P1 | round-trip一致性 | ✅ TokenShopSystem.test.ts |
-| SHOP-034 | F-Error: deserialize-null | P0 | data=null时崩溃 | ❌ 无null guard |
-| SHOP-035 | F-Error: deserialize-items含NaN | P0 | tokenPrice=NaN序列化后损坏 | ❌ |
-| SHOP-036 | F-Lifecycle: TokenShopSystem.serialize是否被engine-save调用 | P0 | 需验证六处同步 | ❌ 需验证 |
+### 2.10 离线进度
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| T-N-026 | calculateOfflineProgress 正常计算 | covered | TimedActivitySystem.test.ts L197 |
+| T-N-027 | calculateAllOfflineProgress 批量 | covered | TimedActivitySystem.test.ts L203 |
+| T-B-010 | duration=NaN 返回0结果 | uncovered | FIX-TIMED-018 |
+| T-B-011 | duration<=0 返回0结果 | uncovered | FIX-TIMED-018 |
+| T-B-012 | duration=0 0积分 | covered | TimedActivitySystem.test.ts L213 |
 
----
-
-## D. TimedActivitySystem（限时活动系统）
-
-### D1. 限时活动流程
-
-#### F-Normal: createTimedActivityFlow
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| TIMED-001 | F-Normal: 创建4阶段流程 | P1 | preview→active→settlement→closed | ✅ TimedActivitySystem.test.ts |
-| TIMED-002 | F-Error: activeStart=NaN | **P0** | previewStart=NaN-PREVIEW_DURATION=NaN，所有阶段比较NaN，phase永远不变 | ❌ NaN |
-| TIMED-003 | F-Error: activeEnd < activeStart | P1 | endTime < startTime，逻辑异常 | ❌ 无校验 |
-| TIMED-004 | F-Boundary: 重复activityId覆盖 | P1 | Map.set覆盖旧流程 | ✅ |
-
-#### F-Normal: updatePhase
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| TIMED-005 | F-Normal: preview阶段 | P2 | now < activeStart | ✅ |
-| TIMED-006 | F-Normal: active阶段 | P2 | activeStart <= now < activeEnd | ✅ |
-| TIMED-007 | F-Normal: settlement阶段 | P2 | activeEnd <= now < closedTime | ✅ |
-| TIMED-008 | F-Normal: closed阶段 | P2 | now >= closedTime | ✅ |
-| TIMED-009 | F-Error: flow不存在 | P2 | 返回'closed' | ✅ |
-| TIMED-010 | F-Boundary: now=NaN | **P0** | NaN < activeStart = false, NaN < activeEnd = false, NaN < closedTime = false → 直接closed | ❌ NaN跳过所有阶段 |
-| TIMED-011 | F-Error: updatePhase就地修改flow对象 | P1 | flow.phase被就地修改，非不可变 | ❌ 浅拷贝风险 |
-
-#### F-Normal: canParticipate / getRemainingTime
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| TIMED-012 | F-Normal: active阶段可参与 | P2 | phase==='active' | ✅ |
-| TIMED-013 | F-Normal: 非active不可参与 | P2 | 返回false | ✅ |
-| TIMED-014 | F-Boundary: getRemainingTime-已结束 | P2 | Math.max(0, 负数)=0 | ✅ |
-| TIMED-015 | F-Error: getRemainingTime-不存在 | P2 | 返回0 | ✅ |
-
-### D2. 排行榜
-
-#### F-Normal: updateLeaderboard
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| TIMED-016 | F-Normal: 按积分降序排序 | P1 | points降序，tokens次排序 | ✅ |
-| TIMED-017 | F-Boundary: entries为空 | P2 | 返回空数组 | ✅ |
-| TIMED-018 | F-Boundary: entries超过maxEntries | P1 | slice截断 | ✅ |
-| TIMED-019 | F-Error: entry.points=NaN | **P0** | NaN降序排序不确定，排名混乱 | ❌ NaN排序异常 |
-| TIMED-020 | F-Error: updateLeaderboard就地修改entries | P1 | entry.rank = index + 1 就地修改传入对象 | ❌ 副作用 |
-
-#### F-Normal: calculateRankRewards
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| TIMED-021 | F-Normal: 匹配奖励梯度 | P2 | 返回对应梯度奖励 | ✅ |
-| TIMED-022 | F-Boundary: rank=0 | P2 | 无匹配梯度，返回空 | ✅ |
-| TIMED-023 | F-Boundary: rank=NaN | P0 | NaN >= tier.minRank && NaN <= tier.maxRank = false，无奖励 | ❌ NaN |
-| TIMED-024 | F-Boundary: rank超出所有梯度 | P2 | 返回空 | ✅ |
-
-### D3. 节日活动
-
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| TIMED-025 | F-Normal: getFestivalTemplate | P2 | 按festivalType查找 | ✅ |
-| TIMED-026 | F-Normal: getAllFestivalTemplates | P2 | 返回全部5个模板 | ✅ |
-| TIMED-027 | F-Normal: createFestivalActivity | P1 | 创建节日活动流程 | ✅ |
-| TIMED-028 | F-Error: 不存在的festivalType | P2 | 返回null | ✅ |
-| TIMED-029 | F-Error: durationDays=NaN | P0 | NaN * 24*60*60*1000 = NaN，endTime=NaN | ❌ NaN |
-| TIMED-030 | F-Error: durationDays=0 | P1 | endTime=startTime，0天活动 | ❌ 无校验 |
-
-### D4. 离线进度
-
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| TIMED-031 | F-Normal: 按活动类型计算效率 | P1 | 5种类型不同效率 | ✅ |
-| TIMED-032 | F-Boundary: offlineDurationMs=0 | P2 | pointsEarned=0 | ✅ |
-| TIMED-033 | F-Error: offlineDurationMs=NaN | **P0** | NaN/1000=NaN，Math.floor(NaN*0.1*efficiency)=NaN | ❌ NaN |
-| TIMED-034 | F-Error: 未知活动类型 | P1 | efficiency默认0.5 | ✅ |
-
-### D5. 序列化
-
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| TIMED-035 | F-Normal: serialize/deserialize | P1 | flows+leaderboards round-trip | ✅ |
-| TIMED-036 | F-Error: deserialize-null data | P0 | data=null时，data.flows报错 | ❌ 无null guard |
-| TIMED-037 | F-Error: deserialize-flows含NaN | P0 | phase等属性可能为NaN | ❌ |
-| TIMED-038 | F-Lifecycle: 是否被engine-save调用 | P0 | 需验证六处同步 | ❌ 需验证 |
+### 2.11 serialize / deserialize
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| T-N-028 | 序列化/反序列化往返 | covered | TimedActivitySystem.test.ts L222 |
+| T-N-029 | 反序列化清除旧数据 | covered | TimedActivitySystem.test.ts L237 |
+| T-B-013 | data=null 直接return | uncovered | FIX-TIMED-019 |
+| T-B-014 | data.flows=null 空数组 | todo | data.flows ?? [] |
 
 ---
 
-## E. Helper/Factory/Config
+## 3. TokenShopSystem
 
-### E1. ActivityFactory
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| FACT-001 | F-Normal: createDefaultActivityState | P2 | 返回默认状态 | ✅ ActivityFactory.test.ts |
-| FACT-002 | F-Normal: createActivityInstance | P2 | 从def创建instance | ✅ |
-| FACT-003 | F-Normal: createActivityTask | P2 | 从def创建task | ✅ |
-| FACT-004 | F-Normal: createMilestone | P2 | 创建里程碑 | ✅ |
-| FACT-005 | F-Error: createActivityInstance-null def | P0 | def.id → Cannot read property 'id' of null | ❌ 无null guard |
-| FACT-006 | F-Error: createActivityTask-null def | P0 | def.id → 崩溃 | ❌ 无null guard |
+### 3.1 ISubsystem 接口
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| S-N-001 | name='tokenShop' | covered | TokenShopSystem.test.ts L37 |
+| S-N-002 | getState返回状态 | covered | TokenShopSystem.test.ts L41 |
+| S-N-003 | reset恢复默认 | covered | TokenShopSystem.test.ts L194 |
 
-### E2. SeasonHelper
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| SEAS-001 | F-Normal: getCurrentSeasonTheme | P2 | 按索引取模获取 | ✅ SeasonHelper.test.ts |
-| SEAS-002 | F-Boundary: seasonIndex=NaN | P0 | NaN % length = NaN，DEFAULT_SEASON_THEMES[NaN] = undefined | ❌ NaN越界 |
-| SEAS-003 | F-Normal: updateSeasonRecord | P2 | 更新胜败/胜率 | ✅ |
-| SEAS-004 | F-Boundary: updateSeasonRecord-NaN currentRanking | P0 | Math.min(NaN, record.highestRanking) = NaN | ❌ NaN |
-| SEAS-005 | F-Normal: generateSeasonRecordRanking | P2 | 按胜场排序 | ✅ |
-| SEAS-006 | F-Error: generateSeasonRecordRanking-空数组 | P2 | 返回空数组 | ✅ |
+### 3.2 商品查询
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| S-N-004 | getAllItems | covered | TokenShopSystem.test.ts L51 |
+| S-N-005 | getAvailableItems（上架且未售罄） | covered | TokenShopSystem.test.ts L56 |
+| S-N-006 | getItem 存在 | covered | TokenShopSystem.test.ts L61 |
+| S-N-007 | getItem 不存在 undefined | covered | TokenShopSystem.test.ts L67 |
+| S-N-008 | getItemsByActivity | covered | TokenShopSystem.test.ts L71 |
+| S-B-001 | getAvailableItems purchaseLimit=0 不限购 | todo | L76 purchaseLimit > 0 |
+| S-B-002 | getItemsByRarity | uncovered | 未在测试文件中出现 |
 
-### E3. ActivitySystemConfig
-| 节点ID | 分支 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| CONF-001 | F-Normal: DEFAULT_CONCURRENCY_CONFIG | P2 | 默认值正确 | ✅ ActivitySystemConfig.test.ts |
-| CONF-002 | F-Normal: DEFAULT_OFFLINE_EFFICIENCY | P2 | 默认值正确 | ✅ |
-| CONF-003 | F-Cross: seasonHelper委托对象 | P2 | 函数引用正确 | ✅ |
-| CONF-004 | F-Boundary: BASE_POINTS_PER_SECOND精度 | P2 | 0.1浮点精度 | ✅ |
+### 3.3 purchaseItem(id, qty)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| S-N-009 | 正常购买 | covered | TokenShopSystem.test.ts L80 |
+| S-E-001 | 商品不存在 | covered | TokenShopSystem.test.ts L87 |
+| S-E-002 | 已下架 | covered | TokenShopSystem.test.ts L93 |
+| S-E-003 | 限购超出 | covered | TokenShopSystem.test.ts L100 |
+| S-E-004 | 余额不足 | covered | TokenShopSystem.test.ts L108 |
+| S-B-003 | qty=NaN 失败 | uncovered | FIX-SHOP-010 |
+| S-B-004 | qty<=0 失败 | uncovered | FIX-SHOP-011 |
+| S-B-005 | totalCost=NaN 价格异常 | uncovered | FIX-SHOP-010b |
+| S-B-006 | rewards.resourceChanges=null 安全处理 | uncovered | FIX-SHOP-012 |
+| S-B-007 | rewards中value=NaN 跳过 | todo | FIX-SHOP-012 |
+| S-B-008 | 购买后tokenBalance正确扣减 | todo | 需验证余额 |
 
----
+### 3.4 代币管理
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| S-N-010 | addTokens 增加 | covered | TokenShopSystem.test.ts L119 |
+| S-N-011 | spendTokens 余额充足 | covered | TokenShopSystem.test.ts L124 |
+| S-N-012 | spendTokens 余额不足 | covered | TokenShopSystem.test.ts L130 |
+| S-B-009 | addTokens amount=NaN 不增加 | uncovered | FIX-SHOP-013 |
+| S-B-010 | addTokens amount<=0 不增加 | uncovered | FIX-SHOP-014 |
+| S-B-011 | spendTokens amount=NaN 失败 | uncovered | FIX-SHOP-013b |
+| S-B-012 | addTokens 无上限检查 | todo | BR-22: 资源累积需MAX常量 |
 
-## F. 跨系统链路 (F-Cross)
+### 3.5 商品管理
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| S-N-013 | addItem | covered | TokenShopSystem.test.ts L139 |
+| S-N-014 | removeItem | covered | TokenShopSystem.test.ts L149 |
+| S-N-015 | refreshShop | covered | TokenShopSystem.test.ts L154 |
+| S-N-016 | dailyRefresh | covered | TokenShopSystem.test.ts L162 |
+| S-N-017 | setItemAvailability | covered | TokenShopSystem.test.ts L170 |
+| S-B-013 | removeItem 不存在 false | todo | 源码L203 |
+| S-B-014 | dailyRefresh newItems=null 仅重置计数 | todo | 源码L226 |
 
-| 节点ID | 链路 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| CROSS-001 | ActivitySystem → ActivityOfflineCalculator | P1 | 离线计算委托正确 | ✅ |
-| CROSS-002 | ActivitySystem → SeasonHelper | P1 | 赛季功能委托正确 | ✅ |
-| CROSS-003 | ActivitySystem → ActivityFactory | P1 | 工厂函数委托正确 | ✅ |
-| CROSS-004 | TimedActivitySystem → TokenShopSystem | P1 | 限时活动产生代币→商店消费 | ❌ 无直接集成 |
-| CROSS-005 | SignInSystem → TokenShopSystem | P1 | 签到奖励代币→商店消费 | ❌ 无直接集成 |
-| CROSS-006 | ActivitySystem.serialize → engine-save | **P0** | 需验证buildSaveData是否引用 | ❌ 需验证 |
-| CROSS-007 | TokenShopSystem.serialize → engine-save | **P0** | 需验证六处同步 | ❌ 需验证 |
-| CROSS-008 | TimedActivitySystem.serialize → engine-save | **P0** | 需验证六处同步 | ❌ 需验证 |
-| CROSS-009 | claimTaskReward → checkMilestones联动 | P1 | 积分增加后应触发里程碑检查 | ❌ 需外部手动调用 |
-| CROSS-010 | applyOfflineProgress → checkMilestones联动 | P1 | 离线积分后应触发里程碑检查 | ❌ 需外部手动调用 |
-
----
-
-## G. 生命周期 (F-Lifecycle)
-
-| 节点ID | 阶段 | 优先级 | 描述 | covered |
-|--------|------|--------|------|---------|
-| LIFE-001 | 初始化: ActivitySystem构造 | P2 | 配置合并正确 | ✅ |
-| LIFE-002 | 初始化: SignInSystem构造 | P2 | config+rewards合并 | ✅ |
-| LIFE-003 | 初始化: TokenShopSystem构造 | P2 | config+items+tokens初始化 | ✅ |
-| LIFE-004 | 初始化: TimedActivitySystem构造 | P2 | config合并 | ✅ |
-| LIFE-005 | 运行: startActivity→updateTask→claim→checkMilestone | P1 | 完整活动生命周期 | ✅ |
-| LIFE-006 | 运行: signIn→retroactive→getReward | P1 | 完整签到生命周期 | ✅ |
-| LIFE-007 | 运行: createFlow→updatePhase→canParticipate→settlement | P1 | 完整限时活动生命周期 | ✅ |
-| LIFE-008 | 销毁: reset不清理外部状态 | P1 | reset只重置内部config | ✅ |
-| LIFE-009 | 持久化: ActivitySystem serialize/deserialize | P0 | round-trip完整性 | ✅ |
-| LIFE-010 | 持久化: TokenShopSystem serialize/deserialize | P0 | round-trip完整性 | ✅ |
-| LIFE-011 | 持久化: TimedActivitySystem serialize/deserialize | P0 | round-trip完整性 | ✅ |
-| LIFE-012 | 持久化: SignInData通过ActivityState持久化 | P0 | 需验证signIn在ActivityState中是否被正确序列化 | ❌ 需验证 |
-
----
-
-## P0 高危发现汇总
-
-### 系统性NaN问题（影响全模块）
-1. **ACT-020**: updateTaskProgress(NaN) → 进度变NaN，任务永远无法完成
-2. **ACT-030/031**: claimTaskReward → 积分/代币变NaN
-3. **ACT-038**: checkMilestones → NaN >= requiredPoints = false，里程碑永远锁死
-4. **ACT-047**: calculateOfflineProgress(NaN) → 离线积分变NaN
-5. **SIGN-008**: signIn(now=NaN) → Date异常
-6. **SIGN-017**: retroactive(goldAvailable=NaN) → 绕过元宝检查
-7. **SHOP-012/014**: purchaseItem(quantity=NaN/负值) → 代币异常
-8. **SHOP-022/024**: addTokens/spendTokens(NaN) → 代币永久损坏
-9. **TIMED-002/010**: createFlow/updatePhase(NaN) → 阶段跳跃
-10. **TIMED-019**: updateLeaderboard(entry.points=NaN) → 排名混乱
-11. **TIMED-033**: calculateOfflineProgress(NaN) → 离线积分变NaN
-12. **SEAS-002**: getCurrentSeasonTheme(NaN) → undefined越界
-13. **SEAS-004**: updateSeasonRecord(NaN ranking) → highestRanking变NaN
-
-### 逻辑缺陷
-14. **ACT-009**: canStartActivity不检查分类型上限（只检查总上限）
-15. **SIGN-016**: 补签不恢复断签连续性（逻辑不一致）
-
-### 负值漏洞
-16. **ACT-021**: updateTaskProgress(负值) → 倒刷任务进度
-17. **ACT-048**: offlineDurationMs=负值 → 负积分
-18. **SHOP-014/018**: purchaseItem(quantity=负值) → 代币增加
-
-### 序列化风险
-19. **ACT-054**: NaN属性序列化为null
-20. **SHOP-034**: deserialize(null)崩溃
-21. **TIMED-036**: deserialize(null)崩溃
-
-### 架构级（保存/加载覆盖）
-22. **CROSS-006/007/008**: 三个子系统的serialize是否被engine-save调用
-
-### Null防护缺失
-23. **ACT-004/005**: startActivity(null state/def)崩溃
-24. **FACT-005/006**: createActivityInstance/Task(null def)崩溃
+### 3.6 serialize / deserialize
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| S-N-018 | 序列化/反序列化往返 | covered | TokenShopSystem.test.ts L179 |
+| S-B-015 | data=null 直接return | uncovered | FIX-SHOP-015 |
+| S-B-016 | data.tokenBalance=NaN 设为0 | uncovered | FIX-SHOP-015 |
+| S-B-017 | data.items=null 空数组 | todo | data.items ?? [] |
 
 ---
 
-## Rule Evolution Suggestions
+## 4. SignInSystem
 
-### Builder规则更新建议
-1. 增加签到系统时间参数NaN检查规则（Date构造函数不接受NaN）
-2. 增加购买系统quantity负值检查规则（经济系统模式6扩展）
-3. 增加排行榜排序NaN防护规则
-4. 增加离线进度负值时长检查规则
-5. 增加委托模式(Helper/Calculator)的输入验证一致性规则
+### 4.1 ISubsystem 接口
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| G-N-001 | name='signIn' | todo | 未在测试中直接验证 |
+| G-N-002 | reset恢复默认 | todo | 未在测试中直接验证 |
+
+### 4.2 signIn(data, now)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| G-N-003 | 首次签到 consecutiveDays=1 | covered | SignInSystem-p1.test.ts L90 |
+| G-N-004 | 连续签到 consecutiveDays递增 | covered | SignInSystem-p1.test.ts L166 |
+| G-N-005 | 第1天奖励 | covered | SignInSystem-p1.test.ts L97 |
+| G-N-006 | 连续7天奖励 | covered | SignInSystem-p1.test.ts L105 |
+| G-N-007 | 第8天循环回第1天 | covered | SignInSystem-p1.test.ts L124 |
+| G-N-008 | 断签后从1开始 | covered | SignInSystem-p1.test.ts L176 |
+| G-N-009 | 重复签到 throw | covered | SignInSystem-p1.test.ts L152 |
+| G-N-010 | lastSignInTime更新 | covered | SignInSystem-p1.test.ts L160 |
+| G-E-001 | now=NaN throw | todo | FIX-SIGN-007 |
+| G-B-001 | 跨周补签次数重置 | covered | SignInSystem-p2.test.ts L146 |
+| G-B-002 | 同一天重复签到 throw | covered | SignInSystem-p1.test.ts L152 |
+
+### 4.3 retroactive(data, now, goldAvailable)
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| G-N-011 | 补签成功 | covered | SignInSystem-p1.test.ts L263 |
+| G-N-012 | consecutiveDays递增 | covered | SignInSystem-p1.test.ts L271 |
+| G-E-002 | 今日已签到 throw | covered | SignInSystem-p1.test.ts L283 |
+| G-E-003 | 补签次数用完 throw | todo | 源码L171 |
+| G-E-004 | 元宝不足 throw | todo | 源码L176 |
+| G-E-005 | now=NaN throw | uncovered | FIX-SIGN-007b |
+| G-E-006 | goldAvailable=NaN throw | uncovered | FIX-SIGN-008 |
+| G-B-003 | lastSignInTime=0 consecutiveDays=1 | uncovered | FIX-SIGN-009 |
+| G-B-004 | 跨周补签次数重置 | todo | 源码L164-166 |
+
+### 4.4 奖励查询
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| G-N-013 | getReward(day) 正确返回 | covered | SignInSystem-p2.test.ts L26 |
+| G-N-014 | getReward 超出范围 最后一天 | covered | SignInSystem-p2.test.ts L49 |
+| G-N-015 | getReward 0或负数 第1天 | covered | SignInSystem-p2.test.ts L54 |
+| G-N-016 | getAllRewards | covered | SignInSystem-p2.test.ts L59 |
+| G-N-017 | getConsecutiveBonus 3天=20% | covered | SignInSystem-p1.test.ts L203 |
+| G-N-018 | getConsecutiveBonus 7天=50% | covered | SignInSystem-p1.test.ts L210 |
+| G-N-019 | getCycleDay 正确 | covered | SignInSystem-p1.test.ts L139 |
+| G-N-020 | getCycleDay 0/负数 1 | covered | SignInSystem-p1.test.ts L147 |
+
+### 4.5 状态查询
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| G-N-021 | canSignIn 未签 true | todo | 源码L234 |
+| G-N-022 | canSignIn 已签 false | todo | 源码L234 |
+| G-N-023 | canRetroactive 可补签 | todo | 源码L240 |
+| G-N-024 | canRetroactive 次数用完 | todo | 源码L248 |
+| G-N-025 | getRemainingRetroactive | todo | 源码L259 |
+
+### 4.6 [CRITICAL] 序列化缺失
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| G-SERIAL-001 | SignInSystem **无 serialize/deserialize** | uncovered | BR-14/15: 存档覆盖扫描 |
+| G-SERIAL-002 | engine-save是否保存签到状态 | todo | 跨系统链路验证 |
+
+---
+
+## 5. 辅助模块
+
+### 5.1 ActivityFactory
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| AF-N-001 | createDefaultActivityState | covered | ActivityFactory.test.ts L33-54 |
+| AF-N-002 | createActivityInstance 正常 | covered | ActivityFactory.test.ts L74-93 |
+| AF-E-001 | createActivityInstance def=null throw | covered | FIX-FACT-001 |
+| AF-N-003 | createActivityTask 正常 | covered | ActivityFactory.test.ts L114-134 |
+| AF-E-002 | createActivityTask def=null throw | covered | FIX-FACT-002 |
+| AF-N-004 | createMilestone 正常 | covered | ActivityFactory.test.ts L144-167 |
+| AF-B-001 | resourceReward 深拷贝 | covered | ActivityFactory.test.ts L134 |
+
+### 5.2 ActivityOfflineCalculator
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| AO-N-001 | 活跃活动计算 | covered | ActivityOfflineCalculator.test.ts L68 |
+| AO-N-002 | 跳过非活跃活动 | covered | ActivityOfflineCalculator.test.ts L78 |
+| AO-N-003 | 不同类型效率 | covered | ActivityOfflineCalculator.test.ts L86 |
+| AO-N-004 | 积分0跳过 | covered | ActivityOfflineCalculator.test.ts L101 |
+| AO-N-005 | 代币=积分x10% | covered | ActivityOfflineCalculator.test.ts L110 |
+| AO-B-001 | duration=NaN 空数组 | covered | FIX-ACT-006 |
+| AO-B-002 | duration<=0 空数组 | covered | FIX-ACT-006 |
+| AO-N-006 | applyOfflineProgress 正常 | covered | ActivityOfflineCalculator.test.ts L123 |
+| AO-N-007 | 不存在的activityId跳过 | covered | ActivityOfflineCalculator.test.ts L138 |
+| AO-N-008 | 空结果返回原state | covered | ActivityOfflineCalculator.test.ts L153 |
+
+### 5.3 SeasonHelper
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| SH-N-001 | getCurrentSeasonTheme 正确映射 | covered | SeasonHelper.test.ts L27-44 |
+| SH-N-002 | 大索引取模 | covered | SeasonHelper.test.ts L44 |
+| SH-N-003 | createSettlementAnimation | covered | SeasonHelper.test.ts L53-62 |
+| SH-N-004 | updateSeasonRecord 胜场 | covered | SeasonHelper.test.ts L87 |
+| SH-N-005 | updateSeasonRecord 败场 | covered | SeasonHelper.test.ts L94 |
+| SH-N-006 | updateSeasonRecord 胜率 | covered | SeasonHelper.test.ts L101 |
+| SH-N-007 | updateSeasonRecord 最高排名 | covered | SeasonHelper.test.ts L108 |
+| SH-B-001 | seasonIndex=NaN index=0 | covered | FIX-SEAS-022 |
+| SH-B-002 | currentRanking=NaN 保持原值 | uncovered | FIX-SEAS-023 |
+| SH-B-003 | highestRanking=NaN safeRanking | uncovered | FIX-SEAS-023 |
+| SH-N-008 | generateSeasonRecordRanking 排序 | covered | SeasonHelper.test.ts L130-161 |
+| SH-N-009 | getSeasonThemes | covered | SeasonHelper.test.ts L170 |
+
+### 5.4 token-shop-config
+| ID | 分支 | 状态 | 验证 |
+|----|------|------|------|
+| SC-N-001 | DEFAULT_TOKEN_SHOP_CONFIG | covered | token-shop-config.test.ts L21-27 |
+| SC-N-002 | RARITY_ORDER 7个等级 | covered | token-shop-config.test.ts L34-38 |
+| SC-N-003 | RARITY_PRICE_MULTIPLIER | covered | token-shop-config.test.ts L45-60 |
+| SC-N-004 | DEFAULT_SHOP_ITEMS 7个商品 | covered | token-shop-config.test.ts L66-98 |
+| SC-B-001 | 配置-枚举同步（7阶 vs 7商品） | covered | token-shop-config.test.ts L83 |
+
+---
+
+## 6. 跨系统链路
+
+| ID | 链路 | 状态 | 验证 |
+|----|------|------|------|
+| X-001 | ActivitySystem -> ActivityFactory.createActivityInstance | covered | ActivitySystem-p1.test.ts L203 |
+| X-002 | ActivitySystem -> ActivityOfflineCalculator | covered | ActivitySystem-p2.test.ts L265 |
+| X-003 | ActivitySystem -> SeasonHelper.getCurrentSeasonTheme | covered | ActivitySystem-p2.test.ts L325 |
+| X-004 | ActivitySystem.serialize NaN清洗 -> deserialize | uncovered | NaN清洗路径未验证 |
+| X-005 | engine-save -> ActivitySystem.serialize | todo | BR-14: 存档覆盖 |
+| X-006 | engine-save -> TimedActivitySystem.serialize | todo | BR-14: 存档覆盖 |
+| X-007 | engine-save -> TokenShopSystem.serialize | todo | BR-14: 存档覆盖 |
+| X-008 | engine-save -> SignInSystem.serialize | uncovered | BR-14/15: **SignInSystem无serialize** |
+| X-009 | TokenShopSystem <-> ActivitySystem 代币流转 | todo | claimTaskReward.tokens -> addTokens |
+| X-010 | TimedActivitySystem <-> ActivitySystem 离线进度 | todo | 两套独立离线计算 |
+
+---
+
+## 7. 统计摘要
+
+### 7.1 节点状态分布
+
+| 状态 | 数量 | 占比 |
+|------|------|------|
+| covered | 161 | 63.1% |
+| todo | 53 | 20.8% |
+| uncovered | 41 | 16.1% |
+| N/A | 1 | 0.4% |
+| **总计** | **256** | 100% |
+
+### 7.2 P0 未覆盖节点（NaN/数值安全）
+
+| ID | API | 缺陷 | 优先级 |
+|----|-----|------|--------|
+| F-B-001 | canStartActivity | maxTotal=NaN | P0 |
+| F-B-002 | canStartActivity | maxTotal<=0 | P0 |
+| F-B-009 | updateTaskProgress | progress=NaN | P0 |
+| F-B-010 | updateTaskProgress | progress<=0 | P0 |
+| F-B-012 | claimTaskReward | pointReward=NaN | P0 |
+| F-B-013 | claimTaskReward | tokenReward=NaN | P0 |
+| F-B-016 | checkMilestones | points=NaN | P0 |
+| F-B-017~020 | serialize | NaN清洗 | P0 |
+| T-E-001~003 | createTimedActivityFlow | NaN时间 | P0 |
+| T-B-002 | updatePhase | now=NaN | P0 |
+| T-B-004 | updateLeaderboard | NaN积分 | P0 |
+| T-B-010~011 | calculateOfflineProgress | NaN duration | P0 |
+| T-B-013 | deserialize | data=null | P0 |
+| S-B-003~006 | purchaseItem | NaN qty/cost/rewards | P0 |
+| S-B-009~011 | addTokens/spendTokens | NaN amount | P0 |
+| S-B-015~016 | deserialize | null/NaN | P0 |
+| G-E-005~006 | retroactive | NaN now/gold | P0 |
+| G-B-003 | retroactive | lastSignInTime=0 | P0 |
+| G-SERIAL-001 | SignInSystem | 无serialize | P0 |
+| SH-B-002~003 | updateSeasonRecord | NaN ranking | P0 |
+
+### 7.3 规则符合性检查
+
+| Builder规则 | 状态 | 说明 |
+|-------------|------|------|
+| BR-1 每个API至少1个F-Normal | WARN | getItemsByRarity无测试 |
+| BR-2 数值API检查NaN/负值 | WARN | 41个uncovered集中在NaN防护路径 |
+| BR-3 状态变更serialize/deserialize | FAIL | SignInSystem缺失 G-SERIAL-001 |
+| BR-5 跨系统链路 N=4x2=8 | WARN | 6/10 covered X-005~010需验证 |
+| BR-14 存档覆盖扫描 | FAIL | SignInSystem无serialize |
+| BR-22 资源累积上限 | WARN | tokenBalance无MAX S-B-012 |
+| BR-21 资源比较NaN防护 | WARN | purchaseItem余额检查 S-B-008 |
+
+### 7.4 配置-枚举同步
+
+| 检查项 | 状态 | 说明 |
+|--------|------|------|
+| ActivityType枚举 vs typePrefixMap | OK | 5种类型一一对应 |
+| ActivityType枚举 vs typeLimitMap | OK | 5种类型一一对应 |
+| RARITY_ORDER vs RARITY_PRICE_MULTIPLIER | OK | 7阶一致 |
+| RARITY_ORDER vs DEFAULT_SHOP_ITEMS | OK | 7阶各一个 |
+| SignInReward 7天 vs SIGN_IN_CYCLE_DAYS | OK | 7天一致 |
+| SeasonTheme 4个 vs 循环取模 | OK | 4个主题 |

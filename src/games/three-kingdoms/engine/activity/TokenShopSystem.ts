@@ -18,6 +18,9 @@ import {
   DEFAULT_SHOP_ITEMS,
 } from './token-shop-config';
 
+/** 代币余额上限（防止无限累积） */
+export const MAX_TOKEN_BALANCE = 999_999_999;
+
 export class TokenShopSystem implements ISubsystem {
   // ─── ISubsystem 接口 ───────────────────────
 
@@ -204,6 +207,8 @@ export class TokenShopSystem implements ISubsystem {
     // FIX-SHOP-013/014: NaN和负值防护
     if (!Number.isFinite(amount) || amount <= 0) return this.tokenBalance;
     this.tokenBalance += amount;
+    // FIX-SHOP-016: 上限防护 — 防止无限累积
+    this.tokenBalance = Math.min(this.tokenBalance, MAX_TOKEN_BALANCE);
     return this.tokenBalance;
   }
 
@@ -328,7 +333,10 @@ export class TokenShopSystem implements ISubsystem {
     // FIX-SHOP-015: null guard
     if (!data) return;
     this.config = { ...data.config };
-    this.tokenBalance = Number.isFinite(data.tokenBalance) ? data.tokenBalance : 0;
+    // FIX-SHOP-016b: 反序列化时上限防护
+    this.tokenBalance = Number.isFinite(data.tokenBalance)
+      ? Math.min(data.tokenBalance, MAX_TOKEN_BALANCE)
+      : 0;
     this.items.clear();
     for (const item of (data.items ?? [])) {
       this.items.set(item.id, { ...item });

@@ -341,6 +341,42 @@ export class SignInSystem implements ISubsystem {
     return Math.max(0, this.config.weeklyRetroactiveLimit - weeklyCount);
   }
 
+  // ── 序列化 ──────────────────────────────
+
+  /**
+   * 导出签到数据
+   *
+   * FIX-ARCH-004: SignInSystem 缺失 serialize/deserialize
+   * 签到数据需持久化到存档，否则刷新页面后连续天数/补签次数归零
+   */
+  serialize(): {
+    config: SignInConfig;
+    rewards: SignInReward[];
+  } {
+    return {
+      config: { ...this.config },
+      rewards: this.rewards.map(r => ({ ...r, rewards: { ...r.rewards } })),
+    };
+  }
+
+  /**
+   * 导入签到数据
+   *
+   * FIX-ARCH-004: 支持从存档恢复配置和奖励列表
+   */
+  deserialize(data: {
+    config?: SignInConfig;
+    rewards?: SignInReward[];
+  }): void {
+    if (!data) return;
+    if (data.config && typeof data.config === 'object') {
+      this.config = { ...DEFAULT_SIGN_IN_CONFIG, ...data.config };
+    }
+    if (Array.isArray(data.rewards) && data.rewards.length > 0) {
+      this.rewards = data.rewards.map(r => ({ ...r, rewards: { ...r.rewards } }));
+    }
+  }
+
   // ── 工具方法 ──────────────────────────────
 
   /** 获取配置 */

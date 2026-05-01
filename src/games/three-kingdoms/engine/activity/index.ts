@@ -66,6 +66,7 @@ export {
 // v15.0 — 代币兑换商店
 export {
   TokenShopSystem,
+  MAX_TOKEN_BALANCE,
 } from './TokenShopSystem';
 
 export {
