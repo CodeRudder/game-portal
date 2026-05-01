@@ -160,9 +160,12 @@ export class ResourceTradeEngine implements ISubsystem {
    * @returns 交易结果
    */
   tradeResource(from: ResourceType, to: ResourceType, amount: number): ResourceTradeResult {
-    // 参数校验 (FIX-801: NaN绕过防护)
+    // 参数校验 (FIX-801: NaN绕过防护; FIX-802: 拒绝小数金额防止截断资损)
     if (!Number.isFinite(amount) || amount <= 0) {
       return { success: false, received: 0, fee: 0, error: '交易数量必须大于 0' };
+    }
+    if (!Number.isInteger(amount)) {
+      return { success: false, received: 0, fee: 0, error: '交易数量必须为整数' };
     }
 
     // 查找交易对
@@ -239,9 +242,12 @@ export class ResourceTradeEngine implements ISubsystem {
    * @returns 检查结果
    */
   canTradeResource(from: ResourceType, to: ResourceType, amount: number): CanTradeResult {
-    // 参数校验 (FIX-801: NaN绕过防护)
+    // 参数校验 (FIX-801: NaN绕过防护; FIX-802: 拒绝小数金额防止截断资损)
     if (!Number.isFinite(amount) || amount <= 0) {
       return { canTrade: false, reason: '交易数量必须大于 0' };
+    }
+    if (!Number.isInteger(amount)) {
+      return { canTrade: false, reason: '交易数量必须为整数' };
     }
 
     // 查找交易对

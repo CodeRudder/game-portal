@@ -59,6 +59,9 @@ function createPrestigeSystem(): PrestigeSystem {
   return sys;
 }
 
+/** 冷却时间常量（PRD要求72小时） */
+const COOLDOWN_MS = 72 * 60 * 60 * 1000;
+
 /** 创建满足转生条件的系统 */
 function createReadyRebirthSystem(): {
   rebirth: RebirthSystem;
@@ -75,10 +78,44 @@ function createReadyRebirthSystem(): {
     totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
     prestigeLevel: () => REBIRTH_CONDITIONS.minPrestigeLevel,
     onReset: resetFn,
+    campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+    achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
   });
   rebirth.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
 
   return { rebirth, prestige, resetFn };
+}
+
+/** 创建带时间注入的系统（支持模拟冷却时间流逝，用于多次转生测试） */
+function createReadyRebirthSystemWithTime(): {
+  rebirth: RebirthSystem;
+  prestige: PrestigeSystem;
+  resetFn: ReturnType<typeof vi.fn>;
+  advanceTime: (ms: number) => void;
+} {
+  let currentTime = Date.now();
+  const rebirth = createRebirthSystem();
+  const prestige = createPrestigeSystem();
+  const resetFn = vi.fn();
+
+  rebirth.setCallbacks({
+    castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
+    heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
+    totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
+    prestigeLevel: () => REBIRTH_CONDITIONS.minPrestigeLevel,
+    onReset: resetFn,
+    campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+    achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
+    nowProvider: () => currentTime,
+  });
+  rebirth.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
+
+  return {
+    rebirth,
+    prestige,
+    resetFn,
+    advanceTime: (ms: number) => { currentTime += ms; },
+  };
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -238,9 +275,24 @@ describe('P1 — 转生后保留/重置规则（16项数据）', () => {
     });
 
     test('多次转生每次都触发 resetCallback', () => {
+      let currentTime = Date.now();
+      const COOLDOWN = 72 * 60 * 60 * 1000;
       const { rebirth, resetFn } = createReadyRebirthSystem();
+      // 注入时间提供函数以支持多次转生
+      rebirth.setCallbacks({
+        castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
+        heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
+        totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
+        prestigeLevel: () => REBIRTH_CONDITIONS.minPrestigeLevel,
+        onReset: resetFn,
+        campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+        achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
+        nowProvider: () => currentTime,
+      });
       rebirth.executeRebirth();
+      currentTime += COOLDOWN + 1;
       rebirth.executeRebirth();
+      currentTime += COOLDOWN + 1;
       rebirth.executeRebirth();
       expect(resetFn).toHaveBeenCalledTimes(3);
     });
@@ -502,9 +554,11 @@ describe('P1 — 转生后保留/重置规则（16项数据）', () => {
     });
 
     test('多次转生存档/读档记录完整', () => {
-      const { rebirth } = createReadyRebirthSystem();
+      const { rebirth, advanceTime } = createReadyRebirthSystemWithTime();
       rebirth.executeRebirth();
+      advanceTime(COOLDOWN_MS + 1);
       rebirth.executeRebirth();
+      advanceTime(COOLDOWN_MS + 1);
       rebirth.executeRebirth();
       const state = rebirth.getState();
 

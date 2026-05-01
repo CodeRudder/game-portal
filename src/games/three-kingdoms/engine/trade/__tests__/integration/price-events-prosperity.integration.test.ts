@@ -16,8 +16,8 @@ import type { TradeRouteId } from '../../../../core/trade/trade.types';
 import {
   PROSPERITY_LABELS,
 } from '../../../../core/trade/trade.types';
-import {
 import type { ISystemDeps } from "../../../../core/types";
+import {
   TRADE_GOODS_DEFS,
   TRADE_ROUTE_DEFS,
   TRADE_EVENT_DEFS,

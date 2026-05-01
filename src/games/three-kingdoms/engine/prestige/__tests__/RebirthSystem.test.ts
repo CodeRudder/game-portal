@@ -49,9 +49,37 @@ function createReadySystem(): { sys: RebirthSystem; resetFn: vi.Mock } {
     totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
     prestigeLevel: () => REBIRTH_CONDITIONS.minPrestigeLevel,
     onReset: resetFn,
+    campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+    achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
   });
   sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
   return { sys, resetFn };
+}
+
+/** 冷却时间常量 */
+const COOLDOWN_MS = 72 * 60 * 60 * 1000;
+
+/** 创建带时间注入的系统，支持模拟多次转生（自动推进冷却） */
+function createReadySystemWithTime(): { sys: RebirthSystem; resetFn: vi.Mock; advanceTime: (ms: number) => void } {
+  let currentTime = Date.now();
+  const sys = createSystem();
+  const resetFn = vi.fn();
+  sys.setCallbacks({
+    castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
+    heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
+    totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
+    prestigeLevel: () => REBIRTH_CONDITIONS.minPrestigeLevel,
+    onReset: resetFn,
+    campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+    achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
+    nowProvider: () => currentTime,
+  });
+  sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
+  return {
+    sys,
+    resetFn,
+    advanceTime: (ms: number) => { currentTime += ms; },
+  };
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -139,6 +167,8 @@ describe('RebirthSystem', () => {
         heroCount: () => 0, // 不满足
         totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
         prestigeLevel: () => REBIRTH_CONDITIONS.minPrestigeLevel,
+        campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+        achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
       });
       sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
       const check = sys.checkRebirthConditions();
@@ -209,9 +239,12 @@ describe('RebirthSystem', () => {
     });
 
     test('多次转生累计次数', () => {
-      const { sys, resetFn } = createReadySystem();
+      const { sys, resetFn, advanceTime } = createReadySystemWithTime();
       const result1 = sys.executeRebirth();
       expect(result1.newCount).toBe(1);
+
+      // 推进时间超过72小时冷却
+      advanceTime(COOLDOWN_MS + 1);
 
       // 第二次转生
       const result2 = sys.executeRebirth();
@@ -229,6 +262,8 @@ describe('RebirthSystem', () => {
         heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
         totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
         prestigeLevel: () => REBIRTH_CONDITIONS.minPrestigeLevel,
+        campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+        achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
       });
       sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
 
@@ -319,6 +354,8 @@ describe('RebirthSystem', () => {
         heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
         totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
         prestigeLevel: () => REBIRTH_CONDITIONS.minPrestigeLevel,
+        campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+        achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
       });
       sys2.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
       sys2.executeRebirth();
@@ -360,9 +397,10 @@ describe('RebirthSystem', () => {
     });
 
     test('转生10次解锁帝王之路', () => {
-      const { sys } = createReadySystem();
+      const { sys, advanceTime } = createReadySystemWithTime();
       for (let i = 0; i < 10; i++) {
         sys.executeRebirth();
+        advanceTime(COOLDOWN_MS + 1);
       }
       const unlocked = sys.getUnlockedContents();
       expect(unlocked.some((c) => c.unlockId === 'emperor_road')).toBe(true);

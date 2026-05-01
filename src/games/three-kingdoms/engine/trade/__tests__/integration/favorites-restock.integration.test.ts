@@ -11,8 +11,8 @@ import { ShopSystem } from '../../../shop/ShopSystem';
 import { CurrencySystem } from '../../../currency/CurrencySystem';
 import type { ISystemDeps } from '../../../../core/types';
 import type { GoodsFilter } from '../../../../core/shop';
-import {
 import type { CurrencyType } from "../../../../core/currency";
+import {
   DEFAULT_RESTOCK_CONFIG,
   DAILY_MANUAL_REFRESH_LIMIT,
   SHOP_SAVE_VERSION,

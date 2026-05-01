@@ -152,6 +152,11 @@ export const REBIRTH_CONDITIONS: RebirthCondition = {
   minCastleLevel: 10,
   minHeroCount: 5,
   minTotalPower: 10000,
+  /** PRD: 通关进度 ≥ 第4阶段"赤壁之战" */
+  minCampaignStage: 4,
+  /** PRD: 完成"初露锋芒"成就链（5个子成就） */
+  requiredAchievementChainId: 'first_glory',
+  requiredAchievementChainCount: 5,
 };
 
 /** 转生倍率配置 */
@@ -188,6 +193,9 @@ export const REBIRTH_ACCELERATION: RebirthAcceleration = {
   expMultiplier: 2.0,
   durationDays: 7,
 };
+
+/** 转生冷却时间（毫秒）— PRD: 72小时 */
+export const REBIRTH_COOLDOWN_MS = 72 * 60 * 60 * 1000; // 259,200,000 毫秒
 
 /** 转生次数解锁内容 */
 export const REBIRTH_UNLOCK_CONTENTS: RebirthUnlockContent[] = [

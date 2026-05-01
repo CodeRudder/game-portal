@@ -682,13 +682,12 @@ describe('RES-5 边界值与异常输入', () => {
     expect(result.success).toBe(false);
   });
 
-  it('amount = 0.5 (小数) 的行为：正数允许', () => {
+  it('amount = 0.5 (小数) 被拒绝，防止截断资损', () => {
     const { engine } = createEngine();
-    // 0.5 > 0, 不会在参数校验阶段拒绝
+    // FIX-802: 小数金额应被拒绝，不允许截断
     const result = engine.tradeResource('grain', 'gold', 0.5);
-    // 由于 0.5 > 0，会通过参数校验，但实际行为取决于引擎实现
-    // 引擎可能接受小数或 floor 处理
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('整数');
   });
 
   it('amount = Number.MAX_SAFE_INTEGER 触发保护线', () => {

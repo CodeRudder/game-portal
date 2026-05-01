@@ -154,6 +154,12 @@ export interface RebirthCondition {
   minHeroCount: number;
   /** 最低总战力 */
   minTotalPower: number;
+  /** 最低通关阶段（如 4 = 第4阶段"赤壁之战"） */
+  minCampaignStage: number;
+  /** 成就链ID（如 "first_glory" = "初露锋芒"） */
+  requiredAchievementChainId: string;
+  /** 成就链所需完成的子成就数量 */
+  requiredAchievementChainCount: number;
 }
 
 /** 转生倍率配置 */
@@ -349,6 +355,8 @@ export interface RebirthState {
   completedRebirthQuests: string[];
   /** 转生任务进度 */
   rebirthQuestProgress: Record<string, number>;
+  /** 上次转生时间戳（毫秒），用于72小时冷却计算；首次转生时为0 */
+  lastRebirthTimestamp?: number;
 }
 
 /** 声望系统存档数据 */

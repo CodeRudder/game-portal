@@ -39,12 +39,15 @@ function createRebirthSystem(): RebirthSystem {
 }
 
 /** 设置满足转生条件的回调 */
-function setupMetConditions(sys: RebirthSystem): void {
+function setupMetConditions(sys: RebirthSystem, timeProvider?: () => number): void {
   sys.setCallbacks({
     castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
     heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
     totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
     prestigeLevel: () => REBIRTH_CONDITIONS.minPrestigeLevel,
+    campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+    achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
+    ...(timeProvider ? { nowProvider: timeProvider } : {}),
   });
   sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
 }
@@ -96,11 +99,14 @@ describe('RebirthSystem 对抗式测试', () => {
     });
 
     it('多次转生倍率递增', () => {
-      setupMetConditions(sys);
+      let currentTime = Date.now();
+      setupMetConditions(sys, () => currentTime);
+      const COOLDOWN_MS = 72 * 60 * 60 * 1000;
       const multipliers: number[] = [];
       for (let i = 0; i < 5; i++) {
         sys.executeRebirth();
         multipliers.push(sys.getCurrentMultiplier());
+        currentTime += COOLDOWN_MS + 1;
       }
       for (let i = 1; i < multipliers.length; i++) {
         expect(multipliers[i]).toBeGreaterThan(multipliers[i - 1]);
@@ -136,6 +142,8 @@ describe('RebirthSystem 对抗式测试', () => {
         heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
         totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
         onReset: resetCb,
+        campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+        achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
       });
       sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
       sys.executeRebirth();
@@ -170,6 +178,8 @@ describe('RebirthSystem 对抗式测试', () => {
         castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
         heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
         totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
+        campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+        achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
       });
       sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
       const check = sys.checkRebirthConditions();
@@ -181,6 +191,8 @@ describe('RebirthSystem 对抗式测试', () => {
         castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel - 1,
         heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
         totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
+        campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+        achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
       });
       sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
       const check = sys.checkRebirthConditions();
@@ -189,12 +201,15 @@ describe('RebirthSystem 对抗式测试', () => {
     });
 
     it('解锁内容按转生次数正确解锁', () => {
-      setupMetConditions(sys);
+      let currentTime = Date.now();
+      setupMetConditions(sys, () => currentTime);
+      const COOLDOWN_MS = 72 * 60 * 60 * 1000;
       expect(sys.getUnlockedContents().length).toBe(0);
 
       sys.executeRebirth(); // count=1
       expect(sys.getUnlockedContents().length).toBeGreaterThanOrEqual(1);
 
+      currentTime += COOLDOWN_MS + 1;
       sys.executeRebirth(); // count=2
       const contents = sys.getUnlockedContents();
       expect(contents.some(c => c.unlockId === 'hero_legend')).toBe(true);
@@ -272,6 +287,8 @@ describe('RebirthSystem 对抗式测试', () => {
         castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
         heroCount: () => 0, // 不满足
         totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
+        campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+        achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
       });
       sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
       const result = sys.executeRebirth();
@@ -285,12 +302,21 @@ describe('RebirthSystem 对抗式测试', () => {
       expect(check.conditions.castleLevel).toBeDefined();
       expect(check.conditions.heroCount).toBeDefined();
       expect(check.conditions.totalPower).toBeDefined();
-      // 每个条件都有 required/current/met
-      for (const cond of Object.values(check.conditions)) {
+      expect(check.conditions.campaignProgress).toBeDefined();
+      expect(check.conditions.achievementChain).toBeDefined();
+      expect(check.conditions.cooldown).toBeDefined();
+      // 基础条件都有 required/current/met
+      for (const key of ['prestigeLevel', 'castleLevel', 'heroCount', 'totalPower', 'campaignProgress'] as const) {
+        const cond = check.conditions[key];
         expect(cond).toHaveProperty('required');
         expect(cond).toHaveProperty('current');
         expect(cond).toHaveProperty('met');
       }
+      // achievementChain 有额外 chainId
+      expect(check.conditions.achievementChain).toHaveProperty('chainId');
+      // cooldown 有 remainingMs 和 description
+      expect(check.conditions.cooldown).toHaveProperty('remainingMs');
+      expect(check.conditions.cooldown).toHaveProperty('description');
     });
   });
 
@@ -397,9 +423,12 @@ describe('RebirthSystem 对抗式测试', () => {
     });
 
     it('多次转生存档后加载完整', () => {
-      setupMetConditions(sys);
+      let currentTime = Date.now();
+      setupMetConditions(sys, () => currentTime);
+      const COOLDOWN_MS = 72 * 60 * 60 * 1000;
       for (let i = 0; i < 3; i++) {
         sys.executeRebirth();
+        currentTime += COOLDOWN_MS + 1;
       }
       const state = sys.getState();
       const sys2 = createRebirthSystem();

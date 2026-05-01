@@ -27,6 +27,7 @@ import {
   REBIRTH_RESET_RULES,
   REBIRTH_ACCELERATION,
   REBIRTH_UNLOCK_CONTENTS,
+  REBIRTH_COOLDOWN_MS,
   // PRS-P1-01 fix: 使用声望域本地的转生倍率计算，消除对 unification 的跨域依赖
   calcRebirthMultiplierFromConfig,
 } from '../../core/prestige';
@@ -72,6 +73,7 @@ function createInitialRebirthState(): RebirthState {
     accelerationDaysLeft: 0,
     completedRebirthQuests: [],
     rebirthQuestProgress: {},
+    lastRebirthTimestamp: 0,
   };
 }
 
@@ -91,11 +93,18 @@ export class RebirthSystem implements ISubsystem {
   private state: RebirthState = createInitialRebirthState();
   private prestigeLevel = 1;
 
+  /** 时间提供函数（默认 Date.now，测试可注入） */
+  private nowProvider: () => number = () => Date.now();
+
   /** 外部状态查询回调 */
   private castleLevelCallback?: () => number;
   private heroCountCallback?: () => number;
   private totalPowerCallback?: () => number;
   private resetCallback?: (rules: string[]) => void;
+  /** 通关进度回调：返回当前已通关的最高阶段编号 */
+  private campaignStageCallback?: () => number;
+  /** 成就链完成数量回调：返回指定成就链已完成的子成就数量 */
+  private achievementChainCountCallback?: () => number;
 
   // ─── 生命周期 ───────────────────────────
 
@@ -118,19 +127,28 @@ export class RebirthSystem implements ISubsystem {
     totalPower?: () => number;
     prestigeLevel?: () => number;
     onReset?: (rules: string[]) => void;
+    /** 通关进度回调：返回当前已通关的最高阶段编号 */
+    campaignStage?: () => number;
+    /** 成就链完成数量回调：返回"初露锋芒"成就链已完成的子成就数量 */
+    achievementChainCount?: () => number;
+    /** 时间提供函数（默认 Date.now，测试可注入以模拟时间流逝） */
+    nowProvider?: () => number;
   }): void {
     this.castleLevelCallback = callbacks.castleLevel;
     this.heroCountCallback = callbacks.heroCount;
     this.totalPowerCallback = callbacks.totalPower;
     if (callbacks.prestigeLevel) this.prestigeLevel = callbacks.prestigeLevel();
     this.resetCallback = callbacks.onReset;
+    this.campaignStageCallback = callbacks.campaignStage;
+    this.achievementChainCountCallback = callbacks.achievementChainCount;
+    if (callbacks.nowProvider) this.nowProvider = callbacks.nowProvider;
   }
 
   updatePrestigeLevel(level: number): void { this.prestigeLevel = level; }
 
   // ─── 公开 API ───────────────────────────
 
-  /** 检查转生条件 (#8) */
+  /** 检查转生条件 (#8) — 含PRD全部6项条件 + 冷却 */
   checkRebirthConditions(): {
     canRebirth: boolean;
     conditions: {
@@ -138,20 +156,60 @@ export class RebirthSystem implements ISubsystem {
       castleLevel: { required: number; current: number; met: boolean };
       heroCount: { required: number; current: number; met: boolean };
       totalPower: { required: number; current: number; met: boolean };
+      campaignProgress: { required: number; current: number; met: boolean };
+      achievementChain: { required: number; current: number; met: boolean; chainId: string };
+      cooldown: { met: boolean; remainingMs: number; description: string };
     };
   } {
     const castleLevel = this.castleLevelCallback?.() ?? 0;
     const heroCount = this.heroCountCallback?.() ?? 0;
     const totalPower = this.totalPowerCallback?.() ?? 0;
+    const campaignStage = this.campaignStageCallback?.() ?? 0;
+    const achievementChainCount = this.achievementChainCountCallback?.() ?? 0;
+
+    // 冷却检查：首次转生（rebirthCount === 0）无冷却限制
+    const lastTs = this.state.lastRebirthTimestamp ?? 0;
+    const isFirstRebirth = this.state.rebirthCount === 0;
+    const now = this.nowProvider();
+    const elapsed = now - lastTs;
+    const cooldownMet = isFirstRebirth || lastTs === 0 || elapsed >= REBIRTH_COOLDOWN_MS;
+    const remainingMs = cooldownMet ? 0 : Math.max(0, REBIRTH_COOLDOWN_MS - elapsed);
 
     const conditions = {
       prestigeLevel: { required: REBIRTH_CONDITIONS.minPrestigeLevel, current: this.prestigeLevel, met: this.prestigeLevel >= REBIRTH_CONDITIONS.minPrestigeLevel },
       castleLevel: { required: REBIRTH_CONDITIONS.minCastleLevel, current: castleLevel, met: castleLevel >= REBIRTH_CONDITIONS.minCastleLevel },
       heroCount: { required: REBIRTH_CONDITIONS.minHeroCount, current: heroCount, met: heroCount >= REBIRTH_CONDITIONS.minHeroCount },
       totalPower: { required: REBIRTH_CONDITIONS.minTotalPower, current: totalPower, met: totalPower >= REBIRTH_CONDITIONS.minTotalPower },
+      campaignProgress: { required: REBIRTH_CONDITIONS.minCampaignStage, current: campaignStage, met: campaignStage >= REBIRTH_CONDITIONS.minCampaignStage },
+      achievementChain: {
+        required: REBIRTH_CONDITIONS.requiredAchievementChainCount,
+        current: achievementChainCount,
+        met: achievementChainCount >= REBIRTH_CONDITIONS.requiredAchievementChainCount,
+        chainId: REBIRTH_CONDITIONS.requiredAchievementChainId,
+      },
+      cooldown: {
+        met: cooldownMet,
+        remainingMs,
+        description: isFirstRebirth || lastTs === 0
+          ? '首次转生无冷却限制'
+          : cooldownMet
+            ? '冷却已完成'
+            : `冷却中，剩余 ${this.formatCooldownRemaining(remainingMs)}`,
+      },
     };
 
-    return { canRebirth: Object.values(conditions).every(c => c.met), conditions };
+    // 前6项条件必须全部满足，冷却也必须通过
+    const allConditionsMet = [
+      conditions.prestigeLevel,
+      conditions.castleLevel,
+      conditions.heroCount,
+      conditions.totalPower,
+      conditions.campaignProgress,
+      conditions.achievementChain,
+      conditions.cooldown,
+    ].every(c => c.met);
+
+    return { canRebirth: allConditionsMet, conditions };
   }
 
   /** 执行转生 (#9, #10, #11) */
@@ -160,20 +218,29 @@ export class RebirthSystem implements ISubsystem {
   } {
     const check = this.checkRebirthConditions();
     if (!check.canRebirth) {
-      const unmet = Object.entries(check.conditions).filter(([, v]) => !v.met).map(([k, v]) => `${k}: ${v.current}/${v.required}`).join(', ');
+      const unmet = Object.entries(check.conditions)
+        .filter(([, v]) => typeof v === 'object' && 'met' in v && !v.met)
+        .map(([k, v]) => {
+          const cond = v as { current?: number; required?: number; description?: string };
+          if (k === 'cooldown') return `${k}: ${cond.description}`;
+          return `${k}: ${cond.current}/${cond.required}`;
+        })
+        .join(', ');
       return { success: false, reason: `条件不满足: ${unmet}` };
     }
 
     if (this.resetCallback) this.resetCallback([...REBIRTH_RESET_RULES]);
 
+    const now = this.nowProvider();
     const newCount = this.state.rebirthCount + 1;
     const multiplier = calcRebirthMultiplier(newCount);
 
-    const record: RebirthRecord = { rebirthCount: newCount, prestigeLevelBefore: this.prestigeLevel, multiplier, timestamp: Date.now() };
+    const record: RebirthRecord = { rebirthCount: newCount, prestigeLevelBefore: this.prestigeLevel, multiplier, timestamp: now };
     this.state.rebirthCount = newCount;
     this.state.currentMultiplier = multiplier;
     this.state.rebirthRecords.push(record);
     this.state.accelerationDaysLeft = REBIRTH_ACCELERATION.durationDays;
+    this.state.lastRebirthTimestamp = now;
 
     this.deps.eventBus.emit(`${EVENT_PREFIX}:completed`, { count: newCount, multiplier, acceleration: REBIRTH_ACCELERATION });
 
@@ -237,19 +304,51 @@ export class RebirthSystem implements ISubsystem {
 
   getRebirthRecords(): RebirthRecord[] { return [...this.state.rebirthRecords]; }
 
+  // ─── 冷却查询 API ──────────────────────
+
+  /** 获取冷却剩余毫秒数（0表示冷却已完成或首次无冷却） */
+  getCooldownRemainingMs(): number {
+    const lastTs = this.state.lastRebirthTimestamp ?? 0;
+    // 首次转生或旧存档无时间戳 → 无冷却
+    if (lastTs === 0) return 0;
+    const elapsed = this.nowProvider() - lastTs;
+    return Math.max(0, REBIRTH_COOLDOWN_MS - elapsed);
+  }
+
+  /** 冷却是否激活中 */
+  isCooldownActive(): boolean {
+    // 首次转生无冷却
+    if (this.state.rebirthCount === 0) return false;
+    return this.getCooldownRemainingMs() > 0;
+  }
+
+  /** 格式化冷却剩余时间为 HH:MM:SS */
+  private formatCooldownRemaining(remainingMs: number): string {
+    const totalSeconds = Math.floor(remainingMs / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
   // ─── 存档 ───────────────────────────────
 
   loadSaveData(data: { rebirth: RebirthState }): void {
     // FIX-504: null防护
     if (!data || !data.rebirth) return;
-    // FIX-504: 深拷贝+关键字段NaN防护
-    const loaded = { ...data.rebirth };
+    // 合并默认值 + 存档数据（含向后兼容 lastRebirthTimestamp: 0）
+    const loaded = { ...createInitialRebirthState(), ...data.rebirth };
+    // FIX-504: 关键字段NaN防护
     loaded.rebirthCount = Number.isFinite(loaded.rebirthCount) && loaded.rebirthCount >= 0 ? loaded.rebirthCount : 0;
     loaded.currentMultiplier = Number.isFinite(loaded.currentMultiplier) && loaded.currentMultiplier > 0 ? loaded.currentMultiplier : 1.0;
     loaded.accelerationDaysLeft = Number.isFinite(loaded.accelerationDaysLeft) && loaded.accelerationDaysLeft >= 0 ? loaded.accelerationDaysLeft : 0;
     loaded.rebirthRecords = Array.isArray(loaded.rebirthRecords) ? loaded.rebirthRecords : [];
     loaded.completedRebirthQuests = Array.isArray(loaded.completedRebirthQuests) ? loaded.completedRebirthQuests : [];
     loaded.rebirthQuestProgress = loaded.rebirthQuestProgress && typeof loaded.rebirthQuestProgress === 'object' ? loaded.rebirthQuestProgress : {};
+    // 向后兼容：旧存档无 lastRebirthTimestamp 字段时，从最后一条转生记录推算
+    if (loaded.lastRebirthTimestamp === undefined && loaded.rebirthRecords.length > 0) {
+      loaded.lastRebirthTimestamp = loaded.rebirthRecords[loaded.rebirthRecords.length - 1].timestamp;
+    }
     this.state = loaded;
   }
 

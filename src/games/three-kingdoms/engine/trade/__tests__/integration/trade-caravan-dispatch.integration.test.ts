@@ -17,8 +17,8 @@ import { CaravanSystem } from '../../CaravanSystem';
 import type { TradeCurrencyOps } from '../../TradeSystem';
 import type { RouteInfoProvider } from '../../CaravanSystem';
 import type { TradeRouteId, CaravanDispatchRequest } from '../../../../core/trade/trade.types';
-import {
 import type { ISystemDeps } from "../../../../core/types";
+import {
   TRADE_ROUTE_DEFS,
   TRADE_GOODS_DEFS,
   INITIAL_PROSPERITY,

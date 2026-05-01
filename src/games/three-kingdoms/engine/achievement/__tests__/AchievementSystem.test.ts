@@ -447,13 +447,13 @@ describe('AchievementSystem', () => {
       for (const ach of sys.getAchievementsByDimension('building')) expect(ach.dimension).toBe('building');
     });
 
-    it('getDimensionStats 返回浅拷贝（外层新对象，内层共享引用）', () => {
+    it('getDimensionStats 返回深拷贝（内层对象独立，外部修改不影响内部）', () => {
       const sys = createSystem();
       const s1 = sys.getDimensionStats();
       s1.battle.completedCount = 999;
       const s2 = sys.getDimensionStats();
       expect(s1).not.toBe(s2);
-      expect(s2.battle.completedCount).toBe(999); // 浅拷贝：内层共享
+      expect(s2.battle.completedCount).toBe(0); // 深拷贝：内层独立
     });
   });
 

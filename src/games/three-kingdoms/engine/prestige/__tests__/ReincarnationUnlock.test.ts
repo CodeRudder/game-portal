@@ -6,7 +6,8 @@
  *   4. 总战力 ≥ 50,000  5. 通关进度 ≥ 第4阶段  6. 成就链"初露锋芒"
  *   + 转生冷却 ≥ 72小时（首次无限制）
  *
- * 引擎当前仅实现4项（声望/主城/武将/战力），未实现项标记 test.todo。
+ * 引擎当前已实现全部7项条件（声望/主城/武将/战力/通关进度/成就链/冷却）。
+ * 剩余 TODO 为引擎尚未实现的功能（转生次数上限、衰减逻辑等）。
  * @module engine/prestige/__tests__/ReincarnationUnlock
  */
 
@@ -47,12 +48,14 @@ function createSystem(): RebirthSystem {
   return sys;
 }
 
-/** 创建满足所有已实现条件的系统 */
+/** 创建满足转生条件的系统 */
 function createReadySystem(overrides?: {
   prestigeLevel?: number;
   castleLevel?: number;
   heroCount?: number;
   totalPower?: number;
+  campaignStage?: number;
+  achievementChainCount?: number;
 }): { sys: RebirthSystem; resetFn: ReturnType<typeof vi.fn> } {
   const sys = createSystem();
   const resetFn = vi.fn();
@@ -62,9 +65,50 @@ function createReadySystem(overrides?: {
     totalPower: () => overrides?.totalPower ?? REBIRTH_CONDITIONS.minTotalPower,
     prestigeLevel: () => overrides?.prestigeLevel ?? REBIRTH_CONDITIONS.minPrestigeLevel,
     onReset: resetFn,
+    campaignStage: () => overrides?.campaignStage ?? REBIRTH_CONDITIONS.minCampaignStage,
+    achievementChainCount: () => overrides?.achievementChainCount ?? REBIRTH_CONDITIONS.requiredAchievementChainCount,
   });
   sys.updatePrestigeLevel(overrides?.prestigeLevel ?? REBIRTH_CONDITIONS.minPrestigeLevel);
   return { sys, resetFn };
+}
+
+/** 构建满足全部转生条件的回调（用于内联 setCallbacks） */
+function metCallbacks(overrides?: Partial<Record<string, () => number>> & { onReset?: ReturnType<typeof vi.fn> }) {
+  return {
+    castleLevel: overrides?.castleLevel ?? (() => REBIRTH_CONDITIONS.minCastleLevel),
+    heroCount: overrides?.heroCount ?? (() => REBIRTH_CONDITIONS.minHeroCount),
+    totalPower: overrides?.totalPower ?? (() => REBIRTH_CONDITIONS.minTotalPower),
+    prestigeLevel: overrides?.prestigeLevel ?? (() => REBIRTH_CONDITIONS.minPrestigeLevel),
+    campaignStage: overrides?.campaignStage ?? (() => REBIRTH_CONDITIONS.minCampaignStage),
+    achievementChainCount: overrides?.achievementChainCount ?? (() => REBIRTH_CONDITIONS.requiredAchievementChainCount),
+    onReset: overrides?.onReset,
+  };
+}
+
+/** 冷却时间常量 */
+const COOLDOWN_MS = 72 * 60 * 60 * 1000;
+
+/** 创建带时间注入的系统（支持模拟多次转生） */
+function createReadySystemWithTime(): { sys: RebirthSystem; resetFn: ReturnType<typeof vi.fn>; advanceTime: (ms: number) => void } {
+  let currentTime = Date.now();
+  const sys = createSystem();
+  const resetFn = vi.fn();
+  sys.setCallbacks({
+    castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
+    heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
+    totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
+    prestigeLevel: () => REBIRTH_CONDITIONS.minPrestigeLevel,
+    onReset: resetFn,
+    campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+    achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
+    nowProvider: () => currentTime,
+  });
+  sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
+  return {
+    sys,
+    resetFn,
+    advanceTime: (ms: number) => { currentTime += ms; },
+  };
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -77,11 +121,14 @@ describe('转生解锁条件 — P0 完整覆盖', () => {
   // ─────────────────────────────────────────
 
   describe('A. 转生条件常量验证', () => {
-    test('REBIRTH_CONDITIONS 包含4个必要字段', () => {
+    test('REBIRTH_CONDITIONS 包含7个必要字段', () => {
       expect(REBIRTH_CONDITIONS).toHaveProperty('minPrestigeLevel');
       expect(REBIRTH_CONDITIONS).toHaveProperty('minCastleLevel');
       expect(REBIRTH_CONDITIONS).toHaveProperty('minHeroCount');
       expect(REBIRTH_CONDITIONS).toHaveProperty('minTotalPower');
+      expect(REBIRTH_CONDITIONS).toHaveProperty('minCampaignStage');
+      expect(REBIRTH_CONDITIONS).toHaveProperty('requiredAchievementChainId');
+      expect(REBIRTH_CONDITIONS).toHaveProperty('requiredAchievementChainCount');
     });
 
     test('声望等级门槛 > 1（非初始值）', () => {
@@ -136,11 +183,7 @@ describe('转生解锁条件 — P0 完整覆盖', () => {
     describe('B1. 声望等级条件', () => {
       test('声望等级 = 阈值 - 1 → 不满足', () => {
         const sys = createSystem();
-        sys.setCallbacks({
-          castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
-          heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
-          totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
-        });
+        sys.setCallbacks(metCallbacks());
         sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel - 1);
         const check = sys.checkRebirthConditions();
         expect(check.conditions.prestigeLevel.met).toBe(false);
@@ -149,11 +192,7 @@ describe('转生解锁条件 — P0 完整覆盖', () => {
 
       test('声望等级 = 阈值 → 满足', () => {
         const sys = createSystem();
-        sys.setCallbacks({
-          castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
-          heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
-          totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
-        });
+        sys.setCallbacks(metCallbacks());
         sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
         const check = sys.checkRebirthConditions();
         expect(check.conditions.prestigeLevel.met).toBe(true);
@@ -161,11 +200,7 @@ describe('转生解锁条件 — P0 完整覆盖', () => {
 
       test('声望等级 = 阈值 + 10 → 满足', () => {
         const sys = createSystem();
-        sys.setCallbacks({
-          castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
-          heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
-          totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
-        });
+        sys.setCallbacks(metCallbacks());
         sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel + 10);
         const check = sys.checkRebirthConditions();
         expect(check.conditions.prestigeLevel.met).toBe(true);
@@ -174,11 +209,7 @@ describe('转生解锁条件 — P0 完整覆盖', () => {
 
       test('声望等级 = 1（初始值）→ 不满足', () => {
         const sys = createSystem();
-        sys.setCallbacks({
-          castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
-          heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
-          totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
-        });
+        sys.setCallbacks(metCallbacks());
         sys.updatePrestigeLevel(1);
         const check = sys.checkRebirthConditions();
         expect(check.conditions.prestigeLevel.met).toBe(false);
@@ -186,11 +217,7 @@ describe('转生解锁条件 — P0 完整覆盖', () => {
 
       test('声望等级 = 0 → 不满足', () => {
         const sys = createSystem();
-        sys.setCallbacks({
-          castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
-          heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
-          totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
-        });
+        sys.setCallbacks(metCallbacks());
         sys.updatePrestigeLevel(0);
         const check = sys.checkRebirthConditions();
         expect(check.conditions.prestigeLevel.met).toBe(false);
@@ -231,6 +258,8 @@ describe('转生解锁条件 — P0 完整覆盖', () => {
         sys.setCallbacks({
           heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
           totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
+          campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+          achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
         });
         sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
         const check = sys.checkRebirthConditions();
@@ -378,13 +407,14 @@ describe('转生解锁条件 — P0 完整覆盖', () => {
       expect(unmet).toContain('heroCount');
     });
 
-    test('全部不满足 → canRebirth = false，4项全未满足', () => {
+    test('全部不满足 → canRebirth = false，多条件未满足', () => {
       const sys = createSystem();
       // 默认状态：声望1，其余回调未设置返回0
       const check = sys.checkRebirthConditions();
       expect(check.canRebirth).toBe(false);
-      const unmet = Object.entries(check.conditions).filter(([, v]) => !v.met).map(([k]) => k);
-      expect(unmet).toHaveLength(4);
+      // 声望、主城、武将、战力、通关进度、成就链 都不满足（冷却首次满足）
+      const unmet = Object.entries(check.conditions).filter(([, v]) => typeof v === 'object' && 'met' in v && !v.met).map(([k]) => k);
+      expect(unmet).toHaveLength(6);
     });
   });
 
@@ -392,30 +422,56 @@ describe('转生解锁条件 — P0 完整覆盖', () => {
   // D. PRD 6 项条件 vs 引擎实现差距
   // ─────────────────────────────────────────
 
-  describe('D. PRD 6项条件 vs 引擎实现（未实现项标记 TODO）', () => {
+  describe('D. PRD 6项条件 vs 引擎实现（已全部实现）', () => {
 
-    test.todo('条件5: 通关进度 ≥ 第4阶段"赤壁之战" — 引擎未实现 campaignProgress 条件');
-    test.todo('条件6: 成就链"初露锋芒"5个子成就 — 引擎未实现 achievementChain 条件');
-    test.todo('条件7: 转生冷却 ≥ 72小时 — 引擎未实现 cooldown 条件');
+    test('条件5: 通关进度 ≥ 第4阶段 — 已实现', () => {
+      const sys = createSystem();
+      const check = sys.checkRebirthConditions();
+      expect(check.conditions).toHaveProperty('campaignProgress');
+      expect(check.conditions.campaignProgress.required).toBe(REBIRTH_CONDITIONS.minCampaignStage);
+      expect(check.conditions.campaignProgress.current).toBe(0);
+      expect(check.conditions.campaignProgress.met).toBe(false);
+    });
 
-    test('引擎当前仅实现4项条件（声望/主城/武将/战力）', () => {
-      // 验证 checkRebirthConditions 返回4个条件
+    test('条件6: 成就链"初露锋芒" — 已实现', () => {
+      const sys = createSystem();
+      const check = sys.checkRebirthConditions();
+      expect(check.conditions).toHaveProperty('achievementChain');
+      expect(check.conditions.achievementChain.chainId).toBe(REBIRTH_CONDITIONS.requiredAchievementChainId);
+      expect(check.conditions.achievementChain.required).toBe(REBIRTH_CONDITIONS.requiredAchievementChainCount);
+      expect(check.conditions.achievementChain.current).toBe(0);
+      expect(check.conditions.achievementChain.met).toBe(false);
+    });
+
+    test('条件7: 转生冷却 ≥ 72小时 — 已实现', () => {
+      const sys = createSystem();
+      const check = sys.checkRebirthConditions();
+      expect(check.conditions).toHaveProperty('cooldown');
+      // 首次转生无冷却限制
+      expect(check.conditions.cooldown.met).toBe(true);
+      expect(check.conditions.cooldown.description).toContain('首次');
+    });
+
+    test('引擎当前实现7项条件（声望/主城/武将/战力/通关进度/成就链/冷却）', () => {
+      // 验证 checkRebirthConditions 返回7个条件
       const sys = createSystem();
       const check = sys.checkRebirthConditions();
       const conditionKeys = Object.keys(check.conditions);
-      expect(conditionKeys).toHaveLength(4);
+      expect(conditionKeys).toHaveLength(7);
       expect(conditionKeys).toContain('prestigeLevel');
       expect(conditionKeys).toContain('castleLevel');
       expect(conditionKeys).toContain('heroCount');
       expect(conditionKeys).toContain('totalPower');
+      expect(conditionKeys).toContain('campaignProgress');
+      expect(conditionKeys).toContain('achievementChain');
+      expect(conditionKeys).toContain('cooldown');
     });
 
-    test('PRD要求的2项额外条件（通关进度/成就链）不在当前条件中', () => {
+    test('通关进度和成就链条件已在 checkRebirthConditions 中', () => {
       const sys = createSystem();
       const check = sys.checkRebirthConditions();
-      // 确认缺失
-      expect(check.conditions).not.toHaveProperty('campaignProgress');
-      expect(check.conditions).not.toHaveProperty('achievementChain');
+      expect(check.conditions).toHaveProperty('campaignProgress');
+      expect(check.conditions).toHaveProperty('achievementChain');
     });
   });
 
@@ -483,12 +539,7 @@ describe('转生解锁条件 — P0 完整覆盖', () => {
       const emitSpy = vi.spyOn(deps.eventBus, 'emit');
       const sys = new RebirthSystem();
       sys.init(deps);
-      sys.setCallbacks({
-        castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
-        heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
-        totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
-        prestigeLevel: () => REBIRTH_CONDITIONS.minPrestigeLevel,
-      });
+      sys.setCallbacks(metCallbacks());
       sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
 
       sys.executeRebirth();
@@ -524,6 +575,8 @@ describe('转生解锁条件 — P0 完整覆盖', () => {
         castleLevel: () => 0, // 不满足
         heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
         totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
+        campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+        achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
         onReset: resetFn,
       });
       sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
@@ -568,40 +621,47 @@ describe('转生解锁条件 — P0 完整覆盖', () => {
 
   describe('G. 多次转生', () => {
     test('连续转生2次 → rebirthCount = 2', () => {
-      const { sys } = createReadySystem();
+      const { sys, advanceTime } = createReadySystemWithTime();
       sys.executeRebirth();
+      advanceTime(COOLDOWN_MS + 1);
       sys.executeRebirth();
       expect(sys.getState().rebirthCount).toBe(2);
     });
 
     test('连续转生 → 倍率递增', () => {
-      const { sys } = createReadySystem();
+      const { sys, advanceTime } = createReadySystemWithTime();
       const mult1 = sys.executeRebirth().multiplier!;
+      advanceTime(COOLDOWN_MS + 1);
       const mult2 = sys.executeRebirth().multiplier!;
       expect(mult2).toBeGreaterThan(mult1);
     });
 
     test('连续转生 → 记录数累加', () => {
-      const { sys } = createReadySystem();
+      const { sys, advanceTime } = createReadySystemWithTime();
       sys.executeRebirth();
+      advanceTime(COOLDOWN_MS + 1);
       sys.executeRebirth();
+      advanceTime(COOLDOWN_MS + 1);
       sys.executeRebirth();
       expect(sys.getRebirthRecords()).toHaveLength(3);
     });
 
     test('每次转生 resetCallback 都被调用', () => {
-      const { sys, resetFn } = createReadySystem();
+      const { sys, resetFn, advanceTime } = createReadySystemWithTime();
       sys.executeRebirth();
+      advanceTime(COOLDOWN_MS + 1);
       sys.executeRebirth();
+      advanceTime(COOLDOWN_MS + 1);
       sys.executeRebirth();
       expect(resetFn).toHaveBeenCalledTimes(3);
     });
 
     test('第N次转生倍率 = calcRebirthMultiplier(N)', () => {
-      const { sys } = createReadySystem();
+      const { sys, advanceTime } = createReadySystemWithTime();
       for (let i = 1; i <= 5; i++) {
         const result = sys.executeRebirth();
         expect(result.multiplier).toBeCloseTo(calcRebirthMultiplier(i));
+        advanceTime(COOLDOWN_MS + 1);
       }
     });
 
@@ -701,12 +761,7 @@ describe('转生解锁条件 — P0 完整覆盖', () => {
       const deps = mockDeps();
       const sys = new RebirthSystem();
       sys.init(deps);
-      sys.setCallbacks({
-        castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
-        heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
-        totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
-        prestigeLevel: () => REBIRTH_CONDITIONS.minPrestigeLevel,
-      });
+      sys.setCallbacks(metCallbacks());
       sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
       sys.executeRebirth();
 
@@ -724,12 +779,7 @@ describe('转生解锁条件 — P0 完整覆盖', () => {
       const emitSpy = vi.spyOn(deps.eventBus, 'emit');
       const sys = new RebirthSystem();
       sys.init(deps);
-      sys.setCallbacks({
-        castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
-        heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
-        totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
-        prestigeLevel: () => REBIRTH_CONDITIONS.minPrestigeLevel,
-      });
+      sys.setCallbacks(metCallbacks());
       sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
       sys.executeRebirth();
 
@@ -747,7 +797,15 @@ describe('转生解锁条件 — P0 完整覆盖', () => {
       );
     });
 
-    test.todo('PRD: 转生冷却72小时 — 引擎未实现冷却检查');
+    test('PRD: 转生冷却72小时 — 已实现', () => {
+      const { sys } = createReadySystem();
+      const r1 = sys.executeRebirth();
+      expect(r1.success).toBe(true);
+      // 冷却期内第二次转生失败
+      const r2 = sys.executeRebirth();
+      expect(r2.success).toBe(false);
+      expect(r2.reason).toContain('cooldown');
+    });
   });
 
   // ─────────────────────────────────────────
@@ -777,7 +835,7 @@ describe('转生解锁条件 — P0 完整覆盖', () => {
     });
 
     test('解锁内容随转生次数逐步开放', () => {
-      const { sys } = createReadySystem();
+      const { sys, advanceTime } = createReadySystemWithTime();
       for (let i = 1; i <= 3; i++) {
         sys.executeRebirth();
         const unlocked = sys.getUnlockedContents();
@@ -787,6 +845,7 @@ describe('转生解锁条件 — P0 完整覆盖', () => {
         unlocked.forEach(c => {
           expect(c.requiredRebirthCount).toBeLessThanOrEqual(i);
         });
+        advanceTime(COOLDOWN_MS + 1);
       }
     });
 
@@ -865,9 +924,10 @@ describe('转生解锁条件 — P0 完整覆盖', () => {
     });
 
     test('多次转生后存档/读档数据一致', () => {
-      const { sys } = createReadySystem();
+      const { sys, advanceTime } = createReadySystemWithTime();
       for (let i = 0; i < 5; i++) {
         sys.executeRebirth();
+        advanceTime(COOLDOWN_MS + 1);
       }
       const state = sys.getState();
 
@@ -922,6 +982,8 @@ describe('转生解锁条件 — P0 完整覆盖', () => {
         castleLevel: () => dynamicCastle,
         heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
         totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
+        campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+        achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
       });
       sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
 
@@ -935,11 +997,7 @@ describe('转生解锁条件 — P0 完整覆盖', () => {
 
     test('updatePrestigeLevel 实时生效', () => {
       const sys = createSystem();
-      sys.setCallbacks({
-        castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
-        heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
-        totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
-      });
+      sys.setCallbacks(metCallbacks());
 
       sys.updatePrestigeLevel(1);
       expect(sys.checkRebirthConditions().conditions.prestigeLevel.met).toBe(false);
@@ -972,23 +1030,46 @@ describe('转生解锁条件 — P0 完整覆盖', () => {
     });
 
     test('PRD 转生次数上限 20 vs 引擎 — 引擎未实现', () => {
-      const { sys } = createReadySystem();
-      for (let i = 0; i < 21; i++) sys.executeRebirth();
+      const { sys, advanceTime } = createReadySystemWithTime();
+      for (let i = 0; i < 21; i++) {
+        sys.executeRebirth();
+        advanceTime(COOLDOWN_MS + 1);
+      }
       // 引擎无上限检查，当前允许超过20次
       expect(sys.getState().rebirthCount).toBe(21);
     });
 
-    test('PRD 转生冷却72小时 — 引擎未实现', () => {
+    test('PRD 转生冷却72小时 — 已实现', () => {
       const { sys } = createReadySystem();
       const r1 = sys.executeRebirth();
-      const r2 = sys.executeRebirth();
       expect(r1.success).toBe(true);
-      expect(r2.success).toBe(true);
+      // 冷却期内第二次转生应失败
+      const r2 = sys.executeRebirth();
+      expect(r2.success).toBe(false);
+      expect(r2.reason).toContain('cooldown');
     });
 
-    test.todo('PRD: 通关进度条件 — 待引擎实现 campaignProgress 后补充');
-    test.todo('PRD: 成就链条件 — 待引擎实现 achievementChain 后补充');
-    test.todo('PRD: 转生冷却72小时 — 待引擎实现 cooldown 后补充');
+    test('PRD: 通关进度条件 — 已实现', () => {
+      const sys = createSystem();
+      const check = sys.checkRebirthConditions();
+      expect(check.conditions).toHaveProperty('campaignProgress');
+      expect(check.conditions.campaignProgress.required).toBe(REBIRTH_CONDITIONS.minCampaignStage);
+    });
+
+    test('PRD: 成就链条件 — 已实现', () => {
+      const sys = createSystem();
+      const check = sys.checkRebirthConditions();
+      expect(check.conditions).toHaveProperty('achievementChain');
+      expect(check.conditions.achievementChain.chainId).toBe(REBIRTH_CONDITIONS.requiredAchievementChainId);
+    });
+
+    test('PRD: 转生冷却72小时 — 已实现', () => {
+      const sys = createSystem();
+      const check = sys.checkRebirthConditions();
+      expect(check.conditions).toHaveProperty('cooldown');
+      // 首次转生无冷却限制
+      expect(check.conditions.cooldown.met).toBe(true);
+    });
     test.todo('PRD: 转生次数上限20 — 待引擎实现 maxRebirthCount 后补充');
     test.todo('PRD: 武将等级衰减50% — 待引擎实现衰减逻辑后补充');
     test.todo('PRD: 天命保留30% — 待引擎实现天命衰减后补充');

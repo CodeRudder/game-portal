@@ -9,7 +9,7 @@
  *
  * 验证策略：
  *   1. 转生记录中包含 timestamp，可用于冷却计算
- *   2. 引擎当前未实现冷却检查，标记 TODO
+ *   2. 引擎已实现冷却检查（checkRebirthConditions 含 cooldown 条件）
  *   3. 验证转生记录 timestamp 精度
  *   4. 验证多次转生时间戳递增
  *   5. 验证 getRebirthRecords 提供足够信息供上层实现冷却
@@ -65,9 +65,38 @@ function createReadySystem(): {
     totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
     prestigeLevel: () => REBIRTH_CONDITIONS.minPrestigeLevel,
     onReset: resetFn,
+    campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+    achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
   });
   sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
   return { sys, resetFn };
+}
+
+/** 创建带时间注入的系统（支持模拟冷却时间流逝） */
+function createReadySystemWithTime(): {
+  sys: RebirthSystem;
+  resetFn: ReturnType<typeof vi.fn>;
+  advanceTime: (ms: number) => void;
+} {
+  let currentTime = Date.now();
+  const sys = createSystem();
+  const resetFn = vi.fn();
+  sys.setCallbacks({
+    castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
+    heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
+    totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
+    prestigeLevel: () => REBIRTH_CONDITIONS.minPrestigeLevel,
+    onReset: resetFn,
+    campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+    achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
+    nowProvider: () => currentTime,
+  });
+  sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
+  return {
+    sys,
+    resetFn,
+    advanceTime: (ms: number) => { currentTime += ms; },
+  };
 }
 
 /** 冷却常量（PRD要求72小时） */
@@ -110,10 +139,11 @@ describe('P1 — 转生冷却72小时', () => {
     });
 
     test('多次转生时间戳严格递增', () => {
-      const { sys } = createReadySystem();
+      const { sys, advanceTime } = createReadySystemWithTime();
       sys.executeRebirth();
-      // 模拟时间间隔（至少1ms）
+      advanceTime(COOLDOWN_MS + 1);
       sys.executeRebirth();
+      advanceTime(COOLDOWN_MS + 1);
       sys.executeRebirth();
 
       const records = sys.getRebirthRecords();
@@ -138,29 +168,41 @@ describe('P1 — 转生冷却72小时', () => {
   });
 
   // ─────────────────────────────────────────
-  // B. 冷却检查 — 引擎未实现（标记 TODO）
+  // B. 冷却检查 — 引擎已实现
   // ─────────────────────────────────────────
 
-  describe('B. 冷却检查 — 引擎未实现', () => {
-    test('引擎当前无冷却检查：连续转生可立即执行', () => {
+  describe('B. 冷却检查 — 引擎已实现', () => {
+    test('转生后72小时内不可再次转生', () => {
       const { sys } = createReadySystem();
       const r1 = sys.executeRebirth();
-      const r2 = sys.executeRebirth();
-      // 引擎未实现冷却，两次都成功
       expect(r1.success).toBe(true);
-      expect(r2.success).toBe(true);
-      expect(sys.getState().rebirthCount).toBe(2);
+      // 冷却期内第二次转生应失败
+      const r2 = sys.executeRebirth();
+      expect(r2.success).toBe(false);
+      expect(r2.reason).toContain('cooldown');
+      expect(sys.getState().rebirthCount).toBe(1);
     });
 
-    test.todo('PRD: 转生后72小时内不可再次转生 — 引擎 checkRebirthConditions 未包含冷却检查');
-    test.todo('PRD: 冷却期间 executeRebirth 应返回失败并提示剩余冷却时间');
-    test.todo('PRD: 首次转生无冷却限制');
+    test('冷却期间 executeRebirth 返回失败并提示剩余冷却时间', () => {
+      const { sys } = createReadySystem();
+      sys.executeRebirth();
+      const r2 = sys.executeRebirth();
+      expect(r2.success).toBe(false);
+      expect(r2.reason).toContain('cooldown');
+    });
 
-    test('转生记录提供足够信息供上层实现冷却', () => {
+    test('首次转生无冷却限制', () => {
+      const { sys } = createReadySystem();
+      // 首次转生（rebirthCount=0），冷却条件自动满足
+      const check = sys.checkRebirthConditions();
+      expect(check.conditions.cooldown.met).toBe(true);
+      expect(check.conditions.cooldown.description).toContain('首次');
+    });
+
+    test('转生记录提供足够信息供冷却计算', () => {
       const { sys } = createReadySystem();
       sys.executeRebirth();
       const records = sys.getRebirthRecords();
-      // 上层可通过最后一条记录的 timestamp 计算冷却
       expect(records).toHaveLength(1);
       expect(records[0].timestamp).toBeTypeOf('number');
       expect(records[0].rebirthCount).toBe(1);
@@ -340,9 +382,11 @@ describe('P1 — 转生冷却72小时', () => {
     });
 
     test('多次转生：冷却基于最后一次转生时间', () => {
-      const { sys } = createReadySystem();
+      const { sys, advanceTime } = createReadySystemWithTime();
       sys.executeRebirth();
+      advanceTime(COOLDOWN_MS + 1);
       sys.executeRebirth();
+      advanceTime(COOLDOWN_MS + 1);
       sys.executeRebirth();
 
       const records = sys.getRebirthRecords();
@@ -358,20 +402,43 @@ describe('P1 — 转生冷却72小时', () => {
 
   describe('F. 冷却与转生条件组合', () => {
     test('条件满足但冷却未到期 → 不可转生（PRD要求）', () => {
-      // PRD要求：所有条件满足 + 冷却到期 → 才可转生
-      // 当前引擎不检查冷却，所以条件满足即可转生
       const { sys } = createReadySystem();
       const r1 = sys.executeRebirth();
       expect(r1.success).toBe(true);
-      // 立即再次转生（引擎无冷却检查）
+      // 冷却期内再次转生
       const r2 = sys.executeRebirth();
-      // TODO: 冷却实现后应改为 false
-      expect(r2.success).toBe(true);
+      expect(r2.success).toBe(false);
+      expect(r2.reason).toContain('cooldown');
     });
 
-    test.todo('PRD: 冷却到期但条件不满足 → 不可转生');
-    test.todo('PRD: 冷却到期且条件满足 → 可转生');
-    test.todo('PRD: 首次转生无冷却限制（无上次转生记录）');
+    test('冷却到期但条件不满足 → 不可转生', () => {
+      const { sys, advanceTime } = createReadySystemWithTime();
+      sys.executeRebirth();
+      // 推进时间超过冷却
+      advanceTime(COOLDOWN_MS + 1);
+      // 但不满足其他条件（如降低声望等级）
+      sys.updatePrestigeLevel(1);
+      const check = sys.checkRebirthConditions();
+      expect(check.canRebirth).toBe(false);
+      expect(check.conditions.cooldown.met).toBe(true);
+      expect(check.conditions.prestigeLevel.met).toBe(false);
+    });
+
+    test('冷却到期且条件满足 → 可转生', () => {
+      const { sys, advanceTime } = createReadySystemWithTime();
+      sys.executeRebirth();
+      advanceTime(COOLDOWN_MS + 1);
+      const r2 = sys.executeRebirth();
+      expect(r2.success).toBe(true);
+      expect(r2.newCount).toBe(2);
+    });
+
+    test('首次转生无冷却限制（无上次转生记录）', () => {
+      const { sys } = createReadySystem();
+      const check = sys.checkRebirthConditions();
+      expect(check.conditions.cooldown.met).toBe(true);
+      expect(check.conditions.cooldown.remainingMs).toBe(0);
+    });
   });
 
   // ─────────────────────────────────────────
@@ -418,37 +485,66 @@ describe('P1 — 转生冷却72小时', () => {
   // H. PRD 差距汇总 — 转生冷却
   // ─────────────────────────────────────────
 
-  describe('H. PRD 差距汇总 — 转生冷却', () => {
-    test('引擎 RebirthSystem 无冷却相关 API', () => {
+  describe('H. PRD 差距汇总 — 转生冷却已实现', () => {
+    test('引擎 RebirthSystem 已有冷却相关 API', () => {
       const sys = createSystem();
-      // 检查不存在冷却相关方法
-      expect(typeof (sys as any).getCooldownRemaining).toBe('undefined');
-      expect(typeof (sys as any).isCooldownActive).toBe('undefined');
-      expect(typeof (sys as any).canRebirthWithCooldown).toBe('undefined');
+      expect(typeof (sys as any).getCooldownRemainingMs).toBe('function');
+      expect(typeof (sys as any).isCooldownActive).toBe('function');
     });
 
-    test('转生记录提供 timestamp 可供上层计算冷却', () => {
+    test('转生记录提供 timestamp 可供冷却计算', () => {
       const { sys } = createReadySystem();
       sys.executeRebirth();
       const records = sys.getRebirthRecords();
       expect(records[0].timestamp).toBeTypeOf('number');
-      // 上层可用: Date.now() - records[records.length-1].timestamp < COOLDOWN_MS
     });
 
-    test('PRD 冷却72小时 vs 引擎无冷却 — 差距明确', () => {
-      // PRD: 转生冷却 ≥ 72小时（首次无限制）
-      // 引擎: 无冷却检查
+    test('PRD 冷却72小时 — 已实现', () => {
       const { sys } = createReadySystem();
       const r1 = sys.executeRebirth();
-      const r2 = sys.executeRebirth();
       expect(r1.success).toBe(true);
-      expect(r2.success).toBe(true);
-      // TODO: 冷却实现后 r2 应为 false
+      // 冷却期内第二次转生失败
+      const r2 = sys.executeRebirth();
+      expect(r2.success).toBe(false);
     });
 
-    test.todo('PRD: checkRebirthConditions 需增加 cooldown 条件');
-    test.todo('PRD: 冷却期间转生按钮禁用 — UI层实现，引擎需提供 API');
-    test.todo('PRD: 冷却时间精确到秒显示 — 引擎需提供 getCooldownRemaining()');
-    test.todo('PRD: 首次转生无冷却限制 — 引擎需判断 rebirthRecords 是否为空');
+    test('getCooldownRemainingMs 返回剩余冷却毫秒', () => {
+      const { sys } = createReadySystem();
+      sys.executeRebirth();
+      const remaining = sys.getCooldownRemainingMs();
+      expect(remaining).toBeGreaterThan(0);
+      expect(remaining).toBeLessThanOrEqual(COOLDOWN_MS);
+    });
+
+    test('isCooldownActive 在冷却期内返回 true', () => {
+      const { sys } = createReadySystem();
+      expect(sys.isCooldownActive()).toBe(false);
+      sys.executeRebirth();
+      expect(sys.isCooldownActive()).toBe(true);
+    });
+
+    test('冷却到期后 isCooldownActive 返回 false', () => {
+      const { sys, advanceTime } = createReadySystemWithTime();
+      sys.executeRebirth();
+      expect(sys.isCooldownActive()).toBe(true);
+      advanceTime(COOLDOWN_MS + 1);
+      expect(sys.isCooldownActive()).toBe(false);
+    });
+
+    test('checkRebirthConditions 包含 cooldown 条件', () => {
+      const sys = createSystem();
+      const check = sys.checkRebirthConditions();
+      expect(check.conditions).toHaveProperty('cooldown');
+      expect(check.conditions.cooldown).toHaveProperty('met');
+      expect(check.conditions.cooldown).toHaveProperty('remainingMs');
+      expect(check.conditions.cooldown).toHaveProperty('description');
+    });
+
+    test('首次转生无冷却限制 — 引擎已判断 rebirthRecords 是否为空', () => {
+      const sys = createSystem();
+      const check = sys.checkRebirthConditions();
+      // 首次转生（rebirthCount=0），冷却条件自动满足
+      expect(check.conditions.cooldown.met).toBe(true);
+    });
   });
 });

@@ -16,11 +16,11 @@ import { vi } from 'vitest';
 
 import { TradeSystem } from '../TradeSystem';
 import type { TradeCurrencyOps } from '../TradeSystem';
+import type { ISystemDeps } from '../../core/types';
 import {
   CITY_IDS, CITY_LABELS, PROSPERITY_LABELS,
 } from '../../../core/trade/trade.types';
 import {
-import type { ISystemDeps } from "../../core/types";
   TRADE_ROUTE_DEFS, TRADE_GOODS_DEFS, PRICE_REFRESH_INTERVAL,
   PROSPERITY_TIERS, INITIAL_PROSPERITY, PROSPERITY_GAIN_PER_TRADE,
   TRADE_EVENT_DEFS, TRADE_SAVE_VERSION,

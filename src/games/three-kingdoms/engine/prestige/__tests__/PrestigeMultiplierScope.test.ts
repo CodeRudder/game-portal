@@ -54,6 +54,7 @@ function createRebirthedSystem(rebirthTimes: number = 1): {
   sys: RebirthSystem;
   resetFn: ReturnType<typeof vi.fn>;
 } {
+  let currentTime = Date.now();
   const sys = createSystem();
   const resetFn = vi.fn();
   sys.setCallbacks({
@@ -62,11 +63,16 @@ function createRebirthedSystem(rebirthTimes: number = 1): {
     totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
     prestigeLevel: () => REBIRTH_CONDITIONS.minPrestigeLevel,
     onReset: resetFn,
+    campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+    achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
+    nowProvider: () => currentTime,
   });
   sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
 
+  const COOLDOWN_MS = 72 * 60 * 60 * 1000;
   for (let i = 0; i < rebirthTimes; i++) {
     sys.executeRebirth();
+    currentTime += COOLDOWN_MS + 1; // 推进冷却时间
   }
 
   return { sys, resetFn };

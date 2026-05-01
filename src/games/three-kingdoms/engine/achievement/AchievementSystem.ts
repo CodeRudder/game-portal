@@ -108,9 +108,9 @@ export class AchievementSystem implements ISubsystem {
     };
   }
 
-  /** 获取维度统计 */
+  /** 获取维度统计（深拷贝，防止外部修改内部状态） */
   getDimensionStats(): Record<AchievementDimension, DimensionStats> {
-    return { ...this.state.dimensionStats };
+    return structuredClone(this.state.dimensionStats);
   }
 
   /** 获取总成就积分 */

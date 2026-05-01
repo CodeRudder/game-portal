@@ -51,9 +51,37 @@ function createReadySystem(): { sys: RebirthSystem; resetFn: ReturnType<typeof v
     totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
     prestigeLevel: () => REBIRTH_CONDITIONS.minPrestigeLevel,
     onReset: resetFn,
+    campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+    achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
   });
   sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
   return { sys, resetFn };
+}
+
+/** 冷却时间常量 */
+const COOLDOWN_MS = 72 * 60 * 60 * 1000;
+
+/** 创建带时间注入的系统（支持模拟多次转生） */
+function createReadySystemWithTime(): { sys: RebirthSystem; resetFn: ReturnType<typeof vi.fn>; advanceTime: (ms: number) => void } {
+  let currentTime = Date.now();
+  const sys = createSystem();
+  const resetFn = vi.fn();
+  sys.setCallbacks({
+    castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
+    heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
+    totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
+    prestigeLevel: () => REBIRTH_CONDITIONS.minPrestigeLevel,
+    onReset: resetFn,
+    campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+    achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
+    nowProvider: () => currentTime,
+  });
+  sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
+  return {
+    sys,
+    resetFn,
+    advanceTime: (ms: number) => { currentTime += ms; },
+  };
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -153,23 +181,30 @@ describe('RebirthSystem v16.0 传承系统深化', () => {
     });
 
     it('转生2次解锁专属科技路线', () => {
-      const { sys } = createReadySystem();
+      const { sys, advanceTime } = createReadySystemWithTime();
       sys.executeRebirth();
+      advanceTime(COOLDOWN_MS + 1);
       sys.executeRebirth();
       const unlocked = sys.getUnlockedContentsV16();
       expect(unlocked.some(c => c.unlockId === 'exclusive_tech')).toBe(true);
     });
 
     it('转生3次解锁神话武将招募池', () => {
-      const { sys } = createReadySystem();
-      for (let i = 0; i < 3; i++) sys.executeRebirth();
+      const { sys, advanceTime } = createReadySystemWithTime();
+      for (let i = 0; i < 3; i++) {
+        sys.executeRebirth();
+        advanceTime(COOLDOWN_MS + 1);
+      }
       const unlocked = sys.getUnlockedContentsV16();
       expect(unlocked.some(c => c.unlockId === 'mythic_hero_pool')).toBe(true);
     });
 
     it('转生5次解锁跨服竞技场', () => {
-      const { sys } = createReadySystem();
-      for (let i = 0; i < 5; i++) sys.executeRebirth();
+      const { sys, advanceTime } = createReadySystemWithTime();
+      for (let i = 0; i < 5; i++) {
+        sys.executeRebirth();
+        advanceTime(COOLDOWN_MS + 1);
+      }
       const unlocked = sys.getUnlockedContentsV16();
       expect(unlocked.some(c => c.unlockId === 'cross_server_arena')).toBe(true);
     });
