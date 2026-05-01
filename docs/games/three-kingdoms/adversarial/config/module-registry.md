@@ -23,7 +23,7 @@
 | pvp | engine/pvp/ | hero,battle | 4个(160用例) | 待进化 |
 | shop | engine/shop/ | resource,currency | 1个(54用例) | 待进化 |
 | prestige | engine/prestige/ | hero,resource | 4个(141用例) | 待进化 |
-| resource | engine/resource/ | building,tech | 3个(129用例) | 待进化 |
+| resource | engine/resource/ | building,tech | 4个(159用例) | R1完成(21 P0已修复) |
 | bond | engine/bond/ | hero | 1个(51用例) | 待进化 |
 | event | engine/event/ | 全局 | 1个(57用例) | 待进化 |
 | mail | engine/mail/ | 全局 | 0个(融入常规) | 待进化 |

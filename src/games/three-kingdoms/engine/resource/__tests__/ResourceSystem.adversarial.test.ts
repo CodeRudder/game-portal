@@ -257,12 +257,12 @@ describe('ResourceSystem 对抗式测试', () => {
     });
 
     it('consumeResource NaN防御', () => {
-      // NaN <= 0 is false, so it passes the amount<=0 check
-      // Then: current = 300, Number.isFinite(300) = true, 300 < NaN => false
-      // So it proceeds: resources.gold -= NaN => NaN
-      rs.consumeResource('gold', NaN);
-      expect(rs.getAmount('gold')).toBeNaN();
-      // ⚠️ 暴露P1缺陷：NaN消耗未防御，导致资源值变为NaN
+      // FIX-702/703: NaN amount 现在在入口处被 `!Number.isFinite(amount) || amount <= 0` 拦截
+      // 返回 0，资源值不变
+      const before = rs.getAmount('gold');
+      const result = rs.consumeResource('gold', NaN);
+      expect(result).toBe(0);
+      expect(rs.getAmount('gold')).toBe(before);
     });
 
     it('consumeResource undefined防御', () => {

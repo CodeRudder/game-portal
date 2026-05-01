@@ -47,6 +47,16 @@ export function calculateOfflineEarnings(
   productionRates: Readonly<ProductionRate>,
   bonuses?: Bonuses,
 ): OfflineEarnings {
+  // FIX-710: NaN seconds 防护
+  if (!Number.isFinite(offlineSeconds) || offlineSeconds <= 0) {
+    return {
+      offlineSeconds: offlineSeconds ?? 0,
+      earned: zeroResources(),
+      isCapped: false,
+      tierBreakdown: [],
+    };
+  }
+
   const capped = offlineSeconds > OFFLINE_MAX_SECONDS;
   const effectiveSeconds = Math.min(offlineSeconds, OFFLINE_MAX_SECONDS);
   const multiplier = calculateBonusMultiplier(bonuses);

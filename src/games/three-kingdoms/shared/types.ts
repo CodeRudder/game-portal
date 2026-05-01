@@ -312,6 +312,11 @@ export interface GameSaveData {
   offlineReward?: import('../engine/offline/offline.types').OfflineSaveData;
   /** 离线快照系统数据（可选，v9.0+） */
   offlineSnapshot?: import('../engine/offline/offline.types').OfflineSaveData;
+  // ── 铜钱/材料经济系统 (FIX-720/721: Resource R1 存档接入) ──
+  /** 铜钱经济系统数据（可选） */
+  copperEconomy?: import('../engine/resource/copper-economy-system').CopperEconomySaveData;
+  /** 材料经济系统数据（可选） */
+  materialEconomy?: import('../engine/resource/material-economy-system').MaterialEconomySaveData;
 }
 
 // ─────────────────────────────────────────────

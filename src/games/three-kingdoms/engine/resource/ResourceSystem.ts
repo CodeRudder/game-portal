@@ -118,14 +118,19 @@ export class ResourceSystem implements ISubsystem {
 
   /** 每帧更新资源产出。@param deltaMs 毫秒 @param bonuses 加成集合（可选） */
   tick(deltaMs: number, bonuses?: Bonuses): void {
+    // FIX-707: NaN deltaMs 防护
+    if (!Number.isFinite(deltaMs) || deltaMs <= 0) return;
+
     const deltaSec = deltaMs / 1000;
     const multiplier = calculateBonusMultiplier(bonuses);
 
     for (const type of RESOURCE_TYPES) {
       const rate = this.productionRates[type];
-      if (rate <= 0) continue;
+      if (!Number.isFinite(rate) || rate <= 0) continue;
 
       const gain = rate * deltaSec * multiplier;
+      // FIX-707: gain NaN 防护（multiplier 可能因 NaN bonus 变 NaN）
+      if (!Number.isFinite(gain) || gain <= 0) continue;
       this.addResource(type, gain);
     }
   }
@@ -135,7 +140,8 @@ export class ResourceSystem implements ISubsystem {
   /** 增加资源（受上限约束，自动截断）。
    *  RES-CAP-02: 当资源被截断时发出 resource:overflow 事件 */
   addResource(type: ResourceType, amount: number): number {
-    if (amount <= 0) return 0;
+    // FIX-701: NaN amount 防护（NaN <= 0 = false 绕过原守卫）
+    if (!Number.isFinite(amount) || amount <= 0) return 0;
 
     const cap = this.caps[type];
     const before = this.resources[type];
@@ -162,7 +168,8 @@ export class ResourceSystem implements ISubsystem {
 
   /** 消耗资源。@throws 资源不足时抛出错误 */
   consumeResource(type: ResourceType, amount: number): number {
-    if (amount <= 0) return 0;
+    // FIX-702/703: NaN amount 防护
+    if (!Number.isFinite(amount) || amount <= 0) return 0;
 
     const current = this.resources[type];
 
@@ -193,6 +200,8 @@ export class ResourceSystem implements ISubsystem {
    * 直接设置资源数量（用于加载存档等场景）
    */
   setResource(type: ResourceType, amount: number): void {
+    // FIX-718: NaN 防护（Math.max(0, NaN) = NaN）
+    if (!Number.isFinite(amount)) amount = 0;
     amount = Math.max(0, amount);
     const cap = this.caps[type];
     this.resources[type] = cap !== null ? Math.min(amount, cap) : amount;
@@ -208,9 +217,15 @@ export class ResourceSystem implements ISubsystem {
 
     for (const type of RESOURCE_TYPES) {
       const required = cost[type];
-      if (required === undefined || required <= 0) continue;
+      // FIX-705: NaN cost 值防护
+      if (required === undefined || !Number.isFinite(required) || required <= 0) continue;
 
       const current = this.resources[type];
+      // FIX-704: NaN 资源值防护（NaN < required = false 绕过检查）
+      if (!Number.isFinite(current)) {
+        shortages[type] = { required, current: 0 };
+        continue;
+      }
       // 粮草需要扣除保留量
       const available =
         type === 'grain'
@@ -243,7 +258,8 @@ export class ResourceSystem implements ISubsystem {
     // 全部扣除
     for (const type of RESOURCE_TYPES) {
       const amount = cost[type];
-      if (amount !== undefined && amount > 0) {
+      // FIX-706: NaN amount 防护
+      if (amount !== undefined && Number.isFinite(amount) && amount > 0) {
         this.resources[type] -= amount;
       }
     }
@@ -274,6 +290,8 @@ export class ResourceSystem implements ISubsystem {
 
     // 累加各资源类型的产出值（已由 BuildingSystem 从 levelTable 查表计算）
     for (const [resourceType, rate] of Object.entries(buildingProductions)) {
+      // FIX-709: NaN rate 防护
+      if (!Number.isFinite(rate)) continue;
       if (resourceType === 'grain' || resourceType === 'gold' ||
           resourceType === 'troops' || resourceType === 'mandate' ||
           resourceType === 'techPoint' || resourceType === 'recruitToken') {
@@ -291,7 +309,8 @@ export class ResourceSystem implements ISubsystem {
    * 直接设置产出速率（用于测试或特殊场景）
    */
   setProductionRate(type: ResourceType, rate: number): void {
-    this.productionRates[type] = rate;
+    // FIX-709: NaN rate 防护
+    this.productionRates[type] = Number.isFinite(rate) ? rate : 0;
   }
 
   // ── 6. 上限管理 ──
@@ -374,8 +393,17 @@ export class ResourceSystem implements ISubsystem {
 
   /** 序列化为存档数据 */
   serialize(): ResourceSaveData {
+    // FIX-719: 序列化前修复 NaN 资源值（JSON.stringify(NaN) → null → 反序列化变 0）
+    const safeResources = cloneResources(this.resources);
+    for (const type of RESOURCE_TYPES) {
+      if (!Number.isFinite(safeResources[type])) {
+        gameLog.warn(`ResourceSystem.serialize: ${type} 值为 NaN/Infinity，已修复为 0`);
+        safeResources[type] = 0;
+      }
+    }
+
     return {
-      resources: cloneResources(this.resources),
+      resources: safeResources,
       lastSaveTime: Date.now(),
       productionRates: { ...this.productionRates },
       caps: { ...this.caps },
@@ -385,6 +413,13 @@ export class ResourceSystem implements ISubsystem {
 
   /** 从存档数据恢复 */
   deserialize(data: ResourceSaveData): void {
+    // FIX-717: null/undefined 防护
+    if (!data) {
+      gameLog.warn('ResourceSystem.deserialize: 存档数据为空，使用默认值');
+      this.reset();
+      return;
+    }
+
     // 版本检查
     if (data.version !== SAVE_VERSION) {
       gameLog.warn(

@@ -127,7 +127,8 @@ export class CopperEconomySystem implements ISubsystem {
   // ── 1. 被动产出 ──
   tick(deltaSeconds: number): void {
     this.checkDailyReset();
-    if (!this.economyDeps || deltaSeconds <= 0) return;
+    // FIX-712: NaN deltaSeconds 防护
+    if (!this.economyDeps || !Number.isFinite(deltaSeconds) || deltaSeconds <= 0) return;
     const earned = PASSIVE_COPPER_RATE * deltaSeconds;
     const actual = this.economyDeps.addGold(earned);
     this.dailyCopperProduced += actual;
@@ -146,7 +147,8 @@ export class CopperEconomySystem implements ISubsystem {
 
   // ── 3. 关卡通关 ──
   claimStageClearCopper(stageLevel: number): number {
-    if (!this.economyDeps || stageLevel < 1) return 0;
+    // FIX-713: NaN level 防护
+    if (!this.economyDeps || !Number.isFinite(stageLevel) || stageLevel < 1) return 0;
     const reward = STAGE_CLEAR_BASE_COPPER + stageLevel * STAGE_CLEAR_COPPER_PER_LEVEL;
     const actual = this.economyDeps.addGold(reward);
     this.dailyCopperProduced += actual; this.totalCopperProduced += actual;
@@ -156,7 +158,8 @@ export class CopperEconomySystem implements ISubsystem {
   // ── 4. 商店购买 ──
   purchaseItem(itemId: string, count: number): boolean {
     this.checkDailyReset();
-    if (!this.economyDeps || count <= 0) return false;
+    // FIX-714: NaN count 防护
+    if (!this.economyDeps || !Number.isFinite(count) || count <= 0) return false;
     const item = SHOP_ITEMS[itemId];
     if (!item) return false;
     if (item.dailyLimit !== null) {
@@ -174,7 +177,8 @@ export class CopperEconomySystem implements ISubsystem {
 
   // ── 5. 升级消耗 ──
   spendOnLevelUp(heroId: string, level: number): number {
-    if (!this.economyDeps || !heroId || level < 1) return 0;
+    // FIX-715: NaN level 防护
+    if (!this.economyDeps || !heroId || !Number.isFinite(level) || level < 1) return 0;
     return this.trySpend(lookupLevelUpGold(level), 'levelUp');
   }
 
@@ -229,6 +233,11 @@ export class CopperEconomySystem implements ISubsystem {
   }
 
   deserialize(data: CopperEconomySaveData): void {
+    // FIX-717: null/undefined 防护
+    if (!data) {
+      this.reset();
+      return;
+    }
     this.dailyTaskClaimed = data.dailyTaskClaimed ?? false;
     this.dailyShopPurchases = { ...(data.dailyShopPurchases ?? {}) };
     this.lastResetDate = data.lastResetDate ?? '';

@@ -139,6 +139,9 @@ export interface SaveContext {
   // ── 离线收益系统 v9.0+ (FIX-816: R1 存档接入) ──
   readonly offlineReward?: import('./offline/OfflineRewardSystem').OfflineRewardSystem;
   readonly offlineSnapshot?: import('./offline/OfflineSnapshotSystem').OfflineSnapshotSystem;
+  // ── 铜钱/材料经济系统 (FIX-720/721: Resource R1 存档接入) ──
+  readonly copperEconomy?: import('./resource/copper-economy-system').CopperEconomySystem;
+  readonly materialEconomy?: import('./resource/material-economy-system').MaterialEconomySystem;
 }
 
 // ─────────────────────────────────────────────
@@ -225,6 +228,9 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     // ── 离线收益系统 v9.0 (FIX-816: R1 存档接入) ──
     offlineReward: ctx.offlineReward?.serialize(),
     offlineSnapshot: ctx.offlineSnapshot?.getSaveData(),
+    // ── 铜钱/材料经济系统 (FIX-720/721: Resource R1 存档接入) ──
+    copperEconomy: ctx.copperEconomy?.serialize(),
+    materialEconomy: ctx.materialEconomy?.serialize(),
   };
 }
 
@@ -274,6 +280,9 @@ export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameSt
   // ── 离线收益系统 v9.0 (FIX-816: R1 存档接入) ──
   if (data.offlineReward) subsystems.offlineReward = data.offlineReward;
   if (data.offlineSnapshot) subsystems.offlineSnapshot = data.offlineSnapshot;
+  // ── 铜钱/材料经济系统 (FIX-720/721: Resource R1 存档接入) ──
+  if (data.copperEconomy) subsystems.copperEconomy = data.copperEconomy;
+  if (data.materialEconomy) subsystems.materialEconomy = data.materialEconomy;
 
   return {
     version: String(data.version),
@@ -335,6 +344,9 @@ export function fromIGameState(state: IGameState): GameSaveData {
     // ── 离线收益系统 v9.0 (FIX-816: R1 存档接入) ──
     offlineReward: s.offlineReward as import('./offline/offline.types').OfflineSaveData | undefined,
     offlineSnapshot: s.offlineSnapshot as import('./offline/offline.types').OfflineSaveData | undefined,
+    // ── 铜钱/材料经济系统 (FIX-720/721: Resource R1 存档接入) ──
+    copperEconomy: s.copperEconomy as import('./resource/copper-economy-system').CopperEconomySaveData | undefined,
+    materialEconomy: s.materialEconomy as import('./resource/material-economy-system').MaterialEconomySaveData | undefined,
   };
 }
 
@@ -733,6 +745,20 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
     }
   } else {
     gameLog.info('[Save] v9.0 存档迁移：无离线快照数据，自动初始化默认状态');
+  }
+
+  // ── 铜钱经济系统 (FIX-720: Resource R1 存档接入) ──
+  if (data.copperEconomy && ctx.copperEconomy) {
+    ctx.copperEconomy.deserialize(data.copperEconomy);
+  } else {
+    gameLog.info('[Save] 铜钱经济存档迁移：无铜钱经济数据，自动初始化默认状态');
+  }
+
+  // ── 材料经济系统 (FIX-721: Resource R1 存档接入) ──
+  if (data.materialEconomy && ctx.materialEconomy) {
+    ctx.materialEconomy.deserialize(data.materialEconomy);
+  } else {
+    gameLog.info('[Save] 材料经济存档迁移：无材料经济数据，自动初始化默认状态');
   }
 
   syncBuildingToResource({

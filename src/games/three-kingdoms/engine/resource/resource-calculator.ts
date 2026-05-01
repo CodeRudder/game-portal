@@ -56,6 +56,8 @@ export function calculateBonusMultiplier(bonuses?: Bonuses): number {
   let multiplier = 1;
   for (const value of Object.values(bonuses)) {
     if (value !== undefined) {
+      // FIX-708: NaN bonus 防护
+      if (!Number.isFinite(value)) continue;
       multiplier *= (1 + value);
     }
   }

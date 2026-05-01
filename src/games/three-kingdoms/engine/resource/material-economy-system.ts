@@ -175,7 +175,8 @@ export class MaterialEconomySystem implements ISubsystem {
    */
   buyBreakthroughStone(count: number): boolean {
     this.checkDailyReset();
-    if (!this.materialDeps || count <= 0) return false;
+    // FIX-716: NaN count 防护
+    if (!this.materialDeps || !Number.isFinite(count) || count <= 0) return false;
     // 检查日限购
     if (this.dailyBreakstonePurchased + count > DAILY_BUY_LIMIT) return false;
     // 检查铜钱
@@ -348,6 +349,11 @@ export class MaterialEconomySystem implements ISubsystem {
   }
 
   deserialize(data: MaterialEconomySaveData): void {
+    // FIX-717: null/undefined 防护
+    if (!data) {
+      this.reset();
+      return;
+    }
     this.dailyBreakstonePurchased = data.dailyBreakstonePurchased ?? 0;
     this.dailySkillBookClaimed = data.dailySkillBookClaimed ?? false;
     this.dailyExpeditionCount = data.dailyExpeditionCount ?? 0;

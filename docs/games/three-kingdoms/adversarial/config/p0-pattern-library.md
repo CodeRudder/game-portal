@@ -1,9 +1,9 @@
 # P0缺陷模式库 — 三国霸业
 
-> 版本: v1.9 | 初始化: 2026-05-01
+> 版本: v2.0 | 初始化: 2026-05-01
 > 持续积累，每轮更新
 
-## 已验证的P0模式（23个模式）
+## 已验证的P0模式（24个模式）
 
 ### 模式1: null/undefined防护缺失
 - **出现频率**: 8次（19.0%）
@@ -156,3 +156,10 @@
   2. 消耗类操作采用"先验证后消费"模式（validate→generate→consume）
   3. 扩容/购买类操作添加资源预检步骤
 - **关联规则**: Builder规则#23（资源扣除必需验证）
+
+### 模式24: 经济子系统存档缺失
+- **出现频率**: 系统级（Resource R1发现，CopperEconomySystem + MaterialEconomySystem 未接入 engine-save）
+- **检查方法**: 对比每个子系统的 serialize/deserialize 方法与 engine-save.ts 中 buildSaveData/applySaveData 的引用，验证"六处同步"完整性
+- **典型案例**: FIX-720/721 CopperEconomySystem 和 MaterialEconomySystem 有完整的 serialize/deserialize 实现，但 engine-save.ts 中完全未引用，存档后数据丢失
+- **修复模式**: 在 GameSaveData 类型 + SaveContext 接口 + buildSaveData + toIGameState + fromIGameState + applySaveData 六处同步添加子系统
+- **关联规则**: Builder规则#14/15（保存/加载覆盖扫描、deserialize覆盖验证）
