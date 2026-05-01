@@ -93,6 +93,10 @@ export class ActivitySystem implements ISubsystem {
    * @returns 增加后的活跃度
    */
   addPoints(points: number): number {
+    // P0-002 FIX: NaN/负值防护
+    if (!Number.isFinite(points) || points <= 0) return this.state.currentPoints;
+    // 防御 currentPoints 已为 NaN
+    if (!Number.isFinite(this.state.currentPoints)) this.state.currentPoints = 0;
     this.state.currentPoints = Math.min(
       this.state.currentPoints + points,
       this.state.maxPoints,

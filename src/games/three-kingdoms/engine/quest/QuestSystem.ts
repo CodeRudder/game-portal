@@ -199,7 +199,10 @@ export class QuestSystem implements ISubsystem {
     const objective = instance.objectives.find((o) => o.id === objectiveId);
     if (!objective) return null;
 
+    // P0-010 FIX: NaN 防护 — 防御通过 deserialize 注入的 NaN currentCount
+    if (!Number.isFinite(progress)) return null;
     const safeProgress = Math.max(0, progress);
+    if (!Number.isFinite(objective.currentCount)) objective.currentCount = 0;
     objective.currentCount = Math.min(objective.currentCount + safeProgress, objective.targetCount);
 
     this.deps?.eventBus.emit('quest:progress', {
@@ -411,13 +414,19 @@ export class QuestSystem implements ISubsystem {
   // ─── 序列化 ────────────────────────────────
 
   serialize(): QuestSystemSaveData {
-    return serializeQuestState({
+    const data = serializeQuestState({
       activeQuests: this.activeQuests,
       completedQuestIds: this.completedQuestIds,
       activityState: this.getActivityState(),
       dailyRefreshDate: this.dailyRefreshDate,
       dailyQuestInstanceIds: this.dailyQuestInstanceIds,
+      trackedQuestIds: this.trackedQuestIds,
+      instanceCounter: this.instanceCounter,
     });
+    // P0-007 FIX: 补充周常任务数据（serializeQuestState 不包含这些字段）
+    data.weeklyQuestInstanceIds = [...this.weeklyQuestInstanceIds];
+    data.weeklyRefreshDate = this.weeklyRefreshDate;
+    return data;
   }
 
   deserialize(data: QuestSystemSaveData): void {
@@ -427,6 +436,21 @@ export class QuestSystem implements ISubsystem {
     this.activityState = result.activityState as typeof this.activityState;
     this.weeklyQuestInstanceIds = data.weeklyQuestInstanceIds ?? [];
     this.weeklyRefreshDate = data.weeklyRefreshDate ?? '';
+    this.trackedQuestIds = data.trackedQuestIds ?? [];
+    // 恢复 instanceCounter：优先使用存档值，否则从现有实例中推断
+    if (data.instanceCounter != null && data.instanceCounter > 0) {
+      this.instanceCounter = data.instanceCounter;
+    } else {
+      // 从 activeQuests 中的 instanceId 推断最大值
+      let maxNum = 0;
+      for (const inst of this.activeQuests.values()) {
+        const match = inst.instanceId.match(/^quest-inst-(\d+)$/);
+        if (match) {
+          maxNum = Math.max(maxNum, parseInt(match[1], 10));
+        }
+      }
+      this.instanceCounter = maxNum;
+    }
   }
 
   // ─── 内部方法 ──────────────────────────────

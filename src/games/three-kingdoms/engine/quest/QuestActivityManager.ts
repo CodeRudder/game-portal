@@ -62,6 +62,9 @@ export class QuestActivityManager {
 
   /** 增加活跃度（不超过最大值） */
   addPoints(points: number): void {
+    // P0-003 FIX: NaN/负值防护（P0-002 的对称函数）
+    if (!Number.isFinite(points) || points <= 0) return;
+    if (!Number.isFinite(this.state.currentPoints)) this.state.currentPoints = 0;
     this.state.currentPoints = Math.min(
       this.state.currentPoints + points,
       this.state.maxPoints,

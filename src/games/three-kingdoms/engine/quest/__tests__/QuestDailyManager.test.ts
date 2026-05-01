@@ -27,7 +27,7 @@ describe('QuestDailyManager', () => {
   function makeDeps() {
     const registered: QuestDef[] = [];
     return {
-      registerAndAccept: vi.fn((def: QuestDef): QuestInstance | null => {
+      registerAndAccept: jest.fn((def: QuestDef): QuestInstance | null => {
         registered.push(def);
         return {
           instanceId: `inst_${def.id}`,
@@ -37,8 +37,8 @@ describe('QuestDailyManager', () => {
           rewardClaimed: false,
         };
       }),
-      expireQuest: vi.fn(),
-      emitEvent: vi.fn(),
+      expireQuest: jest.fn(),
+      emitEvent: jest.fn(),
     };
   }
 

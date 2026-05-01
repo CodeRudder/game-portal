@@ -28,6 +28,8 @@ export function serializeQuestState(data: {
   activityState: import('../../core/quest').ActivityState;
   dailyRefreshDate: string;
   dailyQuestInstanceIds: string[];
+  trackedQuestIds?: string[];
+  instanceCounter?: number;
 }): QuestSystemSaveData {
   const getActiveQuests = () => Array.from(data.activeQuests.values());
   return {
@@ -36,6 +38,8 @@ export function serializeQuestState(data: {
     activityState: data.activityState,
     dailyRefreshDate: data.dailyRefreshDate,
     dailyQuestInstanceIds: [...data.dailyQuestInstanceIds],
+    trackedQuestIds: data.trackedQuestIds ? [...data.trackedQuestIds] : undefined,
+    instanceCounter: data.instanceCounter,
     version: QUEST_SAVE_VERSION,
   };
 }
@@ -56,6 +60,16 @@ export function deserializeQuestState(
 ): { dailyRefreshDate: string; dailyQuestInstanceIds: string[]; activityState: ActivityStateData } {
   activeQuests.clear();
   for (const inst of saveData.activeQuests ?? []) {
+    // P0-009 FIX: 验证实例完整性
+    if (!inst || !inst.instanceId || !inst.questDefId) continue;
+    // 防御 NaN currentCount
+    if (inst.objectives && Array.isArray(inst.objectives)) {
+      for (const obj of inst.objectives) {
+        if (obj && typeof obj.currentCount === 'number' && !Number.isFinite(obj.currentCount)) {
+          obj.currentCount = 0;
+        }
+      }
+    }
     activeQuests.set(inst.instanceId, inst);
   }
 

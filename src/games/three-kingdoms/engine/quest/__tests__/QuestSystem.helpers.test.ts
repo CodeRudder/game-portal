@@ -200,9 +200,9 @@ describe('QuestSystem.helpers', () => {
       activeQuests.set('i1', instance);
 
       const ctx = {
-        emit: vi.fn(),
-        completeQuest: vi.fn(),
-        checkQuestCompletion: vi.fn().mockReturnValue(false),
+        emit: jest.fn(),
+        completeQuest: jest.fn(),
+        checkQuestCompletion: jest.fn().mockReturnValue(false),
       };
 
       updateProgressByTypeLogic('kill', 3, activeQuests, ctx);
@@ -224,9 +224,9 @@ describe('QuestSystem.helpers', () => {
       activeQuests.set('i1', instance);
 
       const ctx = {
-        emit: vi.fn(),
-        completeQuest: vi.fn(),
-        checkQuestCompletion: vi.fn().mockReturnValue(false),
+        emit: jest.fn(),
+        completeQuest: jest.fn(),
+        checkQuestCompletion: jest.fn().mockReturnValue(false),
       };
 
       updateProgressByTypeLogic('kill', 3, activeQuests, ctx);
@@ -246,8 +246,8 @@ describe('QuestSystem.helpers', () => {
       const ctx = {
         questDefs: new Map(),
         activeQuests,
-        addActivityPoints: vi.fn(),
-        emit: vi.fn(),
+        addActivityPoints: jest.fn(),
+        emit: jest.fn(),
       };
       expect(claimRewardLogic('i1', ctx)).toBeNull();
     });
@@ -261,8 +261,8 @@ describe('QuestSystem.helpers', () => {
       const ctx = {
         questDefs: new Map(),
         activeQuests,
-        addActivityPoints: vi.fn(),
-        emit: vi.fn(),
+        addActivityPoints: jest.fn(),
+        emit: jest.fn(),
       };
       expect(claimRewardLogic('i1', ctx)).toBeNull();
     });
@@ -276,7 +276,7 @@ describe('QuestSystem.helpers', () => {
         objectives: [], rewardClaimed: false,
       });
 
-      const mockClaim = vi.fn().mockReturnValue({ gold: 10 });
+      const mockClaim = jest.fn().mockReturnValue({ gold: 10 });
       const rewards = claimAllRewardsLogic(activeQuests, mockClaim);
       expect(rewards.length).toBe(1);
       expect(mockClaim).toHaveBeenCalledWith('i1');

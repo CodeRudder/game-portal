@@ -178,8 +178,11 @@ export function getActivityState(state: ActivityStateHolder): ActivityState {
 
 /** 增加活跃度（不超过最大值，不低于0） */
 export function addActivityPoints(state: ActivityStateHolder, points: number): void {
-  const safePoints = Math.max(0, points);
-  state.currentPoints = Math.min(state.currentPoints + safePoints, state.maxPoints);
+  // P0-001 FIX: NaN 防护 — !Number.isFinite 包含 NaN/Infinity
+  if (!Number.isFinite(points) || points <= 0) return;
+  // 防御 currentPoints 已为 NaN 的情况（通过 deserialize 注入）
+  if (!Number.isFinite(state.currentPoints)) state.currentPoints = 0;
+  state.currentPoints = Math.min(state.currentPoints + points, state.maxPoints);
 }
 
 /** 领取活跃度里程碑宝箱 */
@@ -222,12 +225,18 @@ export function updateProgressByTypeLogic(
   ctx: ProgressUpdateContext,
   params?: Record<string, unknown>,
 ): void {
+  // P0-004 FIX: NaN 防护
+  if (!Number.isFinite(count) || count <= 0) return;
+
   for (const instance of activeQuests.values()) {
     if (instance.status !== 'active') continue;
 
     for (const objective of instance.objectives) {
       if (objective.type !== objectiveType) continue;
       if (objective.currentCount >= objective.targetCount) continue;
+
+      // P0-004b FIX: 防御 currentCount 为 NaN 的情况
+      if (!Number.isFinite(objective.currentCount)) objective.currentCount = 0;
 
       if (params && objective.params) {
         const match = Object.entries(params).every(

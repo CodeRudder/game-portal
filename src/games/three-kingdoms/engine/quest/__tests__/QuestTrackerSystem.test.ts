@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { jest } from '@jest/globals';
 /**
  * QuestTrackerSystem 单元测试
  *
@@ -22,14 +22,14 @@ function mockDeps(eventBus?: Partial<ISystemDeps['eventBus']>): ISystemDeps {
   const bus = new EventBus();
   return {
     eventBus: eventBus ? {
-      on: eventBus.on ?? vi.fn().mockReturnValue(vi.fn()),
-      once: eventBus.once ?? vi.fn().mockReturnValue(vi.fn()),
-      emit: eventBus.emit ?? vi.fn(),
-      off: eventBus.off ?? vi.fn(),
-      removeAllListeners: eventBus.removeAllListeners ?? vi.fn(),
+      on: eventBus.on ?? jest.fn().mockReturnValue(jest.fn()),
+      once: eventBus.once ?? jest.fn().mockReturnValue(jest.fn()),
+      emit: eventBus.emit ?? jest.fn(),
+      off: eventBus.off ?? jest.fn(),
+      removeAllListeners: eventBus.removeAllListeners ?? jest.fn(),
     } : bus,
-    config: { get: vi.fn(), set: vi.fn() },
-    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
+    config: { get: jest.fn(), set: jest.fn() },
+    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
   } as unknown as ISystemDeps;
 }
 
@@ -37,11 +37,11 @@ function createTracker(useRealBus = false): { tracker: QuestTrackerSystem; deps:
   const deps = useRealBus
     ? mockDeps()
     : mockDeps({
-        on: vi.fn().mockReturnValue(vi.fn()),
-        once: vi.fn().mockReturnValue(vi.fn()),
-        emit: vi.fn(),
-        off: vi.fn(),
-        removeAllListeners: vi.fn(),
+        on: jest.fn().mockReturnValue(jest.fn()),
+        once: jest.fn().mockReturnValue(jest.fn()),
+        emit: jest.fn(),
+        off: jest.fn(),
+        removeAllListeners: jest.fn(),
       });
   const tracker = new QuestTrackerSystem();
   tracker.init(deps);
@@ -87,7 +87,7 @@ describe('QuestTrackerSystem', () => {
   describe('EventBus 事件监听', () => {
     it('startTracking 注册所有目标类型的事件监听', () => {
       const { tracker, deps } = createTracker();
-      const mockOn = vi.fn().mockReturnValue(vi.fn());
+      const mockOn = jest.fn().mockReturnValue(jest.fn());
       (deps.eventBus as { on: typeof mockOn }).on = mockOn;
 
       tracker.startTracking();
@@ -101,7 +101,7 @@ describe('QuestTrackerSystem', () => {
     });
 
     it('unsubscribe 停止所有监听', () => {
-      const unsubs = Array.from({ length: 20 }, () => vi.fn());
+      const unsubs = Array.from({ length: 20 }, () => jest.fn());
       const { tracker, deps } = createTracker();
       let callIdx = 0;
       (deps.eventBus as { on: () => () => void }).on = () => unsubs[callIdx++];
@@ -118,14 +118,14 @@ describe('QuestTrackerSystem', () => {
       const bus = new EventBus();
       const deps = {
         eventBus: bus,
-        config: { get: vi.fn(), set: vi.fn() },
-        registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
+        config: { get: jest.fn(), set: jest.fn() },
+        registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
       } as unknown as ISystemDeps;
 
       const tracker = new QuestTrackerSystem();
       tracker.init(deps);
 
-      const updateFn = vi.fn();
+      const updateFn = jest.fn();
       tracker.bindQuestSystem({ updateProgressByType: updateFn });
       tracker.startTracking();
 
@@ -139,8 +139,8 @@ describe('QuestTrackerSystem', () => {
       const bus = new EventBus();
       const deps = {
         eventBus: bus,
-        config: { get: vi.fn(), set: vi.fn() },
-        registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
+        config: { get: jest.fn(), set: jest.fn() },
+        registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
       } as unknown as ISystemDeps;
 
       const tracker = new QuestTrackerSystem();
@@ -154,14 +154,14 @@ describe('QuestTrackerSystem', () => {
       const bus = new EventBus();
       const deps = {
         eventBus: bus,
-        config: { get: vi.fn(), set: vi.fn() },
-        registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
+        config: { get: jest.fn(), set: jest.fn() },
+        registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
       } as unknown as ISystemDeps;
 
       const tracker = new QuestTrackerSystem();
       tracker.init(deps);
 
-      const updateFn = vi.fn();
+      const updateFn = jest.fn();
       tracker.bindQuestSystem({ updateProgressByType: updateFn });
       tracker.startTracking();
 

@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { jest } from '@jest/globals';
 /**
  * QuestSystem 单元测试 (p2)
  *
@@ -28,14 +28,14 @@ import {
 function mockDeps(): ISystemDeps {
   return {
     eventBus: {
-      on: vi.fn().mockReturnValue(vi.fn()),
-      once: vi.fn().mockReturnValue(vi.fn()),
-      emit: vi.fn(),
-      off: vi.fn(),
-      removeAllListeners: vi.fn(),
+      on: jest.fn().mockReturnValue(jest.fn()),
+      once: jest.fn().mockReturnValue(jest.fn()),
+      emit: jest.fn(),
+      off: jest.fn(),
+      removeAllListeners: jest.fn(),
     },
-    config: { get: vi.fn(), set: vi.fn() },
-    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
+    config: { get: jest.fn(), set: jest.fn() },
+    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
   } as unknown as ISystemDeps;
 }
 

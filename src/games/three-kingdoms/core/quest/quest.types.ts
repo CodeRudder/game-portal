@@ -237,6 +237,10 @@ export interface QuestSystemSaveData {
   weeklyRefreshDate?: string;
   /** 当前周常任务实例 ID 列表 */
   weeklyQuestInstanceIds?: string[];
+  /** 追踪中的任务实例 ID 列表 */
+  trackedQuestIds?: string[];
+  /** 实例计数器（用于生成唯一 instanceId） */
+  instanceCounter?: number;
   /** 版本号 */
   version: number;
 }

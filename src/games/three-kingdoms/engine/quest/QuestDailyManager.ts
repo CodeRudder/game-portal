@@ -50,8 +50,7 @@ export class QuestDailyManager {
 
   /** 是否今天已刷新 */
   isRefreshedToday(): boolean {
-    const today = new Date().toISOString().slice(0, 10);
-    return this.dailyRefreshDate === today;
+    return this.dailyRefreshDate === QuestDailyManager.computeTodayString();
   }
 
   // ─── 刷新 ──────────────────────────────────
@@ -67,7 +66,8 @@ export class QuestDailyManager {
   refresh(): QuestInstance[] {
     if (!this.deps) return [];
 
-    const today = new Date().toISOString().slice(0, 10);
+    // B-C07 FIX: 使用与 isRefreshedToday 一致的日期计算
+    const today = QuestDailyManager.computeTodayString();
     if (this.dailyRefreshDate === today) {
       // 已刷新，返回空（调用方应通过 getInstanceIds 获取）
       return [];
@@ -78,10 +78,14 @@ export class QuestDailyManager {
       this.deps.expireQuest(id);
     }
 
-    // 随机抽取
+    // 随机抽取（P0-008 FIX: 使用 Fisher-Yates 洗牌替代不安全的 sort+random）
     const config = DEFAULT_DAILY_POOL_CONFIG;
-    const shuffled = [...DAILY_QUEST_TEMPLATES].sort(() => Math.random() - 0.5);
-    const picked = shuffled.slice(0, config.dailyPickCount);
+    const pool = [...DAILY_QUEST_TEMPLATES];
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    const picked = pool.slice(0, config.dailyPickCount);
 
     // 注册并接受
     const newInstances: QuestInstance[] = [];
@@ -117,5 +121,21 @@ export class QuestDailyManager {
   restoreState(dailyRefreshDate: string, dailyQuestInstanceIds: string[]): void {
     this.dailyRefreshDate = dailyRefreshDate;
     this.dailyQuestInstanceIds = [...dailyQuestInstanceIds];
+  }
+
+  // ─── 内部工具 ──────────────────────────────
+
+  /**
+   * 计算当前"游戏日"字符串（考虑 refreshHour）
+   * 与 refreshDailyQuestsLogic 使用相同的日期计算逻辑
+   */
+  private static computeTodayString(): string {
+    const config = DEFAULT_DAILY_POOL_CONFIG;
+    const now = new Date();
+    const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (now.getHours() < config.refreshHour) {
+      todayDate.setDate(todayDate.getDate() - 1);
+    }
+    return todayDate.toISOString().slice(0, 10);
   }
 }
