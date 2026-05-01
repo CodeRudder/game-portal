@@ -35,6 +35,7 @@ import type {
 import {
   MAIL_CATEGORY_LABELS,
   MAIL_STATUS_LABELS,
+  MAILBOX_CAPACITY,
   MAILS_PER_PAGE,
 } from './mail.types';
 import type { ISubsystem, ISystemDeps } from '../../core/types';
@@ -128,7 +129,10 @@ export class MailSystem implements ISubsystem {
   // ── 邮件创建 ──
 
   /** 发送邮件 */
-  sendMail(request: MailSendRequest): MailData {
+  sendMail(request: MailSendRequest): MailData | null {
+    // FIX-6: 邮箱容量上限检查
+    if (this.mails.size >= MAILBOX_CAPACITY) return null;
+
     const id = `mail_${this.nextId++}`;
     const now = Date.now();
 
@@ -140,12 +144,15 @@ export class MailSystem implements ISubsystem {
       }
     }
 
-    const attachments: MailAttachment[] = (request.attachments ?? []).map((att, idx) => ({
-      id: `${id}_att_${idx}`,
-      resourceType: att.resourceType,
-      amount: att.amount,
-      claimed: false,
-    }));
+    // FIX-1: 过滤无效附件（NaN/负数/Infinity/零）
+    const attachments: MailAttachment[] = (request.attachments ?? [])
+      .filter(att => Number.isFinite(att.amount) && att.amount > 0)
+      .map((att, idx) => ({
+        id: `${id}_att_${idx}`,
+        resourceType: att.resourceType,
+        amount: att.amount,
+        claimed: false,
+      }));
 
     const mail: MailData = {
       id, category: request.category, title: request.title,
@@ -160,7 +167,7 @@ export class MailSystem implements ISubsystem {
   }
 
   /** 批量发送邮件 */
-  sendBatch(requests: MailSendRequest[]): MailData[] {
+  sendBatch(requests: MailSendRequest[]): (MailData | null)[] {
     return requests.map(req => this.sendMail(req));
   }
 
@@ -286,7 +293,8 @@ export class MailSystem implements ISubsystem {
   deleteMail(mailId: string): boolean {
     const mail = this.mails.get(mailId);
     if (!mail) return false;
-    if (mail.attachments.some(a => !a.claimed) && mail.status !== 'expired') return false;
+    // FIX-4: 只允许删除 read_claimed 或 expired 状态的邮件
+    if (mail.status !== 'read_claimed' && mail.status !== 'expired') return false;
     this.mails.delete(mailId);
     this.persist();
     return true;
@@ -390,6 +398,8 @@ export class MailSystem implements ISubsystem {
 
   /** 从存档恢复 */
   loadFromSaveData(data: MailSaveData): void {
+    // FIX-5: null/undefined 输入防护
+    if (!data) return;
     const restored = restoreSaveData(data);
     if (!restored) return;
     this.mails = restored.mails;
@@ -418,6 +428,8 @@ export class MailSystem implements ISubsystem {
       const resourceSystem = this.deps.registry.get('resource') as { addResource?: (type: string, amount: number) => number };
       if (!resourceSystem?.addResource) return;
       for (const [type, amount] of Object.entries(claimed)) {
+        // FIX-2: 纵深防御，阻止NaN/负数/Infinity传播到资源系统
+        if (!Number.isFinite(amount) || amount <= 0) continue;
         resourceSystem.addResource(type, amount);
       }
     } catch {

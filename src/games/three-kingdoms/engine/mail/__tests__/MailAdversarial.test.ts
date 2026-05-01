@@ -286,24 +286,23 @@ describe('[F-Normal] 主线流程完整性', () => {
 
 describe('[F-Boundary] 边界条件覆盖', () => {
 
-  // FB-1: 附件amount=0的领取行为
-  it('[F-Boundary] FB-1: 附件amount=0时应可领取，返回0值', () => {
+  // FB-1: 附件amount=0的领取行为（FIX-1: 无效附件被过滤）
+  it('[F-Boundary] FB-1: 附件amount=0时应被过滤，不创建该附件', () => {
     const sys = new MailSystem();
     const mail = sys.sendMail(createRewardMail([{ resourceType: 'gold', amount: 0 }]));
+    // FIX-1: amount=0 的附件被过滤掉
+    expect(mail.attachments).toHaveLength(0);
+    // 无附件可领取
     const claimed = sys.claimAttachments(mail.id);
-
-    expect(claimed.gold).toBe(0);
-    expect(sys.getMail(mail.id)!.status).toBe('read_claimed');
+    expect(Object.keys(claimed)).toHaveLength(0);
   });
 
-  // FB-2: 附件amount为负数（代码未校验）
-  it('[F-Boundary] FB-2: 附件amount为负数时行为（代码未校验）', () => {
+  // FB-2: 附件amount为负数（FIX-1: 负数附件被过滤）
+  it('[F-Boundary] FB-2: 附件amount为负数时应被过滤', () => {
     const sys = new MailSystem();
     const mail = sys.sendMail(createRewardMail([{ resourceType: 'gold', amount: -100 }]));
-    const claimed = sys.claimAttachments(mail.id);
-
-    // 负数也正常领取（代码未校验，记录行为）
-    expect(claimed.gold).toBe(-100);
+    // FIX-1: 负数附件被过滤掉
+    expect(mail.attachments).toHaveLength(0);
   });
 
   // FB-3: 空标题/空内容邮件发送
@@ -355,13 +354,14 @@ describe('[F-Boundary] 边界条件覆盖', () => {
     expect(MAILBOX_CAPACITY).toBe(100);
   });
 
-  it('[F-Boundary] FB-7b: 发送超过100封邮件不报错（当前无容量限制）', () => {
+  it('[F-Boundary] FB-7b: 发送超过100封邮件时sendMail返回null（容量上限限制）', () => {
     const sys = new MailSystem();
+    sys.reset();
     for (let i = 0; i < 150; i++) {
       sys.sendMail(createSystemMail({ title: `邮件${i}` }));
     }
-    // 当前实现无容量限制，150封都应存在
-    expect(sys.getMailCount()).toBe(150);
+    // FIX-6: 容量上限限制在100封
+    expect(sys.getMailCount()).toBe(100);
   });
 
   // FB-8: markAllRead() 无邮件时返回0
@@ -763,9 +763,10 @@ describe('[F-Lifecycle] 数据生命周期覆盖', () => {
     expect(sys3.getMail(mail.id)!.status).toBe('read_claimed');
   });
 
-  // FL-6: 大量邮件性能（100+封）
-  it('[F-Lifecycle] FL-6: 发送和查询100+封邮件性能', () => {
+  // FL-6: 大量邮件性能（100封上限）
+  it('[F-Lifecycle] FL-6: 发送和查询100封邮件性能', () => {
     const sys = new MailSystem();
+    sys.reset();
     const start = Date.now();
 
     for (let i = 0; i < 200; i++) {
@@ -773,7 +774,8 @@ describe('[F-Lifecycle] 数据生命周期覆盖', () => {
     }
 
     const sendTime = Date.now() - start;
-    expect(sys.getMailCount()).toBe(200);
+    // FIX-6: 容量上限100封
+    expect(sys.getMailCount()).toBe(100);
 
     // 查询性能
     const queryStart = Date.now();

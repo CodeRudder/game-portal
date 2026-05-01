@@ -97,13 +97,19 @@ export function buildSaveData(
  * 从存档恢复邮件到Map
  *
  * @param data 存档数据
- * @returns 恢复后的 mails Map 和 nextId，版本不匹配返回null
+ * @returns 恢复后的 mails Map 和 nextId，版本不匹配或数据无效返回null
  */
 export function restoreSaveData(data: MailSaveData): { mails: Map<string, MailData>; nextId: number } | null {
-  if (data.version !== MAIL_SAVE_VERSION) return null;
+  // FIX-3: 数据完整性校验
+  if (!data || data.version !== MAIL_SAVE_VERSION) return null;
+  if (!Array.isArray(data.mails)) return null;
+  if (typeof data.nextId !== 'number' || !Number.isFinite(data.nextId)) return null;
 
   const mails = new Map<string, MailData>();
   for (const mail of data.mails) {
+    // FIX-3: 跳过 null/undefined 条目和缺少关键字段的条目
+    if (!mail || typeof mail !== 'object') continue;
+    if (!mail.id || !mail.category) continue;
     mails.set(mail.id, mail);
   }
   return { mails, nextId: data.nextId };

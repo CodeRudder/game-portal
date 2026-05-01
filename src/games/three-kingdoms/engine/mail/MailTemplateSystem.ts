@@ -165,8 +165,9 @@ export class MailTemplateSystem implements ISubsystem {
     const title = this.interpolate(template.titleTemplate, vars);
     const body = this.interpolate(template.bodyTemplate, vars);
 
-    // 生成附件
-    const attachmentDefs = attachments ?? template.defaultAttachments ?? [];
+    // 生成附件（FIX-7: 过滤无效amount）
+    const attachmentDefs = (attachments ?? template.defaultAttachments ?? [])
+      .filter(att => Number.isFinite(att.amount) && att.amount > 0);
     const mailAttachments: MailAttachment[] = attachmentDefs.map(att => ({
       id: `att_${++this.idCounter}`,
       resourceType: att.resourceType,
@@ -215,12 +216,14 @@ export class MailTemplateSystem implements ISubsystem {
   ): MailData {
     const now = Date.now();
     const expireSeconds = options?.expireSeconds ?? DEFAULT_MAIL_EXPIRE_DAYS * 24 * 3600;
-    const attachments: MailAttachment[] = (options?.attachments ?? []).map(att => ({
-      id: `att_${++this.idCounter}`,
-      resourceType: att.resourceType,
-      amount: att.amount,
-      claimed: false,
-    }));
+    const attachments: MailAttachment[] = (options?.attachments ?? [])
+      .filter(att => Number.isFinite(att.amount) && att.amount > 0)
+      .map(att => ({
+        id: `att_${++this.idCounter}`,
+        resourceType: att.resourceType,
+        amount: att.amount,
+        claimed: false,
+      }));
 
     return {
       id: `mail_${++this.idCounter}_${now}`,

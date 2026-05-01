@@ -59,7 +59,7 @@ function makeRewardMail(index: number): MailSendRequest {
     title: `奖励邮件 ${index}`,
     content: `恭喜获得奖励 ${index}`,
     sender: '奖励系统',
-    attachments: [{ resourceType: 'gold', amount: 100 * index }],
+    attachments: [{ resourceType: 'gold', amount: 100 + index }],
   };
 }
 
@@ -125,11 +125,12 @@ describe('邮件容量 — 邮箱满载', () => {
     expect(mailSystem.getMailCount()).toBe(100);
   });
 
-  it('超过100封后仍可发送（引擎不强制限制，由上层控制）', () => {
+  it('超过100封后sendMail返回null（容量上限强制限制）', () => {
     for (let i = 0; i < 120; i++) {
       mailSystem.sendMail(makeMail(i));
     }
-    expect(mailSystem.getMailCount()).toBe(120);
+    // FIX-6: 容量上限强制限制在100封
+    expect(mailSystem.getMailCount()).toBe(100);
   });
 
   it('容量检查：getMailCount 应准确反映当前邮件数', () => {
@@ -540,58 +541,76 @@ describe('邮件容量 — 超限处理（P1补充）', () => {
     mailSystem.reset();
   });
 
-  it('超过100封后最旧邮件应可被查询到并手动删除', () => {
-    const mails: MailData[] = [];
+  it('超过100封后sendMail返回null（容量上限）', () => {
+    const mails: (MailData | null)[] = [];
     for (let i = 0; i < 120; i++) {
       mails.push(mailSystem.sendMail(makeMail(i)));
     }
 
-    expect(mailSystem.getMailCount()).toBe(120);
+    // 前100封成功，后20封返回null
+    expect(mailSystem.getMailCount()).toBe(100);
+    expect(mails[99]).not.toBeNull();
+    expect(mails[100]).toBeNull();
+    expect(mails[119]).toBeNull();
 
-    const oldestMail = mailSystem.getMail(mails[0].id);
-    expect(oldestMail).toBeTruthy();
-    expect(oldestMail!.title).toContain('0');
+    // 删除一封后可以再添加
+    const firstMail = mails[0]!;
+    mailSystem.markRead(firstMail.id);
+    expect(mailSystem.deleteMail(firstMail.id)).toBe(true);
+    expect(mailSystem.getMailCount()).toBe(99);
 
-    mailSystem.markRead(mails[0].id);
-    expect(mailSystem.deleteMail(mails[0].id)).toBe(true);
-    expect(mailSystem.getMailCount()).toBe(119);
+    const newMail = mailSystem.sendMail(makeMail(200));
+    expect(newMail).not.toBeNull();
+    expect(mailSystem.getMailCount()).toBe(100);
   });
 
-  it('超过100封后按时间排序最旧邮件在末尾', () => {
-    for (let i = 0; i < 110; i++) {
+  it('100封邮件按时间排序最旧邮件在末尾', () => {
+    for (let i = 0; i < 100; i++) {
       mailSystem.sendMail(makeMail(i));
     }
 
     const allMails = mailSystem.getAllMails();
-    expect(allMails).toHaveLength(110);
+    expect(allMails).toHaveLength(100);
     expect(allMails[0].sendTime).toBeGreaterThanOrEqual(allMails[allMails.length - 1].sendTime);
   });
 
-  it('模拟上层容量管理：超过100封时删除最旧的已读已领邮件', () => {
-    const mails: MailData[] = [];
+  it('模拟上层容量管理：达到100封时删除最旧的已读已领邮件后可继续添加', () => {
+    const mails: (MailData | null)[] = [];
     for (let i = 0; i < 110; i++) {
       mails.push(mailSystem.sendMail(makeMail(i)));
     }
 
+    // 容量限制：只有前100封成功
+    expect(mailSystem.getMailCount()).toBe(100);
+
     mailSystem.markAllRead();
 
+    // 删除前10封已读已领的邮件
     for (let i = 0; i < 10; i++) {
-      mailSystem.deleteMail(mails[i].id);
+      const mail = mails[i];
+      if (mail) mailSystem.deleteMail(mail.id);
     }
 
+    expect(mailSystem.getMailCount()).toBe(90);
+
+    // 现在可以继续添加新邮件
+    for (let i = 0; i < 10; i++) {
+      const newMail = mailSystem.sendMail(makeMail(200 + i));
+      expect(newMail).not.toBeNull();
+    }
     expect(mailSystem.getMailCount()).toBe(100);
   });
 
   it('容量管理：无附件邮件标记已读后可被deleteReadClaimed清理', () => {
-    // 50封无附件邮件 + 60封有附件邮件
+    // 50封无附件邮件 + 50封有附件邮件（上限100）
     for (let i = 0; i < 50; i++) {
       mailSystem.sendMail(makeMail(i));
     }
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 50; i++) {
       mailSystem.sendMail(makeRewardMail(i));
     }
 
-    expect(mailSystem.getMailCount()).toBe(110);
+    expect(mailSystem.getMailCount()).toBe(100);
 
     // 标记所有邮件已读
     mailSystem.markAllRead();
@@ -600,9 +619,9 @@ describe('邮件容量 — 超限处理（P1补充）', () => {
     // 有附件的邮件标记已读后变为 read_unclaimed，不可被删除
     const deleted = mailSystem.deleteReadClaimed();
     // 只有50封无附件的已读邮件可被删除（read_claimed）
-    // 60封有附件的邮件是 read_unclaimed，不会被删除
+    // 50封有附件的邮件是 read_unclaimed，不会被删除
     expect(deleted).toBe(50);
-    expect(mailSystem.getMailCount()).toBe(60);
+    expect(mailSystem.getMailCount()).toBe(50);
   });
 });
 
@@ -666,16 +685,17 @@ describe('邮件容量 — 暂存队列（P1补充）', () => {
     expect(page5).toHaveLength(0);
   });
 
-  it('暂存队列溢出：超过120封邮件后系统应仍正常工作', () => {
+  it('容量上限保护：sendMail超过100封返回null，系统仍正常工作', () => {
     for (let i = 0; i < 200; i++) {
       mailSystem.sendMail(makeMail(i));
     }
 
-    expect(mailSystem.getMailCount()).toBe(200);
+    // 容量上限：只有100封
+    expect(mailSystem.getMailCount()).toBe(100);
 
     const page1 = mailSystem.getMails(undefined, 1);
     expect(page1).toHaveLength(20);
-    expect(mailSystem.getUnreadCount()).toBe(200);
+    expect(mailSystem.getUnreadCount()).toBe(100);
   });
 });
 
