@@ -365,11 +365,12 @@ describe('F-Error: 刷新次数耗尽', () => {
 });
 
 describe('F-Error: 无货币操作时', () => {
-  it('未注入 currencyOps 时仍可校验和购买（跳过货币检查）', () => {
+  it('未注入 currencyOps 时付费商品拒绝执行购买（FIX-SHOP-009）', () => {
     const sys = createShop();
     const gid = cheapCopperGoods()!;
     expect(sys.validateBuy(buyReq(gid, 1)).canBuy).toBe(true);
-    expect(sys.executeBuy(buyReq(gid, 1)).success).toBe(true);
+    // FIX-SHOP-009: 无 currencyOps 时，付费商品拒绝执行购买（防止免费漏洞）
+    expect(sys.executeBuy(buyReq(gid, 1)).success).toBe(false);
   });
 });
 
