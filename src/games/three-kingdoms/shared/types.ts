@@ -331,6 +331,9 @@ export interface GameSaveData {
   social?: import('../core/social/social.types').SocialSaveData;
   /** 排行榜系统数据（可选，v6.0+） */
   leaderboard?: import('../engine/social/leaderboard-types').LeaderboardState;
+  // ── 新手引导系统 (FIX-T04: Tutorial R1 存档接入) ──
+  /** 新手引导系统数据（可选） */
+  tutorialGuide?: import('../engine/tutorial/tutorial-config').TutorialGuideSaveData;
 }
 
 // ─────────────────────────────────────────────

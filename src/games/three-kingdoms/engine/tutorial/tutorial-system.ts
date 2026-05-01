@@ -138,6 +138,11 @@ export class TutorialSystem implements ISubsystem {
    * @returns 完成结果
    */
   completeCurrentStep(action: string): CompleteStepResult {
+    // FIX-T03: 未初始化时安全返回
+    if (!this.deps) {
+      return { success: false, reason: '系统未初始化', rewards: [], nextStep: null };
+    }
+
     // 引导已跳过
     if (this.state.skipped) {
       return { success: false, reason: '引导已跳过', rewards: [], nextStep: null };
@@ -226,6 +231,8 @@ export class TutorialSystem implements ISubsystem {
    * 跳过后不能再完成任何步骤，也不会获得跳过奖励。
    */
   skipTutorial(): void {
+    // FIX-T06: 防止重复跳过和重复emit
+    if (this.state.skipped) return;
     if (this.isTutorialComplete()) return;
     this.state.skipped = true;
     this.deps.eventBus.emit('tutorial-guide:skipped', {
@@ -337,6 +344,8 @@ export class TutorialSystem implements ISubsystem {
       version: TUTORIAL_GUIDE_SAVE_VERSION,
       completedSteps: [...this.state.completedSteps],
       skipped: this.state.skipped,
+      stepCompletionTimes: { ...this.state.stepCompletionTimes },
+      startedAt: this.state.startedAt,
     };
   }
 
@@ -344,8 +353,33 @@ export class TutorialSystem implements ISubsystem {
    * 从存档数据恢复
    */
   loadSaveData(data: TutorialGuideSaveData): void {
-    this.state.completedSteps = [...data.completedSteps];
-    this.state.skipped = data.skipped;
+    // FIX-601: null/undefined 防护
+    if (!data) {
+      this.state.completedSteps = [];
+      this.state.skipped = false;
+      this.state.stepCompletionTimes = {};
+      this.state.startedAt = null;
+      return;
+    }
+
+    // FIX-602: completedSteps 内容校验，过滤非法 stepId
+    const validIds = new Set<string>(TUTORIAL_GUIDE_STEPS.map(s => s.id));
+    const rawSteps = Array.isArray(data.completedSteps) ? data.completedSteps : [];
+    this.state.completedSteps = rawSteps.filter(
+      (id: string) => validIds.has(id),
+    ) as TutorialGuideStepId[];
+
+    this.state.skipped = Boolean(data.skipped);
+
+    // FIX-603: 恢复 stepCompletionTimes 和 startedAt（兼容旧存档）
+    this.state.stepCompletionTimes =
+      data.stepCompletionTimes && typeof data.stepCompletionTimes === 'object'
+        ? { ...data.stepCompletionTimes }
+        : {};
+    this.state.startedAt =
+      data.startedAt !== undefined && data.startedAt !== null
+        ? data.startedAt
+        : null;
   }
 
   // ─── 内部方法 ────────────────────────────

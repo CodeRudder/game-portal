@@ -64,6 +64,10 @@ export interface TutorialGuideSaveData {
   completedSteps: TutorialGuideStepId[];
   /** 是否已跳过 */
   skipped: boolean;
+  /** 每步完成时间戳（步骤ID → 完成时的 Unix ms），旧存档可能缺失 */
+  stepCompletionTimes?: Record<string, number>;
+  /** 引导开始时间（Unix ms），旧存档可能缺失 */
+  startedAt?: number | null;
 }
 
 // ─────────────────────────────────────────────

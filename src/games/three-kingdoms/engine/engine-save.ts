@@ -160,6 +160,8 @@ export interface SaveContext {
   socialState?: import('../core/social/social.types').SocialState;
   /** 社交状态写回函数 */
   setSocialState?: (state: import('../core/social/social.types').SocialState) => void;
+  // ── 新手引导系统 (FIX-T04: Tutorial R1 存档接入) ──
+  readonly tutorialGuide?: import('./tutorial/tutorial-system').TutorialSystem;
 }
 
 // ─────────────────────────────────────────────
@@ -257,6 +259,8 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     // ── 社交系统 v6.0+ (FIX-R2-P0-01: Social R2 存档序列化) ──
     social: ctx.friendSystem?.serialize(ctx.socialState ?? ctx.friendSystem.getState()),
     leaderboard: ctx.socialLeaderboardSystem?.serialize(),
+    // ── 新手引导系统 (FIX-T04: Tutorial R1 存档接入) ──
+    tutorialGuide: ctx.tutorialGuide?.serialize(),
   };
 }
 
@@ -317,6 +321,8 @@ export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameSt
   // ── 社交系统 v6.0+ (FIX-P0-01: Social R1 存档接入) ──
   if (data.social) subsystems.social = data.social;
   if (data.leaderboard) subsystems.leaderboard = data.leaderboard;
+  // ── 新手引导系统 (FIX-T04: Tutorial R1 存档接入) ──
+  if (data.tutorialGuide) subsystems.tutorialGuide = data.tutorialGuide;
 
   return {
     version: String(data.version),
@@ -385,6 +391,8 @@ export function fromIGameState(state: IGameState): GameSaveData {
     alliance: s.alliance as import('../core/alliance/alliance.types').AllianceSaveData | undefined,
     allianceTask: s.allianceTask as { tasks: Array<{ defId: string; currentProgress: number; status: import('../core/alliance/alliance.types').AllianceTaskStatus; claimedPlayers: string[] }> } | undefined,
     allianceShop: s.allianceShop as { items: Array<{ id: string; purchased: number }> } | undefined,
+    // ── 新手引导系统 (FIX-T04: Tutorial R1 存档接入) ──
+    tutorialGuide: s.tutorialGuide as import('./tutorial/tutorial-config').TutorialGuideSaveData | undefined,
   };
 }
 
@@ -858,6 +866,14 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
     gameLog.info('[Save] 排行榜系统存档恢复成功');
   } else {
     gameLog.info('[Save] v6.0 存档迁移：无排行榜数据，自动初始化默认排行榜状态');
+  }
+
+  // ── 新手引导系统 (FIX-T04: Tutorial R1 存档接入) ──
+  if (data.tutorialGuide && ctx.tutorialGuide) {
+    ctx.tutorialGuide.loadSaveData(data.tutorialGuide);
+    gameLog.info('[Save] 新手引导系统存档恢复成功');
+  } else {
+    gameLog.info('[Save] 新手引导存档迁移：无引导数据，自动初始化默认引导状态');
   }
 
   syncBuildingToResource({

@@ -883,6 +883,8 @@ export class ThreeKingdomsEngine {
       garrison: this.mapSystems.garrison,
       siegeEnhancer: this.mapSystems.siegeEnhancer,
       mapEvent: this.mapSystems.mapEvent,
+      // ── 新手引导系统 (FIX-T04: Tutorial R1 存档接入) ──
+      tutorialGuide: this.tutorialGuide,
     };
   }
   private finalizeLoad(): void {
