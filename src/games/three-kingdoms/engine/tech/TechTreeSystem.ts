@@ -143,6 +143,8 @@ export class TechTreeSystem implements ISubsystem {
   setResearching(id: string, startTime: number, endTime: number): void {
     const state = this.nodes[id];
     if (!state) return;
+    // FIX-501: NaN防护
+    if (!Number.isFinite(startTime) || !Number.isFinite(endTime)) return;
     state.status = 'researching';
     state.researchStartTime = startTime;
     state.researchEndTime = endTime;

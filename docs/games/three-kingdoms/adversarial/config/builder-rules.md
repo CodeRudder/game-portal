@@ -1,6 +1,6 @@
 # Builder Agent Rules — 三国霸业
 
-> 版本: v1.7 | 初始化: 2026-05-01
+> 版本: v1.8 | 初始化: 2026-05-01
 > 每轮复盘后更新此文件
 
 ## 通用规则
@@ -26,6 +26,7 @@
 19. Infinity序列化：Infinity不能直接序列化，必须转为有限值
 20. 对称函数修复验证：修复一对对称函数（如getAttack/getDefense）中的一个时，必须同步检查另一个是否需要相同修复（Battle R2教训：FIX-105修了attack侧Math.max(0)，遗漏defense侧）
 21. 资源比较NaN防护：所有资源比较（`resources.x < cost.x`）前必须验证资源值是否为有限数（`Number.isFinite`），否则NaN比较返回false绕过检查（Building R1教训：FIX-401，13个API入口受影响）
+22. 科技点上限验证：所有资源累积型系统必须有上限常量（MAX_*），且在所有增加路径（update/exchange/refund）中检查上限（Tech R1教训：FIX-504，TechPointSystem无上限）
 
 ## 三国霸业特定规则
 

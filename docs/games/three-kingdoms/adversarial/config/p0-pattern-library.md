@@ -1,9 +1,9 @@
 # P0缺陷模式库 — 三国霸业
 
-> 版本: v1.6 | 初始化: 2026-05-01
+> 版本: v1.7 | 初始化: 2026-05-01
 > 持续积累，每轮更新
 
-## 已验证的P0模式（42个缺陷提炼）
+## 已验证的P0模式（22个模式）
 
 ### 模式1: null/undefined防护缺失
 - **出现频率**: 8次（19.0%）
@@ -136,3 +136,10 @@
 - **典型案例**: FIX-401 `resources.grain=NaN` 时 `NaN < cost.grain` 返回 false，绕过"粮草不足"检查，允许无资源升级
 - **修复模式**: 在资源比较前添加 `if (!Number.isFinite(resources.grain) || !Number.isFinite(resources.gold) || !Number.isFinite(resources.troops)) { reasons.push('资源数据异常'); }`
 - **关联规则**: Builder规则#21（资源比较NaN防护）
+
+### 模式22: 资源累积无上限
+- **出现频率**: 系统级（Tech R1发现，TechPointSystem无上限）
+- **检查方法**: 搜索所有资源/货币/积分类数值的累积操作（`+=`），验证是否有MAX常量约束上限
+- **典型案例**: FIX-504 TechPointSystem.update()中 `current += gain` 无上限检查，配合NaN问题导致不可恢复
+- **修复模式**: 添加 `static readonly MAX_X = N` 常量，在所有增加路径中使用 `Math.min(current + gain, MAX_X)` 约束
+- **关联规则**: Builder规则#22（科技点上限验证）

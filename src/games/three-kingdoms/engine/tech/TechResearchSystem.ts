@@ -115,6 +115,10 @@ export class TechResearchSystem implements ISubsystem {
 
     // 6. 计算研究时间（应用研究速度加成）
     const speedMultiplier = this.pointSystem.getResearchSpeedMultiplier();
+    // FIX-501: NaN/除零防护
+    if (!Number.isFinite(speedMultiplier) || speedMultiplier <= 0) {
+      return { success: false, reason: '研究速度异常' };
+    }
     const actualTime = def.researchTime / speedMultiplier;
 
     // 7. 创建研究槽位
@@ -207,6 +211,10 @@ export class TechResearchSystem implements ISubsystem {
 
   /** 加速研究 */
   speedUp(techId: string, method: SpeedUpMethod, amount: number): SpeedUpResult {
+    // FIX-501: NaN/负值防护
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return { success: false, cost: 0, timeReduced: 0, completed: false, reason: '加速数量无效' };
+    }
     const slotIndex = this.queue.findIndex((s) => s.techId === techId);
     if (slotIndex === -1) {
       return { success: false, cost: 0, timeReduced: 0, completed: false, reason: '未找到研究中的科技' };

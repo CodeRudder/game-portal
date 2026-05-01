@@ -26,12 +26,12 @@
 
 | 指标 | 当前值 |
 |------|--------|
-| 总进化次数 | 8 |
-| Builder规则版本 | v1.7 |
+| 总进化次数 | 9 |
+| Builder规则版本 | v1.8 |
 | Challenger规则版本 | v1.4 |
 | Arbiter规则版本 | v1.6 |
-| P0模式库条目 | 21 |
-| 覆盖模块数 | 17/35 |
+| P0模式库条目 | 22 |
+| 覆盖模块数 | 18/35 |
 
 ---
 
@@ -208,3 +208,22 @@
 **P0模式库变更**:
 - 新增1个模式（模式21: 资源比较NaN绕过）
 - 模式总数: 20 → 21
+
+### 2026-05-01 — Tech R1 进化
+
+**变更类型**: 规则进化 + 代码修复
+**触发**: Tech R1 对抗测试发现系统性缺陷
+
+**代码修复 (4 P0)**:
+- FIX-501: 全模块NaN防护（TechPointSystem/TechResearchSystem/TechTreeSystem关键入口添加`!Number.isFinite()`检查）
+- FIX-502: FusionTechSystem接入engine-save（扩展TechSaveData + SaveContext + buildSaveData + applySaveData）
+- FIX-503: TechOfflineSystem接入engine-save（同上流程）
+- FIX-504: 科技点上限（MAX_TECH_POINTS=99999，在update/exchange/refund中enforce）
+
+**Builder规则变更**:
+- 新增1条通用规则（#22 科技点上限验证：所有资源累积系统必须有MAX常量且在所有增加路径中enforce）
+- 版本: v1.7 → v1.8
+
+**P0模式库变更**:
+- 新增1个模式（模式22: 资源累积无上限）
+- 模式总数: 21 → 22

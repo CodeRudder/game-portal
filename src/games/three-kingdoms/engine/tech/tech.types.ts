@@ -209,6 +209,10 @@ export interface TechSaveData {
   techPoints: TechPointState;
   /** 已选择的互斥节点映射 */
   chosenMutexNodes: Record<string, string>;
+  /** FIX-502: 融合科技数据（可选，向后兼容） */
+  fusionTechData?: import('./fusion-tech.types').FusionTechSaveData;
+  /** FIX-503: 离线研究数据（可选，向后兼容） */
+  offlineResearchData?: import('../../core/tech/offline-research.types').OfflineResearchSaveData;
 }
 
 // ─────────────────────────────────────────────

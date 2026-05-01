@@ -26,6 +26,9 @@ export class TechPointSystem implements ISubsystem {
   /** 研究速度加成百分比（来自文化路线科技） */
   private researchSpeedBonus: number;
 
+  /** FIX-504: 科技点上限常量 */
+  static readonly MAX_TECH_POINTS = 99999;
+
   constructor() {
     this.techPoints = { current: 0, totalEarned: 0, totalSpent: 0 };
     this.academyLevel = 0;
@@ -39,12 +42,15 @@ export class TechPointSystem implements ISubsystem {
   }
 
   update(dt: number): void {
+    // FIX-501: NaN/Infinity防护
+    if (!Number.isFinite(dt) || dt <= 0) return;
     if (this.academyLevel <= 0) return;
     const production = getTechPointProduction(this.academyLevel);
     if (production <= 0) return;
 
     const gain = production * dt;
-    this.techPoints.current += gain;
+    // FIX-504: 科技点上限检查
+    this.techPoints.current = Math.min(this.techPoints.current + gain, TechPointSystem.MAX_TECH_POINTS);
     this.techPoints.totalEarned += gain;
   }
 
@@ -64,6 +70,8 @@ export class TechPointSystem implements ISubsystem {
 
   /** 同步书院等级（由引擎 tick 调用） */
   syncAcademyLevel(level: number): void {
+    // FIX-501: NaN防护
+    if (!Number.isFinite(level) || level < 0) return;
     this.academyLevel = level;
   }
 
@@ -75,7 +83,9 @@ export class TechPointSystem implements ISubsystem {
 
   /** 同步研究速度加成（来自文化路线科技） */
   syncResearchSpeedBonus(bonus: number): void {
-    this.researchSpeedBonus = bonus;
+    // FIX-501: NaN/负值防护
+    if (!Number.isFinite(bonus)) return;
+    this.researchSpeedBonus = Math.max(0, bonus);
   }
 
   /** 获取研究速度加成倍率（1.0 = 无加成） */
@@ -89,11 +99,15 @@ export class TechPointSystem implements ISubsystem {
 
   /** 检查是否有足够的科技点 */
   canAfford(points: number): boolean {
+    // FIX-501: NaN防护
+    if (!Number.isFinite(points) || points < 0) return false;
     return this.techPoints.current >= points;
   }
 
   /** 消耗科技点（不检查，直接扣除） */
   spend(points: number): void {
+    // FIX-501: NaN/负值防护
+    if (!Number.isFinite(points) || points <= 0) return;
     this.techPoints.current -= points;
     this.techPoints.totalSpent += points;
     // 防护：确保科技点不会变为负数
@@ -102,7 +116,10 @@ export class TechPointSystem implements ISubsystem {
 
   /** 退还科技点（不修改 totalSpent） */
   refund(points: number): void {
-    this.techPoints.current += points;
+    // FIX-501: NaN/负值防护
+    if (!Number.isFinite(points) || points <= 0) return;
+    // FIX-504: 科技点上限检查
+    this.techPoints.current = Math.min(this.techPoints.current + points, TechPointSystem.MAX_TECH_POINTS);
     // 防护：确保科技点不会变为负数
     this.techPoints.current = Math.max(0, this.techPoints.current);
   }
@@ -166,12 +183,14 @@ export class TechPointSystem implements ISubsystem {
     if (!check.can) {
       return { success: false, goldSpent: 0, pointsGained: 0, reason: check.reason };
     }
-    if (goldAmount <= 0) {
+    // FIX-501: NaN/负值防护
+    if (!Number.isFinite(goldAmount) || goldAmount <= 0) {
       return { success: false, goldSpent: 0, pointsGained: 0, reason: '兑换铜钱数量必须大于0' };
     }
     // 100铜钱 = 1科技点
     const pointsGained = goldAmount / TechPointSystem.EXCHANGE_RATE;
-    this.techPoints.current += pointsGained;
+    // FIX-504: 科技点上限检查
+    this.techPoints.current = Math.min(this.techPoints.current + pointsGained, TechPointSystem.MAX_TECH_POINTS);
     this.techPoints.totalEarned += pointsGained;
     return { success: true, goldSpent: goldAmount, pointsGained };
   }

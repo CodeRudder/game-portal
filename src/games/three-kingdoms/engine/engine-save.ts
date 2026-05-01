@@ -63,6 +63,10 @@ export interface SaveContext {
   readonly techTree: TechTreeSystem;
   readonly techPoint: TechPointSystem;
   readonly techResearch: TechResearchSystem;
+  /** FIX-502: 融合科技系统（可选，v18.0+） */
+  readonly fusionTech?: import('./tech/FusionTechSystem').FusionTechSystem;
+  /** FIX-503: 离线研究系统（可选，v18.0+） */
+  readonly techOffline?: import('./tech/TechOfflineSystem').TechOfflineSystem;
   readonly bus: EventBus;
   readonly registry: SubsystemRegistry;
   readonly configRegistry: ConfigRegistry;
@@ -133,6 +137,10 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
   const treeData = ctx.techTree.serialize();
   const researchData = ctx.techResearch.serialize();
   const pointData = ctx.techPoint.serialize();
+  // FIX-502: 序列化融合科技系统
+  const fusionData = ctx.fusionTech?.serialize();
+  // FIX-503: 序列化离线研究系统
+  const offlineData = ctx.techOffline?.serialize();
   const techSaveData: TechSaveData = {
     version: 1,
     completedTechIds: treeData.completedTechIds,
@@ -140,6 +148,8 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     researchQueue: researchData.researchQueue,
     techPoints: pointData.techPoints,
     chosenMutexNodes: treeData.chosenMutexNodes,
+    fusionTechData: fusionData,
+    offlineResearchData: offlineData,
   };
 
   return {
@@ -460,6 +470,14 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
     ctx.techPoint.deserialize({
       techPoints: data.tech.techPoints,
     });
+    // FIX-502: 反序列化融合科技系统
+    if (data.tech.fusionTechData && ctx.fusionTech) {
+      ctx.fusionTech.deserialize(data.tech.fusionTechData);
+    }
+    // FIX-503: 反序列化离线研究系统
+    if (data.tech.offlineResearchData && ctx.techOffline) {
+      ctx.techOffline.deserialize(data.tech.offlineResearchData);
+    }
   } else {
     gameLog.info('[Save] v3.0 存档迁移：无科技数据，自动初始化空科技系统');
   }
