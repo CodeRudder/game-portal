@@ -359,4 +359,6 @@ export interface EquipmentSaveData {
   equipments: EquipmentInstance[];
   /** 背包容量 */
   bagCapacity: number;
+  /** 图鉴条目（可选，向后兼容旧存档） */
+  codexEntries?: Record<string, import('./equipment-forge.types').CodexEntry>;
 }

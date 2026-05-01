@@ -382,17 +382,13 @@ describe('F-Cross: 装备↔图鉴交互', () => {
     expect(entry!.bestRarity).toBe('purple');
   });
 
-  it('⚠️ BUG: EquipmentDecomposer.updateCodex 的 rarityOrder 缺少 gold 键', () => {
-    // BUG: EquipmentDecomposer.ts updateCodex 方法中硬编码的 rarityOrder
-    // { white:0, green:1, blue:2, purple:3, orange:4, red:5 }
-    // 缺少 gold 键，导致 gold 品质无法更新 bestRarity
-    // 正确应使用 core/equipment/equipment.types 中的 RARITY_ORDER
+  it('✅ FIX-001: EquipmentDecomposer.updateCodex 的 rarityOrder 已修复 gold 键', () => {
+    // FIX: EquipmentDecomposer.ts updateCodex 方法已替换为导入的 RARITY_ORDER
+    // gold 品质现在可以正确更新 bestRarity
     sys.generateEquipment('sword_iron', 'white', 'forge', 100);
     sys.generateEquipment('sword_iron', 'gold', 'forge', 200);
     const entry = sys.getCodexEntry('sword_iron');
-    // 当前行为：bestRarity 仍为 'white'（BUG）
-    // 预期行为：bestRarity 应为 'gold'
-    expect(entry!.bestRarity).toBe('white'); // BUG 确认：gold 未被记录
+    expect(entry!.bestRarity).toBe('gold'); // 已修复：gold 正确记录
   });
 
   it('未获取的模板图鉴应为未发现', () => {

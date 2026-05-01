@@ -11,6 +11,9 @@ import type { EquipmentInstance, DecomposeResult, BatchDecomposeResult } from '.
 import type { CodexEntry } from '../../core/equipment/equipment-forge.types';
 import type { EquipmentBagManager } from './EquipmentBagManager';
 import {
+  RARITY_ORDER,
+} from '../../core/equipment';
+import {
   DECOMPOSE_COPPER_BASE,
   DECOMPOSE_STONE_BASE,
   DECOMPOSE_ENHANCE_BONUS,
@@ -112,8 +115,7 @@ export class EquipmentDecomposer {
       const entry = this.codex.get(eq.templateId)!;
       entry.obtainCount++;
       entry.discovered = true;
-      const rarityOrder: Record<string, number> = { white: 0, green: 1, blue: 2, purple: 3, orange: 4, red: 5 };
-      if (rarityOrder[eq.rarity] > rarityOrder[entry.bestRarity ?? 'white']) {
+      if (RARITY_ORDER[eq.rarity] > RARITY_ORDER[entry.bestRarity ?? 'white']) {
         entry.bestRarity = eq.rarity;
       }
     }

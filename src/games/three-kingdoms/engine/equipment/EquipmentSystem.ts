@@ -139,14 +139,20 @@ export class EquipmentSystem implements ISubsystem {
 
   /** 计算主属性值 */
   calculateMainStatValue(eq: EquipmentInstance | { mainStat: MainStat; rarity: EquipmentRarity; enhanceLevel: number }): number {
-    const rarityMul = RARITY_MAIN_STAT_MULTIPLIER[eq.rarity];
-    return Math.floor(eq.mainStat.baseValue * rarityMul * (1 + eq.enhanceLevel * ENHANCE_MAIN_STAT_FACTOR.min));
+    const rarityMul = RARITY_MAIN_STAT_MULTIPLIER[eq.rarity] ?? 1;
+    const baseValue = eq.mainStat.baseValue;
+    if (!Number.isFinite(baseValue) || baseValue <= 0) return 0;
+    if (!Number.isFinite(eq.enhanceLevel) || eq.enhanceLevel < 0) return Math.floor(baseValue * rarityMul);
+    return Math.floor(baseValue * rarityMul * (1 + eq.enhanceLevel * ENHANCE_MAIN_STAT_FACTOR.min));
   }
 
   /** 计算副属性值 */
   calculateSubStatValue(subStat: SubStat, rarity: EquipmentRarity, enhanceLevel: number): number {
-    const rarityMul = RARITY_SUB_STAT_MULTIPLIER[rarity];
-    return Math.floor(subStat.baseValue * rarityMul * (1 + enhanceLevel * ENHANCE_SUB_STAT_FACTOR.min));
+    const rarityMul = RARITY_SUB_STAT_MULTIPLIER[rarity] ?? 1;
+    const baseValue = subStat.baseValue;
+    if (!Number.isFinite(baseValue) || baseValue <= 0) return 0;
+    if (!Number.isFinite(enhanceLevel) || enhanceLevel < 0) return Math.floor(baseValue * rarityMul);
+    return Math.floor(baseValue * rarityMul * (1 + enhanceLevel * ENHANCE_SUB_STAT_FACTOR.min));
   }
 
   /** 重算装备属性（别名） */
@@ -167,10 +173,10 @@ export class EquipmentSystem implements ISubsystem {
   /** 计算装备战力评分 */
   calculatePower(eq: EquipmentInstance): number {
     const updated = this.recalculateStats(eq);
-    let power = updated.mainStat.value;
-    for (const ss of updated.subStats) power += ss.value;
-    if (updated.specialEffect) power += updated.specialEffect.value * 5;
-    power += RARITY_ORDER[updated.rarity] * 10;
+    let power = Number.isFinite(updated.mainStat.value) ? updated.mainStat.value : 0;
+    for (const ss of updated.subStats) power += Number.isFinite(ss.value) ? ss.value : 0;
+    if (updated.specialEffect) power += Number.isFinite(updated.specialEffect.value) ? updated.specialEffect.value * 5 : 0;
+    power += (RARITY_ORDER[updated.rarity] ?? 0) * 10;
     return Math.floor(power);
   }
 
@@ -333,13 +339,23 @@ export class EquipmentSystem implements ISubsystem {
       version: EQUIPMENT_SAVE_VERSION,
       equipments: Array.from(this.bag.getMap().values()),
       bagCapacity: this.bag.getCapacity(),
+      codexEntries: Object.fromEntries(this.codex),
     };
   }
 
   deserialize(data: EquipmentSaveData): void {
     this.bag.reset();
     this.heroEquips.clear();
+    this.codex.clear();
     this.bag.setCapacity(data.bagCapacity ?? DEFAULT_BAG_CAPACITY);
+
+    // 恢复图鉴（优先使用保存的codex数据）
+    if (data.codexEntries) {
+      for (const [key, entry] of Object.entries(data.codexEntries)) {
+        this.codex.set(key, entry);
+      }
+    }
+
     for (const eq of data.equipments ?? []) {
       this.bag.getMap().set(eq.uid, eq);
       if (eq.isEquipped && eq.equippedHeroId) {

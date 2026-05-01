@@ -449,10 +449,10 @@ describe('F-Error: 保护符边界', () => {
     }
   });
 
-  it('addProtection 负数应减少保护符', () => {
+  it('addProtection 负数应被拒绝（防护）', () => {
     enhance.addProtection(10);
     enhance.addProtection(-5);
-    expect(enhance.getProtectionCount()).toBe(5);
+    expect(enhance.getProtectionCount()).toBe(10); // 负数被拒绝，保持10
   });
 
   it('serialize/deserialize 应保存保护符数量', () => {

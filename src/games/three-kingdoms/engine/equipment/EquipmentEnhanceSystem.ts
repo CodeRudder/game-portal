@@ -266,8 +266,14 @@ export class EquipmentEnhanceSystem implements ISubsystem {
 
   // ── 保护符管理 ──
 
+  static readonly MAX_PROTECTION_COUNT = 9999;
+
   addProtection(count: number): void {
-    this.protectionCount += count;
+    if (!Number.isFinite(count) || count <= 0) return;
+    this.protectionCount = Math.min(
+      this.protectionCount + count,
+      EquipmentEnhanceSystem.MAX_PROTECTION_COUNT,
+    );
   }
 
   getProtectionCount(): number {
