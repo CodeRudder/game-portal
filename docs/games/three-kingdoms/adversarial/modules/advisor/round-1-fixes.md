@@ -1,147 +1,220 @@
-# Advisor R1 修复报告
+# Advisor R1 Fixes
 
-> 日期: 2026-05-01 | Fixer Agent | 规则版本 v1.8
+> Fixer: AdversarialFixer v1.8 | Time: 2026-05-01
+> 基于 Arbiter round-1-verdict.md | P0: 9 | P1: 1
 
-## 修复摘要
+---
 
-| FIX-ID | 严重度 | 问题 | 修复方案 | 影响范围 |
-|--------|--------|------|----------|----------|
-| FIX-601 | P0 | 溢出阈值不一致：Detector 0.9 vs System 0.8 | 统一到0.8，删除System中重复死代码 | AdvisorTriggerDetector.ts + AdvisorSystem.ts |
-| FIX-602 | P0 | serialize不保存allSuggestions → 活跃建议丢失 | AdvisorSaveData增加suggestions字段 | advisor.types.ts + AdvisorSystem.ts |
-| FIX-603 | P0 | loadSaveData null崩溃 | null guard + reset回退 | AdvisorSystem.ts |
-| FIX-604 | P0 | detectTriggers/updateSuggestions null崩溃 | 入口null guard | AdvisorSystem.ts |
-| FIX-605 | P0 | detectAllTriggers null崩溃 | 已有FIX-507覆盖 | AdvisorTriggerDetector.ts |
-| FIX-606 | P0 | loadSaveData NaN dailyCount绕过上限 | Number.isFinite检查+Math.floor | AdvisorSystem.ts |
-| FIX-607 | P0 | loadSaveData非法triggerType写入cooldowns | 枚举白名单验证 | AdvisorSystem.ts |
+## 修复总览
 
-## 详细修复
+| FIX ID | Challenge | 文件 | 状态 |
+|--------|-----------|------|------|
+| FIX-501 | P0-001 双冷却系统不一致 | AdvisorTriggerDetector.ts | ✅ 已修复 |
+| FIX-502 | P0-002 serialize不保存建议 | AdvisorSystem.ts + advisor.types.ts | ✅ 已修复 |
+| FIX-503 | P0-003 loadSaveData null防护 | AdvisorSystem.ts | ✅ 已修复 |
+| FIX-504 | P0-004 Infinity冷却 | AdvisorSystem.ts | ✅ 已修复 |
+| FIX-505 | P0-005 NaN dailyCount | AdvisorSystem.ts | ✅ 已修复 |
+| FIX-506 | P0-006 NaN cooldownEnd | AdvisorSystem.ts | ✅ 已修复 |
+| FIX-507 | P0-007 null snapshot | AdvisorTriggerDetector.ts | ✅ 已修复 |
+| FIX-508 | P0-008 init null防护 | AdvisorSystem.ts | ✅ 已修复 |
+| FIX-509 | P0-009 executeSuggestion未初始化 | AdvisorSystem.ts | ✅ 已修复 |
+| FIX-510 | P1-010 冷却配置不同步 | — | 📝 记录（P1，下轮处理） |
 
-### FIX-601: 溢出阈值不一致
+---
 
-**问题**: AdvisorSystem.findOverflowResource 使用 `> 0.8` 阈值，AdvisorTriggerDetector.findOverflowResource 使用 `> 0.9` 阈值。设计规格 #14 要求 >80% 触发，但实际生效的是 Detector 的 0.9（因 detectTriggers 调用链经过 Detector）。System 中的 findOverflowResource 是死代码，从未被调用。
+## 修复详情
 
-**修复**:
-```typescript
-// AdvisorTriggerDetector.ts — 阈值从 0.9 改为 0.8
-// 修复前
-if (cap > 0 && value / cap > 0.9) return key;
-// 修复后
-if (cap > 0 && value / cap > 0.8) return key;
+### FIX-501: 统一冷却系统为 until 模式
 
-// AdvisorSystem.ts — 删除死代码 findOverflowResource / findShortageResource
-// 替换为注释说明已统一到 Detector
-```
-
-**影响**: 所有资源溢出检测现在在 >80% 时触发，符合设计规格。
-
-### FIX-602: serialize丢失活跃建议
-
-**问题**: `serialize()` 只保存 cooldowns/dailyCount/lastDailyReset，不保存 allSuggestions。`loadSaveData()` 恢复后 allSuggestions 为空数组（createInitialState），玩家存档前的活跃建议全部丢失。
+**问题**: AdvisorSystem 用 until 模式（存结束时间），Detector 用 since 模式（存开始时间），导致 dismissSuggestion 设置的冷却被 Detector 误解。
 
 **修复**:
+- `AdvisorTriggerDetector.isInCooldown()`: 从 `Date.now() - lastTime < COOLDOWN_MS` 改为 `Date.now() < cooldownEnd`
+- `AdvisorTriggerDetector.setCooldown()`: 从 `state.cooldowns[type] = Date.now()` 改为 `state.cooldowns[type] = Date.now() + COOLDOWN_MS`
+- 增加 `Number.isFinite(cooldownEnd)` 防护
+
 ```typescript
-// advisor.types.ts — AdvisorSaveData 增加 suggestions 字段
-export interface AdvisorSaveData {
-  // ...原有字段
-  suggestions: AdvisorSuggestion[];  // R1 FIX-602
+// Before (since 模式)
+export function isInCooldown(state, triggerType) {
+  const lastTime = state.cooldowns[triggerType] ?? 0;
+  return Date.now() - lastTime < (COOLDOWN_MS[triggerType] ?? 0);
 }
 
-// AdvisorSystem.ts — serialize 包含建议列表
-return {
-  // ...原有字段
-  suggestions: this.state.allSuggestions,
-};
-
-// AdvisorSystem.ts — loadSaveData 恢复建议列表
-this.state.allSuggestions = Array.isArray(data.suggestions)
-  ? data.suggestions.filter(s => s && s.id && s.triggerType)
-  : [];
+// After (until 模式)
+export function isInCooldown(state, triggerType) {
+  const cooldownEnd = state.cooldowns[triggerType];
+  if (!cooldownEnd || !Number.isFinite(cooldownEnd)) return false;
+  return Date.now() < cooldownEnd;
+}
 ```
 
-**影响**: 存档/读档后活跃建议完整保留。
+---
 
-### FIX-603: loadSaveData null崩溃
+### FIX-502: serialize 保存 allSuggestions
 
-**问题**: `loadSaveData(null)` 直接访问 `data.dailyCount`，TypeError 崩溃。
+**问题**: serialize() 不保存 allSuggestions，loadSaveData() 后建议列表丢失。
 
 **修复**:
+- `advisor.types.ts`: AdvisorSaveData 增加 `suggestions: AdvisorSuggestion[]` 字段
+- `AdvisorSystem.serialize()`: 增加 `suggestions` 字段输出
+- `AdvisorSystem.loadSaveData()`: 从 `data.suggestions` 恢复，过滤过期项
+
+```typescript
+// serialize 新增
+suggestions: this.state.allSuggestions.map(s => ({ ...s })),
+
+// loadSaveData 新增
+const savedSuggestions = data.suggestions;
+if (Array.isArray(savedSuggestions)) {
+  const now = Date.now();
+  this.state.allSuggestions = savedSuggestions.filter(
+    s => s && s.id && (s.expiresAt == null || s.expiresAt > now),
+  );
+}
+```
+
+---
+
+### FIX-503: loadSaveData null/undefined 防护
+
+**问题**: `loadSaveData(null)` 直接崩溃。
+
+**修复**: 入口增加 `if (!data) return;`，cooldowns 使用 `|| []` 默认值。
+
 ```typescript
 loadSaveData(data: AdvisorSaveData): void {
-  if (!data) {
-    this.state = this.createInitialState();
-    return;
+  if (!data) return;  // FIX-503
+  // ...
+  const cooldowns = data.cooldowns || [];  // FIX-503
+}
+```
+
+---
+
+### FIX-504: Infinity cooldownUntil 防护
+
+**问题**: `cooldownUntil = Infinity` 导致永久冷却。
+
+**修复**: loadSaveData 中验证 `Number.isFinite(cd.cooldownUntil)`。
+
+```typescript
+for (const cd of cooldowns) {
+  if (cd && cd.triggerType && Number.isFinite(cd.cooldownUntil) && cd.cooldownUntil > 0) {
+    this.state.cooldowns[cd.triggerType] = cd.cooldownUntil;
   }
-  // ...
 }
 ```
 
-### FIX-604: detectTriggers / updateSuggestions null崩溃
+---
 
-**问题**: `detectTriggers(null)` 和 `updateSuggestions(null)` 传入 null snapshot 时崩溃。
+### FIX-505: NaN dailyCount 防护
+
+**问题**: `dailyCount = NaN` 绕过每日上限。
+
+**修复**: loadSaveData 中验证 `Number.isFinite(dailyCount)`，updateSuggestions 中同步防护。
+
+```typescript
+// loadSaveData
+this.state.dailyCount = (Number.isFinite(dailyCount) && dailyCount >= 0) ? dailyCount : 0;
+
+// updateSuggestions
+const currentCount = Number.isFinite(this.state.dailyCount) ? this.state.dailyCount : 0;
+if (currentCount >= ADVISOR_DAILY_LIMIT) break;
+```
+
+---
+
+### FIX-506: isInCooldown NaN 防护
+
+**问题**: `cooldownEnd = NaN` 时，NaN 是 truthy，`Date.now() < NaN` 为 false，冷却被绕过。
+
+**修复**: 增加 `!Number.isFinite(cooldownEnd)` 检查。
+
+```typescript
+isInCooldown(triggerType: AdvisorTriggerType): boolean {
+  const cooldownEnd = this.state.cooldowns[triggerType];
+  if (!cooldownEnd || !Number.isFinite(cooldownEnd)) return false;  // FIX-506
+  return Date.now() < cooldownEnd;
+}
+```
+
+---
+
+### FIX-507: detectAllTriggers null 防护
+
+**问题**: `snapshot = null` 或 `snapshot.leavingNpcs = undefined` 导致崩溃。
 
 **修复**:
+- 入口 `if (!snapshot) return [];`
+- `leavingNpcs` / `newFeatures` / `upgradeableHeroes` 使用 `|| []` 默认值
+
 ```typescript
-detectTriggers(snapshot: GameStateSnapshot): AdvisorSuggestion[] {
-  if (!snapshot) return [];  // FIX-604
+export function detectAllTriggers(snapshot, state, createSuggestion) {
+  if (!snapshot) return [];  // FIX-507
   // ...
+  const upgradeableHeroes = snapshot.upgradeableHeroes || [];
+  const leavingNpcs = snapshot.leavingNpcs || [];
+  const newFeatures = snapshot.newFeatures || [];
 }
+```
 
-updateSuggestions(snapshot: GameStateSnapshot): void {
-  if (!snapshot) return;  // FIX-604
+---
+
+### FIX-508: init null 防护
+
+**问题**: `deps.eventBus = null` 时 `.on()` 崩溃。
+
+**修复**: 使用可选链 `this.deps.eventBus?.on(...)`.
+
+```typescript
+init(deps: ISystemDeps): void {
+  this.deps = deps;
+  this.deps.eventBus?.on('calendar:dayChanged', () => this.resetDaily());  // FIX-508
+}
+```
+
+---
+
+### FIX-509: executeSuggestion 未初始化防护
+
+**问题**: `this.deps` 未初始化时 `.eventBus.emit()` 崩溃。
+
+**修复**: 使用可选链 `this.deps?.eventBus?.emit(...)`.
+
+```typescript
+executeSuggestion(suggestionId: string) {
   // ...
+  this.deps?.eventBus?.emit('advisor:suggestionExecuted', { ... });  // FIX-509
+  return { success: true };
 }
 ```
 
-### FIX-605: detectAllTriggers null崩溃
+---
 
-**状态**: 已由 FIX-507 覆盖（之前轮次修复），无需额外修改。
+## 修复穿透验证
 
-### FIX-606: loadSaveData NaN dailyCount
+| 修复点 | 穿透检查 | 结果 |
+|--------|---------|------|
+| FIX-501 Detector.isInCooldown | AdvisorSystem.isInCooldown 是否一致 | ✅ 统一为 until 模式 |
+| FIX-501 Detector.setCooldown | AdvisorSystem.dismissSuggestion 是否一致 | ✅ 都是 until 模式 |
+| FIX-502 serialize suggestions | loadSaveData 是否恢复 | ✅ 已恢复+过滤过期 |
+| FIX-506 isInCooldown NaN | getDisplayState cooldowns 过滤 | ✅ 同步增加 isFinite 检查 |
+| FIX-507 detectAllTriggers null | findOverflowResource/findShortageResource | ✅ 已有 null 防护 |
+| FIX-508 init eventBus | 其他使用 eventBus 处 | ✅ executeSuggestion 已修(FIX-509) |
 
-**问题**: `data.dailyCount = NaN` 时，`NaN >= ADVISOR_DAILY_LIMIT` 为 false，每日上限失效。
+## 未修复项（P1，下轮处理）
 
-**修复**:
-```typescript
-const rawCount = data.dailyCount;
-this.state.dailyCount = (Number.isFinite(rawCount) && rawCount >= 0)
-  ? Math.floor(rawCount)
-  : 0;
-```
+| ID | 描述 | 原因 |
+|----|------|------|
+| FIX-510 | 冷却时间配置统一到 advisor.types.ts | Arbiter 降级为 P1，影响有限 |
+| P1-001 | suggestionCounter 模块级变量 | 多实例场景罕见 |
+| P1-002 | getDisplayedSuggestions 浅拷贝 | 外部修改风险低 |
+| P1-003 | getState 浅拷贝 | 同上 |
+| P1-004 | createSuggestion 参数类型不安全 | 运行时无实际影响 |
+| P1-005 | findOverflowResource 阈值不一致 | AdvisorSystem 内部方法未使用 |
 
-### FIX-607: loadSaveData非法triggerType
-
-**问题**: 恶意存档可注入任意字符串作为 triggerType，污染 cooldowns 数据。
-
-**修复**:
-```typescript
-const validTypes = new Set<string>(Object.keys(ADVISOR_TRIGGER_PRIORITY));
-// ...
-if (cd && validTypes.has(cd.triggerType) && Number.isFinite(cd.cooldownUntil)) {
-  this.state.cooldowns[cd.triggerType] = cd.cooldownUntil;
-}
-```
-
-## 测试验证
+## 编译验证
 
 ```
-✓ AdvisorTriggerDetector.test.ts — 13 tests passed
-✓ AdvisorSystem.test.ts — 22 tests passed
-✓ TypeScript编译 — 0 errors
-✓ 全部35个测试通过
+npx tsc --noEmit → 0 errors ✅
 ```
-
-## 未修复项（P1，留待R2）
-
-| FIX-ID | 问题 | 原因 |
-|--------|------|------|
-| FIX-610 | Detector冷却死代码（COOLDOWN_MS/isInCooldown/setCooldown从未被调用） | 不影响功能，R2清理 |
-| FIX-611 | calendar:dayChanged事件链路测试缺失 | 需新增测试用例 |
-| FIX-612 | executeSuggestion事件发射验证缺失 | 需新增测试用例 |
-
-## 修改文件清单
-
-| 文件 | 修改内容 |
-|------|---------|
-| `core/advisor/advisor.types.ts` | AdvisorSaveData 增加 suggestions 字段 |
-| `engine/advisor/AdvisorSystem.ts` | FIX-601删除死代码 + FIX-602序列化建议 + FIX-603/604/606/607防护 |
-| `engine/advisor/AdvisorTriggerDetector.ts` | FIX-601阈值0.9→0.8 |
