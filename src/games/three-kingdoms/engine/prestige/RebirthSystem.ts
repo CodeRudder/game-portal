@@ -27,9 +27,9 @@ import {
   REBIRTH_RESET_RULES,
   REBIRTH_ACCELERATION,
   REBIRTH_UNLOCK_CONTENTS,
+  // PRS-P1-01 fix: 使用声望域本地的转生倍率计算，消除对 unification 的跨域依赖
+  calcRebirthMultiplierFromConfig,
 } from '../../core/prestige';
-import { calcRebirthMultiplier as calcRebirthMultiplierCore } from '../unification/BalanceUtils';
-import type { RebirthBalanceConfig } from '../../core/unification';
 import {
   getInitialGift,
   getInstantBuildConfig,
@@ -55,19 +55,12 @@ const EVENT_PREFIX = 'rebirth';
 /**
  * 计算转生倍率 (#9)
  *
- * 委托给 BalanceCalculator.calcRebirthMultiplier（权威版本），
+ * PRS-P1-01 fix: 委托给 core/prestige 域的 calcRebirthMultiplierFromConfig，
  * 使用 REBIRTH_MULTIPLIER 常量构建配置，保持向后兼容的单参数签名。
+ * 不再跨域引用 unification/BalanceUtils。
  */
 export function calcRebirthMultiplier(count: number): number {
-  const config: RebirthBalanceConfig = {
-    maxRebirthCount: 100,
-    baseMultiplier: REBIRTH_MULTIPLIER.base,
-    perRebirthIncrement: REBIRTH_MULTIPLIER.perRebirth,
-    maxMultiplier: REBIRTH_MULTIPLIER.max,
-    curveType: 'logarithmic',
-    decayFactor: 1.0,
-  };
-  return calcRebirthMultiplierCore(count, config);
+  return calcRebirthMultiplierFromConfig(count);
 }
 
 /** 创建初始转生状态 */

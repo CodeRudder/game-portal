@@ -219,6 +219,7 @@ export function initR11Systems(systems: R11Systems, deps: ISystemDeps): void {
   systems.advisorSystem.init(deps);
   systems.currencySystem.init(deps);
   systems.shopSystem.init(deps);
+  // TRD-P1-01 fix: 使用接口注入替代直接引用 CurrencySystem 具体类
   systems.shopSystem.setCurrencySystem(systems.currencySystem);
   systems.tradeSystem.init(deps);
   systems.resourceTradeEngine.init(deps);

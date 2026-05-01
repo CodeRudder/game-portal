@@ -31,8 +31,28 @@ import {
   DISCOUNT_GOODS_STOCK, LIMITED_GOODS_STOCK,
 } from '../../core/shop';
 import { GOODS_DEF_MAP, SHOP_GOODS_IDS } from '../../core/shop';
-import type { CurrencySystem } from '../currency/CurrencySystem';
 import { gameLog } from '../../core/logger';
+
+// ─── 货币操作接口（依赖倒置，解耦 CurrencySystem 具体类） ───
+
+/**
+ * 商店所需的货币操作接口。
+ *
+ * 参照 TradeSystem 的 TradeCurrencyOps 模式，
+ * 将 ShopSystem 对 CurrencySystem 具体类的直接依赖替换为接口回调，
+ * 遵循依赖倒置原则 (DIP)。
+ *
+ * @see TRD-P1-01 修复
+ */
+export interface ShopCurrencyOps {
+  /** 批量检查货币是否充足，返回不足信息 */
+  checkAffordability: (costs: Record<string, number>) => {
+    canAfford: boolean;
+    shortages: Array<{ currency: string; required: number; current: number; gap: number }>;
+  };
+  /** 按优先级消耗货币，失败时抛出异常 */
+  spendByPriority: (shopType: string, costs: Record<string, number>) => Record<string, number>;
+}
 
 // ─── 辅助函数 ────────────────────────────────
 
@@ -89,7 +109,7 @@ export class ShopSystem implements ISubsystem {
   readonly name = 'shop';
 
   private deps!: ISystemDeps;
-  private currencySystem: CurrencySystem | null = null;
+  private currencyOps: ShopCurrencyOps | null = null;
   private shops: Record<ShopType, ShopState> = {} as Record<ShopType, ShopState>;
   private favorites: Set<string> = new Set();
   private activeDiscounts: DiscountConfig[] = [];
@@ -128,7 +148,26 @@ export class ShopSystem implements ISubsystem {
 
   // ─── 依赖注入 ─────────────────────────────
 
-  setCurrencySystem(cs: CurrencySystem): void { this.currencySystem = cs; }
+  /**
+   * 注入货币操作接口（推荐方式，遵循依赖倒置原则）
+   *
+   * 使用方式：
+   * ```ts
+   * shopSystem.setCurrencyOps({
+   *   checkAffordability: (costs) => currencySystem.checkAffordability(costs),
+   *   spendByPriority: (shopType, costs) => currencySystem.spendByPriority(shopType, costs),
+   * });
+   * ```
+   */
+  setCurrencyOps(ops: ShopCurrencyOps): void { this.currencyOps = ops; }
+
+  /**
+   * @deprecated 使用 setCurrencyOps 替代。保留向后兼容。
+   * 直接传入 CurrencySystem 实例时自动适配为 ShopCurrencyOps 接口。
+   */
+  setCurrencySystem(cs: { checkAffordability: (costs: Record<string, number>) => { canAfford: boolean; shortages: Array<{ currency: string; required: number; current: number; gap: number }> }; spendByPriority: (shopType: string, costs: Record<string, number>) => Record<string, number> }): void {
+    this.currencyOps = cs;
+  }
 
   setNPCDiscountProvider(fn: (npcId: string) => number): void { this.npcDiscountProvider = fn; }
 
@@ -263,13 +302,13 @@ export class ShopSystem implements ISubsystem {
 
     const finalPrice = this.calculateFinalPrice(goodsId, shopType, npcId);
 
-    if (this.currencySystem) {
+    if (this.currencyOps) {
       // ACC-10-20 fix: 货币检查金额 = 单价 × 数量
       const totalCost: Record<string, number> = {};
       for (const [cur, price] of Object.entries(finalPrice)) {
         totalCost[cur] = price * quantity;
       }
-      const check = this.currencySystem.checkAffordability(totalCost);
+      const check = this.currencyOps.checkAffordability(totalCost);
       if (!check.canAfford) {
         for (const s of check.shortages) errors.push(`${CUR_LABELS[s.currency]}不足：需要 ${s.required}，缺少 ${s.gap}`);
       }
@@ -285,13 +324,13 @@ export class ShopSystem implements ISubsystem {
 
     const { goodsId, quantity, shopType } = request;
 
-    if (this.currencySystem) {
+    if (this.currencyOps) {
       // ACC-10-20 fix: 扣费金额 = 单价 × 数量
       const totalCost: Record<string, number> = {};
       for (const [cur, price] of Object.entries(validation.finalPrice)) {
         totalCost[cur] = price * quantity;
       }
-      try { this.currencySystem.spendByPriority(shopType, totalCost); }
+      try { this.currencyOps.spendByPriority(shopType, totalCost); }
       catch (e) { return { success: false, reason: (e as Error).message, confirmLevel: validation.confirmLevel }; }
     }
 

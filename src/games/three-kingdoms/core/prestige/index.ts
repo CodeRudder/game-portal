@@ -61,4 +61,12 @@ export {
   REBIRTH_INSTANT_BUILD,
   REBIRTH_UNLOCK_CONTENTS_V16,
   SIMULATION_DIMINISHING_RETURNS_HOUR,
+  // PRS-P1-01 fix: 转生倍率计算内聚到声望域
+  calcRebirthMultiplierFromConfig,
+} from './prestige-config';
+
+export type {
+  // PRS-P1-01 fix: 转生倍率计算相关类型
+  RebirthCurveType,
+  PrestigeRebirthConfig,
 } from './prestige-config';

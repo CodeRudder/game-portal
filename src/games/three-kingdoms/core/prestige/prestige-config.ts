@@ -309,3 +309,66 @@ export const REBIRTH_UNLOCK_CONTENTS_V16: RebirthUnlockContentV16[] = [
 
 /** 收益模拟器边际收益递减拐点（小时） */
 export const SIMULATION_DIMINISHING_RETURNS_HOUR = 72;
+
+// ─────────────────────────────────────────────
+// 8. 转生倍率纯计算（PRS-P1-01 fix: 从 unification/BalanceUtils 迁入）
+// ─────────────────────────────────────────────
+
+/**
+ * 转生倍率增长曲线类型
+ *
+ * PRS-P1-01 修复：将转生倍率计算从 unification/BalanceUtils 迁移至 core/prestige，
+ * 消除 RebirthSystem → unification 的跨域依赖。
+ * 转生倍率是声望域的核心关注点，应内聚在 prestige 模块内。
+ */
+export type RebirthCurveType = 'linear' | 'diminishing' | 'accelerating' | 'logarithmic';
+
+/** 转生倍率计算配置 */
+export interface PrestigeRebirthConfig {
+  maxRebirthCount: number;
+  baseMultiplier: number;
+  perRebirthIncrement: number;
+  maxMultiplier: number;
+  curveType: RebirthCurveType;
+  decayFactor: number;
+}
+
+/**
+ * 计算转生倍率（权威版本）
+ *
+ * 使用 REBIRTH_MULTIPLIER 常量作为默认配置。
+ * 支持对数衰减曲线和递减曲线两种模式。
+ *
+ * @param count - 转生次数
+ * @param config - 可选的自定义配置（默认使用 REBIRTH_MULTIPLIER）
+ * @returns 转生倍率，保留两位小数
+ */
+export function calcRebirthMultiplierFromConfig(count: number, config?: Partial<PrestigeRebirthConfig>): number {
+  if (count <= 0) return 1.0;
+
+  const cfg: PrestigeRebirthConfig = {
+    maxRebirthCount: 100,
+    baseMultiplier: REBIRTH_MULTIPLIER.base,
+    perRebirthIncrement: REBIRTH_MULTIPLIER.perRebirth,
+    maxMultiplier: REBIRTH_MULTIPLIER.max,
+    curveType: 'logarithmic',
+    decayFactor: 1.0,
+    ...config,
+  };
+
+  if (cfg.curveType === 'logarithmic') {
+    // 对数衰减曲线：multiplier = base + perRebirth × ln(1 + count) / ln(2)
+    // 高转生次数时倍率增长自然放缓，避免线性失控
+    const logIncrement = cfg.perRebirthIncrement * Math.log(1 + count) / Math.log(2);
+    const multiplier = Math.min(cfg.baseMultiplier + logIncrement, cfg.maxMultiplier);
+    return Math.round(multiplier * 100) / 100;
+  }
+
+  // 原有递减曲线逻辑（linear / diminishing / accelerating）
+  let multiplier = cfg.baseMultiplier;
+  for (let i = 1; i <= count; i++) {
+    const increment = cfg.perRebirthIncrement * Math.pow(cfg.decayFactor, i - 1);
+    multiplier = Math.min(multiplier + increment, cfg.maxMultiplier);
+  }
+  return Math.round(multiplier * 100) / 100;
+}
