@@ -44,6 +44,7 @@ import { gameLog } from '../../core/logger';
 
 /** 根据游戏天数计算完整日期 */
 function computeDate(totalDays: number): GameDate {
+  if (!Number.isFinite(totalDays) || totalDays < 0) totalDays = 0;
   const td = Math.floor(totalDays);
   const day = (td % DAYS_PER_MONTH) + 1;
   const totalMonths = Math.floor(td / DAYS_PER_MONTH);
@@ -137,7 +138,7 @@ export class CalendarSystem implements ISubsystem {
    * @param dt 距上次更新的现实时间增量（秒）
    */
   update(dt: number): void {
-    if (this.paused || dt <= 0) return;
+    if (this.paused || !Number.isFinite(dt) || dt <= 0) return;
 
     // 1. 推进游戏天数
     const prevIntegerDay = this.lastIntegerDay;
@@ -281,6 +282,7 @@ export class CalendarSystem implements ISubsystem {
 
   /** 设置时间缩放倍率 */
   setTimeScale(scale: number): void {
+    if (!Number.isFinite(scale) || scale < 0) return;
     this.timeScale = scale;
   }
 
@@ -312,32 +314,42 @@ export class CalendarSystem implements ISubsystem {
   serialize(): CalendarSaveData {
     return {
       version: CALENDAR_SAVE_VERSION,
-      totalDays: this.totalDays,
+      totalDays: Number.isFinite(this.totalDays) ? this.totalDays : 0,
       weather: this.weather,
-      weatherTimer: this.weatherTimer,
+      weatherTimer: Number.isFinite(this.weatherTimer) ? this.weatherTimer : 0,
       paused: this.paused,
+      timeScale: Number.isFinite(this.timeScale) ? this.timeScale : DEFAULT_TIME_SCALE,
+      weatherDuration: Number.isFinite(this.weatherDuration) ? this.weatherDuration : rollWeatherDuration(),
     };
   }
 
   /** 从存档数据恢复 */
   deserialize(data: CalendarSaveData): void {
+    if (!data || typeof data !== 'object') return;
+
     if (data.version !== CALENDAR_SAVE_VERSION) {
       gameLog.warn(
         `CalendarSystem: 存档版本不匹配 (期望 ${CALENDAR_SAVE_VERSION}，实际 ${data.version})`,
       );
     }
 
-    if (typeof data.totalDays === 'number') {
+    if (typeof data.totalDays === 'number' && Number.isFinite(data.totalDays) && data.totalDays >= 0) {
       this.totalDays = data.totalDays;
     }
     if (typeof data.weather === 'string' && WEATHERS.includes(data.weather as WeatherType)) {
       this.weather = data.weather;
     }
-    if (typeof data.weatherTimer === 'number') {
+    if (typeof data.weatherTimer === 'number' && Number.isFinite(data.weatherTimer) && data.weatherTimer >= 0) {
       this.weatherTimer = data.weatherTimer;
     }
     if (typeof data.paused === 'boolean') {
       this.paused = data.paused;
+    }
+    if (typeof data.timeScale === 'number' && Number.isFinite(data.timeScale) && data.timeScale > 0) {
+      this.timeScale = data.timeScale;
+    }
+    if (typeof data.weatherDuration === 'number' && Number.isFinite(data.weatherDuration) && data.weatherDuration > 0) {
+      this.weatherDuration = data.weatherDuration;
     }
 
     // 重建缓存
@@ -407,6 +419,7 @@ const CN_DIGITS = ['零', '一', '二', '三', '四', '五', '六', '七', '八'
 
 /** 数字转中文（1-99） */
 function toChineseNumber(n: number): string {
+  if (!Number.isFinite(n) || n < 1 || !Number.isInteger(n)) return '一';
   if (n <= 10) return CN_DIGITS[n];
   if (n < 20) return `十${n % 10 === 0 ? '' : CN_DIGITS[n % 10]}`;
   if (n < 100 && n % 10 === 0) return `${CN_DIGITS[Math.floor(n / 10)]}十`;
@@ -415,6 +428,7 @@ function toChineseNumber(n: number): string {
 
 /** 日期转中文（带"初"前缀） */
 function toChineseDay(day: number): string {
+  if (!Number.isFinite(day) || day < 1 || !Number.isInteger(day)) return '初一';
   if (day <= 10) return `初${CN_DIGITS[day]}`;
   if (day === 20) return '二十';
   if (day === 30) return '三十';

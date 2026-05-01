@@ -124,4 +124,8 @@ export interface CalendarSaveData {
   weatherTimer: number;
   /** 是否暂停 */
   paused: boolean;
+  /** 时间缩放倍率（v2 新增，旧存档可能缺失） */
+  timeScale?: number;
+  /** 天气变化间隔（v2 新增，旧存档可能缺失） */
+  weatherDuration?: number;
 }

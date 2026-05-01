@@ -131,13 +131,16 @@ describe('CalendarSystem', () => {
   describe('serialize / deserialize', () => {
     it('serialize 返回正确格式', () => {
       const data = calendar.serialize();
-      expect(data).toEqual({
+      expect(data).toMatchObject({
         version: CALENDAR_SAVE_VERSION,
         totalDays: 0,
         weather: 'clear',
         weatherTimer: 0,
         paused: false,
       });
+      expect(data.timeScale).toBe(1.0);
+      expect(data.weatherDuration).toBeGreaterThanOrEqual(3);
+      expect(data.weatherDuration).toBeLessThanOrEqual(10);
     });
 
     it('deserialize 恢复状态', () => {
