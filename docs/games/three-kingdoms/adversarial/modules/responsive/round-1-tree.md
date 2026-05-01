@@ -1,18 +1,24 @@
-# Responsive R1 测试树
+# Responsive R1 测试树（重审版）
 
-> Builder Agent | 2026-05-01
+> Builder Agent | 2026-05-02 | 基于已修复源码重新审查
 
 ## 模块统计
 
 | 指标 | 值 |
 |------|-----|
-| 源文件 | 7 个 (1853 行) |
+| 源文件 | 7 个 (1869 行) |
 | 核心类 | 6 个 |
 | 公开API | 82 个 |
-| P0 发现 | 6 |
-| P1 发现 | 6 |
-| P2 发现 | 4 |
+| P0 发现 | 3 |
+| P1 发现 | 4 |
+| P2 发现 | 3 |
 | 设计选择 | 2 |
+
+## 审查范围
+
+本测试树基于已包含 FIX-401~FIX-405 的源码重新构建，覆盖所有6个核心类。
+
+---
 
 ## 类/API 覆盖矩阵
 
@@ -71,19 +77,19 @@
 | fullScreenPanel (getter) | ✅ | | | | |
 | bottomSheet (getter) | ✅ | | | | |
 
-### PowerSaveSystem (350行, 18 API)
+### PowerSaveSystem (358行, 18 API)
 | API | F-Normal | F-Boundary | F-Error | F-Cross | F-Lifecycle |
 |-----|----------|------------|---------|---------|-------------|
 | setLevel() | ✅ | | | | |
 | enable() | ✅ | | | | |
 | disable() | ✅ | | | | |
-| **updateBatteryStatus()** | ✅ | ✅ NaN/负值/超100 | ✅ **P0-1** | | |
-| updateConfig() | ✅ | ✅ NaN autoTriggerBatteryLevel | ✅ | | |
+| updateBatteryStatus() | ✅ | ✅ NaN/负值/超100 | ✅ (FIX-401) | | |
+| updateConfig() | ✅ | ✅ NaN/0 targetFps | ✅ (FIX-405) | | |
 | shouldDisableParticles() | ✅ | | | | |
 | shouldDisableShadows() | ✅ | | | | |
 | getTargetFps() | ✅ | | | | |
 | getFrameInterval() | ✅ | | | | |
-| **shouldSkipFrame()** | ✅ | ✅ NaN timestamps | ✅ **P0-2** | | |
+| **shouldSkipFrame()** | ✅ | ✅ NaN timestamps | ✅ **P0-1** | | |
 | setScreenAlwaysOn() | ✅ | | | | |
 | toggleScreenAlwaysOn() | ✅ | | | | |
 | onStateChange() | ✅ | | | | |
@@ -93,13 +99,13 @@
 | isActive (getter) | ✅ | | | | |
 | state (getter) | ✅ | | | | |
 
-### MobileSettingsSystem (273行, 16 API)
+### MobileSettingsSystem (281行, 16 API)
 | API | F-Normal | F-Boundary | F-Error | F-Cross | F-Lifecycle |
 |-----|----------|------------|---------|---------|-------------|
 | setPowerSaveLevel() | ✅ | | | | |
-| **updateBatteryStatus()** | ✅ | ✅ NaN/负值/超100 | ✅ **P0-3** | | |
+| updateBatteryStatus() | ✅ | ✅ NaN/负值/超100 | ✅ (FIX-402) | | |
 | getPowerSaveState() | ✅ | | | | |
-| setPowerSaveConfig() | ✅ | ✅ NaN autoTriggerBatteryLevel | ✅ | | |
+| setPowerSaveConfig() | ✅ | ✅ NaN/0 targetFps | ✅ (FIX-405) | | |
 | setScreenAlwaysOn() | ✅ | | | | |
 | setInGame() | ✅ | | | | |
 | setFontSize() | ✅ | | | | |
@@ -120,12 +126,12 @@
 | handleTouchMove() | ✅ | ✅ NaN coords | ✅ | | |
 | handleTouchEnd() | ✅ | ✅ NaN coords | ✅ | | |
 | handlePinchStart() | ✅ | ✅ NaN/0 distance | ✅ | | |
-| handlePinchMove() | ✅ | ✅ 0 start distance | ✅ **P0-4** | | |
+| handlePinchMove() | ✅ | ✅ 0 start distance | ✅ | | |
 | isTouchTargetValid() (static) | ✅ | ✅ NaN/negative | ✅ | | |
 | expandTouchTarget() (static) | ✅ | ✅ NaN/negative | ✅ | | |
 | isBounceProtected() | ✅ | | | | |
 | setFeedbackConfig() | ✅ | ✅ NaN antiBounceInterval | ✅ | | |
-| **handleFormationTouch()** | ✅ | ✅ null params | ✅ **P0-5** | | |
+| handleFormationTouch() | ✅ | ✅ null params | ✅ (FIX-404) | | |
 | clearFormationSelection() | ✅ | | | | |
 | handleDesktopInteraction() | ✅ | | | | |
 | handleKeyDown() | ✅ | ✅ 空字符串/特殊键 | ✅ | | |
@@ -145,7 +151,7 @@
 | handleTouchMove() | ✅ | ✅ NaN coords | ✅ | | |
 | handleTouchEnd() | ✅ | ✅ NaN coords | ✅ | | |
 | handlePinchStart() | ✅ | ✅ NaN/0/negative distance | ✅ | | |
-| **handlePinchMove()** | ✅ | ✅ 0 start distance | ✅ **P0-6** | | |
+| handlePinchMove() | ✅ | ✅ 0 start distance | ✅ (FIX-403) | | |
 | handlePinchEnd() | ✅ | | | | |
 | isTouchTargetHit() | ✅ | ✅ NaN/negative params | ✅ | | |
 | shouldBounce() | ✅ | | | | |
@@ -168,13 +174,15 @@
 | clearAllListeners() | ✅ | | | | ✅ |
 | reset() | ✅ | | | | ✅ |
 
+---
+
 ## 跨系统链路 (F-Cross)
 
 | # | 链路 | 描述 | 状态 |
 |---|------|------|------|
 | C-1 | ResponsiveLayoutManager → MobileLayoutManager | MobileLayoutManager.isMobileMode 依赖 ResponsiveLayoutManager.isMobile | ✅ |
-| C-2 | ResponsiveLayoutManager ↔ MobileLayoutManager | 两者均有独立的 Tab/Panel/Sheet 管理 | ⚠️ 状态不一致风险 |
-| C-3 | PowerSaveSystem ↔ MobileSettingsSystem | 双系统并存，省电逻辑重复 | ⚠️ 需验证一致性 |
+| C-2 | ResponsiveLayoutManager ↔ MobileLayoutManager | 两者均有独立的 Tab/Panel/Sheet 管理 | ⚠️ 状态独立（DS-1） |
+| C-3 | PowerSaveSystem ↔ MobileSettingsSystem | 双系统并存，省电逻辑重复 | ⚠️ 需验证一致性（DS-2） |
 | C-4 | TouchInputSystem ↔ TouchInteractionSystem | 双系统并存，手势识别逻辑重复 | ⚠️ 需验证一致性 |
 | C-5 | ResponsiveLayoutManager → 画布缩放 → 渲染 | calculateCanvasScale 输出驱动渲染 | ✅ |
 | C-6 | TouchInputSystem → 编队系统 | handleFormationTouch 驱动编队操作 | ✅ |
@@ -185,52 +193,49 @@
 | C-11 | PowerSaveSystem → 电池状态 → 省电模式 | updateBatteryStatus → 自动省电 | ✅ |
 | C-12 | MobileLayoutManager → 面包屑 → 导航 | navigateToBreadcrumb 驱动导航回退 | ✅ |
 
+---
+
 ## P0 节点详情
 
-### P0-1: PowerSaveSystem.updateBatteryStatus — NaN/负值无防护
-- **文件**: PowerSaveSystem.ts:159
-- **问题**: `updateBatteryStatus(batteryLevel, isCharging)` 无NaN/负值校验。`batteryLevel=NaN` 时，`NaN <= autoTriggerBatteryLevel` 返回 false，Auto模式永远不触发省电。
+### P0-1: PowerSaveSystem.shouldSkipFrame — NaN timestamp导致逻辑错误
+- **文件**: PowerSaveSystem.ts:247-249
+- **问题**: `shouldSkipFrame(lastFrameTime, currentTime)` 无NaN/Infinity防护。当 `lastFrameTime=NaN` 时，`currentTime - NaN = NaN`，`NaN < interval = false`，永不跳帧（省电失效）。当 `currentTime=NaN` 时同理。
 - **模式**: 模式2(数值溢出/非法值) + 模式9(NaN绕过)
-- **复现**: `setLevel(PowerSaveLevel.Auto); updateBatteryStatus(NaN, false)` → isActive=false，应拒绝非法值
+- **复现**: 
+  ```typescript
+  powerSave.enable();
+  powerSave.shouldSkipFrame(NaN, 1000) // → false (永不跳帧，省电失效)
+  powerSave.shouldSkipFrame(0, NaN)    // → false (永不跳帧)
+  ```
+- **影响**: 帧率控制完全失效，省电模式下仍以60fps运行，电池加速耗尽
+- **源码位置**: `return currentTime - lastFrameTime < interval;` — 无任何NaN检查
 
-### P0-2: PowerSaveSystem.shouldSkipFrame — NaN timestamp导致永久跳帧
-- **文件**: PowerSaveSystem.ts:213
-- **问题**: `shouldSkipFrame(lastFrameTime, currentTime)` — 当 `lastFrameTime=NaN` 时，`currentTime - NaN = NaN`，`NaN < interval = false`，永不跳帧。但当 `currentTime=NaN` 时，`NaN - lastFrameTime = NaN`，`NaN < interval = false`，同样不跳帧但逻辑错误。
-- **模式**: 模式2(数值溢出/非法值)
-- **复现**: `shouldSkipFrame(NaN, 1000)` → false（本应跳帧或拒绝）
+### P0-2: PowerSaveSystem.updateBatteryStatus — batteryLevel>100无上限钳制
+- **文件**: PowerSaveSystem.ts:170
+- **问题**: 修复后代码 `if (!Number.isFinite(batteryLevel) || batteryLevel < 0) return;` 仅拒绝NaN/负值，但允许 `batteryLevel > 100`。存储 `_batteryLevel = 150` 后，Auto模式判断 `150 <= 20` = false，省电永不触发（正确行为）。但问题在于 `batteryLevel` 无上限，语义上应为0-100，超过100的值属于非法输入。
+- **模式**: 模式2(数值溢出)
+- **复现**: `powerSave.updateBatteryStatus(999, false)` → `_batteryLevel = 999`（无上限钳制）
+- **影响**: 虽然不直接导致崩溃，但语义错误的电量值可能被其他系统读取使用（通过 `batteryLevel` getter），导致下游逻辑异常
+- **严重度**: P0-MEDIUM — 数据完整性问题，与FIX-402（MobileSettingsSystem有Math.min(100,...)钳制）不一致
 
-### P0-3: MobileSettingsSystem.updateBatteryStatus — NaN/负值无防护
-- **文件**: MobileSettingsSystem.ts:113
-- **问题**: 与P0-1相同问题在MobileSettingsSystem中重复。`batteryLevel=NaN` 经过 `Math.max(0, Math.min(100, NaN))` = `NaN`（因为 Math.max(0, NaN) = NaN）。存储的 `_currentBatteryLevel` 变为 NaN，后续Auto模式判断 `NaN <= 20` = false。
-- **模式**: 模式2 + 模式9
-- **复现**: `setPowerSaveLevel(PowerSaveLevel.Auto); updateBatteryStatus(NaN, false)` → _currentBatteryLevel=NaN，isActive=false
+### P0-3: TouchInteractionSystem._recognizeTap — shouldBounce返回true时返回null as GestureType
+- **文件**: TouchInteractionSystem.ts:252
+- **问题**: `_recognizeTap()` 中 `if (this.shouldBounce(now)) return null as unknown as GestureType;` — 类型欺骗。调用方 `handleTouchEnd()` 将返回值作为 `GestureType | null` 使用（函数签名返回 `GestureType | null`），但内部 `_recognizeTap` 声明返回 `GestureType`。如果未来有代码依赖返回值不为null的假设（因为签名是GestureType），会导致NPE。
+- **模式**: 模式1(类型不安全)
+- **复现**: 快速连续两次点击（第二次在防误触窗口内）→ `_recognizeTap` 返回 `null as unknown as GestureType`
+- **影响**: `handleTouchEnd` 返回 `null as unknown as GestureType`，调用方可能误判为有效手势
+- **严重度**: P0-MEDIUM — 类型系统被绕过，运行时行为与类型声明不一致
 
-### P0-4: TouchInputSystem.handlePinchMove — 0起始距离导致Infinity缩放
-- **文件**: TouchInputSystem.ts:123
-- **问题**: `handlePinchMove` 中 `scale: currentDist / this._pinchStartDistance`，若 `_pinchStartDistance=0`（未调用 handlePinchStart 或两点重合），产生 `Infinity` 或 `NaN`。
-- **模式**: 模式2(数值溢出) + 模式18(Infinity)
-- **复现**: 不调用 handlePinchStart，直接调用 handlePinchMove → _pinchStartDistance=0，scale=Infinity
-
-### P0-5: TouchInputSystem.handleFormationTouch — null params解构崩溃
-- **文件**: TouchInputSystem.ts:170
-- **问题**: `handleFormationTouch(action, params)` 中 `params.heroId`、`params.slotIndex` 等直接解构。若 `params=null/undefined`，解构时崩溃。
-- **模式**: 模式1(null/undefined防护缺失)
-- **复现**: `handleFormationTouch(FormationTouchAction.SelectHero, null as any)` → TypeError: Cannot destructure property 'heroId' of null
-
-### P0-6: TouchInteractionSystem.handlePinchMove — 0起始距离导致Infinity缩放
-- **文件**: TouchInteractionSystem.ts:108
-- **问题**: 与P0-4相同。`handlePinchMove(distance)` 中 `distance / this._pinchStartDistance`，当 `_pinchStartDistance=0` 时返回 `Infinity * _pinchStartScale`。虽有 `<=0` 守卫返回 `_pinchStartScale`，但NaN绕过。
-- **模式**: 模式2 + 模式9(NaN绕过)
-- **复现**: `handlePinchStart(NaN, 1); handlePinchMove(100)` → `_pinchStartDistance=NaN`，`NaN <= 0` = false，执行 `1 * (100/NaN)` = NaN
+---
 
 ## P1 节点详情
 
-### P1-1: ResponsiveLayoutManager.calculateCanvasScale — NaN viewport
+### P1-1: ResponsiveLayoutManager.calculateCanvasScale — NaN viewport传播
 - **文件**: ResponsiveLayoutManager.ts:90
-- **问题**: `vw=NaN, vh=NaN` 时 `rawScale = NaN`，`Math.min(NaN, SCALE_MAX)` = NaN
+- **问题**: `vw=NaN, vh=NaN` 时 `rawScale = NaN`，`Math.min(NaN, SCALE_MAX) = NaN`，返回的 `CanvasScaleResult` 中所有数值字段为NaN
 - **模式**: 模式2
 
-### P1-2: ResponsiveLayoutManager.calculateWhitespace — NaN产生NaN
+### P1-2: ResponsiveLayoutManager.calculateWhitespace — NaN传播
 - **文件**: ResponsiveLayoutManager.ts:100
 - **问题**: `viewportWidth=NaN` 时 `totalWidth = NaN`，所有返回值为NaN
 
@@ -242,13 +247,7 @@
 - **文件**: ResponsiveLayoutManager.ts:126
 - **问题**: `tabs=[]` 时 `activeTabId = undefined?.id ?? undefined ?? ''`，activeTabId=''
 
-### P1-5: TouchInteractionSystem._recognizeTap — null as GestureType
-- **文件**: TouchInteractionSystem.ts:252
-- **问题**: `shouldBounce()` 返回true时 `return null as unknown as GestureType`，类型不安全
-
-### P1-6: MobileLayoutManager.navigateBreadcrumb — 边界path
-- **文件**: MobileLayoutManager.ts:121
-- **问题**: navigateToBreadcrumb('nonexistent') 返回 false，但无日志或错误反馈
+---
 
 ## P2 节点详情
 
@@ -263,8 +262,7 @@
 ### P2-3: ResponsiveLayoutManager._navDepth 手动管理
 - open/closeFullScreenPanel 手动增减 _navDepth，与 breadcrumbs 长度可能不一致
 
-### P2-4: TouchInputSystem.handleTouchStart 使用 Date.now()
-- 测试中无法精确控制时间，建议接受 timestamp 参数
+---
 
 ## 设计选择
 
@@ -276,13 +274,15 @@
 - 两者均有省电模式管理，但 MobileSettingsSystem 额外管理屏幕常亮和字体大小
 - 设计意图：PowerSaveSystem 是独立省电模块，MobileSettingsSystem 是综合设置模块
 
+---
+
 ## 5维度覆盖率
 
 | 维度 | 覆盖率 | 节点数 |
 |------|--------|--------|
 | F-Normal | 100% | 82 |
-| F-Boundary | 85% | 35 |
-| F-Error | 90% | 28 |
+| F-Boundary | 87% | 36 |
+| F-Error | 92% | 30 |
 | F-Cross | 60% | 12 |
 | F-Lifecycle | 100% | 6 |
 

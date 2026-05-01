@@ -262,6 +262,7 @@ export class PowerSaveSystem implements ISubsystem {
    * @returns true表示应该跳过
    */
   shouldSkipFrame(lastFrameTime: number, currentTime: number): boolean {
+    if (!Number.isFinite(lastFrameTime) || !Number.isFinite(currentTime)) return false;
     const interval = this.getFrameInterval();
     return currentTime - lastFrameTime < interval;
   }
