@@ -627,13 +627,13 @@ describe('FLOW-11 羁绊系统集成测试', () => {
     assertStrict(!hasMixed, 'FLOW-11-40', 'faction_6 存在时不应有 mixed_3_3');
   });
 
-  it(accTest('FLOW-11-41', '边界 — 好感度增加负数仍累加（不阻止）'), () => {
+  it(accTest('FLOW-11-41', '边界 — 好感度增加负数被引擎拒绝（FIX-B01防护）'), () => {
     const bondSystem = engine.getBondSystem();
 
     bondSystem.addFavorability('liubei', -10);
     const fav = bondSystem.getFavorability('liubei');
-    // 系统允许负数累加（不做限制，由上层控制）
-    assertStrict(fav.value === -10, 'FLOW-11-41', `负数好感度应为 -10，实际 ${fav.value}`);
+    // FIX-B01: 引擎拒绝负数输入（amount <= 0），值保持初始值0
+    assertStrict(fav.value === 0, 'FLOW-11-41', `负数好感度被拒绝，值应为 0，实际 ${fav.value}`);
   });
 
   it(accTest('FLOW-11-42', '边界 — 获取不存在武将的好感度返回默认值'), () => {

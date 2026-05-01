@@ -160,7 +160,7 @@ describe('GAP-06: 远征入口可达性 (EXP-1 §1.2)', () => {
 
     // 重置
     expedition.reset();
-    expect(expedition.getUnlockedSlots()).toBe(0);
+    expect(expedition.getUnlockedSlots()).toBe(1); // createDefaultExpeditionState 默认 unlockedSlots=1
     expect(expedition.getClearedRouteIds().size).toBe(0);
   });
 
@@ -349,7 +349,7 @@ describe('GAP-07: 阵营筛选 (EXP-2 §2.3)', () => {
     const activeTeams = expedition.getAllTeams().filter(t => t.isExpeditioning);
     const result2 = expedition.validateTeam(
       ['guanyu', 'zhangfei'],
-      FormationType.CRANE_WING,
+      FormationType.STANDARD,
       heroMap,
       activeTeams,
     );

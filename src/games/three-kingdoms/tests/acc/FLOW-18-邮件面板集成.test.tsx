@@ -309,11 +309,16 @@ describe('FLOW-18 邮件面板集成测试', () => {
     assertStrict(remaining.length === 0, 'FLOW-18-18', '删除后邮件列表应为空');
   });
 
-  it(accTest('FLOW-18-19', '无附件未读邮件可直接删除'), () => {
+  it(accTest('FLOW-18-19', '无附件未读邮件需先标记已读才能删除'), () => {
     const mail = mailSys.sendMail(makeSendRequest());
-    // 无附件的未读邮件可以删除（引擎只检查未领附件）
-    const result = mailSys.deleteMail(mail.id);
-    assertStrict(result === true, 'FLOW-18-19', '无附件未读邮件应可删除');
+    // 引擎只允许删除 read_claimed 或 expired 状态的邮件
+    // 无附件未读邮件需先 markRead 变为 read_claimed 再删除
+    const resultBeforeRead = mailSys.deleteMail(mail.id);
+    assertStrict(resultBeforeRead === false, 'FLOW-18-19', '未读邮件直接删除应失败');
+
+    mailSys.markRead(mail.id);
+    const resultAfterRead = mailSys.deleteMail(mail.id);
+    assertStrict(resultAfterRead === true, 'FLOW-18-19', '标记已读后删除应成功');
 
     const remaining = mailSys.getMails();
     assertStrict(remaining.length === 0, 'FLOW-18-19', '删除后邮件列表应为空');

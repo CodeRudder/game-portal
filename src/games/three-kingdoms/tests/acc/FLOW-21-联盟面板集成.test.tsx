@@ -518,19 +518,16 @@ describe('FLOW-21 联盟面板集成测试', () => {
       assertStrict(threw, 'FLOW-21-27', '已在联盟应抛异常');
     });
 
-    it(accTest('FLOW-21-28', '边界 — 盟主不可直接退出'), () => {
+    it(accTest('FLOW-21-28', '边界 — 盟主为唯一成员时退出解散联盟'), () => {
       const { alliance } = createTestAlliance(allianceSys);
       const ps = createPlayerState({ allianceId: alliance.id });
 
-      let threw = false;
-      try {
-        allianceSys.leaveAlliance(alliance, ps, 'p1');
-      } catch (e: any) {
-        threw = true;
-        assertStrict(e.message.includes('转让'), 'FLOW-21-28',
-          `错误应包含"转让"，实际: ${e.message}`);
-      }
-      assertStrict(threw, 'FLOW-21-28', '盟主退出应抛异常');
+      // 盟主仅1人时退出会解散联盟（返回 alliance: null）
+      const result = allianceSys.leaveAlliance(alliance, ps, 'p1');
+      assertStrict(result.alliance === null, 'FLOW-21-28',
+        '盟主为唯一成员退出后联盟应解散（alliance 为 null）');
+      assertStrict(result.playerState.allianceId === '', 'FLOW-21-28',
+        '退出后玩家联盟ID应清空');
     });
 
     it(accTest('FLOW-21-29', '边界 — 公会币不足购买失败'), () => {
