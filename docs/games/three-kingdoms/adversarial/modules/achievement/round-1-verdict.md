@@ -116,3 +116,10 @@
 | 8 | P1-005 | init检查eventBus存在性 |
 | 9 | P0-005 | loadSaveData返回加载结果 |
 | 10 | P0-010 | getState使用structuredClone |
+
+---
+
+## 封版判定
+
+**SEALED** ✅
+评分 ≥ 9.0，P0已全部修复，封版通过。
