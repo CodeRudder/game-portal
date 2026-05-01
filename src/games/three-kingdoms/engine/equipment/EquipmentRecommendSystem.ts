@@ -75,24 +75,34 @@ export class EquipmentRecommendSystem implements ISubsystem {
     const rarityScore = this.scoreRarity(equipment.rarity);
     const enhanceScore = this.scoreEnhance(equipment.enhanceLevel);
 
+    // FIX-607: NaN防护 — 确保所有评分分量都是有限数
+    const safeMainStat = Number.isFinite(mainStatScore) ? mainStatScore : 0;
+    const safeSubStats = Number.isFinite(subStatsScore) ? subStatsScore : 0;
+    const safeSetBonus = Number.isFinite(setBonusScore) ? setBonusScore : 0;
+    const safeRarity = Number.isFinite(rarityScore) ? rarityScore : 0;
+    const safeEnhance = Number.isFinite(enhanceScore) ? enhanceScore : 0;
+
     const totalScore =
-      mainStatScore * WEIGHT_MAIN_STAT +
-      subStatsScore * WEIGHT_SUB_STATS +
-      setBonusScore * WEIGHT_SET_BONUS +
-      rarityScore * WEIGHT_RARITY +
-      enhanceScore * WEIGHT_ENHANCE;
+      safeMainStat * WEIGHT_MAIN_STAT +
+      safeSubStats * WEIGHT_SUB_STATS +
+      safeSetBonus * WEIGHT_SET_BONUS +
+      safeRarity * WEIGHT_RARITY +
+      safeEnhance * WEIGHT_ENHANCE;
+
+    // 最终NaN兜底
+    const safeTotal = Number.isFinite(totalScore) ? totalScore : 0;
 
     return {
       uid: equipment.uid,
       equipment,
       slot: equipment.slot,
-      score: Math.round(totalScore * 100) / 100,
+      score: Math.round(safeTotal * 100) / 100,
       breakdown: {
-        mainStat: Math.round(mainStatScore * 100) / 100,
-        subStats: Math.round(subStatsScore * 100) / 100,
-        setBonus: Math.round(setBonusScore * 100) / 100,
-        rarity: Math.round(rarityScore * 100) / 100,
-        enhanceLevel: Math.round(enhanceScore * 100) / 100,
+        mainStat: Math.round(safeMainStat * 100) / 100,
+        subStats: Math.round(safeSubStats * 100) / 100,
+        setBonus: Math.round(safeSetBonus * 100) / 100,
+        rarity: Math.round(safeRarity * 100) / 100,
+        enhanceLevel: Math.round(safeEnhance * 100) / 100,
       },
     };
   }
@@ -151,13 +161,20 @@ export class EquipmentRecommendSystem implements ISubsystem {
 
   /** 主属性评分：归一化到 0~100 */
   private scoreMainStat(eq: EquipmentInstance): number {
-    return Math.min(100, eq.mainStat.value / 2);
+    const val = eq.mainStat.value;
+    // FIX-607: NaN防护
+    if (!Number.isFinite(val) || val <= 0) return 0;
+    return Math.min(100, val / 2);
   }
 
   /** 副属性评分：数量和总值 */
   private scoreSubStats(eq: EquipmentInstance): number {
     if (eq.subStats.length === 0) return 0;
-    const totalValue = eq.subStats.reduce((sum, s) => sum + s.value, 0);
+    const totalValue = eq.subStats.reduce((sum, s) => {
+      // FIX-607: NaN防护 — 跳过非法副属性值
+      const v = s.value;
+      return sum + (Number.isFinite(v) ? v : 0);
+    }, 0);
     return Math.min(100, totalValue * 2);
   }
 

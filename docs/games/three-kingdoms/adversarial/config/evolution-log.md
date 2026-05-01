@@ -26,12 +26,12 @@
 
 | 指标 | 当前值 |
 |------|--------|
-| 总进化次数 | 9 |
-| Builder规则版本 | v1.8 |
+| 总进化次数 | 10 |
+| Builder规则版本 | v1.9 |
 | Challenger规则版本 | v1.4 |
 | Arbiter规则版本 | v1.6 |
-| P0模式库条目 | 22 |
-| 覆盖模块数 | 18/35 |
+| P0模式库条目 | 23 |
+| 覆盖模块数 | 19/35 |
 
 ---
 
@@ -227,3 +227,25 @@
 **P0模式库变更**:
 - 新增1个模式（模式22: 资源累积无上限）
 - 模式总数: 21 → 22
+
+### 2026-05-01 — Equipment R1 进化
+
+**变更类型**: 规则进化 + 代码修复
+**触发**: Equipment R1 对抗测试发现系统性缺陷
+
+**代码修复 (7 P0)**:
+- FIX-601: EquipmentBagManager.setCapacity NaN绕过（`!Number.isFinite(cap) || cap <= 0` 防护）
+- FIX-602: EquipmentSystem/EquipmentForgeSystem deserialize(null)崩溃（null guard + 默认状态回退，3处）
+- FIX-603: EquipmentEnhanceSystem.enhance 免费强化漏洞（资源扣除从可选改为必需）
+- FIX-604: EquipmentBagManager.expand 免费扩容漏洞（添加资源预检事件）
+- FIX-605: EquipmentForgeSystem.executeForge 无回滚（改为先生成后消费模式）
+- FIX-606: serialize缺失ForgePity/EnhanceProtection（验证架构正确性，engine-save已独立覆盖）
+- FIX-607: EquipmentRecommendSystem NaN传播到评分（evaluateEquipment/scoreMainStat/scoreSubStats添加NaN防护）
+
+**Builder规则变更**:
+- 新增1条通用规则（#23 资源扣除必需验证：所有消耗类操作的资源扣除必须为必需步骤）
+- 版本: v1.8 → v1.9
+
+**P0模式库变更**:
+- 新增1个模式（模式23: 免费强化/扩容/锻造漏洞）
+- 模式总数: 22 → 23

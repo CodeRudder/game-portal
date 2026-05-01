@@ -165,14 +165,16 @@ export class EquipmentForgeSystem implements ISubsystem {
     const outputRarity = this.determineOutputRarity(type, inputRarity, rng);
     const pityTriggered = this.pityManager.update(type, outputRarity);
 
-    // 消耗输入
-    this.consumeInputEquipments(inputUids);
-
-    // 生成新装备（generateEquipment 已自动 addToBag）
+    // FIX-605: 先生成新装备，成功后再消耗输入（防止forge失败时材料丢失）
     const outputSlot = targetSlot ?? this.randomSlot(rng);
     let equipment: EquipmentInstance | null = null;
     if (this.equipmentSystem) {
       equipment = this.equipmentSystem.generateEquipment(outputSlot, outputRarity, 'forge');
+    }
+
+    // 只有生成成功才消耗输入装备
+    if (equipment) {
+      this.consumeInputEquipments(inputUids);
     }
 
     this.totalForgeCount++;
@@ -305,6 +307,12 @@ export class EquipmentForgeSystem implements ISubsystem {
   }
 
   deserialize(data: ForgeSaveData): void {
+    // FIX-602: null/undefined防护，防止反序列化崩溃
+    if (!data || typeof data !== 'object') {
+      this.pityManager.restore({ basicBluePity: 0, advancedPurplePity: 0, targetedGoldPity: 0 });
+      this.totalForgeCount = 0;
+      return;
+    }
     this.pityManager.restore(data.pityState ?? { basicBluePity: 0, advancedPurplePity: 0, targetedGoldPity: 0 });
     this.totalForgeCount = data.totalForgeCount ?? 0;
   }

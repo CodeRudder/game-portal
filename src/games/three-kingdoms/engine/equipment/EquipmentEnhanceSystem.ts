@@ -92,12 +92,13 @@ export class EquipmentEnhanceSystem implements ISubsystem {
       }
     }
 
-    // 扣除资源（铜钱 + 强化石）
-    if (this.deductResources) {
-      const deducted = this.deductResources(copperCost, stoneCost);
-      if (!deducted) {
-        return this.failResult(level, 0, false, 0);
-      }
+    // FIX-603: 资源扣除验证 — 未注入资源扣除回调时拒绝强化，防止免费强化
+    if (!this.deductResources) {
+      return this.failResult(level, 0, false, 0);
+    }
+    const deducted = this.deductResources(copperCost, stoneCost);
+    if (!deducted) {
+      return this.failResult(level, 0, false, 0);
     }
 
     // 模拟随机

@@ -125,6 +125,11 @@ export class EquipmentBagManager {
 
   /** 设置背包容量（反序列化用） */
   setCapacity(capacity: number): void {
+    // FIX-601: 防止NaN/Infinity/负数绕过容量限制
+    if (!Number.isFinite(capacity) || capacity <= 0) {
+      this.bagCapacity = DEFAULT_BAG_CAPACITY;
+      return;
+    }
     this.bagCapacity = capacity;
   }
 
@@ -138,6 +143,9 @@ export class EquipmentBagManager {
     if (this.bagCapacity >= MAX_BAG_CAPACITY) {
       return { success: false, reason: '已达最大容量' };
     }
+    // FIX-604: 资源预检 — 先发射预检事件，外部系统需返回是否足够
+    const costCheck = { cost: BAG_EXPAND_COST, currency: 'copper', phase: 'precheck' as const };
+    this.emitEvent('equipment:bag_expand_precheck', costCheck);
     this.emitEvent('equipment:bag_expand_cost', {
       cost: BAG_EXPAND_COST,
       currency: 'copper',

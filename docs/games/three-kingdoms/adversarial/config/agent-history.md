@@ -33,3 +33,7 @@
 | 24 | 2026-05-01 | tech | R1 | Challenger | 挑战NaN/序列化/上限 | 4 P0 + 2 P1 + 1 P2 |
 | 25 | 2026-05-01 | tech | R1 | Arbiter | 仲裁裁决(7.72/10) | CONTINUE |
 | 26 | 2026-05-01 | tech | R1 | Builder | 修复4 P0(FIX-501~504) | ✅ tsc通过 |
+| 27 | 2026-05-01 | equipment | R1 | Builder | 构建初始流程树 | 142节点 |
+| 28 | 2026-05-01 | equipment | R1 | Challenger | 挑战NaN/免费操作/序列化 | 7 P0 |
+| 29 | 2026-05-01 | equipment | R1 | Arbiter | 仲裁裁决 | CONTINUE |
+| 30 | 2026-05-01 | equipment | R1 | Builder | 修复7 P0(FIX-601~607) | ✅ tsc通过 |

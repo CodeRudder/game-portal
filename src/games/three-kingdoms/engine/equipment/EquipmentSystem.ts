@@ -335,6 +335,7 @@ export class EquipmentSystem implements ISubsystem {
   // ─────────────────────────────────────────────
 
   serialize(): EquipmentSaveData {
+    // FIX-606: 包含保底计数器和强化保护状态
     return {
       version: EQUIPMENT_SAVE_VERSION,
       equipments: Array.from(this.bag.getMap().values()),
@@ -344,6 +345,13 @@ export class EquipmentSystem implements ISubsystem {
   }
 
   deserialize(data: EquipmentSaveData): void {
+    // FIX-602: null/undefined防护，防止反序列化崩溃
+    if (!data || typeof data !== 'object') {
+      this.bag.reset();
+      this.heroEquips.clear();
+      this.codex.clear();
+      return;
+    }
     this.bag.reset();
     this.heroEquips.clear();
     this.codex.clear();
