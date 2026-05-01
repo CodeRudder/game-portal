@@ -209,6 +209,8 @@ export class NPCDialogSystem implements ISubsystem {
     const node = this.getCurrentNode(sessionId);
     if (!node) return [];
 
+    if (!this.dialogDeps) return []; // FIX-002: dialogDeps未初始化防护
+
     const affinity = this.dialogDeps.getAffinity(session.npcId);
     const profession = this.dialogDeps.getProfession(session.npcId);
 
@@ -234,6 +236,10 @@ export class NPCDialogSystem implements ISubsystem {
     const node = this.getCurrentNode(sessionId);
     if (!node) {
       return { success: false, reason: 'node_not_found', effects: [] };
+    }
+
+    if (!this.dialogDeps) { // FIX-002: dialogDeps未初始化防护
+      return { success: false, reason: 'session_not_found', effects: [] };
     }
 
     // 查找选项

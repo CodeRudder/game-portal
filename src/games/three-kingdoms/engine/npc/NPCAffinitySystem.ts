@@ -214,6 +214,8 @@ export class NPCAffinitySystem implements ISubsystem {
   }
 
   importSaveData(data: FavorabilitySaveData): void {
+    // FIX-006: null/undefined输入防护 [BR-10]
+    if (!data) { this.changeHistory = []; this.bondSkillCooldowns.clear(); return; }
     this.changeHistory = data.changeHistory ?? [];
     this.bondSkillCooldowns.clear();
     if (data.bondSkillCooldowns) {
@@ -231,7 +233,15 @@ export class NPCAffinitySystem implements ISubsystem {
     const previousAffinity = npc.affinity;
     const newAffinity = clampAffinity(previousAffinity + delta);
     const actualDelta = newAffinity - previousAffinity;
-    npc.affinity = newAffinity;
+    // FIX-007: 通过NPCSystem修改原始数据，而非修改传入的副本
+    const npcSys = this.getNPCSystem();
+    if (npcSys) {
+      npcSys.setAffinity(npcId, newAffinity);
+      // 同步更新本地npc引用以保持返回值正确
+      npc.affinity = newAffinity;
+    } else {
+      npc.affinity = newAffinity;
+    }
 
     const record: AffinityChangeRecord = { npcId, source, delta: actualDelta, previousAffinity, newAffinity, description, turn: this.currentTurn };
     this.changeHistory.push(record);
@@ -244,5 +254,10 @@ export class NPCAffinitySystem implements ISubsystem {
     }
     this.deps?.eventBus.emit('npc:affinity_changed', { npcId, delta: actualDelta, affinity: newAffinity, source });
     return { ...record };
+  }
+
+  private getNPCSystem(): import('./NPCSystem').NPCSystem | null {
+    try { return this.deps?.registry?.get<import('./NPCSystem').NPCSystem>('npc') ?? null; }
+    catch { return null; }
   }
 }

@@ -182,6 +182,8 @@ export class NPCFavorabilitySystem implements ISubsystem {
   }
 
   deserialize(data: FavorabilitySaveData): void {
+    // FIX-006: null/undefined输入防护 [BR-10]
+    if (!data) { this.changeHistory = []; this.bondSkillCooldowns.clear(); this.activeBondEffects.clear(); return; }
     this.changeHistory = data.changeHistory ?? [];
     this.bondSkillCooldowns.clear();
     if (data.bondSkillCooldowns) {

@@ -229,6 +229,7 @@ export class NPCSystem implements ISubsystem {
   changeAffinity(id: NPCId, delta: number): number | null {
     const npc = this.npcs.get(id);
     if (!npc) return null;
+    if (!Number.isFinite(delta)) return npc.affinity; // FIX-001: NaN防护
 
     const oldLevel = getAffinityLevel(npc.affinity);
     npc.affinity = Math.max(0, Math.min(100, npc.affinity + delta));
@@ -262,6 +263,7 @@ export class NPCSystem implements ISubsystem {
   setAffinity(id: NPCId, value: number): boolean {
     const npc = this.npcs.get(id);
     if (!npc) return false;
+    if (!Number.isFinite(value)) return false; // FIX-001: NaN防护
 
     npc.affinity = Math.max(0, Math.min(100, value));
     return true;

@@ -138,6 +138,10 @@ export class NPCTrainingSystem implements ISubsystem {
     if (this.trainingCooldowns.has(npcId)) {
       return { npcId, outcome: 'draw', rewards: null, message: '切磋冷却中，请稍后再试' };
     }
+    // FIX-003: NaN/非有限数防护
+    if (!Number.isFinite(playerLevel) || !Number.isFinite(npcLevel) || playerLevel < 0 || npcLevel < 0) {
+      return { npcId, outcome: 'draw', rewards: null, message: '参数无效' };
+    }
 
     const outcome = this.resolveTrainingOutcome(playerLevel, npcLevel);
     this.trainingCooldowns.set(npcId, TRAINING_COOLDOWN);
@@ -179,7 +183,8 @@ export class NPCTrainingSystem implements ISubsystem {
     npcId: string, defId: string, currentAffinity: number, bonuses?: AllianceBonus[],
   ): { success: boolean; reason?: string } {
     if (this.alliances.has(npcId)) return { success: false, reason: '已经与此NPC结盟' };
-    if (currentAffinity < ALLIANCE_REQUIRED_AFFINITY) {
+    // FIX-004: NaN防护 [BR-21]
+    if (!Number.isFinite(currentAffinity) || currentAffinity < ALLIANCE_REQUIRED_AFFINITY) {
       return { success: false, reason: `好感度不足，需要${ALLIANCE_REQUIRED_AFFINITY}点，当前${currentAffinity}点` };
     }
 
@@ -289,6 +294,8 @@ export class NPCTrainingSystem implements ISubsystem {
   }
 
   deserialize(data: NPCInteractionSaveData): void {
+    // FIX-006: null/undefined输入防护 [BR-10]
+    if (!data) { this.trainingRecords = []; this.alliances.clear(); this.offlineSummary = null; this.dialogueHistory = []; return; }
     this.trainingRecords = data.trainingRecords ?? [];
     this.alliances.clear();
     for (const a of data.alliances ?? []) {

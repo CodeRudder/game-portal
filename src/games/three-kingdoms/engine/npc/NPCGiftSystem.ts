@@ -218,7 +218,8 @@ export class NPCGiftSystem implements ISubsystem {
     }
 
     // 检查好感度要求
-    if (npcData.affinity < this.config.minAffinityToGift) {
+    // FIX-005: NaN防护 [BR-21]
+    if (!Number.isFinite(npcData.affinity) || npcData.affinity < this.config.minAffinityToGift) {
       return this.failResult(npcId, itemId, '好感度不足，无法赠送');
     }
 
