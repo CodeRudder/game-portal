@@ -271,6 +271,10 @@ describe('F-Normal: 故事事件', () => {
 
   it('触发故事事件后返回奖励', () => {
     const sys = createBondSystem();
+    // story_001 要求 liubei/guanyu/zhangfei 好感度 >= 50
+    sys.addFavorability('liubei', 50);
+    sys.addFavorability('guanyu', 50);
+    sys.addFavorability('zhangfei', 50);
     const result = sys.triggerStoryEvent('story_001');
     expect(result.success).toBe(true);
     expect(result.rewards).toBeDefined();
@@ -280,14 +284,23 @@ describe('F-Normal: 故事事件', () => {
 
   it('触发故事事件后增加好感度', () => {
     const sys = createBondSystem();
+    // story_001 要求 liubei/guanyu/zhangfei 好感度 >= 50
+    sys.addFavorability('liubei', 50);
+    sys.addFavorability('guanyu', 50);
+    sys.addFavorability('zhangfei', 50);
     sys.triggerStoryEvent('story_001');
-    expect(sys.getFavorability('liubei').value).toBe(20);
-    expect(sys.getFavorability('guanyu').value).toBe(20);
-    expect(sys.getFavorability('zhangfei').value).toBe(20);
+    // 每人增加 20 好感度 → 50 + 20 = 70
+    expect(sys.getFavorability('liubei').value).toBe(70);
+    expect(sys.getFavorability('guanyu').value).toBe(70);
+    expect(sys.getFavorability('zhangfei').value).toBe(70);
   });
 
   it('触发故事事件后发射事件总线事件', () => {
     const sys = createBondSystem();
+    // story_001 要求 liubei/guanyu/zhangfei 好感度 >= 50
+    sys.addFavorability('liubei', 50);
+    sys.addFavorability('guanyu', 50);
+    sys.addFavorability('zhangfei', 50);
     sys.triggerStoryEvent('story_001');
     const emit = (sys as unknown as { deps: ISystemDeps }).deps.eventBus.emit as ReturnType<typeof vi.fn>;
     expect(emit).toHaveBeenCalledWith('bond:storyTriggered', expect.objectContaining({
@@ -428,6 +441,10 @@ describe('F-Error: 无效故事事件触发', () => {
 
   it('不可重复事件触发两次 → 第二次失败', () => {
     const sys = createBondSystem();
+    // story_001 要求 liubei/guanyu/zhangfei 好感度 >= 50
+    sys.addFavorability('liubei', 50);
+    sys.addFavorability('guanyu', 50);
+    sys.addFavorability('zhangfei', 50);
     const r1 = sys.triggerStoryEvent('story_001');
     expect(r1.success).toBe(true);
     const r2 = sys.triggerStoryEvent('story_001');
@@ -441,9 +458,10 @@ describe('F-Error: NaN 加成', () => {
     const sys = createBondSystem();
     sys.addFavorability('liubei', NaN);
     const fav = sys.getFavorability('liubei');
-    // NaN + 0 = NaN，验证系统不崩溃
-    expect(isNaN(fav.value)).toBe(true);
-    // 但序列化不应崩溃
+    // addFavorability 静默拒绝 NaN（!Number.isFinite 守卫），值保持 0
+    expect(isNaN(fav.value)).toBe(false);
+    expect(fav.value).toBe(0);
+    // 序列化不应崩溃
     expect(() => sys.serialize()).not.toThrow();
   });
 
@@ -456,8 +474,9 @@ describe('F-Error: NaN 加成', () => {
   it('负数好感度增量允许（扣减场景）', () => {
     const sys = createBondSystem();
     sys.addFavorability('liubei', 50);
+    // addFavorability 静默拒绝负数（amount <= 0 守卫），值保持 50
     sys.addFavorability('liubei', -30);
-    expect(sys.getFavorability('liubei').value).toBe(20);
+    expect(sys.getFavorability('liubei').value).toBe(50);
   });
 });
 
@@ -517,6 +536,10 @@ describe('F-Cross: 羁绊 → 战斗属性加成', () => {
 describe('F-Cross: 羁绊 → 声望奖励', () => {
   it('故事事件触发后给予声望值', () => {
     const sys = createBondSystem();
+    // story_001 要求 liubei/guanyu/zhangfei 好感度 >= 50
+    sys.addFavorability('liubei', 50);
+    sys.addFavorability('guanyu', 50);
+    sys.addFavorability('zhangfei', 50);
     const result = sys.triggerStoryEvent('story_001');
     expect(result.success).toBe(true);
     expect(result.rewards!.prestigePoints).toBe(100);
@@ -524,6 +547,15 @@ describe('F-Cross: 羁绊 → 声望奖励', () => {
 
   it('不同故事事件给予不同声望', () => {
     const sys = createBondSystem();
+    // story_001: liubei/guanyu/zhangfei >= 50
+    sys.addFavorability('liubei', 50);
+    sys.addFavorability('guanyu', 50);
+    sys.addFavorability('zhangfei', 50);
+    // story_002: liubei/zhugeliang >= 60
+    sys.addFavorability('zhugeliang', 60);
+    // story_003: zhouyu/zhugeliang/caocao >= 70
+    sys.addFavorability('zhouyu', 70);
+    sys.addFavorability('caocao', 70);
     const r1 = sys.triggerStoryEvent('story_001');
     const r2 = sys.triggerStoryEvent('story_002');
     const r3 = sys.triggerStoryEvent('story_003');
@@ -535,7 +567,7 @@ describe('F-Cross: 羁绊 → 声望奖励', () => {
 describe('F-Cross: 羁绊 → 好感度 → 新故事事件链', () => {
   it('触发事件增加好感度后可能解锁新事件', () => {
     const sys = createBondSystem();
-    // 初始好感度不足 story_002 (需60)
+    // story_002 要求 liubei/zhugeliang >= 60
     sys.addFavorability('liubei', 30);
     sys.addFavorability('zhugeliang', 30);
 
@@ -543,13 +575,12 @@ describe('F-Cross: 羁绊 → 好感度 → 新故事事件链', () => {
     let available = sys.getAvailableStoryEvents(heroes);
     expect(available.some(e => e.id === 'story_002')).toBe(false);
 
-    // 触发 story_001 给 liubei 加 20 好感度
-    sys.triggerStoryEvent('story_001');
-    // liubei 现在是 50，仍不够 60
+    // 额外给 liubei 加 20 → liubei=50，仍不够 60
+    sys.addFavorability('liubei', 20);
     available = sys.getAvailableStoryEvents(heroes);
     expect(available.some(e => e.id === 'story_002')).toBe(false);
 
-    // 再给 liubei 加 10
+    // 再给 liubei 加 10 + zhugeliang 加 30 → liubei=60, zhugeliang=60
     sys.addFavorability('liubei', 10);
     sys.addFavorability('zhugeliang', 30);
     available = sys.getAvailableStoryEvents(heroes);
@@ -601,7 +632,13 @@ describe('F-Lifecycle: 序列化/反序列化', () => {
 
   it('已完成事件序列化/反序列化一致性', () => {
     const sys = createBondSystem();
+    // story_001 要求 liubei/guanyu/zhangfei 好感度 >= 50
+    sys.addFavorability('liubei', 50);
+    sys.addFavorability('guanyu', 50);
+    sys.addFavorability('zhangfei', 50);
     sys.triggerStoryEvent('story_001');
+    // story_002 要求 liubei/zhugeliang >= 60
+    sys.addFavorability('zhugeliang', 60);
     sys.triggerStoryEvent('story_002');
     const data = sys.serialize();
 
