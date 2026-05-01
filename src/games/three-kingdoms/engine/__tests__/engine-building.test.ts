@@ -81,15 +81,18 @@ describe('ThreeKingdomsEngine — 建筑域', () => {
   // 2. 取消升级
   // ═══════════════════════════════════════════
   describe('cancelUpgrade()', () => {
-    it('成功取消并返还资源', () => {
+    it('成功取消并返还资源(80%)', () => {
       engine.init();
       const check = engine.checkUpgrade('farmland');
       if (check.canUpgrade) {
         const goldBefore = engine.resource.getAmount('gold');
+        const cost = engine.getUpgradeCost('farmland');
         engine.upgradeBuilding('farmland');
         const refund = engine.cancelUpgrade('farmland');
         expect(refund).not.toBeNull();
-        expect(engine.resource.getAmount('gold')).toBe(goldBefore);
+        // 取消升级返还80%资源
+        const expectedRefund = Math.round((cost?.gold ?? 0) * 0.8);
+        expect(engine.resource.getAmount('gold')).toBe(goldBefore - (cost?.gold ?? 0) + expectedRefund);
       }
     });
 
