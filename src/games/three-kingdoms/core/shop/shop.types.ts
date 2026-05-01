@@ -217,6 +217,8 @@ export interface ShopSaveData {
   shops: Record<ShopType, ShopState>;
   /** 收藏商品ID列表 */
   favorites: string[];
+  /** 活跃折扣配置列表 */
+  activeDiscounts?: DiscountConfig[];
   /** 版本号 */
   version: number;
 }

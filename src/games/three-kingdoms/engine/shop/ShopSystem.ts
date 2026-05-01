@@ -262,15 +262,24 @@ export class ShopSystem implements ISubsystem {
       }
     }
 
-    const finalRate = Math.min(itemDiscount, npcRate, activeRate);
+    // FIX-SHOP-002: 防护NaN/非正常折扣率，确保finalRate ∈ (0, 1]
+    const safeRate = (r: number) => (Number.isFinite(r) && r > 0 && r <= 1) ? r : 1;
+    const finalRate = Math.min(safeRate(itemDiscount), safeRate(npcRate), safeRate(activeRate));
     const result: Record<string, number> = {};
     for (const [cur, price] of Object.entries(def.basePrice)) {
-      result[cur] = Math.ceil(price * finalRate);
+      result[cur] = Math.max(1, Math.ceil(price * finalRate)); // 最低1，防止免费
     }
     return result;
   }
 
-  addDiscount(config: DiscountConfig): void { this.activeDiscounts.push(config); }
+  addDiscount(config: DiscountConfig): void {
+    // FIX-SHOP-004: 验证rate范围 (0, 1]，拒绝NaN/负数/零/Infinity
+    if (!Number.isFinite(config.rate) || config.rate <= 0 || config.rate > 1) {
+      gameLog.warn(`ShopSystem: 无效折扣率 ${config.rate}，忽略`);
+      return;
+    }
+    this.activeDiscounts.push(config);
+  }
 
   cleanupExpiredDiscounts(): number {
     const now = Date.now();
@@ -286,8 +295,9 @@ export class ShopSystem implements ISubsystem {
     const { goodsId, quantity, shopType } = request;
 
     // 数量合法性校验
-    if (!quantity || quantity <= 0 || !Number.isInteger(quantity)) {
-      return { canBuy: false, confirmLevel: 'none', errors: ['购买数量无效：必须为正整数'], finalPrice: {} };
+    // FIX-SHOP-003: 添加quantity上限防止溢出
+    if (!quantity || quantity <= 0 || !Number.isInteger(quantity) || quantity > 9999) {
+      return { canBuy: false, confirmLevel: 'none', errors: ['购买数量无效：必须为1~9999的正整数'], finalPrice: {} };
     }
 
     const def = GOODS_DEF_MAP[goodsId];
@@ -301,6 +311,12 @@ export class ShopSystem implements ISubsystem {
     if (item.lifetimeLimit !== -1 && item.lifetimePurchased + quantity > item.lifetimeLimit) errors.push(`终身限购 ${item.lifetimeLimit}，已购 ${item.lifetimePurchased}`);
 
     const finalPrice = this.calculateFinalPrice(goodsId, shopType, npcId);
+
+    // FIX-SHOP-009: 无currencyOps时，付费商品拒绝购买（防止免费漏洞）
+    const hasPrice = Object.values(finalPrice).some(p => p > 0);
+    if (hasPrice && !this.currencyOps) {
+      errors.push('货币系统未初始化，无法购买付费商品');
+    }
 
     if (this.currencyOps) {
       // ACC-10-20 fix: 货币检查金额 = 单价 × 数量
@@ -412,6 +428,8 @@ export class ShopSystem implements ISubsystem {
 
       if (accumulated > 0) {
         this.restockShop(type, now);
+        // FIX-SHOP-011: 更新lastOfflineRestock防止重复补货
+        shop.lastOfflineRestock = now;
         // 10%概率出现稀有
         if (Math.random() < DEFAULT_RESTOCK_CONFIG.offlineRareChance) {
           for (const item of shop.goods) {
@@ -428,19 +446,43 @@ export class ShopSystem implements ISubsystem {
   // ─── 6. 商店等级 ─────────────────────────
 
   getShopLevel(shopType: ShopType): number { return this.shops[shopType].shopLevel; }
-  setShopLevel(shopType: ShopType, level: number): void { this.shops[shopType].shopLevel = level; }
+  setShopLevel(shopType: ShopType, level: number): void {
+    // FIX-SHOP-001: 防护NaN/负数/Infinity
+    if (!Number.isFinite(level) || level < 1) return;
+    this.shops[shopType].shopLevel = level;
+  }
 
   // ─── 7. 序列化 ────────────────────────────
 
   serialize(): ShopSaveData {
-    return { shops: { ...this.shops }, favorites: [...this.favorites], version: SHOP_SAVE_VERSION };
+    // FIX-SHOP-010: 使用深拷贝防止引用泄漏
+    // FIX-SHOP-006: 包含activeDiscounts
+    return {
+      shops: JSON.parse(JSON.stringify(this.shops)) as Record<ShopType, ShopState>,
+      favorites: [...this.favorites],
+      activeDiscounts: [...this.activeDiscounts],
+      version: SHOP_SAVE_VERSION,
+    };
   }
 
   deserialize(data: ShopSaveData): void {
+    // FIX-SHOP-007: null/undefined防护
+    if (!data || typeof data !== 'object') { gameLog.warn('ShopSystem: 存档数据为空'); return; }
+
     if (data.version !== SHOP_SAVE_VERSION) gameLog.warn(`ShopSystem: 存档版本不匹配 (期望 ${SHOP_SAVE_VERSION}，实际 ${data.version})`);
-    for (const type of SHOP_TYPES) { if (data.shops[type]) this.shops[type] = data.shops[type]; }
+    for (const type of SHOP_TYPES) {
+      if (data.shops?.[type]) {
+        // FIX-SHOP-007: 验证关键字段完整性
+        const shop = data.shops[type];
+        if (typeof shop.shopLevel === 'number' && !Number.isFinite(shop.shopLevel)) shop.shopLevel = 1;
+        if (typeof shop.manualRefreshCount !== 'number' || shop.manualRefreshCount < 0) shop.manualRefreshCount = 0;
+        this.shops[type] = shop;
+      }
+    }
     this.favorites.clear();
-    if (data.favorites) for (const id of data.favorites) this.favorites.add(id);
+    if (data.favorites) for (const id of data.favorites) { if (GOODS_DEF_MAP[id]) this.favorites.add(id); }
+    // FIX-SHOP-006: 恢复activeDiscounts
+    this.activeDiscounts = Array.isArray(data.activeDiscounts) ? data.activeDiscounts.filter(d => Number.isFinite(d.rate) && d.rate > 0 && d.rate <= 1) : [];
   }
 
   // ─── 内部方法 ──────────────────────────────
