@@ -291,6 +291,9 @@ export interface GameSaveData {
   recruitTokenEconomy?: import('../engine/hero/recruit-token-economy-system').RecruitTokenEconomySaveData;
   /** 远征系统数据（可选，v12.0+） */
   expedition?: import('../core/expedition/expedition.types').ExpeditionSaveData;
+  // ── NPC系统 v19.0+ ──
+  /** NPC系统数据（可选，v19.0+，FIX-008: R2 存档接入） */
+  npc?: import('../core/npc/npc.types').NPCSaveData;
 }
 
 // ─────────────────────────────────────────────

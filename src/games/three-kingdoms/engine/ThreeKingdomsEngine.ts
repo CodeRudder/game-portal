@@ -854,6 +854,8 @@ export class ThreeKingdomsEngine {
       heroDispatch: this.heroDispatchSystem,
       awakening: this.awakeningSystem,
       recruitTokenEconomy: this.recruitTokenEconomy,
+      // ── NPC系统 v19.0 (FIX-008: R2 存档接入) ──
+      npc: this.r11.npcSystem,
     };
   }
   private finalizeLoad(): void {

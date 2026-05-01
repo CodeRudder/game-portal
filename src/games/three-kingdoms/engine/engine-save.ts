@@ -127,6 +127,8 @@ export interface SaveContext {
   readonly recruitTokenEconomy?: import('./hero/recruit-token-economy-system').RecruitTokenEconomySystem;
   /** 远征系统（可选，v12.0+） */
   readonly expedition?: import('./expedition/ExpeditionSystem').ExpeditionSystem;
+  /** NPC系统（可选，v19.0+，FIX-008: R2 存档接入） */
+  readonly npc?: import('./npc/NPCSystem').NPCSystem;
 }
 
 // ─────────────────────────────────────────────
@@ -201,6 +203,8 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     recruitTokenEconomy: ctx.recruitTokenEconomy?.serialize(),
     // ── 远征系统 v12.0 (FIX-601: R1 保存/加载覆盖) ──
     expedition: ctx.expedition?.serialize(),
+    // ── NPC系统 v19.0 (FIX-008: R2 存档接入) ──
+    npc: ctx.npc?.exportSaveData(),
   };
 }
 
@@ -245,6 +249,8 @@ export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameSt
   if (data.recruitTokenEconomy) subsystems.recruitTokenEconomy = data.recruitTokenEconomy;
   // ── 远征系统 v12.0 (FIX-601: R1 保存/加载覆盖) ──
   if (data.expedition) subsystems.expedition = data.expedition;
+  // ── NPC系统 v19.0 (FIX-008: R2 存档接入) ──
+  if (data.npc) subsystems.npc = data.npc;
 
   return {
     version: String(data.version),
@@ -301,6 +307,8 @@ export function fromIGameState(state: IGameState): GameSaveData {
     recruitTokenEconomy: s.recruitTokenEconomy as import('./hero/recruit-token-economy-system').RecruitTokenEconomySaveData | undefined,
     // ── 远征系统 v12.0 (FIX-601: R1 保存/加载覆盖) ──
     expedition: s.expedition as import('../core/expedition/expedition.types').ExpeditionSaveData | undefined,
+    // ── NPC系统 v19.0 (FIX-008: R2 存档接入) ──
+    npc: s.npc as import('../core/npc/npc.types').NPCSaveData | undefined,
   };
 }
 
@@ -635,6 +643,13 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
     ctx.expedition.deserialize(data.expedition);
   } else {
     gameLog.info('[Save] v12.0 存档迁移：无远征数据，自动初始化默认远征状态');
+  }
+
+  // ── NPC系统 v19.0 (FIX-008: R2 存档接入) ──
+  if (data.npc && ctx.npc) {
+    ctx.npc.importSaveData(data.npc);
+  } else {
+    gameLog.info('[Save] v19.0 存档迁移：无NPC数据，自动初始化默认NPC状态');
   }
 
   syncBuildingToResource({
