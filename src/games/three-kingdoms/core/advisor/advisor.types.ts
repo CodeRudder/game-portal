@@ -131,6 +131,8 @@ export interface AdvisorSaveData {
   dailyCount: number;
   /** 上次每日重置日期 */
   lastDailyReset: string;
+  /** 活跃建议列表（R1 FIX-602: 防止存档丢失） */
+  suggestions: AdvisorSuggestion[];
 }
 
 /** 军师系统存档版本 */

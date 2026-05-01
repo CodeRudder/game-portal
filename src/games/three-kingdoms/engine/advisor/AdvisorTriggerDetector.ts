@@ -31,17 +31,24 @@ interface TriggerState {
 
 /**
  * 检查触发类型是否在冷却中
+ *
+ * FIX-501: 统一为 until 模式（cooldowns 存储冷却结束时间戳）
+ * 与 AdvisorSystem.isInCooldown 保持一致
  */
 export function isInCooldown(state: TriggerState, triggerType: AdvisorTriggerType): boolean {
-  const lastTime = state.cooldowns[triggerType] ?? 0;
-  return Date.now() - lastTime < (COOLDOWN_MS[triggerType] ?? 0);
+  const cooldownEnd = state.cooldowns[triggerType];
+  // FIX-501: 使用 until 模式 + NaN 防护
+  if (!cooldownEnd || !Number.isFinite(cooldownEnd)) return false;
+  return Date.now() < cooldownEnd;
 }
 
 /**
  * 设置触发冷却
+ *
+ * FIX-501: 统一为 until 模式（存储冷却结束时间戳）
  */
 export function setCooldown(state: TriggerState, triggerType: AdvisorTriggerType): void {
-  state.cooldowns[triggerType] = Date.now();
+  state.cooldowns[triggerType] = Date.now() + (COOLDOWN_MS[triggerType] ?? 0);
 }
 
 /**
@@ -52,7 +59,7 @@ export function findOverflowResource(snapshot: GameStateSnapshot): string | null
   const caps = snapshot.resourceCaps as unknown as Record<string, number>;
   for (const [key, value] of Object.entries(snapshot.resources)) {
     const cap = caps[key] ?? 0;
-    if (cap > 0 && value / cap > 0.9) return key;
+    if (cap > 0 && value / cap > 0.8) return key;
   }
   return null;
 }
@@ -72,12 +79,17 @@ export function findShortageResource(snapshot: GameStateSnapshot): string | null
 
 /**
  * 检测所有触发条件，返回候选建议列表
+ *
+ * FIX-507: 增加 snapshot null 防护和数组字段默认值
  */
 export function detectAllTriggers(
   snapshot: GameStateSnapshot,
   state: TriggerState,
   createSuggestion: (trigger: AdvisorTriggerType, title: string, desc: string, priority: string, action: string, target: string, targetId?: string) => AdvisorSuggestion,
 ): AdvisorSuggestion[] {
+  // FIX-507: null snapshot 防护
+  if (!snapshot) return [];
+
   const suggestions: AdvisorSuggestion[] = [];
 
   // 资源溢出检测
@@ -98,8 +110,10 @@ export function detectAllTriggers(
   }
 
   // 武将可升级
-  if (snapshot.upgradeableHeroes.length > 0 && !isInCooldown(state, 'hero_upgradeable')) {
-    const heroId = snapshot.upgradeableHeroes[0];
+  // FIX-507: upgradeableHeroes 默认空数组
+  const upgradeableHeroes = snapshot.upgradeableHeroes || [];
+  if (upgradeableHeroes.length > 0 && !isInCooldown(state, 'hero_upgradeable')) {
+    const heroId = upgradeableHeroes[0];
     suggestions.push(createSuggestion('hero_upgradeable', `武将${heroId}可升级`, `${heroId}已满足升级条件，建议立即升级`, 'high', '前往升级', 'hero', heroId));
   }
 
@@ -114,14 +128,18 @@ export function detectAllTriggers(
   }
 
   // 限时NPC即将离开
-  for (const npc of snapshot.leavingNpcs) {
+  // FIX-507: leavingNpcs 默认空数组
+  const leavingNpcs = snapshot.leavingNpcs || [];
+  for (const npc of leavingNpcs) {
     if (!isInCooldown(state, 'npc_leaving')) {
       suggestions.push(createSuggestion('npc_leaving', `${npc.name}即将离开`, `限时NPC${npc.name}即将离开，请尽快交互`, 'high', '前往查看', 'npc', npc.id));
     }
   }
 
   // 新功能解锁
-  for (const feature of snapshot.newFeatures) {
+  // FIX-507: newFeatures 默认空数组
+  const newFeatures = snapshot.newFeatures || [];
+  for (const feature of newFeatures) {
     if (!isInCooldown(state, 'new_feature_unlock')) {
       suggestions.push(createSuggestion('new_feature_unlock', `点击了解${feature.name}`, `新功能${feature.name}已解锁，点击了解详情`, 'low', '了解更多', 'feature', feature.id));
     }

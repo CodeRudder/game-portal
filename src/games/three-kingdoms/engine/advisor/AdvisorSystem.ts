@@ -106,7 +106,7 @@ interface AdvisorInternalState {
   dailyCount: number;
   /** 上次每日重置日期 */
   lastDailyReset: string;
-  /** 各触发类型的冷却结束时间 */
+  /** 各触发类型的冷却结束时间（until 模式） */
   cooldowns: Record<string, number>;
 }
 
@@ -127,9 +127,13 @@ export class AdvisorSystem implements ISubsystem {
 
   // ─── 生命周期 ───────────────────────────
 
+  /**
+   * FIX-508: init 增加 deps.eventBus null 防护
+   */
   init(deps: ISystemDeps): void {
     this.deps = deps;
-    this.deps.eventBus.on('calendar:dayChanged', () => this.resetDaily());
+    // FIX-508: 可选链防护 eventBus 为 null/undefined
+    this.deps.eventBus?.on('calendar:dayChanged', () => this.resetDaily());
   }
 
   update(_dt: number): void {
@@ -171,7 +175,9 @@ export class AdvisorSystem implements ISubsystem {
 
     for (const suggestion of candidates) {
       // 检查每日上限
-      if (this.state.dailyCount >= ADVISOR_DAILY_LIMIT) {
+      // FIX-505: NaN 防护 — 确保 dailyCount 为有限数
+      const currentCount = Number.isFinite(this.state.dailyCount) ? this.state.dailyCount : 0;
+      if (currentCount >= ADVISOR_DAILY_LIMIT) {
         break;
       }
 
@@ -186,7 +192,7 @@ export class AdvisorSystem implements ISubsystem {
       }
 
       this.state.allSuggestions.push(suggestion);
-      this.state.dailyCount++;
+      this.state.dailyCount = currentCount + 1;
     }
   }
 
@@ -207,7 +213,7 @@ export class AdvisorSystem implements ISubsystem {
   getDisplayState(): AdvisorDisplayState {
     this.checkDailyReset();
     const cooldownRecords: AdvisorCooldownRecord[] = Object.entries(this.state.cooldowns)
-      .filter(([, until]) => Date.now() < until)
+      .filter(([, until]) => Number.isFinite(until) && Date.now() < until)
       .map(([type, until]) => ({
         triggerType: type as AdvisorTriggerType,
         cooldownUntil: until,
@@ -224,6 +230,8 @@ export class AdvisorSystem implements ISubsystem {
   /**
    * 执行建议 (#16)
    * 执行后自动移除
+   *
+   * FIX-509: 增加 deps 未初始化防护
    */
   executeSuggestion(suggestionId: string): { success: boolean; reason?: string } {
     const idx = this.state.allSuggestions.findIndex(s => s.id === suggestionId);
@@ -234,7 +242,8 @@ export class AdvisorSystem implements ISubsystem {
     const suggestion = this.state.allSuggestions[idx];
     this.state.allSuggestions.splice(idx, 1);
 
-    this.deps.eventBus.emit('advisor:suggestionExecuted', {
+    // FIX-509: deps 未初始化时仅移除建议，不 emit 事件
+    this.deps?.eventBus?.emit('advisor:suggestionExecuted', {
       id: suggestionId,
       triggerType: suggestion.triggerType,
     });
@@ -255,7 +264,7 @@ export class AdvisorSystem implements ISubsystem {
     const suggestion = this.state.allSuggestions[idx];
     this.state.allSuggestions.splice(idx, 1);
 
-    // 设置同类型冷却
+    // 设置同类型冷却（until 模式：存储冷却结束时间戳）
     this.state.cooldowns[suggestion.triggerType] = Date.now() + ADVISOR_CLOSE_COOLDOWN_MS;
 
     return { success: true };
@@ -263,19 +272,24 @@ export class AdvisorSystem implements ISubsystem {
 
   /**
    * 检查指定触发类型是否在冷却中
+   *
+   * FIX-506: 增加 NaN 防护
    */
   isInCooldown(triggerType: AdvisorTriggerType): boolean {
     const cooldownEnd = this.state.cooldowns[triggerType];
-    if (!cooldownEnd) return false;
+    // FIX-506: NaN 是 truthy 但 !Number.isFinite(NaN) 为 true
+    if (!cooldownEnd || !Number.isFinite(cooldownEnd)) return false;
     return Date.now() < cooldownEnd;
   }
 
   /**
    * 序列化存档数据
+   *
+   * FIX-502: 增加 allSuggestions 保存
    */
   serialize(): AdvisorSaveData {
     const cooldownRecords: AdvisorCooldownRecord[] = Object.entries(this.state.cooldowns)
-      .filter(([, until]) => Date.now() < until)
+      .filter(([, until]) => Number.isFinite(until) && Date.now() < until)
       .map(([type, until]) => ({
         triggerType: type as AdvisorTriggerType,
         cooldownUntil: until,
@@ -286,18 +300,47 @@ export class AdvisorSystem implements ISubsystem {
       cooldowns: cooldownRecords,
       dailyCount: this.state.dailyCount,
       lastDailyReset: this.state.lastDailyReset,
+      // FIX-502: 保存活跃建议列表
+      suggestions: this.state.allSuggestions.map(s => ({ ...s })),
     };
   }
 
   /**
    * 从存档数据恢复
+   *
+   * FIX-503: null/undefined 防护
+   * FIX-504: Infinity cooldownUntil 防护
+   * FIX-505: NaN dailyCount 防护
+   * FIX-502: 恢复 allSuggestions
    */
   loadSaveData(data: AdvisorSaveData): void {
-    this.state.dailyCount = data.dailyCount;
-    this.state.lastDailyReset = data.lastDailyReset;
+    // FIX-503: null/undefined 防护
+    if (!data) return;
+
+    // FIX-505: NaN dailyCount 防护
+    const dailyCount = data.dailyCount;
+    this.state.dailyCount = (Number.isFinite(dailyCount) && dailyCount >= 0) ? dailyCount : 0;
+
+    this.state.lastDailyReset = data.lastDailyReset || getTodayStr();
     this.state.cooldowns = {};
-    for (const cd of data.cooldowns) {
-      this.state.cooldowns[cd.triggerType] = cd.cooldownUntil;
+
+    // FIX-504: Infinity cooldownUntil 防护
+    const cooldowns = data.cooldowns || [];
+    for (const cd of cooldowns) {
+      if (cd && cd.triggerType && Number.isFinite(cd.cooldownUntil) && cd.cooldownUntil > 0) {
+        this.state.cooldowns[cd.triggerType] = cd.cooldownUntil;
+      }
+    }
+
+    // FIX-502: 恢复 allSuggestions，过滤过期项
+    const savedSuggestions = data.suggestions;
+    if (Array.isArray(savedSuggestions)) {
+      const now = Date.now();
+      this.state.allSuggestions = savedSuggestions.filter(
+        s => s && s.id && (s.expiresAt == null || s.expiresAt > now),
+      );
+    } else {
+      this.state.allSuggestions = [];
     }
   }
 
