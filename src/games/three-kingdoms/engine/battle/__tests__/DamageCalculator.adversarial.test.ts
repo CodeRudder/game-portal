@@ -224,13 +224,14 @@ describe('DamageCalculator — 对抗性测试 (Adversarial)', () => {
   });
 
   // ── 10. Buff加成精确值验证 ──
-  it('ATK_UP +20% 和 ATK_DOWN -10% 叠加后精确为 +10%', () => {
+  // DEF-028: 乘法叠加 1.2 * 0.9 - 1 = 0.08
+  it('ATK_UP +20% 和 ATK_DOWN -10% 叠加后精确为 +8%', () => {
     const unit = createTestUnit({
       buffs: [
         { type: BuffType.ATK_UP, value: 0.2, duration: 1, source: 'test' },
         { type: BuffType.ATK_DOWN, value: 0.1, duration: 1, source: 'test' },
       ],
     });
-    expect(getAttackBonus(unit)).toBeCloseTo(0.1, 10);
+    expect(getAttackBonus(unit)).toBeCloseTo(0.08, 10);
   });
 });

@@ -325,6 +325,7 @@ describe('DamageCalculator', () => {
   // ── 攻击/防御加成计算 ──
 
   describe('getAttackBonus / getDefenseBonus', () => {
+    // DEF-028: 乘法叠加 1.1 * 1.15 - 1 = 0.265
     it('应正确计算多个攻击Buff的叠加值', () => {
       const unit = createTestUnit({
         buffs: [
@@ -332,9 +333,10 @@ describe('DamageCalculator', () => {
           { type: BuffType.ATK_UP, remainingTurns: 1, value: 0.15, sourceId: 's2' },
         ],
       });
-      expect(getAttackBonus(unit)).toBeCloseTo(0.25, 4);
+      expect(getAttackBonus(unit)).toBeCloseTo(0.265, 4);
     });
 
+    // DEF-028: 乘法叠加 1.2 * 0.9 - 1 = 0.08
     it('攻击提升和降低应互相抵消', () => {
       const unit = createTestUnit({
         buffs: [
@@ -342,7 +344,7 @@ describe('DamageCalculator', () => {
           { type: BuffType.ATK_DOWN, remainingTurns: 1, value: 0.1, sourceId: 's2' },
         ],
       });
-      expect(getAttackBonus(unit)).toBeCloseTo(0.1, 4);
+      expect(getAttackBonus(unit)).toBeCloseTo(0.08, 4);
     });
 
     it('无Buff时防御加成应为0', () => {

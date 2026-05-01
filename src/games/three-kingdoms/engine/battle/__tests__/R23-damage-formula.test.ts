@@ -206,11 +206,12 @@ describe('R23-3: 伤害公式边界条件', () => {
       expect(getAttackBonus(unit)).toBe(0.5);
     });
 
+    // DEF-028: 乘法叠加浮点精度修正
     it('ATK_DOWN 减少攻击加成', () => {
       const unit = createUnit({
         buffs: [{ type: BuffType.ATK_DOWN, value: 0.3, duration: 3, source: 'test' }],
       });
-      expect(getAttackBonus(unit)).toBe(-0.3);
+      expect(getAttackBonus(unit)).toBeCloseTo(-0.3, 10);
     });
 
     it('DEF_UP 增加防御加成', () => {
@@ -220,13 +221,15 @@ describe('R23-3: 伤害公式边界条件', () => {
       expect(getDefenseBonus(unit)).toBe(0.5);
     });
 
+    // DEF-028: 乘法叠加浮点精度修正
     it('DEF_DOWN 减少防御加成', () => {
       const unit = createUnit({
         buffs: [{ type: BuffType.DEF_DOWN, value: 0.3, duration: 3, source: 'test' }],
       });
-      expect(getDefenseBonus(unit)).toBe(-0.3);
+      expect(getDefenseBonus(unit)).toBeCloseTo(-0.3, 10);
     });
 
+    // DEF-028: 乘法叠加 1.3 * 1.2 - 1 = 0.56
     it('多个 Buff 叠加', () => {
       const unit = createUnit({
         buffs: [
@@ -234,7 +237,7 @@ describe('R23-3: 伤害公式边界条件', () => {
           { type: BuffType.ATK_UP, value: 0.2, duration: 3, source: 'test' },
         ],
       });
-      expect(getAttackBonus(unit)).toBe(0.5);
+      expect(getAttackBonus(unit)).toBeCloseTo(0.56, 10);
     });
 
     it('SHIELD 计算护盾总量', () => {
