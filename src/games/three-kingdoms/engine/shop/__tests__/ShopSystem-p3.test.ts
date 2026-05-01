@@ -139,6 +139,8 @@ describe('ShopSystem', () => {
 
     it('serialize/deserialize 往返一致', () => {
       const id = getNormalGoodsId();
+      const mockCS = createMockCurrencySystem();
+      shop.setCurrencySystem(mockCS);
       shop.executeBuy({ goodsId: id, quantity: 1, shopType: 'normal' });
       shop.setShopLevel('normal', 3);
 

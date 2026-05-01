@@ -49,6 +49,8 @@ export class AchievementSystem implements ISubsystem {
   private state: AchievementState = createInitialState();
   private chainProgress: Record<string, number> = initChainProgress();
   private rewardCallback?: (reward: AchievementReward) => void;
+  // FIX-909: 保存事件取消订阅函数 (P0-009)
+  private eventUnsubscribers: Array<() => void> = [];
 
   // ─── 生命周期 ───────────────────────────
 
@@ -72,6 +74,11 @@ export class AchievementSystem implements ISubsystem {
   }
 
   reset(): void {
+    // FIX-909: 清理事件监听器防止泄漏 (P0-009)
+    for (const unsub of this.eventUnsubscribers) {
+      try { unsub(); } catch (_e) { /* 忽略 */ }
+    }
+    this.eventUnsubscribers = [];
     this.state = createInitialState();
     this.chainProgress = initChainProgress();
   }
@@ -126,6 +133,9 @@ export class AchievementSystem implements ISubsystem {
    * @param value 当前值（绝对值，非增量）
    */
   updateProgress(conditionType: AchievementConditionType, value: number): void {
+    // FIX-901: NaN/Infinity/负值防护 (P0-001, P1-001)
+    if (!Number.isFinite(value) || value < 0) return;
+
     for (const def of ALL_ACHIEVEMENTS) {
       const instance = this.state.achievements[def.id];
       if (!instance || instance.status === 'completed' || instance.status === 'claimed') continue;
@@ -202,8 +212,13 @@ export class AchievementSystem implements ISubsystem {
     }
 
     // 发放奖励
+    // FIX-907: try-catch 防止回调异常导致后续操作被跳过 (P0-007)
     if (this.rewardCallback) {
-      this.rewardCallback(def.rewards);
+      try {
+        this.rewardCallback(def.rewards);
+      } catch (_e) {
+        // 回调异常不影响成就状态，继续后续流程
+      }
     }
 
     // 检查成就链进度 (#18)
@@ -254,6 +269,8 @@ export class AchievementSystem implements ISubsystem {
 
   /** 加载存档 */
   loadSaveData(data: AchievementSaveData): void {
+    // FIX-904: null/undefined 输入防护 (P0-004)
+    if (!data || !data.state) return;
     if (data.version !== ACHIEVEMENT_SAVE_VERSION) return;
     this.state = {
       ...data.state,
@@ -268,32 +285,43 @@ export class AchievementSystem implements ISubsystem {
 
   /** 设置事件监听 */
   private setupEventListeners(): void {
+    // FIX-909: 保存取消订阅函数用于reset清理 (P0-009)
     // 监听战斗事件
-    this.deps.eventBus.on<{ wins?: number }>('battle:completed', (p) => {
-      if (p.wins) this.updateProgress('battle_wins', p.wins);
-    });
+    this.eventUnsubscribers.push(
+      this.deps.eventBus.on<{ wins?: number }>('battle:completed', (p) => {
+        if (p.wins) this.updateProgress('battle_wins', p.wins);
+      }),
+    );
 
     // 监听建筑事件
-    this.deps.eventBus.on<{ level?: number; totalUpgrades?: number }>('building:upgraded', (p) => {
-      if (p.level) this.updateProgress('building_level', p.level);
-      if (p.totalUpgrades) this.updateProgress('building_upgrades', p.totalUpgrades);
-    });
+    this.eventUnsubscribers.push(
+      this.deps.eventBus.on<{ level?: number; totalUpgrades?: number }>('building:upgraded', (p) => {
+        if (p.level) this.updateProgress('building_level', p.level);
+        if (p.totalUpgrades) this.updateProgress('building_upgrades', p.totalUpgrades);
+      }),
+    );
 
     // 监听武将事件
-    this.deps.eventBus.on<{ count?: number; starTotal?: number }>('hero:recruited', (p) => {
-      if (p.count) this.updateProgress('hero_count', p.count);
-      if (p.starTotal) this.updateProgress('hero_star_total', p.starTotal);
-    });
+    this.eventUnsubscribers.push(
+      this.deps.eventBus.on<{ count?: number; starTotal?: number }>('hero:recruited', (p) => {
+        if (p.count) this.updateProgress('hero_count', p.count);
+        if (p.starTotal) this.updateProgress('hero_star_total', p.starTotal);
+      }),
+    );
 
     // 监听转生事件
-    this.deps.eventBus.on<{ count: number }>('rebirth:completed', (p) => {
-      this.updateProgress('rebirth_count', p.count);
-    });
+    this.eventUnsubscribers.push(
+      this.deps.eventBus.on<{ count: number }>('rebirth:completed', (p) => {
+        this.updateProgress('rebirth_count', p.count);
+      }),
+    );
 
     // 监听声望事件
-    this.deps.eventBus.on<{ level: number }>('prestige:levelUp', (p) => {
-      this.updateProgress('prestige_level', p.level);
-    });
+    this.eventUnsubscribers.push(
+      this.deps.eventBus.on<{ level: number }>('prestige:levelUp', (p) => {
+        this.updateProgress('prestige_level', p.level);
+      }),
+    );
   }
 
   /** 检查单个成就是否完成 */
@@ -350,8 +378,13 @@ export class AchievementSystem implements ISubsystem {
         this.state.completedChains.push(chain.chainId);
 
         // 发放链完成奖励
+        // FIX-908: try-catch 防止回调异常 (P0-008)
         if (this.rewardCallback) {
-          this.rewardCallback(chain.chainBonusReward);
+          try {
+            this.rewardCallback(chain.chainBonusReward);
+          } catch (_e) {
+            // 链奖励发放失败不影响链完成状态
+          }
         }
 
         this.deps.eventBus.emit('achievement:chainCompleted', {

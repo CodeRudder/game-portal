@@ -312,12 +312,6 @@ export class ShopSystem implements ISubsystem {
 
     const finalPrice = this.calculateFinalPrice(goodsId, shopType, npcId);
 
-    // FIX-SHOP-009: 无currencyOps时，付费商品拒绝购买（防止免费漏洞）
-    const hasPrice = Object.values(finalPrice).some(p => p > 0);
-    if (hasPrice && !this.currencyOps) {
-      errors.push('货币系统未初始化，无法购买付费商品');
-    }
-
     if (this.currencyOps) {
       // ACC-10-20 fix: 货币检查金额 = 单价 × 数量
       const totalCost: Record<string, number> = {};
@@ -339,6 +333,12 @@ export class ShopSystem implements ISubsystem {
     if (!validation.canBuy) return { success: false, reason: validation.errors.join('; '), confirmLevel: validation.confirmLevel };
 
     const { goodsId, quantity, shopType } = request;
+
+    // FIX-SHOP-009: 无currencyOps时，付费商品拒绝执行购买（防止免费漏洞）
+    const hasPrice = Object.values(validation.finalPrice).some(p => p > 0);
+    if (hasPrice && !this.currencyOps) {
+      return { success: false, reason: '货币系统未初始化，无法购买付费商品', confirmLevel: validation.confirmLevel };
+    }
 
     if (this.currencyOps) {
       // ACC-10-20 fix: 扣费金额 = 单价 × 数量

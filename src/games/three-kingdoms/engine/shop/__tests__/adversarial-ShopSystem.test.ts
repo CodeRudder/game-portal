@@ -252,7 +252,7 @@ describe('ShopSystem 对抗式测试', () => {
   // ═══════════════════════════════════════
 
   describe('折扣 — 溢出/滥用攻击', () => {
-    it('C-001: 折扣为0时价格应为0', () => {
+    it('C-001: 折扣为0时应被拒绝（FIX-SHOP-004防护）', () => {
       const discount: DiscountConfig = {
         type: 'normal',
         rate: 0,
@@ -261,11 +261,12 @@ describe('ShopSystem 对抗式测试', () => {
         applicableGoods: [],
       };
       shop.addDiscount(discount);
+      // FIX-SHOP-004: rate=0被拒绝，折扣不生效，价格保持原价
       const goods = shop.getShopGoods('normal');
       if (goods.length > 0) {
         const price = shop.calculateFinalPrice(goods[0].defId, 'normal');
         const prices = Object.values(price);
-        prices.forEach(p => expect(p).toBe(0));
+        prices.forEach(p => expect(p).toBeGreaterThan(0));
       }
     });
 
@@ -523,9 +524,9 @@ describe('ShopSystem 对抗式测试', () => {
       expect(shop.getShopLevel('normal')).toBe(3);
     });
 
-    it('H-003: 设置负数等级不应崩溃', () => {
+    it('H-003: 设置负数等级应被拒绝（FIX-SHOP-001防护）', () => {
       shop.setShopLevel('normal', -1);
-      expect(shop.getShopLevel('normal')).toBe(-1);
+      expect(shop.getShopLevel('normal')).toBe(1); // 保持默认值
     });
 
     it('H-004: 设置极大等级不应崩溃', () => {
@@ -588,12 +589,13 @@ describe('ShopSystem 对抗式测试', () => {
   // ═══════════════════════════════════════
 
   describe('NPC折扣 — 折扣注入', () => {
-    it('K-001: NPC折扣为0时价格应为0', () => {
+    it('K-001: NPC折扣为0时应被防护（FIX-SHOP-002防护）', () => {
       shop.setNPCDiscountProvider(() => 0);
       const goods = shop.getShopGoods('normal');
       if (goods.length > 0) {
         const price = shop.calculateFinalPrice(goods[0].defId, 'normal', 'npc_1');
-        Object.values(price).forEach(p => expect(p).toBe(0));
+        // FIX-SHOP-002: rate=0被safeRate防护为1，价格保持原价
+        Object.values(price).forEach(p => expect(p).toBeGreaterThan(0));
       }
     });
 

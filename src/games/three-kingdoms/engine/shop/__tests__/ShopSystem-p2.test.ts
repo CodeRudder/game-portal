@@ -180,6 +180,8 @@ describe('ShopSystem', () => {
 
     it('executeBuy 成功购买', () => {
       const id = getNormalGoodsId();
+      const mockCS = createMockCurrencySystem();
+      shop.setCurrencySystem(mockCS);
       const req: BuyRequest = { goodsId: id, quantity: 1, shopType: 'normal' };
       const result = shop.executeBuy(req);
       expect(result.success).toBe(true);
@@ -196,6 +198,8 @@ describe('ShopSystem', () => {
 
     it('executeBuy 购买后更新 dailyPurchased 和 lifetimePurchased', () => {
       const id = getNormalGoodsId();
+      const mockCS = createMockCurrencySystem();
+      shop.setCurrencySystem(mockCS);
       const req: BuyRequest = { goodsId: id, quantity: 2, shopType: 'normal' };
       shop.executeBuy(req);
 
@@ -234,6 +238,8 @@ describe('ShopSystem', () => {
 
     it('executeBuy 成功后触发 eventBus', () => {
       const id = getNormalGoodsId();
+      const mockCS = createMockCurrencySystem();
+      shop.setCurrencySystem(mockCS);
       const req: BuyRequest = { goodsId: id, quantity: 1, shopType: 'normal' };
       shop.executeBuy(req);
 
@@ -261,6 +267,8 @@ describe('ShopSystem', () => {
 
     it('resetDailyLimits 重置每日购买计数', () => {
       const id = getNormalGoodsId();
+      const mockCS = createMockCurrencySystem();
+      shop.setCurrencySystem(mockCS);
       const req: BuyRequest = { goodsId: id, quantity: 1, shopType: 'normal' };
       shop.executeBuy(req);
 
