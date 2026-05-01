@@ -1,353 +1,347 @@
-# Shop 模块 Round-1 流程树
+# Shop 模块 R1 对抗式测试 — 流程树
 
-> 版本: v1.0 | 日期: 2026-05-01
-> 源码路径: `src/games/three-kingdoms/engine/shop/`
-> Builder规则: v1.8 | P0模式库: v1.8 (22个模式)
-
----
+> Builder Agent | 版本: v1.8 规则 | 日期: 2026-05-01
+> 模块: `src/games/three-kingdoms/engine/shop/`
+> 源文件: 2个引擎 + 4个核心 | 总行数: ~1,350行
 
 ## 模块概览
 
-| 子系统 | 文件 | 行数 | 公开API数 | 状态 |
-|--------|------|------|-----------|------|
-| ShopSystem | ShopSystem.ts | 480 | 24 | 🔴 关键发现 |
-| shop.types | shop.types.ts | 267 | — | ✅ 纯类型 |
-| shop-config | shop-config.ts | 98 | 6常量 | ✅ 纯数据 |
-| goods-data | goods-data.ts | 361 | 2映射 | ✅ 纯数据 |
+| 子系统 | 文件 | 行数 | 公开API数 | 序列化 |
+|--------|------|------|-----------|--------|
+| ShopSystem | ShopSystem.ts | ~480 | 24 | serialize/deserialize |
+| shop.types | shop.types.ts | ~267 | — (纯类型) | N/A |
+| shop-config | shop-config.ts | ~98 | 6常量 | N/A |
+| goods-data | goods-data.ts | ~361 | 2映射 | N/A |
 
-**总计**: 1个子系统, ~24个公开API, 8个私有方法, ~80个分支节点
-
----
-
-## 🔴 P0 关键发现
-
-### DEF-SHOP-001: setShopLevel 无NaN/负数/溢出防护（模式1/21）
-
-**严重度**: P0 - 状态污染  
-**影响范围**: `setShopLevel()` L424  
-**规则违反**: BR-01(数值API入口NaN检查), BR-17(战斗数值安全→通用数值安全)
-
-**证据**:
-```typescript
-// ShopSystem.ts L424
-setShopLevel(shopType: ShopType, level: number): void {
-  this.shops[shopType].shopLevel = level;
-}
-```
-- 无 `!Number.isFinite(level) || level <= 0` 检查
-- NaN写入后 → `getShopLevel()` 返回 NaN
-- 负数写入后 → 商店等级为负数，影响商品品质判断
-- Infinity写入后 → 序列化时可能出问题
-
-**修复建议**: 添加 `if (!Number.isFinite(level) || level < 1) return;`
+**总计公开API: 24个** | **ISubsystem方法: init/update/getState/reset**
 
 ---
 
-### DEF-SHOP-002: calculateFinalPrice 折扣率无NaN防护（模式1/21）
+## 公开API清单
 
-**严重度**: P0 - NaN传播  
-**影响范围**: `calculateFinalPrice()` L209-232  
-**规则违反**: BR-01(NaN检查), BR-17(数值安全)
-
-**证据**:
-```typescript
-// ShopSystem.ts L226-228
-const finalRate = Math.min(itemDiscount, npcRate, activeRate);
-const result: Record<string, number> = {};
-for (const [cur, price] of Object.entries(def.basePrice)) {
-  result[cur] = Math.ceil(price * finalRate);
-}
-```
-- `npcDiscountProvider` 返回NaN → `npcRate = NaN` → `finalRate = NaN` → 所有价格为NaN
-- `addDiscount({ rate: NaN })` → `activeRate = NaN` → `finalRate = NaN`
-- `Math.ceil(NaN)` = NaN，传播到 `validateBuy` 的 `finalPrice`
-- NaN价格通过 `validateBuy` → `executeBuy` → `spendByPriority(NaN cost)` → 货币系统异常
-
-**修复建议**: `const finalRate = Math.max(0, Math.min(1, Number.isFinite(r) ? r : 1))` 对每个rate做防护
-
----
-
-### DEF-SHOP-003: executeBuy 购买后stock/dailyPurchased无溢出防护（模式12/21）
-
-**严重度**: P0 - 状态不一致  
-**影响范围**: `executeBuy()` L298-303  
-**规则违反**: BR-12(溢出闭环)
-
-**证据**:
-```typescript
-// ShopSystem.ts L298-303
-if (item.stock !== -1) item.stock -= quantity;
-item.dailyPurchased += quantity;
-item.lifetimePurchased += quantity;
-```
-- `quantity = Number.MAX_SAFE_INTEGER` 通过验证（正整数）→ stock 溢出为负数
-- `dailyPurchased += quantity` → 超过 `Number.MAX_SAFE_INTEGER` → 精度丢失
-- `lifetimePurchased += quantity` → 同上
-
-**修复建议**: 添加 `quantity` 上限检查（如 `quantity > 9999` 拒绝），或 `Math.min` 防溢出
+| # | API | 签名 | 分类 |
+|---|-----|------|------|
+| 1 | init | (deps: ISystemDeps) => void | 生命周期 |
+| 2 | update | (dt: number) => void | 生命周期 |
+| 3 | getState | () => Record<ShopType, ShopState> | 查询 |
+| 4 | reset | () => void | 生命周期 |
+| 5 | setCurrencyOps | (ops: ShopCurrencyOps) => void | 依赖注入 |
+| 6 | setCurrencySystem | (cs) => void | 依赖注入(deprecated) |
+| 7 | setNPCDiscountProvider | (fn) => void | 依赖注入 |
+| 8 | getShopGoods | (shopType) => GoodsItem[] | 查询 |
+| 9 | getGoodsByCategory | (shopType, category) => GoodsItem[] | 查询 |
+| 10 | getCategories | () => GoodsCategory[] | 查询 |
+| 11 | getGoodsDef | (defId) => GoodsDef \| undefined | 查询 |
+| 12 | getGoodsItem | (shopType, defId) => GoodsItem \| undefined | 查询 |
+| 13 | filterGoods | (shopType, filter) => GoodsItem[] | 查询 |
+| 14 | calculateFinalPrice | (defId, shopType, npcId?) => Record<string, number> | 定价 |
+| 15 | addDiscount | (config: DiscountConfig) => void | 折扣 |
+| 16 | cleanupExpiredDiscounts | () => number | 折扣 |
+| 17 | validateBuy | (request: BuyRequest, npcId?) => BuyValidation | 购买 |
+| 18 | executeBuy | (request: BuyRequest, npcId?) => BuyResult | 购买 |
+| 19 | getStockInfo | (shopType, defId) => StockInfo \| null | 库存 |
+| 20 | resetDailyLimits | () => void | 库存 |
+| 21 | manualRefresh | () => { success, reason? } | 补货 |
+| 22 | toggleFavorite | (defId) => boolean | 收藏 |
+| 23 | isFavorite | (defId) => boolean | 收藏 |
+| 24 | getFavorites | () => string[] | 收藏 |
+| 25 | processOfflineRestock | () => void | 补货 |
+| 26 | getShopLevel | (shopType) => number | 等级 |
+| 27 | setShopLevel | (shopType, level) => void | 等级 |
+| 28 | serialize | () => ShopSaveData | 序列化 |
+| 29 | deserialize | (data: ShopSaveData) => void | 序列化 |
 
 ---
 
-### DEF-SHOP-004: addDiscount 无rate合法性验证（模式1/21）
+## F-0: 跨系统链路验证
 
-**严重度**: P0 - 折扣篡改  
-**影响范围**: `addDiscount()` L234  
-**规则违反**: BR-01(NaN检查), BR-17(数值安全)
+### F-0.1: 保存/加载覆盖扫描 [BR-14/15]
 
-**证据**:
-```typescript
-// ShopSystem.ts L234
-addDiscount(config: DiscountConfig): void { this.activeDiscounts.push(config); }
-```
-- `rate: 0` → 商品免费（`Math.ceil(price * 0) = 0`）
-- `rate: -1` → `Math.ceil(price * -1)` = 负数价格 → 购买倒赚
-- `rate: NaN` → NaN传播（见DEF-SHOP-002）
-- `rate: Infinity` → `Math.ceil(price * Infinity)` = Infinity
-- `startTime > endTime` → 折扣永远不生效（低风险但无验证）
-- `applicableGoods` 含无效ID → 无影响但无验证
+| 检查点 | 状态 | 说明 |
+|--------|------|------|
+| serialize() | ✅ 已实现 | 包含shops/favorites/activeDiscounts/version |
+| deserialize() | ✅ 已实现 | 含null防护、版本检查、rate过滤 |
+| engine-save.ts引用 | ⚠️ 需验证 | 需确认buildSaveData中是否调用shop.serialize() |
+| 六处同步 | ⚠️ 需验证 | GameSaveData/SaveContext/buildSaveData/toIGameState/fromIGameState/applySaveData |
 
-**修复建议**: 验证 `rate ∈ (0, 1]` 且 `!isNaN(rate)`
+### F-0.2: 依赖注入完整性
 
----
+| 注入点 | 类型 | 初始化检查 | 空值防护 |
+|--------|------|-----------|---------|
+| setCurrencyOps | ShopCurrencyOps | ❌ 无强制初始化 | ⚠️ executeBuy有部分防护(FIX-SHOP-009) |
+| setNPCDiscountProvider | 回调函数 | ❌ 无强制初始化 | ✅ calculateFinalPrice中检查null |
+| deps (ISystemDeps) | init注入 | ❌ 无强制初始化 | ⚠️ eventBus用try-catch |
 
-### DEF-SHOP-005: validateBuy quantity检查不防Infinity（模式1/21）
+### F-0.3: 跨系统链路枚举（N=2×2=4条）
 
-**严重度**: P0 - Infinity绕过  
-**影响范围**: `validateBuy()` L244  
-**规则违反**: BR-01(NaN检查), BR-19(Infinity序列化)
-
-**证据**:
-```typescript
-// ShopSystem.ts L244-245
-if (!quantity || quantity <= 0 || !Number.isInteger(quantity)) {
-  return { canBuy: false, ... };
-}
-```
-- `Number.isInteger(Infinity)` = false → **Infinity被正确拦截** ✅
-- 但 `Number.isInteger(-Infinity)` = false → **-Infinity也被拦截** ✅
-- **然而**: `Number.isInteger(NaN)` = false → NaN被拦截 ✅
-- **实际风险**: 此处检查是安全的，但下游 `executeBuy` 依赖 `validateBuy` 的结果，若 `validateBuy` 被绕过（如直接修改返回值），则无二次防护
-
-**实际风险降为P1**，但建议增加 `!Number.isFinite(quantity)` 显式检查
+| # | 链路 | 路径 | 验证状态 |
+|---|------|------|---------|
+| 1 | Shop→Currency | executeBuy→currencyOps.spendByPriority | ✅ 有null防护 |
+| 2 | Shop→EventBus | executeBuy→eventBus.emit | ✅ try-catch |
+| 3 | Shop→NPC | calculateFinalPrice→npcDiscountProvider | ✅ null检查 |
+| 4 | Shop←Engine | update→restockShop | ✅ 正常 |
 
 ---
 
-### DEF-SHOP-006: serialize/deserialize 无activeDiscounts持久化（模式7/15）
+## F-1: 商品查询域 (APIs 8-13)
 
-**严重度**: P0 - 数据丢失  
-**影响范围**: `serialize()` L428-430, `deserialize()` L432-437  
-**规则违反**: BR-14(保存/加载覆盖扫描), BR-15(deserialize覆盖验证)
+### F-1.1: getShopGoods(shopType) — 正常流
 
-**证据**:
-```typescript
-// ShopSystem.ts L428-430
-serialize(): ShopSaveData {
-  return { shops: { ...this.shops }, favorites: [...this.favorites], version: SHOP_SAVE_VERSION };
-}
-// activeDiscounts 未序列化！
-```
-```typescript
-// ShopSystem.ts L432-437
-deserialize(data: ShopSaveData): void {
-  // ...
-  // activeDiscounts 未反序列化！
-}
-```
-- `activeDiscounts` 数组未包含在 `ShopSaveData` 类型中
-- 限时折扣活动在存档→读档后丢失
-- `npcDiscountProvider` 是回调函数，不持久化（可接受，但需文档说明）
-- `lastUpdateTick` 未持久化（影响update中的定时补货判断）
+| 节点 | 类型 | 描述 | 优先级 |
+|------|------|------|--------|
+| F-1.1-N01 | F-Normal | 正常获取normal商店商品列表 | covered |
+| F-1.1-N02 | F-Boundary | shopType不存在于shops → 返回undefined的goods → [] | P2 |
+| F-1.1-N03 | F-Normal | 获取所有4种商店类型 | covered |
 
-**修复建议**: 
-1. `ShopSaveData` 添加 `activeDiscounts` 字段
-2. `serialize` 包含 `activeDiscounts`
-3. `deserialize` 恢复 `activeDiscounts`
+### F-1.2: getGoodsByCategory(shopType, category) — 过滤
 
----
+| 节点 | 类型 | 描述 | 优先级 |
+|------|------|------|--------|
+| F-1.2-N01 | F-Normal | 按resource分类过滤 | covered |
+| F-1.2-N02 | F-Boundary | category无匹配商品 → [] | P2 |
+| F-1.2-N03 | F-Error | shopType无效 → this.shops[undefined] 抛异常 | P1 |
 
-### DEF-SHOP-007: deserialize 无数据完整性验证（模式10/15）
+### F-1.3: filterGoods(shopType, filter) — 搜索/排序
 
-**严重度**: P0 - 反序列化注入  
-**影响范围**: `deserialize()` L432-437  
-**规则违反**: BR-10(deserialize覆盖验证), BR-15
+| 节点 | 类型 | 描述 | 优先级 |
+|------|------|------|--------|
+| F-1.3-N01 | F-Normal | 关键词搜索匹配name | covered |
+| F-1.3-N02 | F-Normal | priceRange过滤 [min, max] | covered |
+| F-1.3-N03 | F-Normal | sortBy=price, sortOrder=asc | covered |
+| F-1.3-N04 | F-Normal | sortBy=default排序（收藏→折扣→价格） | covered |
+| F-1.3-N05 | F-Boundary | filter={} → 返回全部商品 | P2 |
+| F-1.3-N06 | F-Error | priceRange含NaN → 比较结果异常 | P1 |
 
-**证据**:
-```typescript
-// ShopSystem.ts L434-436
-for (const type of SHOP_TYPES) {
-  if (data.shops[type]) this.shops[type] = data.shops[type];
-}
-```
-- `data.shops[type].goods` 可被注入为任意对象（含恶意stock/discount值）
-- `data.shops[type].shopLevel` 可被注入为 NaN/负数/Infinity
-- `data.shops[type].manualRefreshCount` 可被注入为负数
-- `data.favorites` 可包含不存在的商品ID
-- `data` 本身可为 null/undefined → 无null检查
+### F-1.4: getGoodsDef(defId) / getGoodsItem(shopType, defId)
 
-**修复建议**: 
-1. 添加 `if (!data) return;` 顶层防护
-2. 对每个恢复的字段做 `Number.isFinite` 验证
-3. favorites 做 `GOODS_DEF_MAP[id]` 存在性验证
+| 节点 | 类型 | 描述 | 优先级 |
+|------|------|------|--------|
+| F-1.4-N01 | F-Normal | 有效defId返回GoodsDef | covered |
+| F-1.4-N02 | F-Error | defId不存在 → undefined | covered |
+| F-1.4-N03 | F-Normal | getGoodsItem有效shopType+defId | covered |
+| F-1.4-N04 | F-Error | getGoodsItem商品不在商店中 → undefined | covered |
 
 ---
 
-### DEF-SHOP-008: manualRefresh 无currencyOps扣费（模式12/21）
+## F-2: 定价与折扣域 (APIs 14-16)
 
-**严重度**: P1 - 经济漏洞  
-**影响范围**: `manualRefresh()` L370-377  
-**规则违反**: BR-12(溢出闭环)
+### F-2.1: calculateFinalPrice(defId, shopType, npcId?) — 核心定价
 
-**证据**:
-```typescript
-// ShopSystem.ts L370-377
-manualRefresh(): { success: boolean; reason?: string } {
-  for (const type of SHOP_TYPES) {
-    if (this.shops[type].manualRefreshCount >= this.shops[type].manualRefreshLimit)
-      return { success: false, reason: '今日刷新次数已用完' };
-  }
-  // 无扣费逻辑！配置中有 manualRefreshCost: { copper: 500 }
-  const now = Date.now();
-  for (const type of SHOP_TYPES) {
-    this.shops[type].manualRefreshCount++;
-    this.restockShop(type, now);
-  }
-  return { success: true };
-}
-```
-- `DEFAULT_RESTOCK_CONFIG.manualRefreshCost` 定义了 `{ copper: 500 }` 但从未使用
-- 手动刷新不扣费 → 免费刷新所有商店
+| 节点 | 类型 | 描述 | 优先级 |
+|------|------|------|--------|
+| F-2.1-N01 | F-Normal | 正常计算，无折扣 → 返回basePrice | covered |
+| F-2.1-N02 | F-Normal | 商品折扣0.8 → 价格×0.8 | covered |
+| F-2.1-N03 | F-Normal | NPC折扣叠加 → 取最低rate | covered |
+| F-2.1-N04 | F-Normal | 活跃折扣叠加 → 取最低rate | covered |
+| F-2.1-N05 | F-Error | defId不存在 → 返回{} | covered |
+| F-2.1-N06 | P0-NaN | 商品discount=NaN → safeRate(NaN)=1，已防护 | covered(FIX-SHOP-002) |
+| F-2.1-N07 | P0-NaN | npcDiscountProvider返回NaN → safeRate(NaN)=1，已防护 | covered |
+| F-2.1-N08 | P0-NaN | DiscountConfig.rate=NaN → addDiscount已拒绝 | covered(FIX-SHOP-004) |
+| F-2.1-N09 | F-Boundary | 折扣率=0 → safeRate(0)=1（0不>0），回退无折扣 | P1 |
+| F-2.1-N10 | F-Boundary | 折扣率=1.5 → safeRate(1.5)=1，回退无折扣 | covered |
+| F-2.1-N11 | F-Boundary | basePrice含0值货币 → Math.max(1, 0)=1 | P2 |
+| F-2.1-N12 | P0-NaN | basePrice含NaN → Math.max(1, Math.ceil(NaN))=Math.max(1,NaN)=NaN | **P0** |
 
-**修复建议**: 在刷新前调用 `currencyOps.spendByPriority` 扣费
+### F-2.2: addDiscount(config) — 添加折扣
 
----
+| 节点 | 类型 | 描述 | 优先级 |
+|------|------|------|--------|
+| F-2.2-N01 | F-Normal | rate=0.8正常添加 | covered |
+| F-2.2-N02 | P0-NaN | rate=NaN → 已拒绝(FIX-SHOP-004) | covered |
+| F-2.2-N03 | P0-负数 | rate=-0.5 → 已拒绝 | covered |
+| F-2.2-N04 | P0-溢出 | rate=0 → 已拒绝(rate<=0) | covered |
+| F-2.2-N05 | P0-溢出 | rate=Infinity → 已拒绝(!Number.isFinite) | covered |
+| F-2.2-N06 | F-Boundary | rate=1 → 允许（无折扣） | P2 |
+| F-2.2-N07 | F-Boundary | rate=0.001 → 允许（极低折扣） | P2 |
+| F-2.2-N08 | F-Error | config.applicableGoods含无效ID → 不影响，运行时过滤 | P2 |
 
-## 子系统流程树
+### F-2.3: cleanupExpiredDiscounts() — 清理过期
 
-### 1. ShopSystem — 商品查询（#1, #5, #6）
-
-| # | API | 分支 | 状态 | P0模式扫描 |
-|---|-----|------|------|-----------|
-| 1.1 | `getShopGoods(shopType)` | shopType不存在→undefined | ✅ covered | P1: JS可选链安全 |
-| 1.2 | `getGoodsByCategory(shopType, cat)` | shopType无效→异常 | ⚠️ uncovered | P1: this.shops[undefined]会throw |
-| 1.3 | `getCategories()` | 返回静态数据 | ✅ covered | 安全 |
-| 1.4 | `getGoodsDef(defId)` | defId不存在→undefined | ✅ covered | P1: 安全 |
-| 1.5 | `getGoodsItem(shopType, defId)` | 不存在→undefined | ✅ covered | P1: 安全 |
-| 1.6 | `filterGoods(shopType, filter)` | keyword为null→crash | ⚠️ uncovered | **P1**: `filter.keyword.toLowerCase()` → NPE if null |
-| 1.7 | `filterGoods` priceRange | priceRange含NaN→比较失败 | ⚠️ uncovered | P1: 不crash但结果错误 |
-
-### 2. ShopSystem — 定价与折扣（#2, #7）
-
-| # | API | 分支 | 状态 | P0模式扫描 |
-|---|-----|------|------|-----------|
-| 2.1 | `calculateFinalPrice(defId, shopType)` | defId不存在→{} | ✅ covered | 安全 |
-| 2.2 | `calculateFinalPrice` itemDiscount | discount为NaN→NaN价格 | 🔴 **DEF-SHOP-002** | **P0模式1**: NaN传播 |
-| 2.3 | `calculateFinalPrice` npcRate | provider返回NaN→NaN价格 | 🔴 **DEF-SHOP-002** | **P0模式1**: NaN传播 |
-| 2.4 | `calculateFinalPrice` activeRate | discount.rate为NaN→NaN | 🔴 **DEF-SHOP-002** | **P0模式1**: NaN传播 |
-| 2.5 | `addDiscount(config)` | rate无验证 | 🔴 **DEF-SHOP-004** | **P0模式1**: 无边界检查 |
-| 2.6 | `cleanupExpiredDiscounts()` | 正常流程 | ✅ covered | 安全 |
-
-### 3. ShopSystem — 购买逻辑（#3, #8）
-
-| # | API | 分支 | 状态 | P0模式扫描 |
-|---|-----|------|------|-----------|
-| 3.1 | `validateBuy` quantity=0 | 返回不可购买 | ✅ covered | 安全 |
-| 3.2 | `validateBuy` quantity<0 | 返回不可购买 | ✅ covered | 安全 |
-| 3.3 | `validateBuy` quantity=NaN | 返回不可购买 | ✅ covered | 安全 |
-| 3.4 | `validateBuy` quantity=Infinity | 返回不可购买 | ✅ covered | 安全 |
-| 3.5 | `validateBuy` goodsId不存在 | 返回不可购买 | ✅ covered | 安全 |
-| 3.6 | `validateBuy` 库存不足 | 返回不可购买 | ✅ covered | 安全 |
-| 3.7 | `validateBuy` 日限购超限 | 返回不可购买 | ✅ covered | 安全 |
-| 3.8 | `validateBuy` 终身限购超限 | 返回不可购买 | ✅ covered | 安全 |
-| 3.9 | `validateBuy` 货币不足 | 返回不可购买 | ✅ covered | 安全 |
-| 3.10 | `validateBuy` NaN价格 | NaN通过→executeBuy | 🔴 **DEF-SHOP-002** | **P0模式1**: NaN穿透 |
-| 3.11 | `executeBuy` 验证不通过 | 返回失败 | ✅ covered | 安全 |
-| 3.12 | `executeBuy` spendByPriority异常 | catch返回失败 | ✅ covered | 安全 |
-| 3.13 | `executeBuy` 扣费后stock溢出 | stock变负数 | 🔴 **DEF-SHOP-003** | **P0模式12**: 溢出 |
-| 3.14 | `executeBuy` eventBus.emit异常 | catch静默 | ✅ covered | 安全 |
-
-### 4. ShopSystem — 库存与限购（#9）
-
-| # | API | 分支 | 状态 | P0模式扫描 |
-|---|-----|------|------|-----------|
-| 4.1 | `getStockInfo(shopType, defId)` | item不存在→null | ✅ covered | 安全 |
-| 4.2 | `resetDailyLimits()` | 正常重置 | ✅ covered | 安全 |
-| 4.3 | `manualRefresh()` 次数用完 | 返回失败 | ✅ covered | 安全 |
-| 4.4 | `manualRefresh()` 成功 | 无扣费 | 🔴 **DEF-SHOP-008** | P1: 经济漏洞 |
-
-### 5. ShopSystem — 收藏管理
-
-| # | API | 分支 | 状态 | P0模式扫描 |
-|---|-----|------|------|-----------|
-| 5.1 | `toggleFavorite(defId)` | defId不存在→false | ✅ covered | 安全 |
-| 5.2 | `toggleFavorite(defId)` | def.favoritable=false→false | ✅ covered | 安全 |
-| 5.3 | `toggleFavorite` 添加 | 返回true | ✅ covered | 安全 |
-| 5.4 | `toggleFavorite` 移除 | 返回false | ✅ covered | 安全 |
-| 5.5 | `isFavorite(defId)` | 正常查询 | ✅ covered | 安全 |
-| 5.6 | `getFavorites()` | 返回拷贝 | ✅ covered | 安全 |
-
-### 6. ShopSystem — 离线补货
-
-| # | API | 分支 | 状态 | P0模式扫描 |
-|---|-----|------|------|-----------|
-| 6.1 | `processOfflineRestock()` 正常 | 补货+稀有概率 | ✅ covered | 安全 |
-| 6.2 | `processOfflineRestock()` elapsed=0 | accumulated=0→跳过 | ✅ covered | 安全 |
-| 6.3 | `processOfflineRestock()` 稀有折扣 | discount=0.7覆盖 | ✅ covered | 安全 |
-
-### 7. ShopSystem — 商店等级
-
-| # | API | 分支 | 状态 | P0模式扫描 |
-|---|-----|------|------|-----------|
-| 7.1 | `getShopLevel(shopType)` | 正常返回 | ✅ covered | 安全 |
-| 7.2 | `setShopLevel(shopType, level)` | NaN/负数/Infinity | 🔴 **DEF-SHOP-001** | **P0模式1**: 无验证 |
-
-### 8. ShopSystem — 序列化
-
-| # | API | 分支 | 状态 | P0模式扫描 |
-|---|-----|------|------|-----------|
-| 8.1 | `serialize()` 正常 | 包含shops+favorites | ✅ covered | 安全 |
-| 8.2 | `serialize()` 遗漏activeDiscounts | 折扣丢失 | 🔴 **DEF-SHOP-006** | **P0模式7/15**: 数据丢失 |
-| 8.3 | `deserialize()` 正常 | 恢复shops+favorites | ✅ covered | 安全 |
-| 8.4 | `deserialize(null)` | null→crash | 🔴 **DEF-SHOP-007** | **P0模式10**: NPE |
-| 8.5 | `deserialize()` 恶意数据 | 注入NaN/负数stock | 🔴 **DEF-SHOP-007** | **P0模式10**: 注入 |
-
-### 9. ShopSystem — 依赖注入
-
-| # | API | 分支 | 状态 | P0模式扫描 |
-|---|-----|------|------|-----------|
-| 9.1 | `setCurrencyOps(ops)` | 正常注入 | ✅ covered | 安全 |
-| 9.2 | `setCurrencySystem(cs)` | deprecated兼容 | ✅ covered | 安全 |
-| 9.3 | `setNPCDiscountProvider(fn)` | fn返回NaN | 🔴 **DEF-SHOP-002** | **P0模式1**: NaN传播 |
-| 9.4 | `init(deps)` | deps含eventBus | ✅ covered | 安全 |
+| 节点 | 类型 | 描述 | 优先级 |
+|------|------|------|--------|
+| F-2.3-N01 | F-Normal | 清理过期折扣，返回清理数量 | covered |
+| F-2.3-N02 | F-Boundary | 无过期折扣 → 返回0 | P2 |
+| F-2.3-N03 | F-Boundary | 全部过期 → 返回全部数量 | P2 |
 
 ---
 
-## 跨系统链路枚举
+## F-3: 购买流程域 (APIs 17-18) — 核心
 
-| # | 链路 | 路径 | 风险 |
-|---|------|------|------|
-| CS-1 | Shop→Currency | `executeBuy→currencyOps.spendByPriority` | ✅ 有try-catch |
-| CS-2 | Shop→EventBus | `executeBuy→eventBus.emit('shop:goods_purchased')` | ✅ 有try-catch |
-| CS-3 | Shop→NPC | `calculateFinalPrice→npcDiscountProvider` | 🔴 NaN传播 |
-| CS-4 | Shop→Engine-Save | `serialize→buildSaveData` | 🔴 activeDiscounts丢失 |
-| CS-5 | Shop→Engine-Load | `deserialize→applySaveData` | 🔴 无数据验证 |
-| CS-6 | Shop→Update循环 | `update→restockShop` | ✅ 安全 |
-| CS-7 | Shop→Trade | 外部集成（trade-currency-shop） | ✅ 有集成测试 |
-| CS-8 | Shop→Inventory | `executeBuy` 后无库存交付 | ⚠️ P2: 购买后无物品交付逻辑 |
+### F-3.1: validateBuy(request, npcId?) — 购买校验
+
+| 节点 | 类型 | 描述 | 优先级 |
+|------|------|------|--------|
+| F-3.1-N01 | F-Normal | 正常购买，库存充足、限购未达、货币充足 | covered |
+| F-3.1-N02 | P0-NaN | quantity=NaN → 已拒绝(!quantity\|\|quantity<=0) | covered(FIX-SHOP-003) |
+| F-3.1-N03 | P0-NaN | quantity=0 → 已拒绝(quantity<=0) | covered |
+| F-3.1-N04 | P0-溢出 | quantity=10000 → 已拒绝(>9999) | covered(FIX-SHOP-003) |
+| F-3.1-N05 | P0-溢出 | quantity=Infinity → 已拒绝(!Number.isInteger) | covered |
+| F-3.1-N06 | F-Error | goodsId不存在 → 商品不存在 | covered |
+| F-3.1-N07 | F-Error | 商品不在当前商店 → 错误 | covered |
+| F-3.1-N08 | F-Normal | 库存不足 → 错误提示 | covered |
+| F-3.1-N09 | F-Normal | 日限购达上限 → 错误提示 | covered |
+| F-3.1-N10 | F-Normal | 终身限购达上限 → 错误提示 | covered |
+| F-3.1-N11 | F-Normal | 货币不足 → checkAffordability返回不足信息 | covered |
+| F-3.1-N12 | F-Boundary | quantity=9999 → 允许（上限边界） | P2 |
+| F-3.1-N13 | F-Normal | 确认级别计算（五级策略） | covered |
+| F-3.1-N14 | F-Error | 无currencyOps → 跳过货币检查（不报错） | P1 |
+
+### F-3.2: executeBuy(request, npcId?) — 执行购买
+
+| 节点 | 类型 | 描述 | 优先级 |
+|------|------|------|--------|
+| F-3.2-N01 | F-Normal | 正常购买成功，扣费+减库存+更新限购 | covered |
+| F-3.2-N02 | F-Normal | validateBuy失败 → 返回失败 | covered |
+| F-3.2-N03 | P0-免费 | 无currencyOps但有价格 → 已拒绝(FIX-SHOP-009) | covered |
+| F-3.2-N04 | F-Normal | currencyOps.spendByPriority抛异常 → 捕获返回失败 | covered |
+| F-3.2-N05 | F-Normal | 库存无限(stock=-1) → 不减少 | covered |
+| F-3.2-N06 | F-Normal | 事件发布 shop:goods_purchased | covered |
+| F-3.2-N07 | F-Boundary | 免费商品(basePrice全0)+无currencyOps → 允许购买 | P2 |
+| F-3.2-N08 | P0-NaN | finalPrice含NaN → totalCost=NaN×quantity=NaN → spendByPriority收到NaN | **P0** |
 
 ---
 
-## P0 汇总
+## F-4: 库存与限购域 (APIs 19-21, 25)
 
-| ID | 严重度 | 描述 | 模式 | 修复复杂度 |
-|----|--------|------|------|-----------|
-| DEF-SHOP-001 | P0 | setShopLevel无NaN/负数防护 | 模式1 | 低（2行） |
-| DEF-SHOP-002 | P0 | calculateFinalPrice折扣率NaN传播 | 模式1 | 中（6行） |
-| DEF-SHOP-003 | P0 | executeBuy购买后stock溢出 | 模式12 | 低（3行） |
-| DEF-SHOP-004 | P0 | addDiscount无rate验证 | 模式1 | 低（4行） |
-| DEF-SHOP-005 | P1↓ | validateBuy Infinity检查（实际安全） | 模式1 | 低（1行加固） |
-| DEF-SHOP-006 | P0 | serialize遗漏activeDiscounts | 模式7/15 | 中（类型+逻辑） |
-| DEF-SHOP-007 | P0 | deserialize无数据完整性验证 | 模式10 | 中（验证逻辑） |
-| DEF-SHOP-008 | P1 | manualRefresh无扣费 | 模式12 | 低（5行） |
+### F-4.1: getStockInfo(shopType, defId)
 
-**P0总数**: 6个（DEF-SHOP-001/002/003/004/006/007）  
-**P1总数**: 2个（DEF-SHOP-005/008）
+| 节点 | 类型 | 描述 | 优先级 |
+|------|------|------|--------|
+| F-4.1-N01 | F-Normal | 正常获取库存信息 | covered |
+| F-4.1-N02 | F-Error | 商品不存在 → null | covered |
+
+### F-4.2: resetDailyLimits()
+
+| 节点 | 类型 | 描述 | 优先级 |
+|------|------|------|--------|
+| F-4.2-N01 | F-Normal | 重置所有商店日限购+刷新计数 | covered |
+
+### F-4.3: manualRefresh()
+
+| 节点 | 类型 | 描述 | 优先级 |
+|------|------|------|--------|
+| F-4.3-N01 | F-Normal | 正常手动刷新 | covered |
+| F-4.3-N02 | F-Normal | 刷新次数达上限 → 拒绝 | covered |
+| F-4.3-N03 | F-Boundary | 最后一次刷新 → 成功 | P2 |
+
+### F-4.4: processOfflineRestock()
+
+| 节点 | 类型 | 描述 | 优先级 |
+|------|------|------|--------|
+| F-4.4-N01 | F-Normal | 离线时间>interval → 补货1次 | covered |
+| F-4.4-N02 | F-Normal | 离线时间>2×interval → 最多补货2次(maxAccumulation) | covered |
+| F-4.4-N03 | F-Boundary | 离线时间<interval → 不补货 | P2 |
+| F-4.4-N04 | F-Normal | 10%稀有折扣概率 | covered |
+| F-4.4-N05 | F-Error | lastOfflineRestock在未来 → elapsed为负 → accumulated=0 | P2 |
+
+---
+
+## F-5: 收藏管理域 (APIs 22-24)
+
+### F-5.1: toggleFavorite(defId)
+
+| 节点 | 类型 | 描述 | 优先级 |
+|------|------|------|--------|
+| F-5.1-N01 | F-Normal | 添加收藏 | covered |
+| F-5.1-N02 | F-Normal | 取消收藏 | covered |
+| F-5.1-N03 | F-Error | defId不存在 → false | covered |
+| F-5.1-N04 | F-Error | def存在但favoritable=false → false | P2 |
+
+### F-5.2: isFavorite / getFavorites
+
+| 节点 | 类型 | 描述 | 优先级 |
+|------|------|------|--------|
+| F-5.2-N01 | F-Normal | 正常查询 | covered |
+| F-5.2-N02 | F-Boundary | 空收藏列表 → [] | P2 |
+
+---
+
+## F-6: 商店等级域 (APIs 26-27)
+
+### F-6.1: getShopLevel / setShopLevel
+
+| 节点 | 类型 | 描述 | 优先级 |
+|------|------|------|--------|
+| F-6.1-N01 | F-Normal | 获取等级 | covered |
+| F-6.1-N02 | F-Normal | 设置等级=3 | covered |
+| F-6.1-N03 | P0-NaN | level=NaN → 已拒绝(!Number.isFinite) | covered(FIX-SHOP-001) |
+| F-6.1-N04 | P0-负数 | level=-1 → 已拒绝(level<1) | covered |
+| F-6.1-N05 | P0-溢出 | level=Infinity → 已拒绝(!Number.isFinite) | covered |
+| F-6.1-N06 | F-Boundary | level=0 → 已拒绝(level<1) | covered |
+| F-6.1-N07 | F-Boundary | level=1 → 允许（最小有效值） | P2 |
+| F-6.1-N08 | P1-溢出 | level=999999 → 允许，无上限检查 | **P1** |
+
+---
+
+## F-7: 序列化域 (APIs 28-29)
+
+### F-7.1: serialize()
+
+| 节点 | 类型 | 描述 | 优先级 |
+|------|------|------|--------|
+| F-7.1-N01 | F-Normal | 正常序列化，包含shops/favorites/activeDiscounts | covered |
+| F-7.1-N02 | F-Normal | 深拷贝防止引用泄漏(FIX-SHOP-010) | covered |
+
+### F-7.2: deserialize(data)
+
+| 节点 | 类型 | 描述 | 优先级 |
+|------|------|------|--------|
+| F-7.2-N01 | F-Normal | 正常反序列化 | covered |
+| F-7.2-N02 | F-Error | data=null → 安全返回(FIX-SHOP-007) | covered |
+| F-7.2-N03 | F-Error | data=undefined → 安全返回 | covered |
+| F-7.2-N04 | F-Boundary | 版本不匹配 → 警告但继续 | covered |
+| F-7.2-N05 | F-Error | data.shops缺少某类型 → 保留原shop | covered |
+| F-7.2-N06 | F-Normal | activeDiscounts含无效rate → 过滤 | covered |
+| F-7.2-N07 | F-Error | favorites含无效defId → 过滤(检查GOODS_DEF_MAP) | covered |
+| F-7.2-N08 | F-Error | shop.shopLevel=NaN → 重置为1 | covered |
+| F-7.2-N09 | F-Error | shop.manualRefreshCount为负 → 重置为0 | covered |
+
+---
+
+## F-8: 生命周期域 (APIs 1-4)
+
+### F-8.1: init / update / reset
+
+| 节点 | 类型 | 描述 | 优先级 |
+|------|------|------|--------|
+| F-8.1-N01 | F-Normal | init设置deps和lastUpdateTick | covered |
+| F-8.1-N02 | F-Normal | update定时补货(8h间隔) | covered |
+| F-8.1-N03 | F-Normal | reset清空所有商店状态 | covered |
+| F-8.1-N04 | F-Boundary | update间隔不足8h → 不补货 | P2 |
+| F-8.1-N05 | P1-注入 | deps未init时调用executeBuy → this.deps?.eventBus安全 | P1 |
+
+---
+
+## 统计
+
+| 分类 | 数量 |
+|------|------|
+| F-Normal | 38 |
+| F-Boundary | 18 |
+| F-Error | 16 |
+| **P0** | **3** |
+| P1 | 4 |
+| P2 | 14 |
+| **总计** | **93** |
+
+### P0 汇总
+
+| ID | 节点 | 描述 | 状态 |
+|----|------|------|------|
+| DEF-SHOP-101 | F-2.1-N12 | calculateFinalPrice: basePrice含NaN → finalPrice含NaN传播到购买 | 🔴 未修复 |
+| DEF-SHOP-102 | F-3.2-N08 | executeBuy: finalPrice含NaN → totalCost=NaN → spendByPriority收到NaN | 🔴 未修复 |
+| DEF-SHOP-103 | F-6.1-N08 | setShopLevel: 无上限检查，level=999999允许设置 | 🟡 P1升级 |
+
+### 已有FIX覆盖
+
+| FIX ID | 位置 | 描述 |
+|--------|------|------|
+| FIX-SHOP-001 | setShopLevel | NaN/负数/Infinity防护 |
+| FIX-SHOP-002 | calculateFinalPrice | 折扣率NaN防护(safeRate) |
+| FIX-SHOP-003 | validateBuy | quantity上限9999 |
+| FIX-SHOP-004 | addDiscount | rate范围验证 |
+| FIX-SHOP-006 | serialize | 包含activeDiscounts |
+| FIX-SHOP-007 | deserialize | null/undefined防护 |
+| FIX-SHOP-009 | executeBuy | 无currencyOps时拒绝付费商品 |
+| FIX-SHOP-010 | serialize | 深拷贝防引用泄漏 |
+| FIX-SHOP-011 | processOfflineRestock | 更新lastOfflineRestock防重复 |

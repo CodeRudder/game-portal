@@ -267,7 +267,9 @@ export class ShopSystem implements ISubsystem {
     const finalRate = Math.min(safeRate(itemDiscount), safeRate(npcRate), safeRate(activeRate));
     const result: Record<string, number> = {};
     for (const [cur, price] of Object.entries(def.basePrice)) {
-      result[cur] = Math.max(1, Math.ceil(price * finalRate)); // 最低1，防止免费
+      // FIX-SHOP-101: 防护basePrice含NaN/非正常数值，防止NaN传播到购买流程
+      const safePrice = Number.isFinite(price) && price > 0 ? price : 0;
+      result[cur] = Math.max(1, Math.ceil(safePrice * finalRate)); // 最低1，防止免费
     }
     return result;
   }

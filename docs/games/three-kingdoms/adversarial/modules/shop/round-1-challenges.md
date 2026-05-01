@@ -1,192 +1,250 @@
-# Shop 模块 R1 对抗式测试 — Challenger 审查
+# Shop 模块 R1 对抗式测试 — Challenger 质询报告
 
-> Challenger Agent | 2026-05-01
-> 审查策略：NaN绕过、折扣率篡改、serialize缺失、deserialize注入、经济漏洞、溢出闭环
-
----
-
-## P0 确认清单
-
-### P0-001: setShopLevel 无NaN/负数/Infinity防护
-- **位置**: `ShopSystem.ts:424`
-- **代码**: `this.shops[shopType].shopLevel = level;`
-- **问题**: 无 `!Number.isFinite(level)` 检查
-- **影响**: 
-  - `level = NaN` → `getShopLevel()` 返回NaN → 后续等级判断逻辑异常
-  - `level = -1` → 商店等级为负，可能解锁不应有的商品
-  - `level = Infinity` → 序列化时 `JSON.stringify(Infinity)` = `null` → 反序列化后为null
-- **源码行**:
-  ```typescript
-  setShopLevel(shopType: ShopType, level: number): void {
-    this.shops[shopType].shopLevel = level; // 无任何校验
-  }
-  ```
-- **修复**: `if (!Number.isFinite(level) || level < 1) return;`
-- **BR规则**: BR-01 (数值API入口NaN检查), BR-17 (战斗数值安全→通用数值安全)
-
-### P0-002: calculateFinalPrice 折扣率NaN传播链
-- **位置**: `ShopSystem.ts:209-232`
-- **代码**: `const finalRate = Math.min(itemDiscount, npcRate, activeRate);`
-- **问题**: 三个折扣来源均可能产生NaN，且无防护
-- **影响**:
-  - 路径1: `npcDiscountProvider` 返回NaN → `npcRate = NaN` → `finalRate = NaN`
-  - 路径2: `addDiscount({ rate: NaN })` → `activeRate = NaN` → `finalRate = NaN`
-  - 路径3: `item.discount` 为NaN（通过deserialize注入）→ `itemDiscount = NaN` → `finalRate = NaN`
-  - `Math.ceil(price * NaN)` = NaN → 传播到 `validateBuy` → `executeBuy` → `spendByPriority(NaN)`
-  - **NaN穿透路径**: discount → price → validation → purchase → currency system
-- **源码行**:
-  ```typescript
-  let npcRate = 1;
-  if (npcId && this.npcDiscountProvider) npcRate = this.npcDiscountProvider(npcId); // 无NaN检查
-  // ...
-  const finalRate = Math.min(itemDiscount, npcRate, activeRate); // NaN污染所有
-  result[cur] = Math.ceil(price * finalRate); // NaN传播
-  ```
-- **修复**: `const finalRate = Math.max(0.01, Math.min(1, Number.isFinite(itemDiscount) ? itemDiscount : 1, ...))`
-- **BR规则**: BR-01, BR-06 (NaN绕过教训)
-
-### P0-003: executeBuy 购买后stock/dailyPurchased溢出
-- **位置**: `ShopSystem.ts:298-303`
-- **代码**: `item.stock -= quantity; item.dailyPurchased += quantity;`
-- **问题**: `validateBuy` 允许 `quantity = Number.MAX_SAFE_INTEGER`（正整数），导致溢出
-- **影响**:
-  - `stock -= 9007199254740991` → 精度丢失或负数
-  - `dailyPurchased += 9007199254740991` → 超过安全整数范围
-  - 后续 `dailyPurchased + quantity > dailyLimit` 比较可能因精度丢失而失效
-- **源码行**:
-  ```typescript
-  if (item.stock !== -1) item.stock -= quantity;       // 无溢出检查
-  item.dailyPurchased += quantity;                       // 无溢出检查
-  item.lifetimePurchased += quantity;                    // 无溢出检查
-  ```
-- **修复**: 在 `validateBuy` 中添加 `if (quantity > 9999)` 上限检查
-- **BR规则**: BR-12 (溢出闭环)
-
-### P0-004: addDiscount 无rate合法性验证
-- **位置**: `ShopSystem.ts:234`
-- **代码**: `this.activeDiscounts.push(config);`
-- **问题**: rate字段无任何校验
-- **影响**:
-  - `rate: 0` → 商品免费（`Math.ceil(price * 0) = 0`）→ 免费购买
-  - `rate: -1` → 负数价格 → 购买倒赚
-  - `rate: NaN` → NaN传播（见P0-002）
-  - `rate: 2` → 价格翻倍（折扣率>1应为加价）
-  - `startTime > endTime` → 折扣永不过期但也不生效（逻辑混乱）
-- **源码行**:
-  ```typescript
-  addDiscount(config: DiscountConfig): void { this.activeDiscounts.push(config); }
-  ```
-- **修复**: 验证 `rate ∈ (0, 1]` 且 `!isNaN(rate)` 且 `startTime <= endTime`
-- **BR规则**: BR-01, BR-17
-
-### P0-005: serialize 遗漏 activeDiscounts — 折扣数据丢失
-- **位置**: `ShopSystem.ts:428-430`
-- **代码**: `return { shops: { ...this.shops }, favorites: [...this.favorites], version: ... };`
-- **问题**: `activeDiscounts` 数组未序列化
-- **影响**:
-  - 限时折扣活动在 save/load 后全部丢失
-  - 玩家看到的折扣消失，影响游戏体验
-  - 运营活动折扣无法持久化
-- **六处检查**:
-  1. ShopSaveData 类型 → ❌ 无 `activeDiscounts` 字段
-  2. serialize() → ❌ 未包含 `activeDiscounts`
-  3. deserialize() → ❌ 未恢复 `activeDiscounts`
-  4. ShopState 类型 → ✅ 有 `goods` (discount在item内)
-  5. `lastUpdateTick` → ❌ 未持久化（影响定时补货）
-  6. `npcDiscountProvider` → ✅ 回调函数，不持久化（可接受）
-- **修复**: ShopSaveData添加 `activeDiscounts` 字段，serialize/deserialize同步
-- **BR规则**: BR-14 (保存/加载覆盖扫描), BR-15 (deserialize覆盖验证)
-
-### P0-006: deserialize 无数据完整性验证 — 反序列化注入
-- **位置**: `ShopSystem.ts:432-437`
-- **代码**: `if (data.shops[type]) this.shops[type] = data.shops[type];`
-- **问题**: 直接赋值，无任何验证
-- **影响**:
-  - `data.shops[type].shopLevel` 可注入 NaN/负数/Infinity
-  - `data.shops[type].goods[].stock` 可注入负数（无限购买）
-  - `data.shops[type].goods[].discount` 可注入0（免费）或负数（倒赚）
-  - `data.shops[type].goods[].dailyPurchased` 可注入负数（重置限购）
-  - `data.shops[type].manualRefreshCount` 可注入负数（无限刷新）
-  - `data.favorites` 可包含不存在的商品ID
-  - `data` 本身为 null/undefined → crash
-- **源码行**:
-  ```typescript
-  deserialize(data: ShopSaveData): void {
-    if (data.version !== SHOP_SAVE_VERSION) gameLog.warn(...); // 仅warn
-    for (const type of SHOP_TYPES) {
-      if (data.shops[type]) this.shops[type] = data.shops[type]; // 直接赋值
-    }
-    // 无null检查、无数值验证
-  }
-  ```
-- **修复**: 
-  1. `if (!data) return;` 顶层防护
-  2. 对关键字段做 `Number.isFinite` 验证
-  3. favorites 做 `GOODS_DEF_MAP[id]` 存在性验证
-- **BR规则**: BR-10 (deserialize覆盖验证), BR-15
+> Challenger Agent | 版本: v1.8 规则 | 日期: 2026-05-01
+> 目标: round-1-tree.md (93节点)
 
 ---
 
-## P1 确认清单
+## 质询总览
 
-### P1-001: manualRefresh 无扣费 — 经济漏洞
-- **位置**: `ShopSystem.ts:370-377`
-- **问题**: `DEFAULT_RESTOCK_CONFIG.manualRefreshCost` 定义了 `{ copper: 500 }` 但从未使用
-- **影响**: 玩家可无限免费刷新所有商店
-- **修复**: 刷新前调用 `currencyOps.spendByPriority` 扣费
-- **BR规则**: BR-12 (溢出闭环)
-
-### P1-002: filterGoods keyword为null时crash
-- **位置**: `ShopSystem.ts:170`
-- **代码**: `filter.keyword.toLowerCase()` → NPE if keyword is null/undefined
-- **影响**: 传入 `{ keyword: null }` 时crash
-- **修复**: `if (filter.keyword && typeof filter.keyword === 'string')`
-
-### P1-003: validateBuy Infinity检查（实际安全但建议加固）
-- **位置**: `ShopSystem.ts:244-245`
-- **代码**: `!Number.isInteger(quantity)` → `Number.isInteger(Infinity)` = false → 已拦截
-- **影响**: 实际安全，但建议显式添加 `!Number.isFinite(quantity)` 提高可读性
-- **修复**: 添加显式检查
+| 维度 | Builder标注 | Challenger认可 | 质疑 | 裁定 |
+|------|------------|---------------|------|------|
+| Normal流 | 38 | 35 | 3 | → 2降级P2, 1维持 |
+| Boundary | 18 | 15 | 3 | → 1升级P1, 2补充 |
+| Error | 16 | 14 | 2 | → 1升级P0, 1补充 |
+| P0 | 3 | 2 | 1(+1新增) | → 确认2个P0 |
+| P1 | 4 | 3 | 1(+1新增) | → 确认 |
+| P2 | 14 | 14 | 0 | → 维持 |
 
 ---
 
-## NaN 绕过专项扫描
+## C-1: P0 质询 — 新增缺陷
 
-| API | 检查方式 | NaN绕过? | Infinity绕过? | 修复方案 |
-|-----|---------|----------|--------------|---------|
-| validateBuy quantity | `!quantity \|\| quantity <= 0 \|\| !Number.isInteger(quantity)` | ❌ 安全 | ❌ 安全 | 已安全 |
-| executeBuy (via validateBuy) | 依赖validateBuy | ❌ 安全 | ❌ 安全 | 已安全 |
-| setShopLevel level | 无检查 | ✅ 是 | ✅ 是 | `!Number.isFinite(level) \|\| level < 1` |
-| calculateFinalPrice npcRate | 无检查 | ✅ 是 | ✅ 是 | Math.min前验证 |
-| calculateFinalPrice activeRate | 无检查 | ✅ 是 | ✅ 是 | addDiscount时验证 |
-| addDiscount rate | 无检查 | ✅ 是 | ✅ 是 | rate ∈ (0,1] |
-| filterGoods priceRange | 无检查 | ✅ 是 | — | NaN比较返回false |
-| manualRefresh | 无数值参数 | — | — | 安全 |
+### C-1.1: executeBuy 事务性缺陷 — 货币扣除成功但库存扣减失败 [BR-13]
 
-## 资源比较 NaN 防护扫描 (BR-021)
+**对应节点**: F-3.2-N01  
+**类型**: 事务性扫描  
+**规则**: BR-13(事务性扫描：多步操作必须验证原子性)
 
-| API | 比较语句 | NaN安全? |
-|-----|---------|---------|
-| validateBuy stock | `item.stock < quantity` | ✅ stock从配置来，安全 |
-| validateBuy dailyLimit | `dailyPurchased + quantity > dailyLimit` | ✅ quantity已验证 |
-| validateBuy lifetimeLimit | `lifetimePurchased + quantity > lifetimeLimit` | ✅ 同上 |
-| validateBuy currencyOps | `checkAffordability(totalCost)` | ❌ totalCost含NaN时 → 依赖CurrencySystem |
-| calculateFinalPrice | `price * finalRate` | ❌ finalRate可为NaN |
-| filterGoods priceRange | `p >= min && p <= max` | ❌ NaN比较=false，安全但结果错误 |
+**问题分析**:
+executeBuy的执行流程：
+1. validateBuy → 通过
+2. currencyOps.spendByPriority() → 扣费（已扣）
+3. item.stock -= quantity → 库存扣减
+4. item.dailyPurchased += quantity → 限购更新
 
-## engine-save 接入扫描
+如果在步骤2和步骤3之间，item引用失效（如并发restockShop重建了goods数组），则：
+- 货币已扣除
+- 但getGoodsItem重新查找可能返回undefined（新数组中的新item）
+- 原item引用指向旧数组中的孤立对象，修改无效果
 
-| 子系统 | serialize() | deserialize() | engine-save接入 | 状态 |
-|--------|-------------|---------------|----------------|------|
-| ShopSystem | ✅ 有（缺activeDiscounts） | ✅ 有（无验证） | 需验证 | ⚠️ 部分缺失 |
+**源码证据**:
+```typescript
+// L284: spendByPriority已扣费
+try { this.currencyOps.spendByPriority(shopType, totalCost); }
+catch (e) { return { success: false, ... }; }
+
+// L290: getGoodsItem重新查找 → 如果restockShop在中间被调用，item可能失效
+const item = this.getGoodsItem(shopType, goodsId);
+if (item) {  // ← item可能为undefined，扣费不回滚
+  if (item.stock !== -1) item.stock -= quantity;
+```
+
+**严重度**: P0 — 货币丢失  
+**建议**: 在validateBuy阶段缓存item引用，executeBuy使用缓存引用而非重新查找；或添加回滚机制
+
+### C-1.2: calculateFinalPrice basePrice含NaN传播 [DEF-SHOP-101确认]
+
+**对应节点**: F-2.1-N12  
+**类型**: 数值安全  
+**规则**: BR-01(数值API入口NaN检查), BR-17(战斗数值安全→通用数值安全)
+
+**问题分析**:
+```typescript
+// L189: basePrice来自GOODS_DEF_MAP静态配置
+for (const [cur, price] of Object.entries(def.basePrice)) {
+  result[cur] = Math.max(1, Math.ceil(price * finalRate));
+  // price=NaN → NaN*finalRate=NaN → Math.ceil(NaN)=NaN → Math.max(1,NaN)=NaN
+}
+```
+
+虽然GOODS_DEF_MAP是静态配置，但：
+1. deserialize可能恢复被篡改的数据
+2. 未来动态商品可能引入NaN
+3. 违反防御性编程原则
+
+**传播路径**: calculateFinalPrice → validateBuy(finalPrice) → executeBuy(totalCost) → spendByPriority(NaN)
+
+**严重度**: P0 — NaN传播链
+
+### C-1.3: validateBuy无currencyOps时不报错 [DEF-SHOP-NEW-01]
+
+**对应节点**: F-3.1-N14  
+**类型**: 安全漏洞  
+**规则**: BR-01, FIX-SHOP-009一致性
+
+**问题分析**:
+- executeBuy在无currencyOps时有付费商品防护(FIX-SHOP-009) ✓
+- 但validateBuy在无currencyOps时**跳过货币检查**，返回canBuy=true ✓
+- 这意味着：validateBuy说"可以买"，但executeBuy说"货币系统未初始化"
+- **前端会显示"购买"按钮可用，用户点击后报错** — UX缺陷
+
+**严重度**: P1 — 前后端不一致（非P0，因为executeBuy有最终防线）
 
 ---
 
-## 总结
+## C-2: P0 质询 — 对Builder标注的质疑
 
-| 级别 | 数量 | 关键问题 |
-|------|------|---------|
-| P0 | 6 | NaN传播(2)、溢出(1)、折扣篡改(1)、serialize缺失(1)、deserialize注入(1) |
-| P1 | 3 | 经济漏洞(1)、NPE(1)、加固建议(1) |
+### C-2.1: DEF-SHOP-103 setShopLevel无上限 → 应为P1非P0
 
-**最高风险**: P0-002 (calculateFinalPrice NaN传播链) — 三入口NaN可穿透到货币系统，影响整个经济体系。
+**Builder标注**: P0  
+**Challenger意见**: 降级为P1
+
+**理由**:
+- shopLevel仅影响商品品质（注释说明），不影响核心购买流程
+- 无溢出风险（level为number类型，JS安全整数范围内）
+- 实际影响：可能显示超出配置的等级描述，但不导致崩溃或数据丢失
+- 建议添加上限常量（如SHOP_LEVEL_CONFIG.length=5），但非P0
+
+**裁定请求**: P0 → P1
+
+### C-2.2: F-1.3-N06 priceRange含NaN → 应为P1
+
+**Builder标注**: P1  
+**Challenger意见**: 确认P1，补充说明
+
+**补充**:
+```typescript
+if (filter.priceRange) {
+  const [min, max] = filter.priceRange;
+  items = items.filter(i => {
+    const p = ...;
+    return p >= min && p <= max;  // min=NaN → NaN比较=false，过滤掉所有商品
+  });
+}
+```
+NaN比较返回false，导致所有商品被过滤掉 — 功能异常但不崩溃，P1正确。
+
+---
+
+## C-3: 遗漏节点补充
+
+### C-3.1: restockShop折扣率无下限 [新增P1]
+
+**位置**: restockShop() 私有方法  
+**类型**: 数值安全  
+**规则**: BR-01
+
+**问题**:
+```typescript
+// restockShop L437
+if (Math.random() < DEFAULT_RESTOCK_CONFIG.discountChance) {
+  item.discount = 0.7 + Math.random() * 0.2;  // 范围 [0.7, 0.9]
+}
+```
+虽然0.7+Math.random()*0.2在[0.7,0.9]范围内是安全的，但processOfflineRestock中：
+```typescript
+// L353
+item.discount = 0.7; // 稀有折扣 — 固定值，安全
+```
+**结论**: 安全，无需修复。但建议添加注释说明范围保证。
+
+### C-3.2: confirmLevel阈值配置验证 [新增P2]
+
+**位置**: confirmLevel() 私有方法  
+**类型**: 配置验证  
+**规则**: BR-02(配置交叉验证)
+
+**问题**: CONFIRM_THRESHOLDS的阈值应单调递增，但无验证：
+```typescript
+// shop-config.ts
+none: 0, low: 1000, medium: 5000, high: 20000, critical: 100000
+```
+当前值正确（单调递增），但如果配置被修改为非单调（如high<medium），confirmLevel逻辑会错误。
+
+**严重度**: P2 — 静态配置，运行时不变
+
+### C-3.3: manualRefresh全商店统一计数逻辑 [新增P2]
+
+**位置**: manualRefresh()  
+**类型**: 逻辑审查  
+
+**问题**:
+```typescript
+// L325: 检查所有商店是否达上限
+for (const type of SHOP_TYPES) {
+  if (this.shops[type].manualRefreshCount >= this.shops[type].manualRefreshLimit)
+    return { success: false, reason: '今日刷新次数已用完' };
+}
+// L330: 增加所有商店的计数
+for (const type of SHOP_TYPES) {
+  this.shops[type].manualRefreshCount++;
+  this.restockShop(type, now);
+}
+```
+设计意图：一个刷新操作刷新所有商店，共享刷新次数。逻辑一致，无问题。
+
+### C-3.4: deserialize后goods数组引用一致性 [新增P1]
+
+**位置**: deserialize()  
+**类型**: 状态一致性  
+**规则**: BR-15
+
+**问题**:
+```typescript
+// deserialize直接赋值
+this.shops[type] = shop;  // shop是存档数据
+```
+反序列化后的ShopState.goods数组中GoodsItem的favorited字段可能与this.favorites Set不一致：
+- deserialize先设置shops，再重建favorites
+- 但shop.goods中的favorited字段来自存档，可能包含已不存在的defId
+- 后续toggleFavorite依赖this.favorites而非item.favorited
+
+**影响**: getShopGoods返回的item.favorited可能为true，但isFavorite返回false（或反之）
+
+**严重度**: P1 — 显示不一致
+
+---
+
+## C-4: 跨系统质询
+
+### C-4.1: engine-save.ts是否调用ShopSystem.serialize? [BR-14]
+
+**需验证**: engine-save.ts的buildSaveData中是否包含shop字段  
+**如果缺失**: 所有商店进度（购买记录、限购、收藏、折扣）在存档后丢失 → P0
+
+### C-4.2: CurrencySystem.spendByPriority的NaN防护 [BR-10穿透]
+
+**穿透路径**: executeBuy → currencyOps.spendByPriority(shopType, totalCost)  
+**问题**: 如果totalCost含NaN（DEF-SHOP-101传播），spendByPriority是否有NaN防护？  
+**如果无防护**: NaN传播到CurrencySystem → 货币数据污染
+
+### C-4.3: eventBus.emit异常安全性
+
+**位置**: executeBuy L293  
+```typescript
+try {
+  this.deps?.eventBus?.emit('shop:goods_purchased', { ... });
+} catch { /* ok */ }
+```
+try-catch覆盖了emit，但如果eventBus的某个监听器抛出异常：
+- 购买已成功（货币已扣、库存已减）
+- 异常被吞掉，购买结果正常返回
+- **行为正确** — 不应因事件发布失败而回滚购买
+
+---
+
+## 质询结论
+
+| 类别 | 数量 | 说明 |
+|------|------|------|
+| 新增P0 | 1 | C-1.1: executeBuy事务性缺陷(货币扣后item失效) |
+| 确认P0 | 1 | C-1.2: basePrice NaN传播(DEF-SHOP-101) |
+| 降级P0→P1 | 1 | C-2.1: setShopLevel无上限 |
+| 新增P1 | 2 | C-1.3(validateBuy/executeBuy不一致) + C-3.4(deserialize favorited不一致) |
+| 新增P2 | 1 | C-3.2(confirmLevel阈值验证) |
+| 跨系统待验证 | 3 | C-4.1/C-4.2/C-4.3 |
+
+**最终P0清单**:
+1. DEF-SHOP-101: calculateFinalPrice basePrice NaN传播
+2. DEF-SHOP-201: executeBuy事务性缺陷（货币扣除后item引用失效风险）

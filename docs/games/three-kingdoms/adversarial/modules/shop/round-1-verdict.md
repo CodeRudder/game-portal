@@ -1,124 +1,160 @@
 # Shop 模块 R1 对抗式测试 — Arbiter 裁决
 
-> Arbiter Agent | 2026-05-01
-> 5维度评分 + P0确认 + 修复优先级
+> Arbiter Agent | 版本: v1.8 规则 | 日期: 2026-05-01
+> 依据: round-1-tree.md (Builder) + round-1-challenges.md (Challenger)
 
 ---
 
-## P0 确认裁决
+## 裁决总览
 
-| ID | 描述 | Builder | Challenger | Arbiter裁决 | 理由 |
-|----|------|---------|------------|-------------|------|
-| P0-001 | setShopLevel无NaN/负数/Infinity防护 | DEF-SHOP-001 | P0-001 | ✅ **确认P0** | 直接写入无校验，NaN/负数/Infinity均可注入 |
-| P0-002 | calculateFinalPrice折扣率NaN传播链 | DEF-SHOP-002 | P0-002 | ✅ **确认P0** | 三入口NaN穿透到货币系统，经济体系级风险 |
-| P0-003 | executeBuy购买后stock溢出 | DEF-SHOP-003 | P0-003 | ✅ **确认P0** | MAX_SAFE_INTEGER绕过限购检查，精度丢失 |
-| P0-004 | addDiscount无rate合法性验证 | DEF-SHOP-004 | P0-004 | ✅ **确认P0** | rate=0免费/负数倒赚/NaN传播，三重风险 |
-| P0-005 | serialize遗漏activeDiscounts | DEF-SHOP-006 | P0-005 | ✅ **确认P0** | 折扣活动save/load后丢失，运营活动失效 |
-| P0-006 | deserialize无数据完整性验证 | DEF-SHOP-007 | P0-006 | ✅ **确认P0** | 存档注入可篡改stock/discount/level，null crash |
-
-**确认P0: 6个**
-
-### P1 确认
-
-| ID | 描述 | 裁决 |
-|----|------|------|
-| P1-001 | manualRefresh无扣费（经济漏洞） | ✅ 确认P1 — 配置定义了费用但未使用 |
-| P1-002 | filterGoods keyword为null时NPE | ✅ 确认P1 — `.toLowerCase()` on null |
-| P1-003 | validateBuy Infinity显式加固 | ✅ 确认P1 — 建议性加固，当前已安全 |
+| 指标 | 值 |
+|------|-----|
+| 总节点数 | 93 |
+| P0缺陷 | 2 |
+| P1缺陷 | 5 |
+| P2缺陷 | 16 |
+| 跨系统待验证 | 3 |
+| 已有FIX覆盖 | 9 (FIX-SHOP-001~011) |
 
 ---
 
-## 5维度评分
+## P0 裁决
 
-### D1: 节点覆盖率 (权重 25%)
-- 公开API: 24个
-- F-Normal: 24个 (每个API至少1个 ✅)
-- F-Boundary: 18个
-- F-Error: 12个
-- F-CrossSystem: 8个 (N=4×2=8, 实际8 ✅)
-- F-DataLifecycle: 5个
-- **覆盖率**: 67/24 = 279% (超额覆盖)
-- **评分**: **9.5/10**
+### DEF-SHOP-101: calculateFinalPrice basePrice NaN传播 → executeBuy
 
-### D2: P0发现质量 (权重 30%)
-- NaN传播链: calculateFinalPrice三入口 (itemDiscount/npcRate/activeRate)
-- 折扣篡改: addDiscount rate无验证 (0/负数/NaN/Infinity)
-- serialize缺失: activeDiscounts未持久化
-- deserialize注入: 6类可注入字段
-- 溢出: quantity MAX_SAFE_INTEGER绕过限购
-- 所有P0有源码行号支撑 ✅
-- NaN专项扫描表完整 ✅
-- **评分**: **9.5/10**
+**Builder**: F-2.1-N12, P0  
+**Challenger**: C-1.2, 确认P0  
+**Arbiter裁决**: ✅ **P0确认**
 
-### D3: 源码验证深度 (权重 20%)
-- ShopSystem.ts 全文读取 ✅
-- index.ts 导出验证 ✅
-- shop.types.ts 类型验证 ✅
-- shop-config.ts 常量验证 ✅
-- BR-021 资源比较NaN防护扫描 ✅
-- engine-save接入验证 ✅
-- **评分**: **9.0/10**
+**理由**:
+1. NaN传播链完整：basePrice(NaN) → calculateFinalPrice → validateBuy(finalPrice含NaN) → executeBuy(totalCost=NaN×quantity=NaN) → spendByPriority(NaN)
+2. 违反BR-01(数值API入口NaN检查)和BR-17(战斗数值安全→通用数值安全)
+3. 虽然当前GOODS_DEF_MAP为静态配置，但防御性编程要求所有数值输出验证
+4. FIX-SHOP-002仅防护了折扣率，未防护basePrice本身
 
-### D4: 跨系统链路 (权重 15%)
-- Shop ↔ Currency: executeBuy→spendByPriority ✅
-- Shop ↔ EventBus: emit('shop:goods_purchased') ✅
-- Shop ↔ NPC: calculateFinalPrice→npcDiscountProvider ✅ (发现NaN风险)
-- Shop ↔ Engine-Save: serialize/deserialize ✅ (发现activeDiscounts缺失)
-- Shop ↔ Update循环: update→restockShop ✅
-- Shop ↔ Trade: 外部集成 ✅
-- Shop ↔ Inventory: 购买后无物品交付 ✅ (标记P2)
-- **评分**: **9.0/10**
+**修复方案**: calculateFinalPrice中，对basePrice的每个value添加`Number.isFinite(price) ? ... : 0`防护
 
-### D5: 规则合规性 (权重 10%)
-- BR-01 (NaN检查): ✅ 发现3处违反 (setShopLevel/calculateFinalPrice/addDiscount)
-- BR-06 (NaN绕过教训): ✅ 发现calculateFinalPrice NaN传播链
-- BR-12 (溢出闭环): ✅ 发现executeBuy溢出
-- BR-14 (保存/加载覆盖): ✅ 发现activeDiscounts缺失
-- BR-15 (deserialize覆盖六处): ✅ 验证serialize/deserialize完整性
-- BR-17 (数值安全): ✅ 发现setShopLevel/addDiscount
-- BR-19 (Infinity序列化): ✅ setShopLevel可注入Infinity
-- BR-21 (资源比较NaN防护): ✅ 扫描6处
-- **评分**: **9.0/10**
+**修复ID**: FIX-SHOP-101
 
 ---
 
-## 综合评分
+### DEF-SHOP-201: executeBuy事务性缺陷 — 货币扣除后item引用失效
 
-| 维度 | 权重 | 得分 | 加权 |
-|------|------|------|------|
-| D1 节点覆盖率 | 25% | 9.5 | 2.375 |
-| D2 P0发现质量 | 30% | 9.5 | 2.850 |
-| D3 源码验证深度 | 20% | 9.0 | 1.800 |
-| D4 跨系统链路 | 15% | 9.0 | 1.350 |
-| D5 规则合规性 | 10% | 9.0 | 0.900 |
-| **综合** | **100%** | | **9.275** |
+**Challenger**: C-1.1, 新增P0  
+**Arbiter裁决**: ⚠️ **降级为P1**
 
-### **R1 评分: 9.3/10** ✅ ≥ 9.0 封版线
+**理由**:
+1. Challenger指出的并发restockShop场景在当前单线程JS中不会发生（update和executeBuy在同一调用栈）
+2. `this.getGoodsItem(shopType, goodsId)` 在executeBuy中重新查找是冗余但非危险操作
+3. item引用在validateBuy和executeBuy之间不会失效（无异步中断点）
+4. 但代码确实存在设计缺陷：validateBuy已验证item存在，executeBuy不应重新查找而应传参
 
----
+**严重度调整**: P0 → P1（设计不佳但无实际触发路径）
 
-## 修复优先级排序
+**修复方案**: executeBuy中使用validateBuy返回的item信息，避免重复查找（代码质量改进）
 
-| 优先级 | ID | 描述 | 预估复杂度 | 修复行数 |
-|--------|-----|------|-----------|---------|
-| 1 | P0-002 | calculateFinalPrice NaN防护（经济体系级） | 中 | ~6行 |
-| 2 | P0-004 | addDiscount rate合法性验证 | 低 | ~4行 |
-| 3 | P0-001 | setShopLevel NaN/负数防护 | 低 | ~2行 |
-| 4 | P0-003 | validateBuy quantity上限 | 低 | ~3行 |
-| 5 | P0-005 | serialize activeDiscounts持久化 | 中 | 类型+逻辑 |
-| 6 | P0-006 | deserialize 数据完整性验证 | 中 | ~15行 |
-| 7 | P1-001 | manualRefresh 扣费 | 低 | ~5行 |
-| 8 | P1-002 | filterGoods keyword null安全 | 低 | ~2行 |
+**修复ID**: FIX-SHOP-201（P1，非本轮必须修复）
 
 ---
 
-## 封版决策
+## P1 裁决
 
-**评分 9.3 ≥ 9.0 封版线** → ✅ **批准封版**
+### DEF-SHOP-102: setShopLevel无上限 → 确认P1
 
-条件：所有6个P0必须在封版前修复完成，通过 `npx tsc --noEmit` 编译验证。
+**Builder**: P0 (DEF-SHOP-103)  
+**Challenger**: C-2.1, 降级为P1  
+**Arbiter裁决**: ✅ **P1确认**
 
-### 封版签署
-- Builder: ✅ 流程树67节点，24 API全覆盖，8跨系统链路
-- Challenger: ✅ 发现6个P0 + 3个P1，均有源码验证
-- Arbiter: ✅ 综合评分9.3，批准封版
+**理由**: shopLevel不影响核心购买流程，无溢出/崩溃风险。建议添加上限=SHOP_LEVEL_CONFIG.length。
+
+---
+
+### DEF-SHOP-103: validateBuy/executeBuy无currencyOps行为不一致
+
+**Challenger**: C-1.3, P1  
+**Arbiter裁决**: ✅ **P1确认**
+
+**理由**: validateBuy返回canBuy=true但executeBuy拒绝执行。前端显示不一致。建议validateBuy也检查currencyOps。
+
+---
+
+### DEF-SHOP-104: deserialize后favorited字段与favorites Set不一致
+
+**Challenger**: C-3.4, P1  
+**Arbiter裁决**: ✅ **P1确认**
+
+**理由**: deserialize先设置shops（含item.favorited），再重建favorites。如果存档中item.favorited=true但defId已不在GOODS_DEF_MAP中，则favorites不含该ID但item.favorited=true。建议deserialize后同步item.favorited。
+
+---
+
+### DEF-SHOP-105: filterGoods priceRange含NaN过滤异常
+
+**Builder**: P1  
+**Challenger**: 确认P1  
+**Arbiter裁决**: ✅ **P1确认**
+
+---
+
+### DEF-SHOP-106: deps未init时executeBuy的eventBus安全
+
+**Builder**: P1  
+**Arbiter裁决**: ✅ **P1确认**（已有?.安全链）
+
+---
+
+## 跨系统验证结论
+
+| # | 验证项 | 状态 | 说明 |
+|---|--------|------|------|
+| C-4.1 | engine-save.ts是否调用shop.serialize() | ⚠️ 待验证 | 如缺失则升级为P0 |
+| C-4.2 | CurrencySystem.spendByPriority NaN防护 | ⚠️ 待验证 | 依赖DEF-SHOP-101修复 |
+| C-4.3 | eventBus.emit异常安全 | ✅ 安全 | try-catch覆盖，行为正确 |
+
+---
+
+## 修复优先级
+
+| 优先级 | 修复ID | 描述 | 类型 |
+|--------|--------|------|------|
+| **P0-必须** | FIX-SHOP-101 | calculateFinalPrice basePrice NaN防护 | 数值安全 |
+| P1-建议 | FIX-SHOP-102 | setShopLevel添加上限 | 溢出防护 |
+| P1-建议 | FIX-SHOP-103 | validateBuy检查currencyOps | 一致性 |
+| P1-建议 | FIX-SHOP-104 | deserialize后同步favorited | 状态一致 |
+| P1-建议 | FIX-SHOP-105 | filterGoods priceRange NaN防护 | 数值安全 |
+| P1-建议 | FIX-SHOP-201 | executeBuy避免重复查找item | 代码质量 |
+
+---
+
+## 覆盖率评估
+
+| 维度 | 覆盖 | 总计 | 覆盖率 |
+|------|------|------|--------|
+| 公开API | 24/24 | 24 | 100% |
+| F-Normal | 38 | 38 | 100% |
+| F-Boundary | 18 | 18 | 100% |
+| F-Error | 16 | 16 | 100% |
+| P0节点 | 2 | 2 | 100% |
+| 跨系统链路 | 4 | 4 | 100% |
+
+**R1覆盖率**: 93/93 = **100%**
+
+---
+
+## R2 建议
+
+1. 修复FIX-SHOP-101后，在R2验证修复穿透（spendByPriority是否也需要NaN防护）
+2. 验证engine-save.ts对ShopSystem的序列化调用完整性
+3. 添加ShopSystem到GameEngine的集成测试
+4. 考虑executeBuy的原子性重构（P1 backlog）
+
+---
+
+## 签名
+
+| 角色 | 决策 | 日期 |
+|------|------|------|
+| Builder | 93节点枚举 | 2026-05-01 |
+| Challenger | 5项质询 | 2026-05-01 |
+| Arbiter | 2个P0(1个降级P1), 5个P1 | 2026-05-01 |
+
+**本轮必须修复**: FIX-SHOP-101 (1个P0)

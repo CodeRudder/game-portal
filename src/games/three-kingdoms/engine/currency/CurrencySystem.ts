@@ -154,7 +154,8 @@ export class CurrencySystem implements ISubsystem {
   /** 设置货币数量（用于加载存档） */
   setCurrency(type: CurrencyType, amount: number): void {
     const cap = CURRENCY_CAPS[type];
-    this.wallet[type] = cap !== null ? Math.min(amount, cap) : Math.max(0, amount);
+    const clamped = Math.max(0, amount);
+    this.wallet[type] = cap !== null ? Math.min(clamped, cap) : clamped;
   }
 
   /**
@@ -334,13 +335,21 @@ export class CurrencySystem implements ISubsystem {
       }
       // 按实际可接收量折算消耗
       const actualSpent = Math.ceil(actualReceived / rate);
+      const beforeFrom = this.wallet[from];
+      const beforeTo = this.wallet[to];
       this.wallet[from] -= actualSpent;
       this.wallet[to] = cap;
+      this.emitChanged(from, beforeFrom, this.wallet[from]);
+      this.emitChanged(to, beforeTo, this.wallet[to]);
       return { success: true, spent: actualSpent, received: actualReceived };
     }
 
+    const beforeFrom = this.wallet[from];
+    const beforeTo = this.wallet[to];
     this.wallet[from] -= amount;
     this.wallet[to] += received;
+    this.emitChanged(from, beforeFrom, this.wallet[from]);
+    this.emitChanged(to, beforeTo, this.wallet[to]);
     return { success: true, spent: amount, received };
   }
 
