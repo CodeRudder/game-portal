@@ -305,4 +305,16 @@ export class AllianceBossSystem implements ISubsystem {
   getRemainingChallenges(playerState: AlliancePlayerState): number {
     return Math.max(0, this.config.dailyChallengeLimit - playerState.dailyBossChallenges);
   }
+
+  // ── 存档序列化 (FIX-P0-001: Alliance R1 存档接入) ──
+
+  /** Boss系统存档数据 — Boss状态由 AllianceData 字段承载(bossKilledToday/lastBossRefreshTime) */
+  serialize(): Record<string, unknown> {
+    return { config: { ...this.config } };
+  }
+
+  /** 从存档恢复 — Boss通过 alliance 数据重建，此处无额外状态 */
+  deserialize(_data: Record<string, unknown>): void {
+    /* Boss状态由 AllianceData.bossKilledToday/lastBossRefreshTime 承载 */
+  }
 }

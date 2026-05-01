@@ -78,6 +78,8 @@ export interface SaveContext {
   readonly equipmentEnhance?: import('./equipment/EquipmentEnhanceSystem').EquipmentEnhanceSystem;
   /** 贸易系统（可选，v5.0+） */
   readonly trade?: import('./trade/TradeSystem').TradeSystem;
+  /** 商队系统（可选，v5.0+，FIX-805: R1 存档接入） */
+  readonly caravan?: import('./trade/CaravanSystem').CaravanSystem;
   /** 商店系统（可选，v5.0+） */
   readonly shop?: import('./shop/ShopSystem').ShopSystem;
   /** 声望系统（可选，v14.0+） */
@@ -142,6 +144,11 @@ export interface SaveContext {
   // ── 铜钱/材料经济系统 (FIX-720/721: Resource R1 存档接入) ──
   readonly copperEconomy?: import('./resource/copper-economy-system').CopperEconomySystem;
   readonly materialEconomy?: import('./resource/material-economy-system').MaterialEconomySystem;
+  // ── 联盟系统 v13.0+ (FIX-P0-001: Alliance R1 存档接入) ──
+  readonly allianceSystem?: import('./alliance/AllianceSystem').AllianceSystem;
+  readonly allianceTaskSystem?: import('./alliance/AllianceTaskSystem').AllianceTaskSystem;
+  readonly allianceBossSystem?: import('./alliance/AllianceBossSystem').AllianceBossSystem;
+  readonly allianceShopSystem?: import('./alliance/AllianceShopSystem').AllianceShopSystem;
 }
 
 // ─────────────────────────────────────────────
@@ -184,6 +191,7 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     equipmentForge: ctx.equipmentForge?.serialize(),
     equipmentEnhance: ctx.equipmentEnhance?.serialize(),
     trade: ctx.trade?.serialize(),
+    caravan: ctx.caravan?.serialize(),
     shop: ctx.shop?.serialize(),
     prestige: ctx.prestige?.getSaveData(),
     heritage: ctx.heritage?.getSaveData(),
@@ -231,6 +239,10 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     // ── 铜钱/材料经济系统 (FIX-720/721: Resource R1 存档接入) ──
     copperEconomy: ctx.copperEconomy?.serialize(),
     materialEconomy: ctx.materialEconomy?.serialize(),
+    // ── 联盟系统 v13.0+ (FIX-P0-001: Alliance R1 存档接入) ──
+    alliance: ctx.allianceSystem?.serialize(ctx.allianceSystem.getPlayerState(), ctx.allianceSystem.getAlliance()),
+    allianceTask: ctx.allianceTaskSystem?.serialize(),
+    allianceShop: ctx.allianceShopSystem?.serialize(),
   };
 }
 
@@ -250,6 +262,7 @@ export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameSt
   if (data.equipmentForge) subsystems.equipmentForge = data.equipmentForge;
   if (data.equipmentEnhance) subsystems.equipmentEnhance = data.equipmentEnhance;
   if (data.trade) subsystems.trade = data.trade;
+  if (data.caravan) subsystems.caravan = data.caravan;
   if (data.shop) subsystems.shop = data.shop;
   if (data.prestige) subsystems.prestige = data.prestige;
   if (data.heritage) subsystems.heritage = data.heritage;
@@ -283,6 +296,10 @@ export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameSt
   // ── 铜钱/材料经济系统 (FIX-720/721: Resource R1 存档接入) ──
   if (data.copperEconomy) subsystems.copperEconomy = data.copperEconomy;
   if (data.materialEconomy) subsystems.materialEconomy = data.materialEconomy;
+  // ── 联盟系统 v13.0+ (FIX-P0-001: Alliance R1 存档接入) ──
+  if (data.alliance) subsystems.alliance = data.alliance;
+  if (data.allianceTask) subsystems.allianceTask = data.allianceTask;
+  if (data.allianceShop) subsystems.allianceShop = data.allianceShop;
 
   return {
     version: String(data.version),
@@ -347,6 +364,10 @@ export function fromIGameState(state: IGameState): GameSaveData {
     // ── 铜钱/材料经济系统 (FIX-720/721: Resource R1 存档接入) ──
     copperEconomy: s.copperEconomy as import('./resource/copper-economy-system').CopperEconomySaveData | undefined,
     materialEconomy: s.materialEconomy as import('./resource/material-economy-system').MaterialEconomySaveData | undefined,
+    // ── 联盟系统 v13.0+ (FIX-P0-001: Alliance R1 存档接入) ──
+    alliance: s.alliance as import('../core/alliance/alliance.types').AllianceSaveData | undefined,
+    allianceTask: s.allianceTask as { tasks: Array<{ defId: string; currentProgress: number; status: import('../core/alliance/alliance.types').AllianceTaskStatus; claimedPlayers: string[] }> } | undefined,
+    allianceShop: s.allianceShop as { items: Array<{ id: string; purchased: number }> } | undefined,
   };
 }
 
@@ -556,6 +577,11 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
     ctx.trade.deserialize(data.trade);
   }
 
+  // ── 商队系统 v5.0 (FIX-805: R1 存档接入) ──
+  if (data.caravan && ctx.caravan) {
+    ctx.caravan.deserialize(data.caravan);
+  }
+
   // ── 商店系统 v5.0 ──
   if (data.shop && ctx.shop) {
     ctx.shop.deserialize(data.shop);
@@ -759,6 +785,28 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
     ctx.materialEconomy.deserialize(data.materialEconomy);
   } else {
     gameLog.info('[Save] 材料经济存档迁移：无材料经济数据，自动初始化默认状态');
+  }
+
+  // ── 联盟系统 v13.0+ (FIX-P0-001: Alliance R1 存档接入) ──
+  if (data.alliance && ctx.allianceSystem) {
+    const { playerState, alliance } = ctx.allianceSystem.deserialize(data.alliance);
+    ctx.allianceSystem.resetAllianceData(alliance, playerState);
+  } else {
+    gameLog.info('[Save] v13.0 存档迁移：无联盟数据，自动初始化默认联盟状态');
+  }
+
+  // ── 联盟任务系统 (FIX-P0-002: Alliance R1 存档接入) ──
+  if (data.allianceTask && ctx.allianceTaskSystem) {
+    ctx.allianceTaskSystem.deserialize(data.allianceTask);
+  } else {
+    gameLog.info('[Save] v13.0 存档迁移：无联盟任务数据，自动初始化默认任务状态');
+  }
+
+  // ── 联盟商店系统 (FIX-P0-003: Alliance R1 存档接入) ──
+  if (data.allianceShop && ctx.allianceShopSystem) {
+    ctx.allianceShopSystem.deserialize(data.allianceShop);
+  } else {
+    gameLog.info('[Save] v13.0 存档迁移：无联盟商店数据，自动初始化默认商店状态');
   }
 
   syncBuildingToResource({

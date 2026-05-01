@@ -208,7 +208,10 @@ export class CaravanSystem implements ISubsystem {
     // 检查载重
     let totalWeight = 0;
     for (const [goodsId, qty] of Object.entries(request.cargo)) {
-      // 简单重量计算（每单位重量1）
+      // FIX-803: NaN/负值防护
+      if (!Number.isFinite(qty) || qty < 0) {
+        return { success: false, reason: `货物数量无效: ${goodsId}` };
+      }
       totalWeight += qty;
     }
     if (totalWeight > caravan.attributes.capacity) {
@@ -349,6 +352,8 @@ export class CaravanSystem implements ISubsystem {
     const caravan = this.caravans.get(caravanId);
     if (!caravan) return false;
     if (attribute === 'currentLoad') return false; // currentLoad 不可直接升级
+    // FIX-802: NaN/负值防护
+    if (!Number.isFinite(value) || value <= 0) return false;
     caravan.attributes[attribute] += value;
     return true;
   }

@@ -208,4 +208,24 @@ export class AllianceShopSystem implements ISubsystem {
     }
     return grouped;
   }
+
+  // ── 存档序列化 (FIX-P0-003: Alliance R1 存档接入) ──
+
+  /** 商店存档数据 */
+  serialize(): { items: Array<{ id: string; purchased: number }> } {
+    return {
+      items: this.shopItems.map(i => ({ id: i.id, purchased: i.purchased })),
+    };
+  }
+
+  /** 从存档恢复限购状态 */
+  deserialize(data: { items: Array<{ id: string; purchased: number }> }): void {
+    if (!data || !Array.isArray(data.items)) return;
+    for (const saved of data.items) {
+      const item = this.shopItems.find(i => i.id === saved.id);
+      if (item) {
+        item.purchased = Math.max(0, saved.purchased);
+      }
+    }
+  }
 }

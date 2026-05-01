@@ -242,6 +242,8 @@ export interface GameSaveData {
   equipmentEnhance?: { protectionCount: number };
   /** 贸易系统数据（可选，v5.0+） */
   trade?: import('../core/trade/trade.types').TradeSaveData;
+  /** 商队系统数据（可选，v5.0+，FIX-805: R1 存档接入） */
+  caravan?: { caravans: import('../core/trade/trade.types').Caravan[]; version: number };
   /** 商店系统数据（可选，v5.0+） */
   shop?: import('../core/shop/shop.types').ShopSaveData;
   /** 声望系统数据（可选，v14.0+） */
@@ -315,6 +317,13 @@ export interface GameSaveData {
   // ── 铜钱/材料经济系统 (FIX-720/721: Resource R1 存档接入) ──
   /** 铜钱经济系统数据（可选） */
   copperEconomy?: import('../engine/resource/copper-economy-system').CopperEconomySaveData;
+  // ── 联盟系统 v13.0+ (FIX-P0-001: Alliance R1 存档接入) ──
+  /** 联盟系统数据（可选，v13.0+） */
+  alliance?: import('../core/alliance/alliance.types').AllianceSaveData;
+  /** 联盟任务系统数据（可选，v13.0+） */
+  allianceTask?: { tasks: Array<{ defId: string; currentProgress: number; status: import('../core/alliance/alliance.types').AllianceTaskStatus; claimedPlayers: string[] }> };
+  /** 联盟商店系统数据（可选，v13.0+） */
+  allianceShop?: { items: Array<{ id: string; purchased: number }> };
   /** 材料经济系统数据（可选） */
   materialEconomy?: import('../engine/resource/material-economy-system').MaterialEconomySaveData;
 }

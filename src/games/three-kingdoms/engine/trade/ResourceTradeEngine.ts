@@ -160,8 +160,8 @@ export class ResourceTradeEngine implements ISubsystem {
    * @returns 交易结果
    */
   tradeResource(from: ResourceType, to: ResourceType, amount: number): ResourceTradeResult {
-    // 参数校验
-    if (amount <= 0) {
+    // 参数校验 (FIX-801: NaN绕过防护)
+    if (!Number.isFinite(amount) || amount <= 0) {
       return { success: false, received: 0, fee: 0, error: '交易数量必须大于 0' };
     }
 
@@ -239,8 +239,8 @@ export class ResourceTradeEngine implements ISubsystem {
    * @returns 检查结果
    */
   canTradeResource(from: ResourceType, to: ResourceType, amount: number): CanTradeResult {
-    // 参数校验
-    if (amount <= 0) {
+    // 参数校验 (FIX-801: NaN绕过防护)
+    if (!Number.isFinite(amount) || amount <= 0) {
       return { canTrade: false, reason: '交易数量必须大于 0' };
     }
 

@@ -184,6 +184,10 @@ export class TradeSystem implements ISubsystem {
     bargainingPower: number,
     guardCost: number,
   ): TradeProfit {
+    // FIX-804: NaN防护
+    const safeBargainingPower = Number.isFinite(bargainingPower) && bargainingPower >= 0 ? bargainingPower : 1;
+    const safeGuardCost = Number.isFinite(guardCost) && guardCost >= 0 ? guardCost : 0;
+
     const routeState = this.routeStates.get(routeId);
     const routeDef = this.routeDefs.get(routeId);
     if (!routeState || !routeDef) {
@@ -195,7 +199,7 @@ export class TradeSystem implements ISubsystem {
     for (const [goodsId, quantity] of Object.entries(cargo)) {
       const price = this.goodsPrices.get(goodsId);
       const def = this.goodsDefs.get(goodsId);
-      if (price && def) {
+      if (price && def && Number.isFinite(quantity) && quantity > 0) {
         totalCost += def.basePrice * quantity;
         totalRevenue += price.currentPrice * quantity;
       }
@@ -203,9 +207,9 @@ export class TradeSystem implements ISubsystem {
 
     const tier = findProsperityTier(routeState.prosperity);
     const prosperityBonus = tier.outputMultiplier - 1;
-    const bargainingBonus = bargainingPower - 1;
+    const bargainingBonus = safeBargainingPower - 1;
     const adjustedRevenue = totalRevenue * (1 + prosperityBonus) * (1 + bargainingBonus);
-    const profit = adjustedRevenue - totalCost - guardCost;
+    const profit = adjustedRevenue - totalCost - safeGuardCost;
     const profitRate = totalCost > 0 ? profit / totalCost : 0;
 
     return {
@@ -215,7 +219,7 @@ export class TradeSystem implements ISubsystem {
       profitRate,
       prosperityBonus,
       bargainingBonus,
-      guardCost,
+      guardCost: safeGuardCost,
     };
   }
 

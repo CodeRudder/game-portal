@@ -43,7 +43,11 @@ export const DEFAULT_INTERACTION_CONFIG: InteractionConfig = {
 
 /** 获取今日互动记录（使用 UTC 避免时区问题） */
 function getTodayInteractions(state: SocialState, now: number): InteractionRecord[] {
-  // P0-04 fix: 使用 UTC 计算当日零点，避免时区依赖
+  // P0-04 fix: 校验 now 必须为有限数
+  if (!Number.isFinite(now)) {
+    throw new Error('无效的时间参数: now 必须为有限数');
+  }
+  // 使用 UTC 计算当日零点，避免时区依赖
   const d = new Date(now);
   const dayStart = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0);
   return state.dailyInteractions.filter((i) => i.timestamp >= dayStart);

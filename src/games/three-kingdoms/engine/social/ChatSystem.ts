@@ -112,6 +112,11 @@ export class ChatSystem implements ISubsystem {
     now: number,
     targetId?: string,
   ): { state: SocialState; message: ChatMessage } {
+    // P0-05 fix: 校验 now 必须为有限数
+    if (!Number.isFinite(now)) {
+      throw new Error('无效的时间参数: now 必须为有限数');
+    }
+
     // 系统频道仅官方
     if (channel === CC.SYSTEM && senderId !== 'system') {
       throw new Error('系统频道仅限官方发送');

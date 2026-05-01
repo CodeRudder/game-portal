@@ -1,170 +1,151 @@
-# Social 模块 R1 对抗式测试 — Arbiter 裁决报告
+# Social 模块 R1 对抗式测试 — Arbiter 仲裁裁决
 
-> 生成时间: 2025-07-11
-> Builder: round-1-tree.md (API覆盖矩阵 + 流程分支树 + 跨系统链路)
-> Challenger: round-1-challenges.md (11 个 P0 漏洞)
-
----
-
-## 1. 五维度评分
-
-### 1.1 Normal Flow (正常流程覆盖) — 9.0/10
-
-| 子项 | 评分 | 说明 |
-|------|------|------|
-| 好友 CRUD | 9.5 | add/remove/request/accept/reject 全覆盖 |
-| 好友互动 | 9.0 | gift/visit/spar 三种互动 + 每日限制 |
-| 借将系统 | 9.0 | borrow/return/PvP禁用 完整 |
-| 聊天系统 | 9.0 | 多频道发送/禁言/举报/清理 |
-| 排行榜 | 9.0 | 分数更新/分页查询/赛季管理 |
-| 序列化 | 8.5 | serialize/deserialize 均有覆盖 |
-
-**扣分项**: 序列化/反序列化的循环一致性测试不够充分 (-1.0)
-
-**加权得分**: **9.0**
+> 生成时间: 2025-07-11 (R1 正式版)
+> 仲裁范围: Builder 测试树 + Challenger 挑战报告
+> 仲裁标准: 5 维度评分 (每维度 0-10 分)
 
 ---
 
-### 1.2 Boundary Conditions (边界条件) — 7.5/10
+## 1. 维度评分
 
-| 子项 | 评分 | 说明 |
-|------|------|------|
-| 容量上限 | 9.0 | maxFriends/dailyLimit/pendingLimit 有测试 |
-| 时间边界 | 7.0 | 冷却到期/发言间隔有测试，但时间回拨未覆盖 (-2.0) |
-| 数值边界 | 6.5 | score=0 有测试，但 NaN/Infinity/负数未覆盖 (-3.0) |
-| 分页边界 | 8.5 | page=0/page>totalPages/pageSize>MAX 有测试 |
-| 空状态 | 8.0 | 空好友/空排行榜有测试 |
+### 1.1 Normal Flow (正常流程覆盖) — 9/10
 
-**扣分项**: 
-- NaN/Infinity 作为 score 未被任何测试覆盖 (-2.0)
-- 时间回拨场景未测试 (-1.5)
-- 自申请/自借边界未测试 (-1.0)
-
-**加权得分**: **7.5**
-
----
-
-### 1.3 Error Paths (错误路径) — 8.0/10
-
-| 子项 | 评分 | 说明 |
-|------|------|------|
-| 参数校验 | 8.0 | 大部分 throw 路径有测试 |
-| 异常恢复 | 7.5 | 异常后状态一致性未充分验证 (-2.0) |
-| 反序列化防御 | 7.0 | null/undefined 输入未充分覆盖 (-2.5) |
-| 级联错误 | 8.0 | acceptFriendRequest 内 addFriend 失败有测试 |
+**评分依据**:
+- 所有 59 个公开 API 均有 F-Normal 节点 ✅
+- 好友 CRUD 全流程覆盖 ✅
+- 互动三件套 (赠送/拜访/切磋) 正常路径覆盖 ✅
+- 借将/归还正常路径覆盖 ✅
+- 聊天四频道正常路径覆盖 ✅
+- 排行榜增删改查正常路径覆盖 ✅
+- 赛季结算正常路径覆盖 ✅
 
 **扣分项**:
-- deserializeChat(null) 未测试 (-1.5)
-- 异常抛出后 state 不变性未验证 (-1.0)
+- LeaderboardSystem 无 serialize/deserialize 正常路径 (-1)
 
-**加权得分**: **8.0**
+### 1.2 Boundary Conditions (边界条件) — 8/10
 
----
-
-### 1.4 Cross-System Interactions (跨系统交互) — 7.5/10
-
-| 子项 | 评分 | 说明 |
-|------|------|------|
-| Friend + Chat | 8.0 | 共享 SocialState，有序列化集成 |
-| Friend + Borrow | 9.0 | 委托模式完整 |
-| Leaderboard 独立性 | 7.0 | 独立 LeaderboardState，与 SocialState 无交互测试 (-2.5) |
-| 序列化一致性 | 7.5 | serialize/deserialize 循环测试不够 (-2.0) |
-
-**扣分项**:
-- Leaderboard 与其他系统无集成测试 (-2.0)
-- 跨模块状态一致性未验证 (-1.0)
-
-**加权得分**: **7.5**
-
----
-
-### 1.5 Data Lifecycle (数据生命周期) — 7.0/10
-
-| 子项 | 评分 | 说明 |
-|------|------|------|
-| 创建 | 9.0 | 好友/消息/排行榜条目创建完整 |
-| 读取 | 9.0 | 各种查询方法覆盖充分 |
-| 更新 | 8.5 | 分数更新/禁言/互动有测试 |
-| 删除/清理 | 7.0 | removeFriend/cleanExpired 有测试，但清理后一致性未验证 (-2.5) |
-| 持久化 | 6.0 | 版本迁移未覆盖 (-3.5) |
-| 重置 | 8.0 | dailyReset/赛季重置有测试 |
+**评分依据**:
+- 好友上限 50 → 已覆盖 ✅
+- 每日申请 20 → 已覆盖 ✅
+- 待处理申请 30 → 已覆盖 ✅
+- 删除冷却 24h → 已覆盖 ✅
+- 互动每日限制 (10/5/3) → 已覆盖 ✅
+- 借将每日 3 次 → 已覆盖 ✅
+- 发言间隔 (10s/5s/3s) → 已覆盖 ✅
+- 消息容量上限 (100/50) → 已覆盖 ✅
+- 排行榜容量 1000 → 已覆盖 ✅
+- 分页 pageSize 上限 20 → 已覆盖 ✅
 
 **扣分项**:
-- 版本升级/降级数据迁移未测试 (-2.5)
-- cleanExpiredMessages 后消息顺序一致性未验证 (-1.0)
+- friendshipPoints 无上限常量 (-1)
+- sendMessage content 无空字符串校验 (-0.5)
+- playerName/playerId 无空字符串校验 (-0.5)
 
-**加权得分**: **7.0**
+### 1.3 Error Paths (错误路径) — 6/10
+
+**评分依据**:
+- 好友不存在 → throw ✅
+- 申请不存在 → throw ✅
+- 已是好友 → throw ✅
+- 系统频道权限 → throw ✅
+- 禁言中发言 → throw ✅
+- 发言间隔 → throw ✅
+- 已归还再归还 → throw ✅
+
+**扣分项**:
+- NaN 传入 now 参数 → 3 个子系统均未防护 (-2)
+- NaN/Infinity 传入 score → 未防护 (-1)
+- 自申请/自借 → 未防护 (-0.5)
+- deserialize 版本不匹配 → 静默丢弃 (-0.5)
+
+### 1.4 Cross-System Interactions (跨系统交互) — 3/10
+
+**评分依据**:
+- FriendSystem → BorrowHeroHelper 委托链路 ✅
+- FriendSystem → FriendInteractionHelper 委托链路 ✅
+- FriendSystem ↔ ChatSystem 共享 SocialState ✅
+
+**严重扣分项**:
+- **Social 模块完全未接入 engine-save** (-5) — BR-014/BR-024 直接违反
+- LeaderboardSystem 无 serialize/deserialize (-1)
+- LeaderboardSystem 与 SocialState 无关联 (-0.5)
+- ChatSystem.serializeChat 与 FriendSystem.serialize 路径重叠/冲突 (-0.5)
+
+### 1.5 Data Lifecycle (数据生命周期) — 3/10
+
+**评分依据**:
+- FriendSystem.serialize/deserialize 存在 ✅
+- ChatSystem.serializeChat/deserializeChat 存在 ✅
+- dailyReset 重置每日计数 ✅
+
+**严重扣分项**:
+- **GameSaveData 无 social 字段** → 保存时数据丢失 (-4)
+- **buildSaveData 未调用 Social serialize** → 加载时数据丢失 (-2)
+- **LeaderboardSystem 无序列化** → 排行榜无法持久化 (-1)
 
 ---
 
-## 2. 综合评分
+## 2. 总分计算
 
-| 维度 | 权重 | 得分 | 加权 |
-|------|------|------|------|
-| Normal Flow | 25% | 9.0 | 2.25 |
-| Boundary Conditions | 25% | 7.5 | 1.875 |
-| Error Paths | 20% | 8.0 | 1.60 |
-| Cross-System | 15% | 7.5 | 1.125 |
-| Data Lifecycle | 15% | 7.0 | 1.05 |
-| **总分** | **100%** | | **7.90** |
-
----
-
-## 3. P0 漏洞裁决
-
-| 编号 | Challenger 指控 | 裁决 | 理由 |
-|------|----------------|------|------|
-| P0-01 | getState() 可变引用 | **确认 CRITICAL** | 可直接篡改内部状态，绕过所有校验 |
-| P0-02 | NaN/Infinity 导致排序崩溃 | **确认 CRITICAL** | NaN 进入排序比较函数导致不确定行为 |
-| P0-03 | 时间回拨覆盖 lastSendTime | **确认 CRITICAL** | 影响消息清理和时间线一致性 |
-| P0-04 | 时区依赖 getTodayInteractions | **确认 MEDIUM** | 跨时区场景下每日限制不一致 |
-| P0-05 | 版本不匹配静默丢弃数据 | **确认 MEDIUM** | 版本升级时数据丢失风险 |
-| P0-06 | deserializeChat null safety | **确认 MEDIUM** | 输入为 null 时崩溃 |
-| P0-07 | metadata 引用泄漏 | **确认 MEDIUM** | 外部可修改排行榜元数据 |
-| P0-09 | 奖励无显式上限 | **确认 LOW** | 依赖配置正确性，非代码逻辑缺陷 |
-| P0-10 | 自申请好友 | **确认 MEDIUM** | 违反业务规则 |
-| P0-11 | 自借将 | **确认 MEDIUM** | 违反业务规则 |
-| P0-12 | sortBoard/assignRanks 可变性 | **确认 CRITICAL** | 与 P0-01 同源，合并修复 |
-
-**确认漏洞总计**: 11 个 (4 CRITICAL + 6 MEDIUM + 1 LOW)
+| 维度 | 权重 | 得分 | 加权分 |
+|------|------|------|--------|
+| Normal Flow | 20% | 9 | 1.8 |
+| Boundary Conditions | 20% | 8 | 1.6 |
+| Error Paths | 20% | 6 | 1.2 |
+| Cross-System Interactions | 20% | 3 | 0.6 |
+| Data Lifecycle | 20% | 3 | 0.6 |
+| **总分** | **100%** | — | **5.8/10** |
 
 ---
 
-## 4. 封版判定
+## 3. 裁决结论
 
-### R1 评分: 7.90 / 10
+### R1 评分: 5.8/10 — **未达封版标准 (≥9.0)**
 
-### 判定: **不封版** (需要 R2)
+### 必须修复的 P0 (阻塞封版)
 
-**理由**:
-1. 总分 7.90 < 9.0 封版阈值
-2. 存在 4 个 CRITICAL 级别漏洞，涉及数据完整性和安全性
-3. Boundary Conditions (7.5) 和 Data Lifecycle (7.0) 两个维度低于 8.0
+| 优先级 | 编号 | 问题 | 修复类型 |
+|--------|------|------|---------|
+| **P0-1** | P0-01 | engine-save 未接入 Social | 架构修复 (六处同步) |
+| **P0-2** | P0-02 | updateScore NaN/Infinity/负数 | 入口校验 |
+| **P0-3** | P0-03 | getState() 返回可变引用 | 深拷贝 |
+| **P0-4** | P0-04 | getTodayInteractions NaN 绕过 | 入口校验 |
+| **P0-5** | P0-05 | sendMessage NaN 绕过 | 入口校验 |
 
-### 修复要求 (进入 Fixer 阶段)
+### 建议修复的 P0 (提升评分)
 
-必须修复以下所有 CRITICAL + MEDIUM 漏洞才能进入 R2:
+| 优先级 | 编号 | 问题 | 修复类型 |
+|--------|------|------|---------|
+| P1 | P0-06 | 自申请校验 | 逻辑校验 |
+| P1 | P0-07 | 自借将校验 | 逻辑校验 |
+| P1 | P0-08 | deserialize 版本迁移 | 数据安全 |
+| P1 | P0-09 | metadata 浅拷贝 | 引用安全 |
+| P1 | P0-10 | friendshipPoints 上限 | 游戏平衡 |
+| P1 | P0-11 | LeaderboardSystem serialize | 数据持久化 |
 
-| 优先级 | 漏洞 | 修复方案 |
-|--------|------|---------|
-| P0 | P0-01+P0-12 | getState() 返回深拷贝 |
-| P0 | P0-02 | updateScore 入口校验 score |
-| P0 | P0-03 | sendMessage 校验时间单调递增 |
-| P1 | P0-04 | getTodayInteractions 使用 UTC |
-| P1 | P0-06 | deserializeChat 防御性编程 |
-| P1 | P0-07 | metadata 浅拷贝 |
-| P1 | P0-10 | sendFriendRequest 自申请校验 |
-| P1 | P0-11 | borrowHero 自借校验 |
-| P2 | P0-05 | deserialize 版本迁移 |
-| P2 | P0-09 | endSeasonAndStartNew 显式上限 |
+### 修复后预期评分
 
-### R2 预期
+如果修复全部 11 个 P0：
+- Normal Flow: 10/10 (+1)
+- Boundary Conditions: 9/10 (+1)
+- Error Paths: 9/10 (+3)
+- Cross-System: 9/10 (+6)
+- Data Lifecycle: 9/10 (+6)
+- **预期总分: 9.2/10** → 可封版
 
-修复所有 P0 后，预期 R2 评分:
-- Normal Flow: 9.5 (+0.5)
-- Boundary Conditions: 9.0 (+1.5)
-- Error Paths: 9.0 (+1.0)
-- Cross-System: 8.0 (+0.5)
-- Data Lifecycle: 8.5 (+1.5)
+### 修复范围评估
 
-**R2 预期总分**: ~9.0 (可达封版阈值)
+P0-01 (engine-save 接入) 是架构级修复，需要修改 6 处文件：
+1. `shared/types.ts` — GameSaveData 添加 social/leaderboard 字段
+2. `engine-save.ts` — buildSaveData 调用 serialize
+3. `engine-save.ts` — applySaveData 调用 deserialize
+4. `engine-save-migration.ts` — toIGameState/fromIGameState 同步
+5. `LeaderboardSystem.ts` — 添加 serialize/deserialize 方法
+6. `engine-extended-deps.ts` — 确认 deps 传递
+
+P0-02~P0-05 是入口校验修复，每个 1-3 行代码。
+P0-06~P0-07 是逻辑校验修复，每个 1-2 行代码。
+
+### 下一步
+
+进入 **R1 Fixer** 阶段，修复全部 11 个 P0 后重新评估。

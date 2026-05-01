@@ -327,4 +327,17 @@ export class AllianceTaskSystem implements ISubsystem {
   getTaskPool(): AllianceTaskDef[] {
     return [...this.taskPool];
   }
+
+  // ── 存档序列化 (FIX-P0-002: Alliance R1 存档接入) ──
+
+  /** 任务系统存档数据 */
+  serialize(): { tasks: ReturnType<AllianceTaskSystem['serializeTasks']> } {
+    return { tasks: this.serializeTasks() };
+  }
+
+  /** 从存档恢复任务状态 */
+  deserialize(data: { tasks: Array<{ defId: string; currentProgress: number; status: AllianceTaskStatus; claimedPlayers: string[] }> }): void {
+    if (!data || !Array.isArray(data.tasks)) return;
+    this.deserializeTasks(data.tasks);
+  }
 }

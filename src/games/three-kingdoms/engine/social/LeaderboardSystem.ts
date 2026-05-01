@@ -284,6 +284,36 @@ export class LeaderboardSystem implements ISubsystem {
     return [...REWARD_CONFIGS];
   }
 
+  // ── 存档序列化 ──────────────────────────
+
+  /**
+   * 序列化排行榜状态
+   */
+  serialize(): LeaderboardState {
+    return JSON.parse(JSON.stringify(this.state));
+  }
+
+  /**
+   * 反序列化恢复排行榜状态
+   */
+  deserialize(data: LeaderboardState | null | undefined): void {
+    if (!data || typeof data !== 'object') {
+      this.state = createDefaultLeaderboardState();
+      return;
+    }
+    // 验证必要字段
+    if (!data.boards || !data.currentSeason) {
+      this.state = createDefaultLeaderboardState();
+      return;
+    }
+    this.state = JSON.parse(JSON.stringify(data));
+    // 重新排序和分配排名确保一致性
+    for (const typeKey of Object.values(LeaderboardType)) {
+      this.sortBoard(typeKey as LeaderboardType);
+      this.assignRanks(typeKey as LeaderboardType);
+    }
+  }
+
   // ─── 内部方法 ─────────────────────────────
 
   /** 排序：分数降序 → 时间升序 */
