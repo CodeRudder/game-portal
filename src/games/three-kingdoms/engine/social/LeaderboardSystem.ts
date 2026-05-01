@@ -47,15 +47,15 @@ export class LeaderboardSystem implements ISubsystem {
   // ─── 状态访问 ─────────────────────────────
 
   getState(): LeaderboardState {
-    return this.state;
+    return JSON.parse(JSON.stringify(this.state));
   }
 
   getCurrentSeason(): LeaderboardSeason {
-    return this.state.currentSeason;
+    return { ...this.state.currentSeason };
   }
 
   getSeasonHistory(): LeaderboardSeason[] {
-    return this.state.seasonHistory;
+    return this.state.seasonHistory.map(s => ({ ...s }));
   }
 
   // ─── 分数更新 ─────────────────────────────
@@ -73,6 +73,11 @@ export class LeaderboardSystem implements ISubsystem {
     score: number,
     metadata: Record<string, string | number> = {},
   ): LeaderboardEntry | null {
+    // P0-02 fix: 校验 score 合法性
+    if (!Number.isFinite(score) || score < 0) {
+      throw new Error(`无效分数: ${score}，必须为非负有限数`);
+    }
+
     const board = this.state.boards[type];
     const now = Date.now();
 
@@ -116,7 +121,7 @@ export class LeaderboardSystem implements ISubsystem {
       score,
       achievedAt: now,
       rank: 0,
-      metadata,
+      metadata: { ...metadata },
     };
     board.push(entry);
     this.sortBoard(type);
@@ -222,11 +227,13 @@ export class LeaderboardSystem implements ISubsystem {
     oldSeason.isCurrent = false;
     this.state.seasonHistory.push({ ...oldSeason });
 
-    // 计算奖励（所有类型）
+    // 计算奖励（所有类型）— 仅前100名
+    const REWARD_MAX_RANK = 100;
     const rewards: Array<{ playerId: string; rank: number; reward: LeaderboardRewardConfig['reward'] }> = [];
     for (const typeKey of Object.values(LeaderboardType)) {
       const board = this.state.boards[typeKey as LeaderboardType];
       for (const entry of board) {
+        if (entry.rank > REWARD_MAX_RANK) continue; // P0-09 fix: 显式上限过滤
         const reward = this.getRewardForRank(entry.rank);
         if (reward) {
           rewards.push({

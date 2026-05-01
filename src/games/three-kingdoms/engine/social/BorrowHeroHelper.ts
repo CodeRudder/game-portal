@@ -61,6 +61,10 @@ export class BorrowHeroHelper {
     if (!state.friends[lenderPlayerId]) {
       throw new Error('不是好友');
     }
+    // P0-11 fix: 禁止自借
+    if (borrowerPlayerId === lenderPlayerId) {
+      throw new Error('不能向自己借将');
+    }
 
     // 检查是否已有未归还的借将
     const activeFromLender = state.activeBorrows.filter(

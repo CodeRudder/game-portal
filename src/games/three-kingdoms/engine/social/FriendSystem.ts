@@ -133,6 +133,10 @@ export class FriendSystem implements ISubsystem {
     if (state.friends[toPlayerId]) {
       throw new Error('已经是好友了');
     }
+    // P0-10 fix: 禁止对自己发送好友申请
+    if (fromPlayerId === toPlayerId) {
+      throw new Error('不能对自己发送好友申请');
+    }
 
     const request: FriendRequest = {
       id: generateId('freq'),
@@ -345,7 +349,20 @@ export class FriendSystem implements ISubsystem {
    * 反序列化恢复社交状态
    */
   deserialize(data: import('../../core/social/social.types').SocialSaveData): SocialState {
-    if (!data || data.version !== SOCIAL_SAVE_VERSION) {
+    if (!data) {
+      return createDefaultSocialState();
+    }
+    // P0-05 fix: 版本不匹配时记录警告而非静默丢弃
+    if (data.version !== SOCIAL_SAVE_VERSION) {
+      console.warn(
+        `[SocialSystem] 存档版本不匹配: 期望=${SOCIAL_SAVE_VERSION}, 实际=${data.version}。` +
+        `将尝试兼容恢复。`
+      );
+      // 尝试兼容恢复：如果 state 存在且结构合理，尽量使用
+      if (data.state && typeof data.state === 'object') {
+        const defaultState = createDefaultSocialState();
+        return { ...defaultState, ...data.state };
+      }
       return createDefaultSocialState();
     }
     return { ...data.state };

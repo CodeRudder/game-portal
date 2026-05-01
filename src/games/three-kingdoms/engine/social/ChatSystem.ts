@@ -125,6 +125,10 @@ export class ChatSystem implements ISubsystem {
     // 检查发言间隔
     const channelKey = targetId ? `${channel}_${targetId}` : channel;
     const lastSend = state.lastSendTime[channelKey] || 0;
+    // P0-03 fix: 拒绝时间回拨
+    if (lastSend > 0 && now < lastSend) {
+      throw new Error('发送时间不能早于上次发言时间');
+    }
     const interval = this.channelConfigs[channel].sendIntervalMs;
     if (interval > 0 && lastSend > 0 && now - lastSend < interval) {
       throw new Error('发言间隔太短');
@@ -379,6 +383,14 @@ export class ChatSystem implements ISubsystem {
     lastSendTime: Record<string, number>;
     muteRecords: import('../../core/social/social.types').MuteRecord[];
   }): Partial<SocialState> {
+    // P0-06 fix: 防御性校验
+    if (!data) {
+      return {
+        chatMessages: { WORLD: [], GUILD: [], PRIVATE: [], SYSTEM: [] } as SocialState['chatMessages'],
+        lastSendTime: {},
+        muteRecords: [],
+      };
+    }
     return {
       chatMessages: (data.chatMessages ?? {
         WORLD: [], GUILD: [], PRIVATE: [], SYSTEM: [],
