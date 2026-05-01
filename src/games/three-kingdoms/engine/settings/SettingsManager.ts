@@ -352,7 +352,17 @@ export class SettingsManager implements ISubsystem {
     try {
       if (!data || !data.settings) return false;
       // 简单版本兼容：如果版本不同，保留默认值并合并已有字段
-      this.settings = { ...createDefaultAllSettings(), ...data.settings };
+      const merged = { ...createDefaultAllSettings(), ...data.settings };
+      // FIX-001: 校验关键字段，防止 Infinity/NaN 注入
+      if (!Number.isFinite(merged.lastModifiedAt)) {
+        merged.lastModifiedAt = Date.now();
+      }
+      // 校验音量范围
+      merged.audio.masterVolume = this.clampVolume(merged.audio.masterVolume);
+      merged.audio.bgmVolume = this.clampVolume(merged.audio.bgmVolume);
+      merged.audio.sfxVolume = this.clampVolume(merged.audio.sfxVolume);
+      merged.audio.voiceVolume = this.clampVolume(merged.audio.voiceVolume);
+      this.settings = merged;
       this.saveToStorage();
       return true;
     } catch {

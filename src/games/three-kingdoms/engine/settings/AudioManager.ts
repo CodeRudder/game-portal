@@ -115,6 +115,9 @@ export class AudioManager implements ISubsystem {
     const channelVolume = AudioSceneHelper.getChannelVolume(this.settings, channel);
     let effective = (channelVolume / 100) * (this.settings.masterVolume / 100);
 
+    // FIX-006: NaN 防护
+    if (!Number.isFinite(effective)) return 0;
+
     if (this.isInBackground && channel === AudioChannel.BGM) effective = 0;
     if (this.isInCall) return 0;
     if (this.batteryLevel < this.config.lowBatteryThreshold && channel === AudioChannel.BGM) {

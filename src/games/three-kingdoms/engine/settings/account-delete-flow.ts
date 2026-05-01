@@ -229,6 +229,8 @@ export function isGuestExpired(
   nowFn: NowFn,
 ): boolean {
   if (!settings.isGuest) return false;
+  // FIX-009: NaN createdAt 防护
+  if (!Number.isFinite(createdAt)) return true;
   return nowFn() - createdAt >= GUEST_EXPIRE_MS;
 }
 

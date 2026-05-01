@@ -195,10 +195,13 @@ export class GraphicsManager implements ISubsystem {
    */
   detectBestPreset(capability?: DeviceCapability): GraphicsPreset {
     const cap = capability ?? this.detectDeviceCapability();
-    if (cap.cpuCores >= 8 && cap.memoryGB >= 8) {
+    // FIX-007: NaN/Infinity 防护
+    const cpuCores = Number.isFinite(cap.cpuCores) ? cap.cpuCores : 0;
+    const memoryGB = Number.isFinite(cap.memoryGB) ? cap.memoryGB : 0;
+    if (cpuCores >= 8 && memoryGB >= 8) {
       return GraphicsPreset.High;
     }
-    if (cap.cpuCores >= 4 && cap.memoryGB >= 4) {
+    if (cpuCores >= 4 && memoryGB >= 4) {
       return GraphicsPreset.Medium;
     }
     return GraphicsPreset.Low;

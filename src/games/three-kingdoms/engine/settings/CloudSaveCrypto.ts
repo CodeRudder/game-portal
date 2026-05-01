@@ -12,6 +12,10 @@
 
 /** 加密数据（模拟 AES-GCM） */
 export function encryptData(data: string, key: string): string {
+  // FIX-002: 空密钥防护
+  if (!key || key.length === 0) {
+    throw new Error('加密密钥不能为空');
+  }
   const keyBytes = new TextEncoder().encode(key);
   const dataBytes = new TextEncoder().encode(data);
   const encrypted = new Uint8Array(dataBytes.length);
@@ -23,6 +27,10 @@ export function encryptData(data: string, key: string): string {
 
 /** 解密数据 */
 export function decryptData(encrypted: string, key: string): string {
+  // FIX-002: 空密钥防护
+  if (!key || key.length === 0) {
+    throw new Error('解密密钥不能为空');
+  }
   const keyBytes = new TextEncoder().encode(key);
   const encryptedBytes = base64ToUint8(encrypted);
   const decrypted = new Uint8Array(encryptedBytes.length);

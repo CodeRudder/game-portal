@@ -79,6 +79,7 @@ export class CloudSaveSystem implements ISubsystem {
   private nowFn: NowFn;
   private syncTimer: ReturnType<typeof setInterval> | null = null;
   private retryCount = 0;
+  private syncInProgress = false; // FIX-005: 并发锁
 
   constructor(deps?: {
     cloudStorage?: ICloudStorage;
@@ -133,6 +134,11 @@ export class CloudSaveSystem implements ISubsystem {
       return this.failResult('云存储未配置');
     }
 
+    // FIX-005: 并发锁保护
+    if (this.syncInProgress) {
+      return this.failResult('同步正在进行中');
+    }
+
     if (!this.networkDetector.isOnline()) {
       return this.failResult('网络不可用');
     }
@@ -142,6 +148,7 @@ export class CloudSaveSystem implements ISubsystem {
     }
 
     this.setState(CloudSyncState.Syncing);
+    this.syncInProgress = true; // FIX-005
 
     try {
       const remote = await this.cloudStorage.download();
@@ -172,6 +179,7 @@ export class CloudSaveSystem implements ISubsystem {
       }
 
       this.retryCount = 0;
+      this.syncInProgress = false; // FIX-005
       const result: CloudSyncResult = {
         state: CloudSyncState.Success,
         message: '同步成功',
@@ -183,6 +191,7 @@ export class CloudSaveSystem implements ISubsystem {
       this.setState(CloudSyncState.Success);
       return result;
     } catch {
+      this.syncInProgress = false; // FIX-005
       return this.handleSyncError();
     }
   }

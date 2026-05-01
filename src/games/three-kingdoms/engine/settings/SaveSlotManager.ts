@@ -149,6 +149,10 @@ export class SaveSlotManager implements ISubsystem {
     if (!this.isSlotAvailable(index)) {
       return { success: false, message: '该槽位需要购买' };
     }
+    // FIX-008: gameData null/undefined 防护
+    if (gameData == null || typeof gameData !== 'string') {
+      return { success: false, message: '存档数据无效' };
+    }
     try {
       const sizeBytes = new Blob([gameData]).size;
       const slotData: SaveSlotData = {
@@ -274,17 +278,25 @@ export class SaveSlotManager implements ISubsystem {
     if (!exportData || !exportData.slots) {
       return { success: false, message: '无效的导入数据' };
     }
+
+    // FIX-004: 先验证所有数据可解码，再统一写入（两阶段导入）
+    const decodedEntries: Array<{ index: number; data: string }> = [];
     try {
       for (const [indexStr, encoded] of Object.entries(exportData.slots)) {
         const index = parseInt(indexStr, 10);
         if (!this.isValidSlotIndex(index)) continue;
         const decoded = decodeURIComponent(escape(atob(encoded)));
-        this.saveToSlot(index, decoded, '导入存档');
+        decodedEntries.push({ index, data: decoded });
       }
-      return { success: true, message: '导入成功' };
     } catch {
       return { success: false, message: '导入失败：数据格式错误' };
     }
+
+    // 全部验证通过，统一写入
+    for (const { index, data } of decodedEntries) {
+      this.saveToSlot(index, data, '导入存档');
+    }
+    return { success: true, message: '导入成功' };
   }
 
   // ─────────────────────────────────────────

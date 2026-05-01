@@ -126,6 +126,11 @@ export class AccountSystem implements ISubsystem {
       return { success: false, message: '未初始化', rewardGranted: false, rewardAmount: 0 };
     }
 
+    // FIX-003: identifier 参数校验
+    if (!identifier || typeof identifier !== 'string' || identifier.trim() === '') {
+      return { success: false, message: '绑定标识不能为空', rewardGranted: false, rewardAmount: 0 };
+    }
+
     const existing = this.settings.bindings.find((b) => b.method === method);
     if (existing) {
       return { success: false, message: '该方式已绑定', rewardGranted: false, rewardAmount: 0 };
