@@ -1,100 +1,198 @@
-# Achievement 流程分支树 Round 2
+# Achievement R2 Test Branch Tree
 
-> Builder: TreeBuilder v1.8 | Time: 2026-05-02
-> 模块: achievement | 基线: R1 sealed (commit d210bf2e) | R1修复: 4 FIX merged
+> Builder: AdversarialTestTreeBuilder v2.0 | Time: 2026-05-01
+> 模块: achievement | 基于: round-1-verdict.md + round-1-fixes.md
 
-## R1→R2 变更摘要
+## 目标
 
-R1 修复了 6 个 P0 问题（合并为 4 个 FIX），新增防护点：
+在 R1 修复基础上，验证 P0 修复的穿透性，并覆盖 R1 遗留的 P1 场景。
 
-| FIX-ID | 影响函数 | 新增分支 | 状态 |
-|--------|---------|---------|------|
-| FIX-ACH-402 | loadSaveData | +6 分支（字段验证/NaN/补全） | ✅ covered |
-| FIX-ACH-403 | updateProgress | +1 分支（已有进度NaN） | ✅ covered |
-| FIX-ACH-404 | getSaveData | +1 分支（深拷贝progress） | ✅ covered |
-| FIX-ACH-406 | claimReward | +1 分支（积分验证） | ✅ covered |
+---
 
-## 统计
+## T1: Normal Flow（正常流程）— 权重 20%
 
-| 子系统 | 节点数 | API数 | covered | uncovered | P0 | P1 |
-|--------|--------|-------|---------|-----------|----|----|
-| AchievementSystem | 101 | 16 | 96 | 5 | 0 | 5 |
-| AchievementHelpers | 12 | 3 | 10 | 2 | 0 | 2 |
-| achievement-config | 18 | 6 | 18 | 0 | 0 | 0 |
-| achievement.types | 8 | 4 | 8 | 0 | 0 | 0 |
-| **总计** | **139** | **29** | **132** | **7** | **0** | **7** |
+### T1.1 完整生命周期
+```
+init → updateProgress(正常值) → 条件满足 → completed → claimReward → totalPoints 正确累加
+```
+**验证点**: totalPoints 精确值、dimensionStats 更新、completedAt 非空
 
-## 覆盖率提升
+### T1.2 链式成就流程
+```
+前置成就 completed+claimed → 后续成就自动 unlocked → updateProgress → completed → claimed
+```
+**验证点**: chainProgress 推进、completedChains 追加
 
-| 子系统 | R1覆盖率 | R2覆盖率 | 提升 |
-|--------|---------|---------|------|
-| AchievementSystem | 67.4% | 95.0% | +27.6% |
-| AchievementHelpers | 66.7% | 83.3% | +16.6% |
-| achievement-config | 100% | 100% | — |
-| achievement.types | 100% | 100% | — |
+### T1.3 批量进度更新
+```
+updateProgressFromSnapshot(snapshot) → 多维度同时更新 → 各维度独立判定
+```
+**验证点**: 每个维度成就独立完成、互不干扰
 
-## R2 新增覆盖节点
+### T1.4 保存/加载往返
+```
+getSaveData() → 序列化 → loadSaveData() → 状态完全恢复
+```
+**验证点**: totalPoints、progress、status、completedChains 一致
 
-### FIX-ACH-402 防护分支（loadSaveData）
+---
 
-| # | 分支条件 | 优先级 | 状态 | 测试来源 |
-|---|---------|--------|------|---------|
-| AS-R2-402a | data.state.achievements = undefined → return | P0 | ✅ | loadSaveData 缺失字段 |
-| AS-R2-402b | data.state.dimensionStats = null → return | P0 | ✅ | loadSaveData 缺失字段 |
-| AS-R2-402c | totalPoints = NaN → fallback 0 | P0 | ✅ | loadSaveData NaN 穿透 |
-| AS-R2-402d | progress[key] = NaN → fallback 0 | P0 | ✅ | loadSaveData NaN 穿透 |
-| AS-R2-402e | completedChains = undefined → fallback [] | P0 | ✅ | loadSaveData 缺失字段 |
-| AS-R2-402f | 缺失成就实例 → 补全 createAchievementInstance | P0 | ✅ | loadSaveData 缺失实例 |
+## T2: Error Path（异常路径）— 权重 25%
 
-### FIX-ACH-403 防护分支（updateProgress）
+### T2.1 loadSaveData 异常输入
+```
+loadSaveData(null) → 静默拒绝
+loadSaveData(undefined) → 静默拒绝
+loadSaveData({}) → 静默拒绝
+loadSaveData({ state: null }) → 静默拒绝
+loadSaveData({ state: {}, version: wrong }) → 版本不匹配拒绝
+```
+**验证点**: 系统状态不变、不抛异常
 
-| # | 分支条件 | 优先级 | 状态 | 测试来源 |
-|---|---------|--------|------|---------|
-| AS-R2-403a | current = NaN → safeCurrent = 0 | P0 | ✅ | updateProgress 已有NaN进度 |
+### T2.2 loadSaveData 字段缺失/异常
+```
+loadSaveData({ state: { achievements: null } }) → 拒绝加载
+loadSaveData({ state: { dimensionStats: null } }) → 拒绝加载
+loadSaveData({ state: { totalPoints: NaN } }) → fallback 0
+loadSaveData({ state: { totalPoints: -1 } }) → fallback 0
+loadSaveData({ state: { totalPoints: Infinity } }) → fallback 0
+loadSaveData({ state: { completedChains: null } }) → fallback []
+```
+**验证点**: FIX-ACH-402 穿透验证
 
-### FIX-ACH-404 防护分支（getSaveData）
+### T2.3 claimReward 异常积分
+```
+配置 achievementPoints = NaN → claimReward → totalPoints 不变
+配置 achievementPoints = 0 → claimReward → totalPoints 不变
+配置 achievementPoints = -1 → claimReward → totalPoints 不变
+配置 achievementPoints = Infinity → claimReward → totalPoints 不变
+```
+**验证点**: FIX-ACH-406 穿透验证
 
-| # | 分支条件 | 优先级 | 状态 | 测试来源 |
-|---|---------|--------|------|---------|
-| AS-R2-404a | progress 深拷贝 → 外部修改不影响内部 | P0 | ✅ | getSaveData 引用隔离 |
+### T2.4 updateProgress 异常值
+```
+updateProgress(type, NaN) → 拒绝更新
+updateProgress(type, Infinity) → 拒绝更新
+updateProgress(type, -1) → 拒绝更新
+```
+**验证点**: FIX-901 防护
 
-### FIX-ACH-406 防护分支（claimReward）
+### T2.5 已有 NaN 进度穿透
+```
+loadSaveData(含 NaN progress) → updateProgress(正常值) → 进度正确更新
+```
+**验证点**: FIX-ACH-403 穿透验证
 
-| # | 分支条件 | 优先级 | 状态 | 测试来源 |
-|---|---------|--------|------|---------|
-| AS-R2-406a | achievementPoints = NaN → 跳过累加 | P0 | ✅ | claimReward NaN 积分 |
-| AS-R2-406b | achievementPoints = 0 → 跳过累加 | P0 | ✅ | claimReward 零积分 |
+---
 
-## R2 残余 uncovered 节点（全部 P1）
+## T3: Boundary（边界条件）— 权重 25%
 
-| # | API | 分支条件 | 优先级 | 风险评估 |
-|---|-----|---------|--------|---------|
-| AS-009 | reset() | eventUnsubscribers 清空验证 | P1 | 低风险：FIX-909 已间接覆盖 |
-| AS-010 | reset() | rewardCallback 不清空 | P1 | 低风险：设计决策 |
-| AS-021 | setRewardCallback | 覆盖已有回调 | P1 | 低风险：简单赋值 |
-| AS-022 | setRewardCallback(null) | null 防护 | P1 | 低风险：undefined 行为一致 |
-| AS-033 | getAchievementsByDimension | 无效维度 | P1 | 低风险：返回空数组 |
-| AH-004 | createInitialState | 未知维度动态初始化 | P1 | 低风险：config 覆盖全维度 |
-| AH-009 | checkChainProgress | 空 chainProgress | P1 | 低风险：循环天然处理 |
+### T3.1 进度边界值
+```
+progress = target - 1 → 未完成
+progress = target → 完成
+progress = target + 1 → 完成
+progress = MAX_SAFE_INTEGER → 正常处理
+```
 
-## 跨系统链路覆盖
+### T3.2 totalPoints 边界
+```
+totalPoints = 0 → 正确
+totalPoints = Number.MAX_SAFE_INTEGER → 正确
+totalPoints = 0.5（浮点） → 正确处理
+```
 
-| 链路域 | 链路数 | covered | uncovered |
-|--------|--------|---------|-----------|
-| Achievement↔EventBus | 5 | 5 | 0 |
-| Achievement↔RewardCallback | 3 | 3 | 0 |
-| Achievement↔Save | 4 | 4 | 0 |
-| Achievement↔Chain | 3 | 3 | 0 |
-| Achievement→Prestige | 1 | 1 | 0 |
-| Achievement↔Prerequisite | 2 | 2 | 0 |
-| **总计** | **18** | **18** | **0** |
+### T3.3 空状态边界
+```
+init 后无任何进度 → getSaveData 正确
+空 achievements 对象 → loadSaveData 补全
+无 completedChains → getSaveData 返回空数组
+```
 
-## P1 建议清单（R3 跟进，非阻塞）
+### T3.4 getSaveData 深拷贝验证
+```
+getSaveData() → 修改返回值的 progress → 内部状态不变
+getSaveData() → 修改返回值的 status → 内部状态不变
+```
+**验证点**: FIX-ACH-404 穿透验证
 
-| # | 建议 | 优先级 |
-|---|------|--------|
-| 1 | reset() 中清空 rewardCallback | P1 |
-| 2 | setRewardCallback(null) 防护 | P1 |
-| 3 | getAchievementsByDimension 无效维度 | P1 |
-| 4 | 事件监听器直接测试（5事件×3payload） | P1 |
-| 5 | rewardCallback 返回值验证 | P1 |
+---
+
+## T4: Cross-System（跨系统交互）— 权重 15%
+
+### T4.1 事件监听器覆盖
+```
+emit('battle:victory') → 对应成就进度更新
+emit('hero:recruit') → 对应成就进度更新
+emit('quest:complete') → 对应成就进度更新
+emit('resource:gain') → 对应成就进度更新
+emit('dimension:unlock') → 对应成就进度更新
+```
+**验证点**: 5 个事件全覆盖
+
+### T4.2 保存/加载与进度交互
+```
+updateProgress → getSaveData → loadSaveData → updateProgress → 正确累积
+```
+**验证点**: 往返一致性
+
+### T4.3 reset 跨系统一致性
+```
+完成成就 → reset → totalPoints=0, 所有成就=locked, completedChains=[]
+```
+**验证点**: reset 彻底性
+
+---
+
+## T5: Data Lifecycle（数据生命周期）— 权重 15%
+
+### T5.1 引用隔离
+```
+getSaveData 返回值修改 → 不影响内部状态
+getState 返回值修改 → 不影响内部状态
+```
+**验证点**: 不可变性
+
+### T5.2 补全机制
+```
+loadSaveData(缺少部分成就) → 补全后成就数量 = ALL_ACHIEVEMENTS.length
+loadSaveData(包含已删除成就) → 保留但不影响
+```
+**验证点**: FIX-ACH-402/405 补全逻辑
+
+### T5.3 链式进度生命周期
+```
+链中部分完成 → 保存 → 加载 → 链进度恢复 → 继续完成 → 链完成
+```
+**验证点**: chainProgress 持久化
+
+---
+
+## R2 新增分支（针对 R1 P1 建议）
+
+### T2.6 reset callback 清理
+```
+设置 rewardCallback → reset → rewardCallback 被清空
+```
+**验证点**: R1 P1-3 建议
+
+### T4.4 rewardCallback NaN 防护
+```
+rewardCallback 返回 NaN → totalPoints 不受影响
+```
+**验证点**: R1 P1-4 建议
+
+---
+
+## 分支统计
+
+| 类别 | 分支数 | R1 覆盖 | R2 新增 |
+|------|--------|---------|---------|
+| Normal | 4 | 4 | 0 |
+| Error | 6 | 4 | 2 |
+| Boundary | 4 | 3 | 1 |
+| Cross | 4 | 3 | 1 |
+| Lifecycle | 3 | 2 | 1 |
+| **总计** | **21** | **16** | **5** |
+
+R2 新增 5 个分支，重点验证 P0 修复穿透和 P1 遗留场景。

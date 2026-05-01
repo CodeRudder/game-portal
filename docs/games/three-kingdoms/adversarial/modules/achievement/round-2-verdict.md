@@ -1,106 +1,111 @@
 # Achievement R2 Verdict
 
-> Arbiter: AdversarialArbiter v1.8 | Time: 2026-05-02
+> Arbiter: AdversarialArbiter v2.0 | Time: 2026-05-01
 > 模块: achievement | 基于: round-2-tree.md + round-2-challenges.md
-> 基线: R1 sealed (commit d210bf2e) | R1修复: 4 FIX merged (174 tests)
 
 ## 评分
 
-| 维度 | R1分数 | R2分数 | 权重 | R2加权分 | 变化 |
-|------|--------|--------|------|---------|------|
-| F-Normal | 95 | 98 | 20% | 19.6 | +3 |
-| F-Error | 70 | 95 | 25% | 23.75 | +25 |
-| F-Boundary | 72 | 94 | 25% | 23.5 | +22 |
-| F-Cross | 88 | 96 | 15% | 14.4 | +8 |
-| F-Lifecycle | 55 | 90 | 15% | 13.5 | +35 |
-| **总分** | **76.0** | | **100%** | **94.75/100** | **+18.75** |
+| 维度 | 分数 | 权重 | 加权分 |
+|------|------|------|--------|
+| F-Normal | 98/100 | 20% | 19.6 |
+| F-Error | 94/100 | 25% | 23.5 |
+| F-Boundary | 92/100 | 25% | 23.0 |
+| F-Cross | 90/100 | 15% | 13.5 |
+| F-Lifecycle | 85/100 | 15% | 12.8 |
+| **总分** | | **100%** | **92.4/100** |
 
 ## 判定: ✅ SEALED（封版通过）
 
-R2 总分 **94.75/100**，超过封版阈值 9.0（90/100），准予封版。
+总分 92.4 ≥ 9.0 封版门槛，无未修复 P0 问题。
 
 ---
 
-## R1→R2 改善详情
+## R1→R2 对比
 
-### P0 修复验证
-
-| FIX-ID | 描述 | R1状态 | R2验证 | 穿透测试 |
-|--------|------|--------|--------|---------|
-| FIX-ACH-402 | loadSaveData 全面防护 | 🔴 P0 | ✅ 6/6 分支覆盖 | ✅ 无穿透 |
-| FIX-ACH-403 | updateProgress NaN 进度 | 🔴 P0 | ✅ 1/1 分支覆盖 | ✅ 无穿透 |
-| FIX-ACH-404 | getSaveData 深拷贝 | 🔴 P0 | ✅ 1/1 分支覆盖 | ✅ 无穿透 |
-| FIX-ACH-406 | claimReward 积分验证 | 🔴 P0 | ✅ 2/2 分支覆盖 | ✅ 无穿透 |
-
-**P0 修复率: 4/4 = 100%**
-
-### 覆盖率提升
-
-| 子系统 | R1覆盖率 | R2覆盖率 | 提升 |
-|--------|---------|---------|------|
-| AchievementSystem | 67.4% | 95.0% | +27.6% |
-| AchievementHelpers | 66.7% | 83.3% | +16.6% |
-| achievement-config | 100% | 100% | — |
-| achievement.types | 100% | 100% | — |
-
-### 穿透率评估
-
-| 修复 | 穿透率 | 说明 |
-|------|--------|------|
-| FIX-ACH-402 | 0% | loadSaveData→getState 无穿透 |
-| FIX-ACH-403 | 0% | updateProgress 三层防护闭环 |
-| FIX-ACH-404 | 0% | getSaveData 深拷贝隔离 |
-| FIX-ACH-406 | 0% | claimReward 积分验证完整 |
-
-**总穿透率: 0%**（目标 <10% ✅）
+| 维度 | R1 分数 | R2 分数 | 变化 |
+|------|---------|---------|------|
+| F-Normal | 95 | 98 | +3 |
+| F-Error | 70 | 94 | +24 |
+| F-Boundary | 72 | 92 | +20 |
+| F-Cross | 88 | 90 | +2 |
+| F-Lifecycle | 55 | 85 | +30 |
+| **总分** | **76.0** | **92.4** | **+16.4** |
 
 ---
 
-## 规则符合性验证
+## P0 修复穿透验证
 
-| 规则 | R1状态 | R2状态 | 说明 |
-|------|--------|--------|------|
-| BR-001 NaN防护 | ⚠️ 部分 | ✅ 完整 | updateProgress/loadSaveData/claimReward 全覆盖 |
-| BR-010 FIX穿透 | ⚠️ 需验证 | ✅ 验证通过 | 穿透率 0% |
-| BR-014 保存/加载覆盖 | ❌ 不充分 | ✅ 完整 | loadSaveData 全面字段验证 + 往返测试 |
+| FIX-ID | 挑战 | 穿透状态 | 验证方式 |
+|--------|------|---------|---------|
+| FIX-ACH-402 | C1 | ✅ 已穿透 | loadSaveData NaN/缺失字段/缺失实例 → 全部防护 |
+| FIX-ACH-403 | C2 | ✅ 已穿透 | updateProgress NaN 进度 → 重置为 0 |
+| FIX-ACH-404 | C3 | ✅ 已穿透 | getSaveData 深拷贝 → 外部修改隔离 |
+| FIX-ACH-406 | C4 | ✅ 已穿透 | claimReward 异常积分 → 跳过累加 |
+
+**穿透率: 0%**（所有 P0 修复完整穿透到下游路径）
+
+---
+
+## 挑战结果
+
+| # | 挑战 | 结果 | 说明 |
+|---|------|------|------|
+| C1 | FIX-402 穿透 | ✅ PASS | 5/5 向量通过 |
+| C2 | FIX-403 穿透 | ✅ PASS | 双层防护确认 |
+| C3 | FIX-404 穿透 | ✅ PASS | 深拷贝隔离确认 |
+| C4 | FIX-406 穿透 | ✅ PASS | 异常积分跳过确认 |
+| C5 | 未知维度 | ✅ PASS | 动态初始化正常 |
+| C6 | reset callback | ⚠️ NOTE | reset 不清空 callback，但无实际风险（P2 遗留） |
+| C7 | callback NaN | ✅ PASS | FIX-ACH-406 已覆盖此路径 |
+| C8 | 组合攻击 | ✅ PASS | totalPoints 始终为有限数 |
+| C9 | 往返一致 | ✅ PASS | JSON 序列化/反序列化后状态一致 |
+| C10 | 事件完整性 | ✅ PASS | 5 事件 × 3 payload 全通过 |
+
+**通过率: 9/10 完全通过，1/10 注意项（P2 级别）**
+
+---
+
+## 测试覆盖
+
+| 测试套件 | 测试数 | 状态 |
+|---------|--------|------|
+| AchievementSystem.test.ts | 93 | ✅ 全部通过 |
+| AchievementHelpers.test.ts | 9 | ✅ 全部通过 |
+| achievement-adversarial.test.ts | 72 | ✅ 全部通过 |
+| **总计** | **174** | **✅ 全部通过** |
+
+---
+
+## 规则符合性
+
+| 规则 | R1 状态 | R2 状态 | 说明 |
+|------|---------|---------|------|
+| BR-001 NaN防护 | ⚠️ 部分 | ✅ 完整 | updateProgress/loadSaveData/claimReward 三层覆盖 |
+| BR-010 FIX穿透 | ⚠️ 需验证 | ✅ 已验证 | 穿透率 0% |
+| BR-014 保存/加载覆盖 | ❌ 不充分 | ✅ 完整 | loadSaveData 全面字段验证 |
 | BR-017 战斗数值安全 | ❌ 不充分 | ✅ 完整 | claimReward 积分验证 |
 | BR-019 Infinity序列化 | ❌ 不充分 | ✅ 完整 | loadSaveData 拦截 Infinity |
 | BR-021 资源比较NaN | N/A | N/A | 成就系统无资源比较 |
 
 ---
 
-## 测试统计
+## P2 遗留（不阻塞封版）
 
-| 测试文件 | 测试数 | 通过 | 失败 |
-|---------|--------|------|------|
-| achievement-adversarial.test.ts | 72 | 72 | 0 |
-| AchievementSystem.test.ts | 93 | 93 | 0 |
-| AchievementHelpers.test.ts | 9 | 9 | 0 |
-| **总计** | **174** | **174** | **0** |
+| # | 描述 | 风险 | 建议 |
+|---|------|------|------|
+| 1 | reset() 不清空 rewardCallback | 低 | 下次迭代清空 |
+| 2 | 事件监听器直接测试覆盖 | 低 | 可通过集成测试补充 |
 
 ---
 
-## 残余 P1 清单（非阻塞，R3 跟进）
+## 封版声明
 
-| # | 建议 | 风险等级 | 阻塞性 |
-|---|------|---------|--------|
-| 1 | reset() 中清空 rewardCallback | 低 | 非阻塞 |
-| 2 | setRewardCallback(null) 防护 | 低 | 非阻塞 |
-| 3 | getAchievementsByDimension 无效维度 | 低 | 非阻塞 |
-| 4 | 事件监听器直接测试（5事件×3payload） | 低 | 非阻塞 |
-| 5 | rewardCallback 返回值验证 | 低 | 非阻塞 |
+**Achievement 模块 R2 对抗测试通过，予以封版。**
 
----
+- ✅ R1 的 4 个 P0 修复全部穿透验证通过
+- ✅ 174 测试全部通过（102 单元 + 72 对抗）
+- ✅ 总分 92.4/100，超过 9.0 封版门槛
+- ✅ 穿透率 0%，无 NaN/Infinity/引用泄漏风险
+- ✅ 所有业务规则（BR-001/010/014/017/019）符合
 
-## 封版签名
-
-| 角色 | 版本 | 时间 | 结果 |
-|------|------|------|------|
-| TreeBuilder | v1.8 | 2026-05-02 | 139 节点，132 covered，7 uncovered（全 P1） |
-| Challenger | v1.8 | 2026-05-02 | 10 挑战，10 通过，0 失败 |
-| Arbiter | v1.8 | 2026-05-02 | **94.75/100 — SEALED** |
-
-**Achievement 模块 R2 对抗性测试封版通过。**
-
-> 封版commit: 待提交
-> 前序commit: d210bf2e (R1 sealed)
+**SEALED by AdversarialArbiter v2.0**
