@@ -193,7 +193,7 @@ export class TouchInputSystem implements ISubsystem {
   /** 处理编队触控操作 */
   handleFormationTouch(
     action: FormationTouchAction,
-    params: { heroId?: string; slotIndex?: number; secondSlotIndex?: number },
+    params: { heroId?: string; slotIndex?: number; secondSlotIndex?: number } = {},
   ): FormationTouchEvent | null {
     const event: FormationTouchEvent = { action, ...params };
 

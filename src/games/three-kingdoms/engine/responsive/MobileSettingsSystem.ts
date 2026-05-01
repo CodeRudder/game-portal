@@ -120,6 +120,7 @@ export class MobileSettingsSystem implements ISubsystem {
    * @param isCharging 是否在充电
    */
   updateBatteryStatus(batteryLevel: number, isCharging: boolean): void {
+    if (!Number.isFinite(batteryLevel)) batteryLevel = 100;
     this._currentBatteryLevel = Math.max(0, Math.min(100, batteryLevel));
     this._isCharging = isCharging;
 
@@ -145,6 +146,13 @@ export class MobileSettingsSystem implements ISubsystem {
    * 更新省电配置
    */
   setPowerSaveConfig(config: Partial<PowerSaveConfig>): void {
+    if (config.targetFps !== undefined && (!Number.isFinite(config.targetFps) || config.targetFps <= 0)) {
+      config.targetFps = POWER_SAVE_FPS;
+    }
+    if (config.autoTriggerBatteryLevel !== undefined &&
+        (!Number.isFinite(config.autoTriggerBatteryLevel) || config.autoTriggerBatteryLevel < 0 || config.autoTriggerBatteryLevel > 100)) {
+      config.autoTriggerBatteryLevel = DEFAULT_POWER_SAVE_CONFIG.autoTriggerBatteryLevel;
+    }
     this._powerSaveConfig = { ...this._powerSaveConfig, ...config };
     this._updatePowerSaveState();
   }

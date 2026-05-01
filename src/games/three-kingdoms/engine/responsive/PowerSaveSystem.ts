@@ -167,6 +167,7 @@ export class PowerSaveSystem implements ISubsystem {
    * @param isCharging - 是否正在充电
    */
   updateBatteryStatus(batteryLevel: number, isCharging: boolean): void {
+    if (!Number.isFinite(batteryLevel) || batteryLevel < 0) return;
     this._batteryLevel = batteryLevel;
     this._isCharging = isCharging;
 
@@ -182,6 +183,13 @@ export class PowerSaveSystem implements ISubsystem {
    * @param config - 新的配置（部分更新）
    */
   updateConfig(config: Partial<PowerSaveConfig>): void {
+    if (config.targetFps !== undefined && (!Number.isFinite(config.targetFps) || config.targetFps <= 0)) {
+      config.targetFps = POWER_SAVE_FPS;
+    }
+    if (config.autoTriggerBatteryLevel !== undefined &&
+        (!Number.isFinite(config.autoTriggerBatteryLevel) || config.autoTriggerBatteryLevel < 0 || config.autoTriggerBatteryLevel > 100)) {
+      config.autoTriggerBatteryLevel = DEFAULT_POWER_SAVE_CONFIG.autoTriggerBatteryLevel;
+    }
     this._config = { ...this._config, ...config };
     // 配置变更后重新评估
     this._updateActiveState();

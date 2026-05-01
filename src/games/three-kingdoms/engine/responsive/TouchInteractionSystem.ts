@@ -150,7 +150,7 @@ export class TouchInteractionSystem implements ISubsystem {
 
   /** 双指缩放移动 */
   handlePinchMove(distance: number): number {
-    if (this._pinchStartDistance <= 0) return this._pinchStartScale;
+    if (!Number.isFinite(this._pinchStartDistance) || this._pinchStartDistance <= 0) return this._pinchStartScale;
     return this._pinchStartScale * (distance / this._pinchStartDistance);
   }
 
