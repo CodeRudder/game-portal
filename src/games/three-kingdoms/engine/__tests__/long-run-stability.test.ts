@@ -9,6 +9,7 @@
 
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ThreeKingdomsEngine } from '../ThreeKingdomsEngine';
+import { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 import type { ResourceType } from '../../shared/types';
 
 // ─────────────────────────────────────────────
@@ -91,8 +92,9 @@ const localStorageMock = {
 function runEngineForTicks(tickCount: number, seed: number): ThreeKingdomsEngine {
   const rng = seededRandom(seed);
 
-  const engine = new ThreeKingdomsEngine();
-  engine.init();
+  const sim = new GameEventSimulator();
+  sim.init();
+  const engine = sim.engine;
 
   for (let t = 0; t < tickCount; t++) {
     // 每个tick执行1-3个随机操作
@@ -105,7 +107,7 @@ function runEngineForTicks(tickCount: number, seed: number): ThreeKingdomsEngine
         case 0: { // 添加资源
           const type = RESOURCE_TYPES[randInt(rng, 0, RESOURCE_TYPES.length - 1)];
           const amount = randFloat(rng, 10, 5000);
-          engine.resource.addResource(type, amount);
+          sim.addResources({ [type]: amount });
           break;
         }
         case 1: { // 消耗资源

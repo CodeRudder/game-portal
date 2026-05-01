@@ -83,8 +83,7 @@ function createPlayerState(overrides?: Partial<AlliancePlayerState>): AlliancePl
   };
 }
 
-// ── 模拟联盟战争攻防系统 ──
-// AllianceWarSystem尚未独立实现，通过AllianceSystem的权限和成员管理支撑
+// ── 联盟战争攻防测试辅助（基于 AllianceSystem 成员验证） ──
 
 interface WarAttackResult {
   success: boolean;
@@ -99,94 +98,100 @@ interface WarDefendResult {
   damageBlocked: number;
 }
 
-/** 模拟联盟战争管理器（基于AllianceSystem的成员数据） */
-class AllianceWarSimulator {
-  private dailyAttackLimit = 3;
-  private dailyDefendLimit = 1;
-  private warDuration = 2 * 60 * 60 * 1000; // 2小时
-  private warStartTime: number;
-  private attackRecords: Record<string, number> = {};
-  private defendRecords: Record<string, number> = {};
+const WAR_DAILY_ATTACK_LIMIT = 3;
+const WAR_DAILY_DEFEND_LIMIT = 1;
+const WAR_DURATION_MS = 2 * 60 * 60 * 1000; // 2小时
+const TERRITORY_CAPTURE_THRESHOLD = 1000;
 
-  constructor(startTime: number) {
-    this.warStartTime = startTime;
+/** 战争状态追踪（纯数据，不含业务逻辑） */
+interface WarState {
+  warStartTime: number;
+  attackRecords: Record<string, number>;
+  defendRecords: Record<string, number>;
+}
+
+function createWarState(startTime: number): WarState {
+  return { warStartTime: startTime, attackRecords: {}, defendRecords: {} };
+}
+
+/** 成员身份验证：委托 AllianceSystem.getMemberList */
+function requireMember(alliance: AllianceData, playerId: string): void {
+  const memberList = allianceSystem.getMemberList(alliance);
+  if (!memberList.find(m => m.playerId === playerId)) {
+    throw new Error('不是联盟成员');
+  }
+}
+
+/** 发起进攻（通过 AllianceSystem 成员验证 + 战争状态追踪） */
+function warAttack(
+  state: WarState,
+  alliance: AllianceData,
+  playerId: string,
+  targetTerritory: string,
+  damage: number,
+): WarAttackResult {
+  requireMember(alliance, playerId);
+
+  const now = Date.now();
+  if (now > state.warStartTime + WAR_DURATION_MS) {
+    throw new Error('战争时间已结束');
   }
 
-  /** 发起进攻 */
-  attack(
-    alliance: AllianceData,
-    playerId: string,
-    targetTerritory: string,
-    damage: number,
-  ): WarAttackResult {
-    // 检查成员身份
-    if (!alliance.members[playerId]) {
-      throw new Error('不是联盟成员');
-    }
-
-    // 检查战争时间
-    const now = Date.now();
-    if (now > this.warStartTime + this.warDuration) {
-      throw new Error('战争时间已结束');
-    }
-
-    // 检查进攻次数
-    const used = this.attackRecords[playerId] ?? 0;
-    if (used >= this.dailyAttackLimit) {
-      throw new Error('今日进攻次数已用完');
-    }
-
-    this.attackRecords[playerId] = used + 1;
-
-    return {
-      success: true,
-      attackCount: used + 1,
-      damage: Math.max(0, damage),
-      territoryCaptured: damage >= 1000, // 简化：伤害>=1000占领据点
-    };
+  const used = state.attackRecords[playerId] ?? 0;
+  if (used >= WAR_DAILY_ATTACK_LIMIT) {
+    throw new Error('今日进攻次数已用完');
   }
 
-  /** 发起防守 */
-  defend(
-    alliance: AllianceData,
-    playerId: string,
-    damageBlocked: number,
-  ): WarDefendResult {
-    if (!alliance.members[playerId]) {
-      throw new Error('不是联盟成员');
-    }
+  state.attackRecords[playerId] = used + 1;
 
-    const used = this.defendRecords[playerId] ?? 0;
-    if (used >= this.dailyDefendLimit) {
-      throw new Error('今日防守次数已用完');
-    }
+  return {
+    success: true,
+    attackCount: used + 1,
+    damage: Math.max(0, damage),
+    territoryCaptured: damage >= TERRITORY_CAPTURE_THRESHOLD,
+  };
+}
 
-    this.defendRecords[playerId] = used + 1;
+/** 发起防守（通过 AllianceSystem 成员验证 + 战争状态追踪） */
+function warDefend(
+  state: WarState,
+  alliance: AllianceData,
+  playerId: string,
+  damageBlocked: number,
+): WarDefendResult {
+  requireMember(alliance, playerId);
 
-    return {
-      success: true,
-      defendCount: used + 1,
-      damageBlocked: Math.max(0, damageBlocked),
-    };
+  const used = state.defendRecords[playerId] ?? 0;
+  if (used >= WAR_DAILY_DEFEND_LIMIT) {
+    throw new Error('今日防守次数已用完');
   }
 
-  getRemainingAttacks(playerId: string): number {
-    return Math.max(0, this.dailyAttackLimit - (this.attackRecords[playerId] ?? 0));
-  }
+  state.defendRecords[playerId] = used + 1;
 
-  getRemainingDefends(playerId: string): number {
-    return Math.max(0, this.dailyDefendLimit - (this.defendRecords[playerId] ?? 0));
-  }
+  return {
+    success: true,
+    defendCount: used + 1,
+    damageBlocked: Math.max(0, damageBlocked),
+  };
+}
 
-  isWarOver(): boolean {
-    return Date.now() > this.warStartTime + this.warDuration;
-  }
+function getRemainingAttacks(state: WarState, playerId: string): number {
+  return Math.max(0, WAR_DAILY_ATTACK_LIMIT - (state.attackRecords[playerId] ?? 0));
+}
+
+function getRemainingDefends(state: WarState, playerId: string): number {
+  return Math.max(0, WAR_DAILY_DEFEND_LIMIT - (state.defendRecords[playerId] ?? 0));
+}
+
+function isWarOver(state: WarState): boolean {
+  return Date.now() > state.warStartTime + WAR_DURATION_MS;
 }
 
 // ── 测试 ──
 
+let allianceSystem: AllianceSystem;
+
 describe('P0: 联盟战争攻防战斗 (GAP-ALLIANCE-007)', () => {
-  let allianceSystem: AllianceSystem;
   let alliance: AllianceData;
 
   beforeEach(() => {
@@ -197,126 +202,126 @@ describe('P0: 联盟战争攻防战斗 (GAP-ALLIANCE-007)', () => {
 
   describe('每日3次进攻限制', () => {
     it('玩家可以进攻3次', () => {
-      const war = new AllianceWarSimulator(Date.now() - 1000);
+      const war = createWarState(Date.now() - 1000);
 
       for (let i = 0; i < 3; i++) {
-        const result = war.attack(alliance, 'player1', 'territory_A', 500);
+        const result = warAttack(war, alliance, 'player1', 'territory_A', 500);
         expect(result.success).toBe(true);
         expect(result.attackCount).toBe(i + 1);
       }
 
-      expect(war.getRemainingAttacks('player1')).toBe(0);
+      expect(getRemainingAttacks(war, 'player1')).toBe(0);
     });
 
     it('第4次进攻被拒绝', () => {
-      const war = new AllianceWarSimulator(Date.now() - 1000);
+      const war = createWarState(Date.now() - 1000);
 
       // 进攻3次
       for (let i = 0; i < 3; i++) {
-        war.attack(alliance, 'player1', 'territory_A', 500);
+        warAttack(war, alliance, 'player1', 'territory_A', 500);
       }
 
       // 第4次应该失败
       expect(() => {
-        war.attack(alliance, 'player1', 'territory_A', 500);
+        warAttack(war, alliance, 'player1', 'territory_A', 500);
       }).toThrow(/进攻次数已用完/);
     });
 
     it('不同玩家进攻次数独立', () => {
-      const war = new AllianceWarSimulator(Date.now() - 1000);
+      const war = createWarState(Date.now() - 1000);
 
       // 玩家1进攻3次
       for (let i = 0; i < 3; i++) {
-        war.attack(alliance, 'player1', 'territory_A', 500);
+        warAttack(war, alliance, 'player1', 'territory_A', 500);
       }
-      expect(war.getRemainingAttacks('player1')).toBe(0);
+      expect(getRemainingAttacks(war, 'player1')).toBe(0);
 
       // 玩家2仍可进攻
-      expect(war.getRemainingAttacks('player2')).toBe(3);
-      const result = war.attack(alliance, 'player2', 'territory_B', 500);
+      expect(getRemainingAttacks(war, 'player2')).toBe(3);
+      const result = warAttack(war, alliance, 'player2', 'territory_B', 500);
       expect(result.success).toBe(true);
     });
   });
 
   describe('每日1次防守限制', () => {
     it('玩家可以防守1次', () => {
-      const war = new AllianceWarSimulator(Date.now() - 1000);
+      const war = createWarState(Date.now() - 1000);
 
-      const result = war.defend(alliance, 'player1', 800);
+      const result = warDefend(war, alliance, 'player1', 800);
       expect(result.success).toBe(true);
       expect(result.defendCount).toBe(1);
       expect(result.damageBlocked).toBe(800);
     });
 
     it('第2次防守被拒绝', () => {
-      const war = new AllianceWarSimulator(Date.now() - 1000);
+      const war = createWarState(Date.now() - 1000);
 
-      war.defend(alliance, 'player1', 800);
+      warDefend(war, alliance, 'player1', 800);
 
       expect(() => {
-        war.defend(alliance, 'player1', 500);
+        warDefend(war, alliance, 'player1', 500);
       }).toThrow(/防守次数已用完/);
     });
 
     it('不同玩家防守次数独立', () => {
-      const war = new AllianceWarSimulator(Date.now() - 1000);
+      const war = createWarState(Date.now() - 1000);
 
-      war.defend(alliance, 'player1', 800);
-      expect(war.getRemainingDefends('player1')).toBe(0);
-      expect(war.getRemainingDefends('player2')).toBe(1);
+      warDefend(war, alliance, 'player1', 800);
+      expect(getRemainingDefends(war, 'player1')).toBe(0);
+      expect(getRemainingDefends(war, 'player2')).toBe(1);
     });
   });
 
   describe('据点占领判定', () => {
     it('伤害>=1000时占领据点', () => {
-      const war = new AllianceWarSimulator(Date.now() - 1000);
+      const war = createWarState(Date.now() - 1000);
 
-      const result = war.attack(alliance, 'player1', 'territory_A', 1500);
+      const result = warAttack(war, alliance, 'player1', 'territory_A', 1500);
       expect(result.territoryCaptured).toBe(true);
     });
 
     it('伤害<1000时不占领据点', () => {
-      const war = new AllianceWarSimulator(Date.now() - 1000);
+      const war = createWarState(Date.now() - 1000);
 
-      const result = war.attack(alliance, 'player1', 'territory_A', 500);
+      const result = warAttack(war, alliance, 'player1', 'territory_A', 500);
       expect(result.territoryCaptured).toBe(false);
     });
 
     it('多次进攻可以累计占领', () => {
-      const war = new AllianceWarSimulator(Date.now() - 1000);
+      const war = createWarState(Date.now() - 1000);
 
       // 第一次进攻500，不占领
-      const r1 = war.attack(alliance, 'player1', 'territory_A', 500);
+      const r1 = warAttack(war, alliance, 'player1', 'territory_A', 500);
       expect(r1.territoryCaptured).toBe(false);
 
       // 第二次进攻1200，占领
-      const r2 = war.attack(alliance, 'player1', 'territory_A', 1200);
+      const r2 = warAttack(war, alliance, 'player1', 'territory_A', 1200);
       expect(r2.territoryCaptured).toBe(true);
     });
   });
 
   describe('权限验证', () => {
     it('非联盟成员不能参与战争', () => {
-      const war = new AllianceWarSimulator(Date.now() - 1000);
+      const war = createWarState(Date.now() - 1000);
 
       expect(() => {
-        war.attack(alliance, 'stranger', 'territory_A', 500);
+        warAttack(war, alliance, 'stranger', 'territory_A', 500);
       }).toThrow(/不是联盟成员/);
 
       expect(() => {
-        war.defend(alliance, 'stranger', 500);
+        warDefend(war, alliance, 'stranger', 500);
       }).toThrow(/不是联盟成员/);
     });
 
     it('盟主/军师/成员都可以参与战争', () => {
-      const war = new AllianceWarSimulator(Date.now() - 1000);
+      const war = createWarState(Date.now() - 1000);
 
       // 盟主进攻
-      expect(war.attack(alliance, 'player1', 'territory_A', 500).success).toBe(true);
+      expect(warAttack(war, alliance, 'player1', 'territory_A', 500).success).toBe(true);
       // 军师进攻
-      expect(war.attack(alliance, 'player2', 'territory_B', 500).success).toBe(true);
+      expect(warAttack(war, alliance, 'player2', 'territory_B', 500).success).toBe(true);
       // 成员进攻
-      expect(war.attack(alliance, 'player3', 'territory_C', 500).success).toBe(true);
+      expect(warAttack(war, alliance, 'player3', 'territory_C', 500).success).toBe(true);
     });
   });
 

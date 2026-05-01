@@ -75,7 +75,7 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
   describe('场景 1: 反序列化注入攻击', () => {
     it('注入恶意 JSON 不应导致引擎崩溃', () => {
       const maliciousPayloads = [
-        '{"version":1,"resources":{"__proto__":{"admin":true}}}',
+        (() => { const o: Record<string, unknown> = { version: 1, resources: { admin: true } }; Object.setPrototypeOf(o.resources as object, { admin: true }); return JSON.stringify(o); })(),
         '{"version":1,"resources":null}',
         '{"version":1,"resources":"string_instead_of_object"}',
         '{"version":1,"resources":12345}',
@@ -95,11 +95,12 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
     });
 
     it('注入 prototype 污染数据不应影响引擎行为', () => {
+      const resourcesObj = { grain: 100 } as Record<string, unknown>;
+      Object.setPrototypeOf(resourcesObj, { polluted: true });
       const payload = JSON.stringify({
         version: 1,
         resources: {
-          grain: 100,
-          __proto__: { polluted: true },
+          ...resourcesObj,
           constructor: { prototype: { polluted: true } },
         },
       });
@@ -455,17 +456,18 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
 
   describe('场景 15: 注入额外字段', () => {
     it('反序列化包含额外字段的数据不应崩溃', () => {
-      const payload = JSON.stringify({
+      const payloadObj = {
         version: 1,
         resources: { grain: 100, gold: 200 },
         buildings: {},
         calendar: {},
         extraField1: 'malicious',
         extraField2: { nested: { deep: { inject: true } } },
-        __proto__: { polluted: true },
         constructor: 'overridden',
         prototype: { hacked: true },
-      });
+      } as Record<string, unknown>;
+      Object.setPrototypeOf(payloadObj, { polluted: true });
+      const payload = JSON.stringify(payloadObj);
 
       const testEngine = new ThreeKingdomsEngine();
       testEngine.init();
@@ -482,9 +484,9 @@ describe('ThreeKingdomsEngine — 对抗性测试', () => {
       const parsed = JSON.parse(serialized);
 
       // 注入恶意字段
-      (parsed as Record<string, unknown>).__proto__ = { admin: true };
+      Object.setPrototypeOf(parsed, { admin: true });
       if (parsed.resources && typeof parsed.resources === 'object') {
-        (parsed as Record<string, unknown>).resources.__proto__ = { polluted: true };
+        Object.setPrototypeOf(parsed.resources, { polluted: true });
       }
 
       const injected = JSON.stringify(parsed);

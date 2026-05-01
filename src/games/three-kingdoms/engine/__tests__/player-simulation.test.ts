@@ -14,6 +14,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ThreeKingdomsEngine } from '../ThreeKingdomsEngine';
+import { GameEventSimulator } from '../../test-utils/GameEventSimulator';
 
 // ── localStorage mock ──
 const storage: Record<string, string> = {};
@@ -29,10 +30,8 @@ Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, wri
 
 // ── 测试辅助 ──
 
-function createEngine(): ThreeKingdomsEngine {
-  const engine = new ThreeKingdomsEngine();
-  engine.init();
-  return engine;
+function createSim(): GameEventSimulator {
+  return new GameEventSimulator().init();
 }
 
 /** 快速推进 N 个 tick（每个 100ms） */
@@ -53,16 +52,18 @@ function fastForwardSeconds(engine: ThreeKingdomsEngine, targetSeconds: number):
 // ═══════════════════════════════════════════════════════════════
 
 describe('R11: 玩家行为模拟测试', () => {
+  let sim: GameEventSimulator;
   let engine: ThreeKingdomsEngine;
 
   beforeEach(() => {
     Object.keys(storage).forEach(k => delete storage[k]);
     vi.restoreAllMocks();
-    engine = createEngine();
+    sim = createSim();
+    engine = sim.engine;
   });
 
   afterEach(() => {
-    engine.reset();
+    sim.reset();
   });
 
   // ─────────────────────────────────────────────
@@ -107,8 +108,7 @@ describe('R11: 玩家行为模拟测试', () => {
 
       // ── Step 4: 招募第一个武将 ──
       // 给新手足够的招募资源
-      engine.resource.addResource('recruitToken', 10);
-      engine.resource.addResource('gold', 10000);
+      sim.addResources({ recruitToken: 10, gold: 10000 });
 
       const recruitResult = engine.heroRecruit.recruitSingle('normal');
 
@@ -160,11 +160,7 @@ describe('R11: 玩家行为模拟测试', () => {
   describe('场景 2: 中期玩家 — 日常任务+扫荡+升级+编队+挑战', () => {
     it('应完成：日常任务 → 扫荡关卡 → 升级装备 → 编队调整 → 挑战 boss', () => {
       // ── 模拟中期玩家状态：给予大量资源 ──
-      engine.resource.addResource('grain', 100000);
-      engine.resource.addResource('gold', 100000);
-      engine.resource.addResource('troops', 50000);
-      engine.resource.addResource('recruitToken', 50);
-      engine.resource.addResource('techPoint', 5000);
+      sim.addResources({ grain: 100000, gold: 100000, troops: 50000, recruitToken: 50, techPoint: 5000 });
 
       // ── Step 1: 日常任务 ──
       // 推进游戏时间到日常重置
@@ -262,8 +258,7 @@ describe('R11: 玩家行为模拟测试', () => {
   describe('场景 3: 休闲玩家 — 上线收菜+扫荡+下线+离线收益+再上线', () => {
     it('应完成：上线 → 收菜 → 扫荡 → 下线 → 离线收益 → 再次上线', () => {
       // ── Phase 1: 首次上线 ──
-      engine.resource.addResource('grain', 50000);
-      engine.resource.addResource('gold', 50000);
+      sim.addResources({ grain: 50000, gold: 50000 });
 
       // 收菜：快速推进获取产出
       fastForward(engine, 200);
@@ -274,7 +269,7 @@ describe('R11: 玩家行为模拟测试', () => {
 
       // ── Phase 2: 快速扫荡 ──
       // 给足够武将来扫荡
-      engine.resource.addResource('recruitToken', 20);
+      sim.addResources({ recruitToken: 20 });
       engine.heroRecruit.recruitSingle('normal');
 
       fastForward(engine, 100);
@@ -344,12 +339,7 @@ describe('R11: 玩家行为模拟测试', () => {
     it('应完成：购买礼包 → 快速升级 → 购买资源 → 抽武将', () => {
       // ── Step 1: 模拟购买礼包（直接注入大量资源） ──
       // 氪金玩家通过礼包获得大量资源
-      engine.resource.addResource('grain', 1000000);
-      engine.resource.addResource('gold', 1000000);
-      engine.resource.addResource('troops', 500000);
-      engine.resource.addResource('recruitToken', 200);
-      engine.resource.addResource('techPoint', 50000);
-      engine.resource.addResource('mandate', 1000);
+      sim.addResources({ grain: 1000000, gold: 1000000, troops: 500000, recruitToken: 200, techPoint: 50000, mandate: 1000 });
 
       // 断言 1: 资源注入成功
       const res = engine.getSnapshot().resources;
@@ -437,8 +427,7 @@ describe('R11: 玩家行为模拟测试', () => {
 
   describe('跨场景验证: 数据一致性', () => {
     it('所有资源类型在任何操作后都不应为负数', () => {
-      engine.resource.addResource('gold', 10000);
-      engine.resource.addResource('recruitToken', 10);
+      sim.addResources({ gold: 10000, recruitToken: 10 });
 
       // 执行一系列操作
       engine.heroRecruit.recruitSingle('normal');
@@ -457,8 +446,7 @@ describe('R11: 玩家行为模拟测试', () => {
     });
 
     it('快速连续操作不应导致数据不一致', () => {
-      engine.resource.addResource('gold', 100000);
-      engine.resource.addResource('recruitToken', 100);
+      sim.addResources({ gold: 100000, recruitToken: 100 });
 
       // 快速连续招募
       const results = [];
@@ -479,8 +467,7 @@ describe('R11: 玩家行为模拟测试', () => {
     });
 
     it('长时间在线（30分钟模拟）后数据一致', () => {
-      engine.resource.addResource('gold', 50000);
-      engine.resource.addResource('recruitToken', 10);
+      sim.addResources({ gold: 50000, recruitToken: 10 });
 
       // 30 分钟 = 1800 秒 = 18000 tick (100ms each)
       fastForward(engine, 18000);
@@ -501,8 +488,7 @@ describe('R11: 玩家行为模拟测试', () => {
     });
 
     it('保存-加载循环不丢失核心数据', () => {
-      engine.resource.addResource('gold', 99999);
-      engine.resource.addResource('recruitToken', 10);
+      sim.addResources({ gold: 99999, recruitToken: 10 });
 
       // 招募一个武将
       engine.heroRecruit.recruitSingle('normal');

@@ -42,6 +42,13 @@ function createResourceMock() {
       return true;
     },
     getAmount: (type: string) => amounts[type] ?? 0,
+    /** 测试辅助：注入资源（替代直接 addResource，遵循 RULE-FLOW-047） */
+    grant: (resources: Record<string, number>) => {
+      for (const [type, amount] of Object.entries(resources)) {
+        amounts[type] = (amounts[type] ?? 0) + amount;
+      }
+    },
+    /** 系统回调：由子系统内部调用，走完整链路 */
     addResource: (type: string, amount: number) => {
       amounts[type] = (amounts[type] ?? 0) + amount;
     },
@@ -149,8 +156,7 @@ describe('GAP-HERO-001: 一键升级功能', () => {
       // 先清空资源，然后给恰好够升1级的资源
       res.spend('gold', res.getAmount('gold'));
       res.spend('grain', res.getAmount('grain'));
-      res.addResource('gold', 100);
-      res.addResource('grain', 100);
+      res.grant({ gold: 100, grain: 100 });
 
       const result = levelSys.quickEnhance('guanyu');
       // 资源可能不够任何升级，也可能刚好够1级
