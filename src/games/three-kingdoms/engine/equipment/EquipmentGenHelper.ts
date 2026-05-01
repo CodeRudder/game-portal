@@ -70,16 +70,18 @@ export function isSlot(value: string): value is EquipmentSlot {
 
 /** 按部位生成装备 */
 export function generateBySlot(slot: EquipmentSlot, rarity: EquipmentRarity, source: EquipmentSource, seed: number): EquipmentInstance {
+  // FIX-612: NaN/Infinity seed防护 — 非法seed回退为时间戳
+  const safeSeed = !Number.isFinite(seed) ? (Date.now() % 233280) : seed;
   const uid = generateUid();
-  const mainStat = genMainStat(slot, rarity, seed);
-  const subStats = genSubStats(slot, rarity, seed + 100);
-  const specialEffect = genSpecialEffect(slot, rarity, seed + 200);
+  const mainStat = genMainStat(slot, rarity, safeSeed);
+  const subStats = genSubStats(slot, rarity, safeSeed + 100);
+  const specialEffect = genSpecialEffect(slot, rarity, safeSeed + 200);
   const namePrefix = RARITY_NAME_PREFIX[rarity];
-  const baseName = seedPick(SLOT_NAME_PREFIXES[slot], seed + 300);
+  const baseName = seedPick(SLOT_NAME_PREFIXES[slot], safeSeed + 300);
   return {
     uid, templateId: `tpl_${slot}_${rarity}`, name: namePrefix ? `${namePrefix}${baseName}` : baseName,
     slot, rarity, enhanceLevel: 0, mainStat, subStats, specialEffect,
-    source, acquiredAt: Date.now(), isEquipped: false, equippedHeroId: null, seed,
+    source, acquiredAt: Date.now(), isEquipped: false, equippedHeroId: null, seed: safeSeed,
   };
 }
 

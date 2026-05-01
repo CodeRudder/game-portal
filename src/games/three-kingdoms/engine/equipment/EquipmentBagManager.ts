@@ -49,6 +49,8 @@ export class EquipmentBagManager {
   private emitEvent: EventEmitFn;
   /** 模板查询回调 */
   private getTemplate: TemplateQueryFn;
+  /** FIX-609: 扩容验证回调 — 外部注入资源充足性检查 */
+  private expandValidator: (() => boolean) | null = null;
 
   constructor(emitEvent: EventEmitFn, getTemplate: TemplateQueryFn) {
     this.emitEvent = emitEvent;
@@ -59,6 +61,10 @@ export class EquipmentBagManager {
 
   /** 添加装备到背包 */
   add(equipment: EquipmentInstance): BagOperationResult {
+    // FIX-608: null/undefined防护，防止崩溃
+    if (!equipment || typeof equipment !== 'object') {
+      return { success: false, reason: '无效装备' };
+    }
     if (this.equipments.size >= this.bagCapacity) {
       return { success: false, reason: '背包已满' };
     }
@@ -138,14 +144,20 @@ export class EquipmentBagManager {
     return this.equipments.size >= this.bagCapacity;
   }
 
+  /** FIX-609: 注入扩容验证器 — 外部系统用于检查资源充足性 */
+  setExpandValidator(fn: () => boolean): void {
+    this.expandValidator = fn;
+  }
+
   /** 扩容背包 */
   expand(): BagOperationResult {
     if (this.bagCapacity >= MAX_BAG_CAPACITY) {
       return { success: false, reason: '已达最大容量' };
     }
-    // FIX-604: 资源预检 — 先发射预检事件，外部系统需返回是否足够
-    const costCheck = { cost: BAG_EXPAND_COST, currency: 'copper', phase: 'precheck' as const };
-    this.emitEvent('equipment:bag_expand_precheck', costCheck);
+    // FIX-609: 资源验证 — 未注入验证器或验证失败时拒绝扩容
+    if (this.expandValidator && !this.expandValidator()) {
+      return { success: false, reason: '资源不足' };
+    }
     this.emitEvent('equipment:bag_expand_cost', {
       cost: BAG_EXPAND_COST,
       currency: 'copper',

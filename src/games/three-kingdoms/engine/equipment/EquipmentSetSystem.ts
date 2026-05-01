@@ -177,7 +177,8 @@ export class EquipmentSetSystem implements ISubsystem {
 
   private mergeBonuses(target: Record<string, number>, source: Record<string, number>): void {
     for (const [key, value] of Object.entries(source)) {
-      target[key] = (target[key] ?? 0) + value;
+      // FIX-613: NaN防护 — 跳过非法配置值
+      target[key] = (target[key] ?? 0) + (Number.isFinite(value) ? value : 0);
     }
   }
 }

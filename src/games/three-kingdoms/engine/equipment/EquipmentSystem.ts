@@ -114,7 +114,8 @@ export class EquipmentSystem implements ISubsystem {
   /** 关卡掉落生成 */
   generateCampaignDrop(campaignType: CampaignType, seed?: number): EquipmentInstance {
     const usedSeed = seed ?? (Date.now() + this.seedCounter++);
-    const weights = CAMPAIGN_DROP_WEIGHTS[campaignType];
+    // FIX-614: 无效campaignType防护 — 回退到'normal'
+    const weights = CAMPAIGN_DROP_WEIGHTS[campaignType] ?? CAMPAIGN_DROP_WEIGHTS.normal;
     const rarity = weightedPickRarity(weights, usedSeed) as EquipmentRarity;
     const slot = seedPick(EQUIPMENT_SLOTS, usedSeed + 1) as EquipmentSlot;
     const eq = this.generateBySlot(slot, rarity, 'campaign_drop', usedSeed + 2)!;

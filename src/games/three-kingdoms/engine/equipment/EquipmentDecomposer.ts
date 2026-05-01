@@ -41,7 +41,9 @@ export class EquipmentDecomposer {
 
   /** 计算分解奖励 */
   calculateDecomposeReward(eq: EquipmentInstance): DecomposeResult {
-    const enhanceBonus = 1 + eq.enhanceLevel * DECOMPOSE_ENHANCE_BONUS;
+    // FIX-611: NaN防护 — enhanceLevel非法值回退为0
+    const level = !Number.isFinite(eq.enhanceLevel) || eq.enhanceLevel < 0 ? 0 : eq.enhanceLevel;
+    const enhanceBonus = 1 + level * DECOMPOSE_ENHANCE_BONUS;
     return {
       copper: Math.floor(DECOMPOSE_COPPER_BASE[eq.rarity] * enhanceBonus),
       enhanceStone: Math.floor(DECOMPOSE_STONE_BASE[eq.rarity] * enhanceBonus),
