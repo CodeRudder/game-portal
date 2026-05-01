@@ -134,14 +134,19 @@ describe('FLOW-14 远征系统集成测试', () => {
     const exp = getExpedition(sim);
     const routes = exp.getAllRoutes();
 
-    // 虎牢关路线默认解锁
+    // FIX: 弱断言 !!hulaoEasy?.unlocked → 强断言：验证路线名称、难度、解锁状态
     const hulaoEasy = routes.find(r => r.id === 'route_hulao_easy');
-    assertStrict(!!hulaoEasy?.unlocked, 'FLOW-14-03', '虎牢关简单路线应默认解锁');
+    assertStrict(hulaoEasy !== undefined, 'FLOW-14-03', '虎牢关简单路线应存在');
+    assertStrict(hulaoEasy!.name === '虎牢关·简', 'FLOW-14-03', `路线名称应为虎牢关·简，实际: ${hulaoEasy!.name}`);
+    assertStrict(hulaoEasy!.difficulty === RouteDifficulty.EASY, 'FLOW-14-03', `难度应为EASY，实际: ${hulaoEasy!.difficulty}`);
+    assertStrict(hulaoEasy!.unlocked === true, 'FLOW-14-03', '虎牢关简单路线应默认解锁');
 
-    // 汜水关路线默认未解锁
+    // FIX: 弱断言 !!yishuiEasy → 强断言：验证路线属性完整
     const yishuiEasy = routes.find(r => r.id === 'route_yishui_easy');
-    assertStrict(!!yishuiEasy, 'FLOW-14-03', '汜水关路线应存在');
-    assertStrict(!yishuiEasy?.unlocked, 'FLOW-14-03', '汜水关路线默认应未解锁');
+    assertStrict(yishuiEasy !== undefined, 'FLOW-14-03', '汜水关路线应存在');
+    assertStrict(yishuiEasy!.name === '汜水关·简', 'FLOW-14-03', `路线名称应为汜水关·简，实际: ${yishuiEasy!.name}`);
+    assertStrict(yishuiEasy!.difficulty === RouteDifficulty.EASY, 'FLOW-14-03', `难度应为EASY，实际: ${yishuiEasy!.difficulty}`);
+    assertStrict(yishuiEasy!.unlocked === false, 'FLOW-14-03', '汜水关路线默认应未解锁');
   });
 
   it(accTest('FLOW-14-04', '面板数据 — 槽位与主城等级关系'), () => {
@@ -179,7 +184,12 @@ describe('FLOW-14 远征系统集成测试', () => {
 
     const result = exp.createTeam('蜀国精锐', heroes.map(h => h.id), FormationType.STANDARD, heroDataMap);
     assertStrict(result.valid, 'FLOW-14-06', `队伍创建应成功: ${result.errors.join(', ')}`);
-    assertStrict(result.totalPower > 0, 'FLOW-14-06', `战力应>0，实际: ${result.totalPower}`);
+    // FIX: 弱断言 result.totalPower > 0 → 强断言：验证战力在合理范围内（含阵型和羁绊加成）
+    const heroPowerSum = heroes.reduce((sum, h) => sum + h.power, 0);
+    assertStrict(result.totalPower >= heroPowerSum, 'FLOW-14-06',
+      `战力应>=武将战力之和${heroPowerSum}（含加成），实际: ${result.totalPower}`);
+    assertStrict(result.totalPower <= heroPowerSum * 1.5, 'FLOW-14-06',
+      `战力应<=武将战力之和*1.5=${Math.round(heroPowerSum * 1.5)}（加成上限），实际: ${result.totalPower}`);
 
     const teams = exp.getAllTeams();
     assertStrict(teams.length === 1, 'FLOW-14-06', `应有1支队伍，实际: ${teams.length}`);
@@ -189,7 +199,10 @@ describe('FLOW-14 远征系统集成测试', () => {
     const exp = getExpedition(sim);
     const dispatched = createAndDispatchTeam(exp);
 
-    assertStrict(!!dispatched, 'FLOW-14-07', '派遣应成功');
+    // FIX: 弱断言 !!dispatched → 强断言：验证返回值包含有效 teamId 和 routeId
+    assertStrict(dispatched !== null, 'FLOW-14-07', '派遣应成功');
+    assertStrict(dispatched!.teamId.length > 0, 'FLOW-14-07', `teamId 应非空字符串，实际: "${dispatched!.teamId}"`);
+    assertStrict(dispatched!.routeId.startsWith('route_'), 'FLOW-14-07', `routeId 应以 route_ 开头，实际: "${dispatched!.routeId}"`);
     const team = exp.getTeam(dispatched!.teamId);
     assertStrict(team!.isExpeditioning, 'FLOW-14-07', '队伍应处于远征中');
     assertStrict(team!.currentRouteId === dispatched!.routeId, 'FLOW-14-07', '路线ID应匹配');
@@ -222,7 +235,10 @@ describe('FLOW-14 远征系统集成测试', () => {
 
     const routes = exp.getAllRoutes();
     const unlockedRoute = routes.find(r => r.unlocked);
-    assertStrict(!!unlockedRoute, 'FLOW-14-09', '应有已解锁路线');
+    // FIX: 弱断言 !!unlockedRoute → 强断言：验证已解锁路线的属性
+    assertStrict(unlockedRoute !== undefined, 'FLOW-14-09', '应有已解锁路线');
+    assertStrict(unlockedRoute!.unlocked === true, 'FLOW-14-09', '路线应标记为已解锁');
+    assertStrict(unlockedRoute!.id.startsWith('route_'), 'FLOW-14-09', `路线ID格式应正确，实际: ${unlockedRoute!.id}`);
 
     const ok = exp.dispatchTeam(teamId, unlockedRoute!.id);
     assertStrict(!ok, 'FLOW-14-09', '兵力不足应派遣失败');
@@ -239,10 +255,17 @@ describe('FLOW-14 远征系统集成测试', () => {
   it(accTest('FLOW-14-11', '远征事件 — 推进到下一节点'), () => {
     const exp = getExpedition(sim);
     const dispatched = createAndDispatchTeam(exp);
-    assertStrict(!!dispatched, 'FLOW-14-11', '派遣应成功');
+    // FIX: 弱断言 !!dispatched → 强断言：验证派遣返回值
+    assertStrict(dispatched !== null, 'FLOW-14-11', '派遣应成功');
+    assertStrict(dispatched!.teamId.length > 0, 'FLOW-14-11', 'teamId 应非空');
 
     const nextNodeId = exp.advanceToNextNode(dispatched!.teamId, 0);
-    assertStrict(!!nextNodeId, 'FLOW-14-11', '推进应返回下一节点ID');
+    // FIX: 弱断言 !!nextNodeId → 强断言：验证节点ID格式（route_xxx_n 格式）
+    assertStrict(nextNodeId !== null, 'FLOW-14-11', '推进应返回下一节点ID');
+    assertStrict(typeof nextNodeId === 'string' && nextNodeId.length > 0, 'FLOW-14-11',
+      `节点ID应为非空字符串，实际: ${nextNodeId}`);
+    assertStrict(nextNodeId!.includes('_n'), 'FLOW-14-11',
+      `节点ID应包含 _n 序列号，实际: ${nextNodeId}`);
 
     const team = exp.getTeam(dispatched!.teamId);
     assertStrict(team!.currentNodeId === nextNodeId, 'FLOW-14-11', '队伍当前节点应更新');
@@ -258,7 +281,9 @@ describe('FLOW-14 远征系统集成测试', () => {
 
     const routes = exp.getAllRoutes();
     const unlockedRoute = routes.find(r => r.unlocked);
-    assertStrict(!!unlockedRoute, 'FLOW-14-12', '应有已解锁路线');
+    // FIX: 弱断言 !!unlockedRoute → 强断言：验证路线存在且已解锁
+    assertStrict(unlockedRoute !== undefined, 'FLOW-14-12', '应有已解锁路线');
+    assertStrict(unlockedRoute!.unlocked === true, 'FLOW-14-12', '路线应标记为已解锁');
 
     exp.dispatchTeam(teamId, unlockedRoute!.id);
 
@@ -276,7 +301,10 @@ describe('FLOW-14 远征系统集成测试', () => {
 
       const result = exp.processNodeEffect(teamId);
       assertStrict(result.healed, 'FLOW-14-12', '休息节点应恢复兵力');
-      assertStrict(result.healAmount > 0, 'FLOW-14-12', `恢复量应>0，实际: ${result.healAmount}`);
+      // FIX: 弱断言 result.healAmount > 0 → 强断言：验证恢复量为 maxTroops 的20%（REST_HEAL_PERCENT）
+      const expectedHeal = Math.floor(exp.getTeam(teamId)!.maxTroops * 0.20);
+      assertStrict(result.healAmount === expectedHeal, 'FLOW-14-12',
+        `恢复量应为${expectedHeal}（maxTroops*20%），实际: ${result.healAmount}`);
     } else {
       // 无休息节点时，验证非休息节点不恢复
       const result = exp.processNodeEffect(teamId);
@@ -287,7 +315,10 @@ describe('FLOW-14 远征系统集成测试', () => {
   it(accTest('FLOW-14-13', '远征事件 — 完成路线记录通关和星级'), () => {
     const exp = getExpedition(sim);
     const dispatched = createAndDispatchTeam(exp);
-    assertStrict(!!dispatched, 'FLOW-14-13', '派遣应成功');
+    // FIX: 弱断言 !!dispatched → 强断言：验证派遣返回值
+    assertStrict(dispatched !== null, 'FLOW-14-13', '派遣应成功');
+    assertStrict(dispatched!.teamId.length > 0, 'FLOW-14-13', 'teamId 应非空');
+    assertStrict(dispatched!.routeId.length > 0, 'FLOW-14-13', 'routeId 应非空');
 
     const ok = exp.completeRoute(dispatched!.teamId, 3);
     assertStrict(ok, 'FLOW-14-13', '完成路线应成功');
@@ -307,7 +338,9 @@ describe('FLOW-14 远征系统集成测试', () => {
   it(accTest('FLOW-14-14', '远征事件 — 完成路线后兵力恢复到满'), () => {
     const exp = getExpedition(sim);
     const dispatched = createAndDispatchTeam(exp);
-    assertStrict(!!dispatched, 'FLOW-14-14', '派遣应成功');
+    // FIX: 弱断言 !!dispatched → 强断言：验证派遣返回值
+    assertStrict(dispatched !== null, 'FLOW-14-14', '派遣应成功');
+    assertStrict(dispatched!.teamId.length > 0, 'FLOW-14-14', 'teamId 应非空');
 
     // 模拟战斗消耗
     exp.getState().teams[dispatched!.teamId].troopCount = 50;
@@ -321,13 +354,18 @@ describe('FLOW-14 远征系统集成测试', () => {
   it(accTest('FLOW-14-15', '远征事件 — 里程碑检查'), () => {
     const exp = getExpedition(sim);
     const dispatched = createAndDispatchTeam(exp);
-    assertStrict(!!dispatched, 'FLOW-14-15', '派遣应成功');
+    // FIX: 弱断言 !!dispatched → 强断言：验证派遣返回值
+    assertStrict(dispatched !== null, 'FLOW-14-15', '派遣应成功');
+    assertStrict(dispatched!.teamId.length > 0, 'FLOW-14-15', 'teamId 应非空');
 
     exp.completeRoute(dispatched!.teamId, 3);
 
     const milestones = exp.checkMilestones();
+    // FIX: 弱断言 milestones.length > 0 → 强断言：验证里程碑数量和内容
     assertStrict(milestones.length > 0, 'FLOW-14-15', `通关后应有里程碑，实际: ${milestones.length}`);
     assertStrict(milestones.includes(MilestoneType.FIRST_CLEAR), 'FLOW-14-15', '应包含"初出茅庐"里程碑');
+    assertStrict(milestones.every(m => Object.values(MilestoneType).includes(m)), 'FLOW-14-15',
+      `所有里程碑应为合法枚举值，实际: ${milestones.join(',')}`);
   });
 
   // ── 4. 远征奖励（FLOW-14-16 ~ FLOW-14-20） ──
@@ -342,7 +380,14 @@ describe('FLOW-14 远征系统集成测试', () => {
       isFirstClear: false,
       isRouteComplete: false,
     });
-    assertStrict(easyReward.gold > 0, 'FLOW-14-16', '简单路线应有铜钱奖励');
+    // FIX: 弱断言 easyReward.gold > 0 → 强断言：验证奖励 = BASE_REWARDS[difficulty].gold * nodeMultiplier * gradeMultiplier
+    // EASY + BANDIT(0.3) + MINOR_VICTORY(1.0) = 400 * 0.3 * 1.0 = 120
+    const expectedEasyGold = Math.round(BASE_REWARDS[RouteDifficulty.EASY].gold * 0.3 * 1.0);
+    assertStrict(easyReward.gold === expectedEasyGold, 'FLOW-14-16',
+      `简单山贼小胜铜钱应为${expectedEasyGold}，实际: ${easyReward.gold}`);
+    const expectedEasyExp = Math.round(BASE_REWARDS[RouteDifficulty.EASY].exp * 0.3 * 1.0);
+    assertStrict(easyReward.exp === expectedEasyExp, 'FLOW-14-16',
+      `简单山贼小胜经验应为${expectedEasyExp}，实际: ${easyReward.exp}`);
 
     const hardReward = rewardSystem.calculateNodeReward({
       difficulty: RouteDifficulty.HARD,
@@ -399,11 +444,16 @@ describe('FLOW-14 远征系统集成测试', () => {
   it(accTest('FLOW-14-19', '远征奖励 — 里程碑奖励'), () => {
     const rewardSystem = new ExpeditionRewardSystem();
 
+    // FIX: 弱断言 !!firstClear → 强断言：验证里程碑奖励包含具体字段
     const firstClear = rewardSystem.getMilestoneReward(MilestoneType.FIRST_CLEAR);
-    assertStrict(!!firstClear, 'FLOW-14-19', '初出茅庐应有奖励');
+    assertStrict(firstClear !== null, 'FLOW-14-19', '初出茅庐应有奖励');
+    assertStrict(firstClear!.gold === 1000, 'FLOW-14-19', `初出茅庐铜钱应为1000，实际: ${firstClear!.gold}`);
 
     const tenClears = rewardSystem.getMilestoneReward(MilestoneType.TEN_CLEARS);
-    assertStrict(!!tenClears, 'FLOW-14-19', '百战之师应有奖励');
+    assertStrict(tenClears !== null, 'FLOW-14-19', '百战之师应有奖励');
+    // 百战之师奖励配置中 gold=0，验证其他字段结构完整
+    assertStrict(typeof tenClears!.gold === 'number', 'FLOW-14-19', '百战之师奖励应有 gold 字段');
+    assertStrict(Array.isArray(tenClears!.drops), 'FLOW-14-19', '百战之师奖励应有 drops 数组');
   });
 
   it(accTest('FLOW-14-20', '远征奖励 — 评级影响奖励倍率'), () => {
@@ -437,7 +487,10 @@ describe('FLOW-14 远征系统集成测试', () => {
 
     exp.recoverTroops(TROOP_COST.recoveryIntervalSeconds * 5);
     const after = exp.getTeam(teamId)!.troopCount;
-    assertStrict(after > before, 'FLOW-14-21', `兵力应增加: ${before} → ${after}`);
+    // FIX: 弱断言 after > before → 强断言：验证恢复量 = 5 * recoveryAmount = 5
+    const expectedRecovery = 5 * TROOP_COST.recoveryAmount;
+    assertStrict(after === before + expectedRecovery, 'FLOW-14-21',
+      `兵力应增加${expectedRecovery}（5次恢复），实际: ${before} → ${after}`);
   });
 
   it(accTest('FLOW-14-22', '时间/冷却 — 兵力恢复不超过上限'), () => {
@@ -459,7 +512,9 @@ describe('FLOW-14 远征系统集成测试', () => {
 
     // 先三星通关
     const dispatched = createAndDispatchTeam(exp);
-    assertStrict(!!dispatched, 'FLOW-14-23', '派遣应成功');
+    // FIX: 弱断言 !!dispatched → 强断言：验证派遣返回值
+    assertStrict(dispatched !== null, 'FLOW-14-23', '派遣应成功');
+    assertStrict(dispatched!.teamId.length > 0, 'FLOW-14-23', 'teamId 应非空');
     exp.completeRoute(dispatched!.teamId, 3);
 
     // 普通扫荡每日5次
@@ -500,7 +555,10 @@ describe('FLOW-14 远征系统集成测试', () => {
     const exp = getExpedition(sim);
     const result = exp.createTeam('空队伍', [], FormationType.STANDARD, {});
     assertStrict(!result.valid, 'FLOW-14-26', '空队伍应校验失败');
+    // FIX: 弱断言 result.errors.length > 0 → 强断言：验证错误消息包含关键词
     assertStrict(result.errors.length > 0, 'FLOW-14-26', '应有错误信息');
+    assertStrict(result.errors.some(e => e.includes('武将') || e.includes('英雄') || e.includes('hero') || e.includes('空')),
+      'FLOW-14-26', `错误信息应包含武将/空相关提示，实际: ${result.errors.join('; ')}`);
   });
 
   it(accTest('FLOW-14-27', '边界 — 超过最大武将数校验失败'), () => {
@@ -517,7 +575,10 @@ describe('FLOW-14 远征系统集成测试', () => {
   it(accTest('FLOW-14-28', '边界 — 序列化/反序列化保持通关记录'), () => {
     const exp = getExpedition(sim);
     const dispatched = createAndDispatchTeam(exp);
-    assertStrict(!!dispatched, 'FLOW-14-28', '派遣应成功');
+    // FIX: 弱断言 !!dispatched → 强断言：验证派遣返回值
+    assertStrict(dispatched !== null, 'FLOW-14-28', '派遣应成功');
+    assertStrict(dispatched!.teamId.length > 0, 'FLOW-14-28', 'teamId 应非空');
+    assertStrict(dispatched!.routeId.length > 0, 'FLOW-14-28', 'routeId 应非空');
     exp.completeRoute(dispatched!.teamId, 3);
 
     const saved = exp.serialize();
@@ -534,7 +595,9 @@ describe('FLOW-14 远征系统集成测试', () => {
   it(accTest('FLOW-14-29', '边界 — 重置清空所有远征状态'), () => {
     const exp = getExpedition(sim);
     const dispatched = createAndDispatchTeam(exp);
-    assertStrict(!!dispatched, 'FLOW-14-29', '派遣应成功');
+    // FIX: 弱断言 !!dispatched → 强断言：验证派遣返回值
+    assertStrict(dispatched !== null, 'FLOW-14-29', '派遣应成功');
+    assertStrict(dispatched!.teamId.length > 0, 'FLOW-14-29', 'teamId 应非空');
     exp.completeRoute(dispatched!.teamId, 3);
 
     exp.reset();
@@ -542,6 +605,11 @@ describe('FLOW-14 远征系统集成测试', () => {
     const state = exp.getState();
     assertStrict(state.clearedRouteIds.size === 0, 'FLOW-14-29', '重置后通关记录应清空');
     assertStrict(Object.keys(state.teams).length === 0, 'FLOW-14-29', '重置后队伍应清空');
+    // FIX: 补充强断言 — 验证星级和里程碑也被清空
+    assertStrict(Object.keys(state.routeStars).length === 0, 'FLOW-14-29',
+      `重置后星级记录应清空，实际: ${Object.keys(state.routeStars).length}`);
+    assertStrict(state.achievedMilestones.size === 0, 'FLOW-14-29',
+      `重置后里程碑应清空，实际: ${state.achievedMilestones.size}`);
   });
 
   it(accTest('FLOW-14-30', '边界 — 槽位满时派遣失败'), () => {
@@ -550,7 +618,9 @@ describe('FLOW-14 远征系统集成测试', () => {
 
     // 创建并派遣第一支队伍
     const dispatched = createAndDispatchTeam(exp);
-    assertStrict(!!dispatched, 'FLOW-14-30', '第一支队伍派遣应成功');
+    // FIX: 弱断言 !!dispatched → 强断言：验证派遣返回值
+    assertStrict(dispatched !== null, 'FLOW-14-30', '第一支队伍派遣应成功');
+    assertStrict(dispatched!.teamId.length > 0, 'FLOW-14-30', 'teamId 应非空');
 
     // 创建第二支队伍
     const heroes2 = [
