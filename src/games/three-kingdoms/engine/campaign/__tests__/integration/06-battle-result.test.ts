@@ -740,15 +740,20 @@ describe('§4.6 战斗日志', () => {
 
 describe.skip('§4.7 操作评分（S/A/B等级评定 — v3.0 未实现，预留）', () => {
   it('should assign S rating for perfect battle (3 stars, no damage taken)', () => {
-    // TODO: 等待操作评分系统实现后补充
+    // [依赖外部] 等待操作评分系统(OperationRatingSystem)实现后补充
     // 预期：3星 + 0伤害受到 = S级
+    // 依赖: BattleRatingEngine 需要支持 S/A/B 等级评定算法
   });
 
   it('should assign A rating for 3-star battle with some damage', () => {
-    // TODO: 等待操作评分系统实现后补充
+    // [依赖外部] 等待操作评分系统(OperationRatingSystem)实现后补充
+    // 预期：3星 + 有伤害受到 = A级
+    // 依赖: 同上 S级测试
   });
 
   it('should assign B rating for 1-2 star battle', () => {
-    // TODO: 等待操作评分系统实现后补充
+    // [依赖外部] 等待操作评分系统(OperationRatingSystem)实现后补充
+    // 预期：1-2星 = B级
+    // 依赖: 同上 S级测试
   });
 });

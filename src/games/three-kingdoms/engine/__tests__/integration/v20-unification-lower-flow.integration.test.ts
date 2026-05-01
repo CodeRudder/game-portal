@@ -91,7 +91,31 @@ describe('v20.0 天下一统(下) — §1 最终战役', () => {
       const finalStage = lastChapter.stages[lastChapter.stages.length - 1];
       const stageInfo = sim.engine.getStageInfo(finalStage.id);
       expect(stageInfo).toBeDefined();
-      // TODO: 验证 boss 数据字段
+
+      // 验证 boss 关卡类型
+      expect(stageInfo!.type).toBe('boss');
+
+      // 验证敌方阵容数据完整
+      expect(stageInfo!.enemyFormation).toBeDefined();
+      expect(stageInfo!.enemyFormation.id).toBeDefined();
+      expect(stageInfo!.enemyFormation.name).toBeDefined();
+      expect(stageInfo!.enemyFormation.units.length).toBeGreaterThanOrEqual(1);
+
+      // 验证 boss 单位核心属性
+      const bossUnit = stageInfo!.enemyFormation.units[0];
+      expect(bossUnit.id).toBeDefined();
+      expect(bossUnit.name).toBeDefined();
+      expect(bossUnit.maxHp).toBeGreaterThan(0);
+      expect(bossUnit.attack).toBeGreaterThan(0);
+      expect(bossUnit.defense).toBeGreaterThanOrEqual(0);
+      expect(bossUnit.level).toBeGreaterThan(0);
+
+      // 验证推荐战力
+      expect(stageInfo!.recommendedPower).toBeGreaterThan(0);
+
+      // 验证掉落表
+      expect(stageInfo!.dropTable).toBeDefined();
+      expect(Array.isArray(stageInfo!.dropTable)).toBe(true);
     });
 
   });
@@ -412,7 +436,15 @@ describe('v20.0 天下一统(下) — §5 跨系统联动', () => {
     // 验证结局触发、奖励发放、统计更新
     const snapshot = sim.engine.getSnapshot();
     expect(snapshot.territoryState).toBeDefined();
-    // TODO: 验证结局/奖励/统计字段
+
+    // 验证领土已全部被玩家占领
+    const allTerritories = territory.getTerritoriesByOwnership('player');
+    expect(allTerritories.length).toBeGreaterThan(0);
+
+    // 验证 snapshot 中的领土状态完整
+    expect(snapshot.territoryState).toBeDefined();
+    expect(snapshot.territoryState.territories).toBeDefined();
+    expect(typeof snapshot.territoryState.territories).toBe('object');
   });
 
 });

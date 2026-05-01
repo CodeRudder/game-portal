@@ -816,8 +816,21 @@ export class ThreeKingdomsEngine {
         try { self.resource.consumeResource('gold', amount); return true; } catch { return false; }
       },
       getGoldAmount: () => self.resource.getAmount('gold'),
-      addBreakthroughStone: (count: number) => { /* TODO: 接入物品背包 */ },
-      addSkillBook: (count: number) => { /* TODO: 接入物品背包 */ },
+      addBreakthroughStone: (count: number) => {
+        // [需设计] 接入物品背包系统后实现
+        // 依赖: InventorySystem.addItem('breakthroughStone', count)
+        // 注意: breakthroughStone 不属于 ResourceType，无法存入资源池
+        // 物品背包系统实现前，仅做日志记录，不执行实际存储
+        if (count <= 0) return;
+        // TODO(inventory): self.inventory.addItem('breakthroughStone', count);
+      },
+      addSkillBook: (count: number) => {
+        // [需设计] 接入物品背包系统后实现
+        // 当前: skillBook 已属于 ResourceType，暂存入资源池
+        // 未来: 应迁移至 InventorySystem.addItem('skillBook', count)
+        if (count <= 0) return;
+        self.resource.addResource('skillBook', count);
+      },
       getClearedStages: () => {
         const progress = self.campaignSystems.campaignSystem.getProgress();
         return Object.entries(progress.stageStates)

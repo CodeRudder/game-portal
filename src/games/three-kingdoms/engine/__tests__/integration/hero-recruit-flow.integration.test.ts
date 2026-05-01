@@ -122,7 +122,9 @@ describe('武将招募流程集成测试 (v2-play.md)', () => {
   });
 
   describe('[CROSS-FLOW-6] 招募代币获取路径验证', () => {
-    // TODO: 日常任务系统尚未配置招贤榜奖励，待实现后启用
+    // [依赖外部] 日常任务系统尚未配置招贤榜奖励，待实现后启用
+    // 依赖: DailyTaskSystem 需要支持招贤榜(recruitToken)作为奖励类型
+    // 阻塞: 日常任务系统完整流程未接入引擎
     it.todo('[步骤1] 完成日常任务应获得招贤榜', () => {
       const tokenBefore = sim.getResource('recruitToken');
 
@@ -180,7 +182,9 @@ describe('武将招募流程集成测试 (v2-play.md)', () => {
   });
 
   describe('[E2E] 完整流程: 招贤馆解锁 → 获取招贤榜 → 单抽', () => {
-    // TODO: 招贤榜获取途径（日常任务/商店/活动）尚未实现，待实现后启用
+    // [依赖外部] 招贤榜获取途径（日常任务/商店/活动）尚未实现，待实现后启用
+    // 依赖: DailyTaskSystem + ShopSystem(招贤榜商品) + EventSystem(活动奖励)
+    // 阻塞: 多个子系统尚未实现招贤榜发放逻辑
     it.todo('[完整流程] 主城升级 → 招贤馆解锁 → 获取招贤榜 → 招募武将', () => {
       // 步骤1: 升级主城到 Lv5
       console.log('[E2E] 步骤1: 升级主城到 Lv5');
