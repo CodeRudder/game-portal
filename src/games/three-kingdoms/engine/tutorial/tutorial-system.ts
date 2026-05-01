@@ -367,19 +367,29 @@ export class TutorialSystem implements ISubsystem {
     // FIX-602: completedSteps 内容校验，过滤非法 stepId
     const validIds = new Set<string>(TUTORIAL_GUIDE_STEPS.map(s => s.id));
     const rawSteps = Array.isArray(data.completedSteps) ? data.completedSteps : [];
-    this.state.completedSteps = rawSteps.filter(
-      (id: string) => validIds.has(id),
-    ) as TutorialGuideStepId[];
+    // FIX-T10 (R2): 去重，防止重复 stepId 导致进度计算错误
+    this.state.completedSteps = [...new Set(
+      rawSteps.filter((id: string) => validIds.has(id))
+    )] as TutorialGuideStepId[];
 
     this.state.skipped = Boolean(data.skipped);
 
     // FIX-603: 恢复 stepCompletionTimes 和 startedAt（兼容旧存档）
-    this.state.stepCompletionTimes =
-      data.stepCompletionTimes && typeof data.stepCompletionTimes === 'object'
-        ? { ...data.stepCompletionTimes }
-        : {};
+    if (data.stepCompletionTimes && typeof data.stepCompletionTimes === 'object') {
+      // FIX-T08 (R2): 过滤非 finite number 值，防止 NaN/Infinity 污染
+      const times: Record<string, number> = {};
+      for (const [key, val] of Object.entries(data.stepCompletionTimes)) {
+        if (typeof val === 'number' && Number.isFinite(val)) {
+          times[key] = val;
+        }
+      }
+      this.state.stepCompletionTimes = times;
+    } else {
+      this.state.stepCompletionTimes = {};
+    }
+    // FIX-T09 (R2): startedAt 值合理性校验
     this.state.startedAt =
-      data.startedAt !== undefined && data.startedAt !== null
+      typeof data.startedAt === 'number' && Number.isFinite(data.startedAt) && data.startedAt > 0
         ? data.startedAt
         : null;
   }
