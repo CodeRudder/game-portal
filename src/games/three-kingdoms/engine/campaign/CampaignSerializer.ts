@@ -15,6 +15,7 @@ import type {
   StarRating,
 } from './campaign.types';
 import { MAX_STARS } from './campaign.types';
+import { createInitialProgress } from './CampaignProgressSystem';
 
 // ─────────────────────────────────────────────
 // 常量

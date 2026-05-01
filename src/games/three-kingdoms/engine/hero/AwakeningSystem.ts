@@ -28,6 +28,7 @@ export interface AwakeningDeps {
   canAffordResource: (type: string, amount: number) => boolean;
   spendResource: (type: string, amount: number) => boolean;
   getResourceAmount: (type: string) => number;
+  addResource: (type: string, amount: number) => void;
 }
 
 /** 觉醒状态（每个武将） */

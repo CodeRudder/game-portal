@@ -42,7 +42,7 @@ function createInitialStageState(stageId: string): StageState {
 }
 
 /** 创建初始进度（第1章第1关解锁） */
-function createInitialProgress(dataProvider: ICampaignDataProvider): CampaignProgress {
+export function createInitialProgress(dataProvider: ICampaignDataProvider): CampaignProgress {
   const chapters = dataProvider.getChapters();
   const firstChapter = chapters.length > 0 ? chapters[0] : null;
   const stageStates: Record<string, StageState> = {};

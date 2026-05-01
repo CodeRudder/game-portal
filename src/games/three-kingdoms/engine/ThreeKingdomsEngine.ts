@@ -292,6 +292,7 @@ export class ThreeKingdomsEngine {
         try { this.resource.consumeResource(type as import('../shared/types').ResourceType, amount); return true; } catch { return false; }
       },
       getResourceAmount: (type) => this.resource.getAmount(type as import('../shared/types').ResourceType),
+      addResource: (type, amount) => { this.resource.addResource(type as import('../shared/types').ResourceType, amount); },
     });
     initCampaignSystems(this.campaignSystems, deps); initTechSystems(this.techSystems, deps);
     initMapSystems(this.mapSystems, deps); initEventSystems(this.eventSystems, deps);
