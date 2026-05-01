@@ -166,11 +166,27 @@ export class HeritageSystem implements ISubsystem {
     if (source.quality < HERO_HERITAGE_RULE.minSourceQuality) return this.failResult('hero', '源武将品质不足');
     if (target.quality < HERO_HERITAGE_RULE.minTargetQuality) return this.failResult('hero', '目标武将品质不足');
 
+    // FIX-H01: NaN防护 — 源/目标武将数值字段
+    if (!Number.isFinite(source.exp) || !Number.isFinite(source.level)) {
+      return this.failResult('hero', '源武将数据异常（含NaN或Infinity）');
+    }
+    if (!Number.isFinite(target.exp)) {
+      return this.failResult('hero', '目标武将数据异常（含NaN或Infinity）');
+    }
+    // FIX-H01: NaN防护 — 请求参数
+    if (!Number.isFinite(request.options.expEfficiency) || request.options.expEfficiency < 0) {
+      return this.failResult('hero', '传承效率参数异常');
+    }
+
     const baseEfficiency = QUALITY_EXP_EFFICIENCY[source.quality] ?? 0.5;
     const sameFaction = source.faction === target.faction;
     const factionModifier = sameFaction ? HERO_HERITAGE_RULE.sameFactionBonus : -HERO_HERITAGE_RULE.diffFactionPenalty;
     const efficiency = Math.min(1, Math.max(0, baseEfficiency + factionModifier));
     const copperCost = source.level * HERO_HERITAGE_RULE.copperCostFactor;
+    // FIX-H02: copperCost NaN防护
+    if (!Number.isFinite(copperCost) || copperCost < 0) {
+      return this.failResult('hero', '铜钱消耗计算异常');
+    }
 
     const sourceBefore = this.makeHeroSummary(source);
     const targetBefore = this.makeHeroSummary(target);
@@ -218,6 +234,17 @@ export class HeritageSystem implements ISubsystem {
       return this.failResult('equipment', '源装备和目标装备必须同部位');
     }
 
+    // FIX-H01: NaN防护 — 源/目标装备数值字段
+    if (!Number.isFinite(source.enhanceLevel) || source.enhanceLevel < 0) {
+      return this.failResult('equipment', '源装备强化等级数据异常');
+    }
+    if (!Number.isFinite(target.enhanceLevel) || target.enhanceLevel < 0) {
+      return this.failResult('equipment', '目标装备强化等级数据异常');
+    }
+    if (!Number.isFinite(source.rarity) || !Number.isFinite(target.rarity)) {
+      return this.failResult('equipment', '装备稀有度数据异常');
+    }
+
     const rawLevel = request.options.transferEnhanceLevel ? source.enhanceLevel : 0;
     const transferredLevel = Math.max(0, rawLevel - EQUIPMENT_HERITAGE_RULE.levelLoss);
 
@@ -231,6 +258,10 @@ export class HeritageSystem implements ISubsystem {
 
     const finalLevel = Math.floor(transferredLevel * efficiency);
     const copperCost = rawLevel * EQUIPMENT_HERITAGE_RULE.copperCostFactor;
+    // FIX-H02: copperCost NaN防护
+    if (!Number.isFinite(copperCost) || copperCost < 0) {
+      return this.failResult('equipment', '铜钱消耗计算异常');
+    }
 
     const sourceBefore: HeritageDataSummary = { id: source.uid, level: source.enhanceLevel, value: source.enhanceLevel };
     const targetBefore: HeritageDataSummary = { id: target.uid, level: target.enhanceLevel, value: target.enhanceLevel };
@@ -268,15 +299,32 @@ export class HeritageSystem implements ISubsystem {
       return this.failResult('experience', `源武将等级不足${EXPERIENCE_HERITAGE_RULE.minSourceLevel}级`);
     }
 
-    const ratio = Math.min(request.expRatio, EXPERIENCE_HERITAGE_RULE.maxExpRatio);
+    // FIX-H01: NaN防护 — 源/目标武将数值字段
+    if (!Number.isFinite(source.exp) || !Number.isFinite(source.level)) {
+      return this.failResult('experience', '源武将数据异常（含NaN或Infinity）');
+    }
+    if (!Number.isFinite(target.exp)) {
+      return this.failResult('experience', '目标武将数据异常（含NaN或Infinity）');
+    }
+    // FIX-H01: NaN防护 — 请求参数
+    if (!Number.isFinite(request.expRatio)) {
+      return this.failResult('experience', '传承比例参数异常');
+    }
+
+    // FIX-H08: expRatio下限防护
+    const ratio = Math.max(0, Math.min(request.expRatio, EXPERIENCE_HERITAGE_RULE.maxExpRatio));
     const rawExp = source.exp * ratio;
     const transferredExp = Math.floor(rawExp * EXPERIENCE_HERITAGE_RULE.efficiency);
     const copperCost = Math.floor(source.level * EXPERIENCE_HERITAGE_RULE.copperCostFactor * ratio);
+    // FIX-H02: copperCost NaN防护
+    if (!Number.isFinite(copperCost) || copperCost < 0) {
+      return this.failResult('experience', '铜钱消耗计算异常');
+    }
 
     const sourceBefore = this.makeHeroSummary(source);
     const targetBefore = this.makeHeroSummary(target);
 
-    const newSourceExp = source.exp - Math.floor(rawExp);
+    const newSourceExp = Math.max(0, source.exp - Math.floor(rawExp));
     const newTargetExp = target.exp + transferredExp;
 
     this.updateHeroCallback?.(source.id, { exp: newSourceExp });
@@ -343,12 +391,42 @@ export class HeritageSystem implements ISubsystem {
   // ─── 存档 ───────────────────────────────
 
   loadSaveData(data: HeritageSaveData): void {
-    this.state = { ...data.state };
-    if (data.accelState) { this.accelState = { ...data.accelState }; }
+    // FIX-H03: null guard
+    if (!data || !data.state) {
+      this.reset();
+      return;
+    }
+    // FIX-H03: NaN字段验证
+    const s = data.state;
+    this.state = {
+      heroHeritageCount: Number.isFinite(s.heroHeritageCount) ? Math.max(0, s.heroHeritageCount) : 0,
+      equipmentHeritageCount: Number.isFinite(s.equipmentHeritageCount) ? Math.max(0, s.equipmentHeritageCount) : 0,
+      experienceHeritageCount: Number.isFinite(s.experienceHeritageCount) ? Math.max(0, s.experienceHeritageCount) : 0,
+      dailyHeritageCount: Number.isFinite(s.dailyHeritageCount) ? Math.max(0, s.dailyHeritageCount) : 0,
+      lastDailyReset: typeof s.lastDailyReset === 'string' ? s.lastDailyReset : getTodayStr(),
+      heritageHistory: Array.isArray(s.heritageHistory) ? s.heritageHistory : [],
+    };
+    if (data.accelState) {
+      this.accelState = {
+        initialGiftClaimed: !!data.accelState.initialGiftClaimed,
+        rebuildCompleted: !!data.accelState.rebuildCompleted,
+        instantUpgradeCount: Number.isFinite(data.accelState.instantUpgradeCount) ? Math.max(0, data.accelState.instantUpgradeCount) : 0,
+        instantUpgradedBuildings: Array.isArray(data.accelState.instantUpgradedBuildings) ? data.accelState.instantUpgradedBuildings : [],
+      };
+    }
   }
 
   getSaveData(): HeritageSaveData {
-    return { version: HERITAGE_SAVE_VERSION, state: { ...this.state }, accelState: { ...this.accelState } };
+    // FIX-H04: NaN序列化防护 — 确保所有数值字段不含NaN
+    const safeState: HeritageState = {
+      heroHeritageCount: Number.isFinite(this.state.heroHeritageCount) ? this.state.heroHeritageCount : 0,
+      equipmentHeritageCount: Number.isFinite(this.state.equipmentHeritageCount) ? this.state.equipmentHeritageCount : 0,
+      experienceHeritageCount: Number.isFinite(this.state.experienceHeritageCount) ? this.state.experienceHeritageCount : 0,
+      dailyHeritageCount: Number.isFinite(this.state.dailyHeritageCount) ? this.state.dailyHeritageCount : 0,
+      lastDailyReset: this.state.lastDailyReset,
+      heritageHistory: this.state.heritageHistory,
+    };
+    return { version: HERITAGE_SAVE_VERSION, state: safeState, accelState: { ...this.accelState } };
   }
 
   // ─── 内部方法 ───────────────────────────

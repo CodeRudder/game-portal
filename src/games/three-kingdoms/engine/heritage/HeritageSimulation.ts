@@ -108,6 +108,10 @@ export function instantUpgrade(
   callbacks: RebirthAccelCallbacks,
 ): { success: boolean; reason?: string; newState: RebirthAccelerationState } {
   const rebirthCount = callbacks.getRebirthCount?.() ?? 0;
+  // FIX-H06: 回调未注入时给出明确错误
+  if (!callbacks.getRebirthCount) {
+    return { success: false, reason: '转生数据不可用，无法执行瞬间升级', newState: accelState };
+  }
   const maxInstantUpgrades = rebirthCount * INSTANT_UPGRADE_COUNT_PER_REBIRTH;
 
   if (accelState.instantUpgradeCount >= maxInstantUpgrades) {
@@ -182,28 +186,41 @@ export function isHeritageUnlocked(unlockId: string, currentCount: number): bool
  * 对比立即转生和等待后转生的收益差异
  */
 export function simulateEarnings(params: HeritageSimulationParams): HeritageSimulationResult {
-  const immediateMultiplier = calcRebirthMultiplier(params.currentRebirthCount + 1);
+  // FIX-H05: 参数NaN防护
+  const dailyOnlineHours = Number.isFinite(params.dailyOnlineHours) && params.dailyOnlineHours > 0
+    ? params.dailyOnlineHours : 4;
+  const waitHours = Number.isFinite(params.waitHours) && params.waitHours >= 0
+    ? params.waitHours : 0;
+  const currentRebirthCount = Number.isFinite(params.currentRebirthCount) && params.currentRebirthCount >= 0
+    ? params.currentRebirthCount : 0;
+
+  const rawMultiplier = calcRebirthMultiplier(currentRebirthCount + 1);
+  // FIX-H05: multiplier结果验证（防止Infinity/NaN跨系统传播）
+  const immediateMultiplier = Number.isFinite(rawMultiplier) && rawMultiplier > 0
+    ? rawMultiplier : 1.0;
   const waitMultiplier = immediateMultiplier; // 倍率不受等待影响
 
   // 立即转生：从现在开始享受倍率
   const immediateDays = 30;
   const immediateEarnings = calcEarnings(
-    immediateMultiplier, immediateDays, params.dailyOnlineHours,
+    immediateMultiplier, immediateDays, dailyOnlineHours,
   );
 
   // 等待后转生：等待期间无倍率，之后享受倍率
-  const waitDays = params.waitHours / 24;
+  const waitDays = waitHours / 24;
   const remainingDays = Math.max(0, immediateDays - waitDays);
   const waitEarnings = calcEarnings(
-    waitMultiplier, remainingDays, params.dailyOnlineHours,
+    waitMultiplier, remainingDays, dailyOnlineHours,
   );
 
   // 计算边际收益递减拐点
   const diminishingReturnHour = SIMULATION_DIMINISHING_THRESHOLD;
-  const recommendedWaitHours = findOptimalWaitTime(params, immediateMultiplier);
+  const recommendedWaitHours = findOptimalWaitTime(
+    { ...params, dailyOnlineHours, waitHours, currentRebirthCount }, immediateMultiplier,
+  );
 
   // 置信度：基于在线时长，越长越准
-  const confidence = Math.min(1, params.dailyOnlineHours / 8);
+  const confidence = Math.min(1, dailyOnlineHours / 8);
 
   return {
     immediateMultiplier,
