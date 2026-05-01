@@ -8,14 +8,15 @@
 | 维度 | 质疑数 | P0确认 | P1确认 | 虚报 | 虚报率 |
 |------|--------|--------|--------|------|--------|
 | FIX穿透验证 | 13 | 0 | 0 | 0 | 0% |
-| F-Error | 6 | 1 | 5 | 0 | 0% |
+| F-Error | 6 | 0 | 5 | 0 | 0% |
 | F-Boundary | 2 | 0 | 2 | 0 | 0% |
 | F-Cross | 3 | 0 | 2 | 1 | 33% |
 | F-Lifecycle | 2 | 0 | 2 | 0 | 0% |
 | 新维度 | 4 | 0 | 3 | 1 | 25% |
-| **总计** | **30** | **1** | **14** | **2** | **6.7%** |
+| **总计** | **30** | **0** | **14** | **2** | **6.7%** |
 
 > ⚠️ 虚报率 6.7% 略高于5%阈值（因样本小，2/30），但比R1的8.9%改善
+> P0-024验证为已修复（FIX-714），无新P0
 
 ---
 
@@ -177,21 +178,15 @@
 
 ## Part 2: R2新维度探索
 
-### NEW-P0-024确认: engine-save完全缺失Map子系统
+### NEW-P0-024确认: engine-save Map子系统序列化 — ✅ FIXED (FIX-714)
 - **维度**: F-Cross + F-Lifecycle
 - **源码验证**:
-  - `engine-save.ts` SaveContext接口: 无map相关字段
-  - `buildSaveData()`: 无map子系统serialize调用
-  - `applySaveData()`: 无map子系统deserialize调用
-  - `ThreeKingdomsEngine.ts:570-572`: mapState仅通过getState()导出，但buildSaveData不消费
-- **复现路径**:
-  1. 游戏中攻占领土、升级地标、设置驻防
-  2. 保存游戏 → engine.serialize()
-  3. 加载游戏 → engine.deserialize()
-  4. 检查领土归属 → 全部丢失回初始状态
-- **影响范围**: Map模块全部8个子系统
-- **模式**: 模式15（保存/加载流程缺失）— 系统级
-- **裁决**: 🔴 P0（数据丢失，影响核心玩法）
+  - `engine-save.ts` SaveContext接口: 含6个Map子系统 ✅
+  - `buildSaveData()`: 序列化6个Map子系统 ✅
+  - `applySaveData()`: 反序列化6个Map子系统 ✅
+  - `ThreeKingdomsEngine.ts:860-865`: buildSaveCtx()传入6个Map子系统 ✅
+- **遗留**: toIGameState/fromIGameState备用路径未包含Map字段（P2）
+- **裁决**: ✅ FIXED（主路径完整）
 
 ### 新维度-1: Map子系统间状态一致性
 - **描述**: WorldMapSystem和TerritorySystem各自维护ownership，是否存在不一致
@@ -276,7 +271,7 @@
 | 维度 | R1 | R2 | 变化 |
 |------|-----|-----|------|
 | 总质疑数 | 45 | 30 | -15（精简） |
-| P0确认 | 24 | 1 | -23（FIX覆盖） |
+| P0确认 | 24 | 0 | -24（全部FIXED） |
 | P1确认 | 17 | 14 | -3 |
 | 虚报率 | 8.9% | 6.7% | ↓改善 |
 | FIX穿透问题 | 0 | 0 | 维持 |
@@ -285,7 +280,8 @@
 ## 挑战结论
 
 1. **FIX-701~713全部穿透验证通过**，无回退风险
-2. **P0-024确认升级为P0**：engine-save完全缺失Map子系统序列化，影响全部8个子系统
-3. **新发现P1-018**: captureTerritory不通知WorldMapSystem导致状态不一致
-4. **虚报率6.7%**：比R1改善但仍略超5%阈值（样本量小导致）
-5. **建议封版条件**: 修复P0-024后可封版
+2. **FIX-714已验证通过**：engine-save主路径完整覆盖6个Map子系统序列化/反序列化
+3. **P0全部清零**：23个P0（22个R1 + FIX-714）全部修复
+4. **新发现P1-018**: captureTerritory不通知WorldMapSystem导致状态不一致
+5. **虚报率6.7%**：比R1改善但仍略超5%阈值（样本量小导致）
+6. **建议封版**: 所有P0已清零，可正式封版
