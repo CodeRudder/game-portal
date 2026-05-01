@@ -120,10 +120,10 @@ describe('组件集成测试 (IC)', () => {
       const tabBar = screen.getByTestId('shop-panel-tabs');
       expect(tabBar).toBeTruthy();
 
-      // 验证默认 Tab（杂货铺）
+      // 验证默认 Tab（集市）
       const normalTab = screen.getByTestId('shop-panel-tab-normal');
       expect(normalTab).toBeTruthy();
-      expect(normalTab.textContent).toContain('杂货铺');
+      expect(normalTab.textContent).toContain('集市');
     });
 
     it('IC-01-03: ShopPanel 空商品列表时显示空状态', async () => {

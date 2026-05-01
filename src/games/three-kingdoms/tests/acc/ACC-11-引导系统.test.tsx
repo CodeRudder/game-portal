@@ -109,6 +109,8 @@ describe('ACC-11 引导系统 验收测试', () => {
 
   it(accTest('ACC-11-01', '首次启动显示欢迎弹窗 - 显示欢迎弹窗'), () => {
     localStorage.removeItem('tk-tutorial-welcome-dismissed');
+    // P1-1修复后：GuideOverlay的showWelcome需要tk-has-visited=true才会显示内层欢迎弹窗
+    localStorage.setItem('tk-has-visited', 'true');
     render(<GuideOverlay {...makeProps()} />);
     expect(screen.getByTestId('guide-welcome-modal')).toBeInTheDocument();
     expect(screen.getByText(/欢迎来到三国霸业/)).toBeInTheDocument();

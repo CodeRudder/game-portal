@@ -368,6 +368,7 @@ const BuildingUpgradeModal: React.FC<BuildingUpgradeModalProps> = ({
           <button
             className={`tk-upgrade-btn tk-upgrade-btn--confirm ${isConfirmDisabled ? 'tk-upgrade-btn--disabled' : ''}`}
             onClick={handleConfirm}
+            disabled={isConfirmDisabled}
             aria-disabled={isConfirmDisabled}
             data-testid="building-upgrade-confirm"
           >
