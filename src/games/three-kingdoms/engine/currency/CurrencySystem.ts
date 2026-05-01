@@ -373,6 +373,12 @@ export class CurrencySystem implements ISubsystem {
   }
 
   deserialize(data: CurrencySaveData): void {
+    if (!data || !data.wallet) {
+      gameLog.warn('CurrencySystem.deserialize: 无效存档数据，使用默认钱包');
+      this.reset();
+      return;
+    }
+
     if (data.version !== CURRENCY_SAVE_VERSION) {
       gameLog.warn(
         `CurrencySystem: 存档版本不匹配 (期望 ${CURRENCY_SAVE_VERSION}，实际 ${data.version})`,
