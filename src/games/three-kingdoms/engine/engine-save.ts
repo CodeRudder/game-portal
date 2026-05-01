@@ -327,6 +327,8 @@ export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameSt
   if (data.leaderboard) subsystems.leaderboard = data.leaderboard;
   // ── 新手引导系统 (FIX-T04: Tutorial R1 存档接入) ──
   if (data.tutorialGuide) subsystems.tutorialGuide = data.tutorialGuide;
+  // ── 羁绊系统 (FIX-B04: Bond R1 存档接入) ──
+  if (data.bond) subsystems.bond = data.bond;
 
   return {
     version: String(data.version),
@@ -397,6 +399,8 @@ export function fromIGameState(state: IGameState): GameSaveData {
     allianceShop: s.allianceShop as { items: Array<{ id: string; purchased: number }> } | undefined,
     // ── 新手引导系统 (FIX-T04: Tutorial R1 存档接入) ──
     tutorialGuide: s.tutorialGuide as import('./tutorial/tutorial-config').TutorialGuideSaveData | undefined,
+    // ── 羁绊系统 (FIX-B04: Bond R1 存档接入) ──
+    bond: s.bond as import('../core/bond').BondSaveData | undefined,
   };
 }
 

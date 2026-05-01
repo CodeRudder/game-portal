@@ -249,7 +249,11 @@ describe('BondSystem', () => {
 
   describe('序列化', () => {
     it('序列化和反序列化保持一致', () => {
+      // FIX-B05: triggerStoryEvent 需要所有关联武将好感度满足条件
+      // story_001 需要 liubei, guanyu, zhangfei 好感度 >= 50
       system.addFavorability('liubei', 50);
+      system.addFavorability('guanyu', 50);
+      system.addFavorability('zhangfei', 50);
       system.triggerStoryEvent('story_001');
 
       const data = system.serialize();
@@ -258,6 +262,8 @@ describe('BondSystem', () => {
       newSystem.loadSaveData(data);
 
       expect(newSystem.getFavorability('liubei').value).toBe(70); // 50 + 20 from event
+      expect(newSystem.getFavorability('guanyu').value).toBe(70);
+      expect(newSystem.getFavorability('zhangfei').value).toBe(70);
     });
   });
 
