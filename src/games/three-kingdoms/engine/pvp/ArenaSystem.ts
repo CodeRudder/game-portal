@@ -147,6 +147,10 @@ export class ArenaSystem implements ISubsystem {
       }
     }
 
+    if (selected.length === 0 && allPlayers.length === 0) {
+      console.warn('[ArenaSystem] generateOpponents: 对手池为空，无法生成对手');
+    }
+
     return selected.slice(0, candidateCount);
   }
 

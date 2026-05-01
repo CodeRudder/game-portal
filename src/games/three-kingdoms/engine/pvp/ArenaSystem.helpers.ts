@@ -127,8 +127,9 @@ export function selectByFactionBalance(
  * 计算玩家战力（简化版，基于积分和阵容）
  *
  * 公式：基础5000 + 积分 × 10 + 阵容武将数 × 1000
+ * 注：返回值保证 ≥ 0，防止异常积分导致负战力影响匹配
  */
 export function calculatePower(playerState: ArenaPlayerState): number {
   const heroCount = playerState.defenseFormation.slots.filter((s) => s !== '').length;
-  return playerState.score * 10 + heroCount * 1000 + 5000;
+  return Math.max(0, playerState.score * 10 + heroCount * 1000 + 5000);
 }

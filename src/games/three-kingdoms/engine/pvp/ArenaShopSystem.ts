@@ -205,6 +205,8 @@ export class ArenaShopSystem implements ISubsystem {
    */
   deserialize(data: ArenaShopSaveData): void {
     if (!data || data.version !== ARENA_SHOP_SAVE_VERSION) return;
+    // 验证 items 为数组，防止损坏存档导致运行时异常
+    if (!Array.isArray(data.items)) return;
     this.items = data.items.map((i) => ({ ...i }));
   }
 }
