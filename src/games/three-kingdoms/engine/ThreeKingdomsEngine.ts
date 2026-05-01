@@ -165,8 +165,11 @@ export class ThreeKingdomsEngine {
       {
         simulateBattle: (stageId: string) => {
           try {
+            const allyTeam = buildAllyTeam(self.heroFormation, self.hero);
+            // DEF-026: 空编队防护
+            if (!allyTeam) return { victory: false, stars: 0 };
             const r = self.campaignSystems.battleEngine.runFullBattle(
-              buildAllyTeam(self.heroFormation, self.hero),
+              allyTeam,
               buildEnemyTeam(campaignDataProvider.getStage(stageId)!),
             );
             return { victory: r.outcome === 'VICTORY' as const, stars: r.stars as number };

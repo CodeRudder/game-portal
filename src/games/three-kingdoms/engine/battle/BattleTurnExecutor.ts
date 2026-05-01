@@ -110,8 +110,8 @@ export class BattleTurnExecutor implements ISubsystem {
     state: BattleState,
     actor: BattleUnit,
   ): BattleAction | null {
-    // DEF-024: actor null/undefined 防护
-    if (!actor || !actor.isAlive) {
+    // DEF-024: actor null/undefined 防护（直接调用路径安全）
+    if (!actor || typeof actor !== 'object' || !actor.isAlive) {
       return null;
     }
 

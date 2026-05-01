@@ -100,10 +100,10 @@ export function buildAllyTeam(
   formation: HeroFormation,
   hero: HeroSystem,
   getTotalStats?: (generalId: string) => GeneralStats | undefined,
-): BattleTeam {
+): BattleTeam | null {
   // DEF-026: 防护 formation 为 null/undefined 的情况
   if (!formation) {
-    return { units: [], side: 'ally' };
+    return null;
   }
   const active = formation.getActiveFormation();
   const slots = active?.slots ?? [];
@@ -116,6 +116,10 @@ export function buildAllyTeam(
     // 优先使用含装备/羁绊加成的总属性，回退到 baseStats
     const stats = getTotalStats?.(gid) ?? g.baseStats;
     units.push(generalToBattleUnit(g, 'ally', i < 3 ? 'front' : 'back', stats));
+  }
+  // DEF-026: 空编队（无有效武将）返回 null，防止 BattleEngine 收到空队伍异常
+  if (units.length === 0) {
+    return null;
   }
   return { units, side: 'ally' };
 }

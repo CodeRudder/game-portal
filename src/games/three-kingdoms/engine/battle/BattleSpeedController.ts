@@ -111,8 +111,21 @@ export class BattleSpeedController implements ISubsystem {
       return false;
     }
 
+    // DEF-027: 从 SKIP 模式切换到其他模式时，确保完全清理 SKIP 状态
+    // SKIP 状态下 turnIntervalScale=0, animationSpeedScale=9999, simplifiedEffects=true
+    // createSpeedState 会重新计算所有字段，无需手动清理，
+    // 但需要确保 SKIP 相关的副作用（如跳过动画队列）被重置
+    const isLeavingSkip = this.speedState.speed === BattleSpeed.SKIP && speed !== BattleSpeed.SKIP;
+
     const previousSpeed = this.speedState.speed;
     this.speedState = this.createSpeedState(speed);
+
+    // DEF-027: 如果从 SKIP 切换出来，重置动画速度缩放为正常值
+    // createSpeedState 已正确设置，此处为防御性检查
+    if (isLeavingSkip && !Number.isFinite(this.speedState.animationSpeedScale)) {
+      this.speedState.animationSpeedScale = speed;
+      this.speedState.turnIntervalScale = 1 / speed;
+    }
 
     // 记录变更事件
     const event: SpeedChangeEvent = {

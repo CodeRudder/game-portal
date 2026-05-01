@@ -61,6 +61,15 @@ export function deserializeProgress(
   data: CampaignSaveData,
   dataProvider: ICampaignDataProvider,
 ): CampaignProgress {
+  // DEF-036: dataProvider null/undefined 防护，防止空回调导致崩溃
+  if (!dataProvider || typeof dataProvider.getChapters !== 'function') {
+    return {
+      currentChapterId: '',
+      stageStates: {},
+      lastClearTime: 0,
+    };
+  }
+
   // DEF-017: null/undefined 防护，防止空存档导致崩溃
   if (!data || !data.progress || !data.progress.stageStates) {
     return createInitialProgress(dataProvider);

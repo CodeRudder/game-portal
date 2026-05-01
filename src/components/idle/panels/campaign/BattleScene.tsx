@@ -139,6 +139,16 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
   const battleEngine = engine.getBattleEngine();
   const { allyTeam, enemyTeam } = useMemo(() => engine.buildTeamsForStage(stage), [engine, stage]);
 
+  // DEF-026: 空编队时显示提示并返回
+  if (!allyTeam) {
+    return (
+      <div className="tk-bs-overlay">
+        <div className="tk-bs-empty-msg">编队为空，请先配置武将</div>
+        <button onClick={() => onBattleEnd(null as any)}>返回</button>
+      </div>
+    );
+  }
+
   const {
     battleState, battleResult, isFinished,
     actingUnitId, actingUnitSide, hitUnitIds, dyingUnitIds,

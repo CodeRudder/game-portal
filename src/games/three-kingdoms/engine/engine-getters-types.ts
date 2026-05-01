@@ -147,7 +147,7 @@ export interface EngineGettersMixin {
   getCampaignSystem(): CampaignProgressSystem;
   getRewardDistributor(): RewardDistributor;
   startBattle(stageId: string): BattleResult;
-  buildTeamsForStage(stage: Stage): { allyTeam: BattleTeam; enemyTeam: BattleTeam };
+  buildTeamsForStage(stage: Stage): { allyTeam: BattleTeam | null; enemyTeam: BattleTeam };
   completeBattle(stageId: string, stars: number): void;
   getStageList(): Stage[];
   getStageInfo(stageId: string): Stage | undefined;

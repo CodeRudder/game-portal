@@ -168,6 +168,8 @@ export function applyGetters(cls: any): void {
     if (!stage) throw new Error(`关卡不存在: ${stageId}`);
     if (!this.campaignSystems.campaignSystem.canChallenge(stageId)) throw new Error(`关卡未解锁: ${stageId}`);
     const allyTeam = buildAllyTeam(this.heroFormation, this.hero);
+    // DEF-026: 空编队防护
+    if (!allyTeam) throw new Error('我方编队为空，无法开始战斗');
     const enemyTeam = buildEnemyTeam(stage);
     return this.campaignSystems.battleEngine.runFullBattle(allyTeam, enemyTeam);
   };

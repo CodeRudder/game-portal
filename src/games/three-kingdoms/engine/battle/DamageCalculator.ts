@@ -129,16 +129,22 @@ export function rollCritical(speed: number): boolean {
  * @returns 攻击加成比例（如0.15表示+15%）
  */
 export function getAttackBonus(unit: BattleUnit): number {
-  let bonus = 0;
+  // DEF-028: 使用乘法叠加而非加法叠加，避免多层buff线性增长导致数值爆炸
+  // 乘法叠加：总加成 = Π(1 + buff_i) - 1，确保每层buff独立生效
+  let multiplier = 1;
   for (const buff of unit.buffs) {
     if (buff.type === BuffType.ATK_UP) {
-      // FIX-102: NaN 防护，防止 buff.value 为 NaN 污染伤害链
-      bonus += Number.isFinite(buff.value) ? buff.value : 0;
+      // FIX-102 + DEF-028: NaN 防护 + 乘法叠加
+      const value = Number.isFinite(buff.value) ? buff.value : 0;
+      multiplier *= (1 + value);
     } else if (buff.type === BuffType.ATK_DOWN) {
-      bonus -= Number.isFinite(buff.value) ? buff.value : 0;
+      const value = Number.isFinite(buff.value) ? buff.value : 0;
+      multiplier *= (1 - value);
     }
   }
-  return bonus;
+  // DEF-028: NaN 防护，确保返回值为有限数
+  const bonus = multiplier - 1;
+  return Number.isFinite(bonus) ? bonus : 0;
 }
 
 /**
@@ -148,16 +154,21 @@ export function getAttackBonus(unit: BattleUnit): number {
  * @returns 防御加成比例（如0.15表示+15%）
  */
 export function getDefenseBonus(unit: BattleUnit): number {
-  let bonus = 0;
+  // DEF-028: 使用乘法叠加而非加法叠加，与攻击buff保持一致
+  let multiplier = 1;
   for (const buff of unit.buffs) {
     if (buff.type === BuffType.DEF_UP) {
-      // FIX-102: NaN 防护，防止 buff.value 为 NaN 污染伤害链
-      bonus += Number.isFinite(buff.value) ? buff.value : 0;
+      // FIX-102 + DEF-028: NaN 防护 + 乘法叠加
+      const value = Number.isFinite(buff.value) ? buff.value : 0;
+      multiplier *= (1 + value);
     } else if (buff.type === BuffType.DEF_DOWN) {
-      bonus -= Number.isFinite(buff.value) ? buff.value : 0;
+      const value = Number.isFinite(buff.value) ? buff.value : 0;
+      multiplier *= (1 - value);
     }
   }
-  return bonus;
+  // DEF-028: NaN 防护，确保返回值为有限数
+  const bonus = multiplier - 1;
+  return Number.isFinite(bonus) ? bonus : 0;
 }
 
 /**

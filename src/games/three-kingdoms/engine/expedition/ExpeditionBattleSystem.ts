@@ -12,6 +12,14 @@
  *   - 惨胜：剩余血量<10%
  *   - 惜败：战斗失败
  *
+ * TODO(DEF-025): 架构问题 — 当前远征使用独立的简化战斗逻辑（simulateBattle/quickBattle），
+ * 未复用 BattleEngine + DamageCalculator 的完整战斗管线。两套战斗逻辑可能导致：
+ * 1. 伤害计算不一致（此处基于战力比，BattleEngine基于攻防公式）
+ * 2. buff/技能/暴击等机制在远征中缺失
+ * 3. 维护成本翻倍
+ * 长期方案：重构为 ExpeditionBattleAdapter 适配层，将远征参数转换为 BattleEngine 可用的
+ * BattleState，复用核心战斗引擎。短期保持现状以避免大规模改动。
+ *
  * @module engine/expedition/ExpeditionBattleSystem
  */
 
