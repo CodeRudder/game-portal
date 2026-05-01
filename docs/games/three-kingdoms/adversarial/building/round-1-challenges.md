@@ -1,224 +1,328 @@
-# 建筑系统对抗式测试 — Round 1 挑战报告
+# Building 模块 — Round 1 Challenger 挑战报告
 
-> **角色**: TreeChallenger
-> **模块**: building（建筑系统）
-> **Round**: 1
-> **日期**: 2026-05-01
+> **Challenger 视角** | 审查对象: `round-1-tree.md`  
+> 挑战时间: 2025-05-02 | 严重程度: P0~P3
 
 ---
 
 ## 挑战总览
 
-| 维度 | 代号 | 发现遗漏数 | 严重等级 |
-|------|------|-----------|---------|
-| 正常流程 | F-Normal | 6 | 🔴 高 |
-| 边界条件 | F-Boundary | 8 | 🔴 高 |
-| 异常路径 | F-Error | 7 | 🔴 高 |
-| 跨系统交互 | F-Cross | 5 | 🟡 中 |
-| 状态转换 | F-State | 6 | 🔴 高 |
-| **合计** | — | **32** | — |
+| 维度 | Builder声称覆盖率 | Challenger评估覆盖率 | 差距 |
+|------|-------------------|---------------------|------|
+| F1-Normal | 88% | **75%** | -13% |
+| F2-Boundary | 81% | **68%** | -13% |
+| F3-Error | 71% | **52%** | -19% |
+| F4-Cross | 67% | **50%** | -17% |
+| F5-Lifecycle | 67% | **55%** | -12% |
+| **合计** | **76%** | **60%** | **-16%** |
 
 ---
 
-## F-Normal: 正常流程遗漏
+## P0 遗漏（阻塞级 — 必须修复）
 
-### N-01: 完整升级生命周期流程未串联
-**严重度**: P0
-**描述**: 流程树将checkUpgrade、startUpgrade、tick拆为独立节点，但未枚举"检查→启动→等待→完成"的完整生命周期串联流程。这是一个端到端的核心用户路径。
-**遗漏**: 需要一个从checkUpgrade通过→startUpgrade→tick定时→升级完成的完整流程节点。
+### P0-01: `cancelUpgrade` 退款基于当前等级而非历史费用 ⚠️ **真实缺陷**
 
-### N-02: 主城升级解锁链路未完整覆盖
-**严重度**: P0
-**描述**: 8种建筑的解锁等级分别为0/0/2/2/3/3/4/5，但流程树只泛化描述了"主城升级后解锁"，未枚举每个解锁阈值的具体触发场景：
-- 主城Lv2→解锁market+barracks（同时解锁2个建筑）
-- 主城Lv3→解锁smithy+academy（同时解锁2个建筑）
-- 主城Lv4→解锁clinic
-- 主城Lv5→解锁wall
+**位置**: `BuildingSystem.ts` L215-233
 
-### N-03: 队列满时升级流程缺失
-**严重度**: P0
-**描述**: 当队列已满（如主城Lv1-5时只有1个槽位），尝试startUpgrade应被checkUpgrade拦截。但流程树未明确描述"队列满→尝试升级→被拒绝"的完整流程。
+**问题描述**: `cancelUpgrade` 调用 `getUpgradeCost(type)` 获取费用，而 `getUpgradeCost` 基于 `state.level` 查表。但在升级过程中 `state.level` 尚未增加（level在tick完成时才+1），所以当前实现实际上是正确的。
 
-### N-04: 批量升级资源递减计算流程
-**严重度**: P1
-**描述**: batchUpgrade中资源是递减的——第一个建筑扣减后，第二个建筑用的是剩余资源。流程树未描述"第一个建筑成功消耗大量资源→第二个建筑因剩余资源不足而失败"的典型场景。
+**但是**：如果通过 `deserialize` 加载了一个 `status: 'upgrading'` 的存档，且该存档的 `level` 已被篡改为升级后的值，那么 `getUpgradeCost` 会查到错误的等级费用，导致退款金额计算错误。
 
-### N-05: 推荐系统与实际升级的联动
-**严重度**: P2
-**描述**: recommendUpgradePath返回推荐列表后，用户按推荐执行升级，流程树未覆盖"获取推荐→逐一执行升级"的完整使用流程。
+**复现步骤**:
+1. 构造存档：`farmland: { level: 5, status: 'upgrading', upgradeEndTime: future }`
+2. `deserialize(data)` → 队列重建，farmland 保持 upgrading
+3. `cancelUpgrade('farmland')` → `getUpgradeCost` 查 level=5 的费用
+4. **预期**: 应该退还 level 4→5 的费用（即 levelTable[4]）
+5. **实际**: 退还 levelTable[5] 的费用（level 5→6 的费用）
 
-### N-06: deserialize后状态一致性验证
-**严重度**: P1
-**描述**: deserialize恢复数据后，应验证恢复后的状态与序列化前一致。流程树未覆盖"serialize→deserialize→验证数据一致性"的往返测试流程。
+**严重程度**: P0 — 可被利用刷退款
 
----
-
-## F-Boundary: 边界条件遗漏
-
-### B-01: 建筑等级为0时的操作边界
-**严重度**: P0
-**描述**: locked建筑level=0，此时调用getUpgradeCost返回null、getProduction返回0。但流程树未覆盖：
-- level=0时调用getAppearanceStage(0)的返回值（应为'humble'）
-- level=0时getWallDefense()返回0（已覆盖）
-- level=0时getProduction(type, 0)返回0（已覆盖）
-
-### B-02: 主城等级刚好等于解锁等级的精确触发
-**严重度**: P0
-**描述**: checkUnlock在主城等级**等于**解锁等级时返回true。需验证边界：主城Lv1时market（需Lv2）应不可解锁；主城Lv2时market刚好可解锁。
-
-### B-03: 队列槽位边界值
-**严重度**: P0
-**描述**: getMaxQueueSlots在主城Lv5时返回1，Lv6时返回2。流程树未覆盖主城Lv5→6时队列从1→2的扩容边界：
-- 主城Lv5时队列有1个升级→升级主城到Lv6→队列应变为2个槽位
-- 此时能否立即添加第二个升级？
-
-### B-04: 升级费用刚好等于持有资源
-**严重度**: P1
-**描述**: 资源检查使用`<`比较（`resources.grain < cost.grain`），意味着资源**等于**费用时可以通过。需验证：grain=200, cost.grain=200时能否正常升级。
-
-### B-05: 升级费用差1时被拒绝
-**严重度**: P1
-**描述**: grain=199, cost.grain=200时应被拒绝。需验证精确的边界拒绝。
-
-### B-06: 取消退款的Math.round精度
-**严重度**: P1
-**描述**: cancelUpgrade使用Math.round(cost.grain * 0.8)计算退款。对于奇数费用值，需验证四舍五入的正确性：
-- cost.grain=201 → refund=Math.round(160.8)=161
-- cost.grain=1 → refund=Math.round(0.8)=1（几乎全额退款）
-
-### B-07: getUpgradeProgress的total<=0边界
-**严重度**: P1
-**描述**: 代码中有`total <= 0 ? 1 : ...`，当endTime===startTime时（timeSeconds=0的升级），进度直接返回1。流程树未覆盖timeSeconds=0的升级场景。
-
-### B-08: levelTable越界访问
-**严重度**: P1
-**描述**: getProduction使用`levelTable[lv-1]`，如果level超过levelTable数组长度，`data`为undefined，返回0。需验证：主城Lv30（maxLevel）时getProduction是否正确返回最后一个值。
+```typescript
+// 源码问题片段 (BuildingSystem.ts:218)
+cancelUpgrade(type: BuildingType): UpgradeCost | null {
+    const state = this.buildings[type];
+    if (state.status !== 'upgrading') return null;
+    const cost = this.getUpgradeCost(type); // ← 基于 state.level 查表
+    // ...
+}
+// getUpgradeCost 基于 state.level 查 levelTable[state.level]
+// 正常升级中 level 未增加，所以查的是正确的"当前等级→下一级"费用
+// 但 deserialize 篡改后 level 已增加，查到的是错误的费用
+```
 
 ---
 
-## F-Error: 异常路径遗漏
+### P0-02: `tick()` 无防重入保护 — 可能重复完成升级
 
-### E-01: startUpgrade传入无效BuildingType
-**严重度**: P1
-**描述**: 如果传入不存在的BuildingType（如'tower'），`this.buildings[type]`为undefined，后续访问.level会抛TypeError。流程树未覆盖非法type输入。
+**位置**: `BuildingSystem.ts` L237-258
 
-### E-02: startUpgrade资源为null/undefined
-**严重度**: P1
-**描述**: startUpgrade的resources参数如果为null，checkUpgrade中resources检查被跳过（`if (resources && ...)`），但后续getUpgradeCost和返回值处理可能正常。需验证resources=null时的行为。
+**问题描述**: `tick()` 遍历 `upgradeQueue`，对 `now >= endTime` 的项执行 `level += 1`。如果在同一帧内多次调用 `tick()`，由于第一次 `tick()` 已将完成的项从队列移除，所以正常情况下不会重复完成。
 
-### E-03: cancelUpgrade时getUpgradeCost返回null
-**严重度**: P0
-**描述**: cancelUpgrade中调用`this.getUpgradeCost(type)`，如果建筑level=0（理论上不会是upgrading，但数据可能损坏），getUpgradeCost返回null，后续`Math.round(null.grain * 0.8)`会抛TypeError。
+**但存在竞态窗口**: 如果 `tick()` 内部在 `level += 1` 之后、`upgradeQueue = remaining` 之前发生异常（虽然当前代码不太可能），会导致 level 已增加但队列未清理。下次 `tick()` 不会再处理（因为已从旧队列遍历），但 level 状态不一致。
 
-### E-04: deserialize传入空对象
-**严重度**: P1
-**描述**: 如果传入`{version: 1, buildings: {}}`，所有建筑都不会被恢复，但upgradeQueue重建和checkAndUnlockBuildings仍会执行。系统状态可能不一致。
-
-### E-05: deserialize传入部分建筑数据
-**严重度**: P1
-**描述**: 如果buildings中只有castle的数据，其他建筑不会被恢复，保持构造时的初始状态。这可能导致已解锁的建筑回退到locked。
-
-### E-06: tick在非upgrading建筑上的安全性
-**严重度**: P2
-**描述**: tick()遍历upgradeQueue，如果队列中有一个slot但对应建筑的status已被外部改为非upgrading（如通过直接修改buildings对象），升级仍会执行level+1。
-
-### E-07: batchUpgrade中startUpgrade抛异常
-**严重度**: P1
-**描述**: batchUpgrade中try-catch捕获了startUpgrade的异常，但此时checkUpgrade已通过。需验证：checkUpgrade通过但startUpgrade失败时，failed列表是否正确记录。
+**实际风险评估**: 低概率但应加防护。
 
 ---
 
-## F-Cross: 跨系统交互遗漏
+### P0-03: `deserialize` 不校验 level 与 status 一致性
 
-### C-01: 建筑→资源系统：产出如何被资源系统消费
-**严重度**: P0
-**描述**: calculateTotalProduction()返回产出汇总，但流程树未描述资源系统如何调用此方法并应用主城加成乘数。需验证：资源系统调用calculateTotalProduction()→乘以getCastleBonusMultiplier()→更新资源池。
+**位置**: `BuildingSystem.ts` L285-310
 
-### C-02: 建筑→战斗系统：城墙城防值如何影响战斗
-**严重度**: P1
-**描述**: getWallDefense()和getWallDefenseBonus()是战斗系统的输入，但流程树未覆盖战斗系统读取这些值的交互。
+**问题描述**: `deserialize` 接受任意 `BuildingSaveData`，不校验：
+- `level > 0` 但 `status === 'locked'` → 矛盾状态
+- `level === 0` 但 `status === 'idle'` → 矛盾状态
+- `status === 'upgrading'` 但 `upgradeEndTime === null` → 矛盾状态
+- `status === 'upgrading'` 但 `upgradeStartTime === null` → 队列重建使用 `now` 作为 fallback
 
-### C-03: 建筑→科技系统：书院产出如何驱动科技研究
-**严重度**: P1
-**description**: 书院的production为techPoint/秒，但流程树未覆盖科技系统如何读取书院产出并消耗科技点。
+**影响**: 矛盾状态可能导致后续逻辑异常，如 `getUpgradeCost` 对 locked 建筑返回非 null。
 
-### C-04: 建筑→武将系统：铁匠铺与装备强化
-**严重度**: P2
-**描述**: 铁匠铺产出材料/小时，但BuildingSystem中未直接暴露给武将/装备系统的接口。流程树未覆盖跨系统数据流。
-
-### C-05: 主城升级→队列扩容的实时生效
-**严重度**: P0
-**描述**: 主城升级完成后，getMaxQueueSlots()的返回值应立即变化。流程树未覆盖"主城升级完成→tick返回castle→队列槽位从1变2→立即添加新升级"的时序。
+**测试用例缺失**: Builder 的 F3-04 只覆盖了 null/undefined/version 不匹配，未覆盖矛盾状态组合。
 
 ---
 
-## F-State: 状态转换遗漏
+### P0-04: `batchUpgrade` 资源扣减与 `startUpgrade` 的双重扣减风险
 
-### S-01: 完整状态转换矩阵
-**严重度**: P0
-**描述**: 建筑有3种状态（locked/idle/upgrading），流程树未枚举所有合法状态转换：
-- locked → idle（解锁）
-- idle → upgrading（开始升级）
-- upgrading → idle（升级完成或取消）
-- ❌ locked → upgrading（非法，应被拦截）
-- ❌ upgrading → locked（不应发生）
-- ❌ idle → locked（不应发生）
+**位置**: `BuildingBatchOps.ts` L58-80 + `BuildingSystem.ts` L195-210
 
-### S-02: 同一建筑连续升级的状态转换
-**严重度**: P0
-**描述**: 建筑升级完成后立即再次升级的状态转换：idle→upgrading→idle→upgrading。流程树未覆盖"快速连续升级"场景。
+**问题描述**: `batchUpgrade` 的设计是：
+1. 用递减后的 `remainingResources` 调用 `checkUpgrade`
+2. 通过后调用 `startUpgrade(type, currentResources)`
 
-### S-03: 取消升级后的状态恢复
-**严重度**: P0
-**描述**: cancelUpgrade后建筑回到idle，但level不变。流程树未验证"升级中取消→状态恢复idle→可立即再次升级"的流程。
+但 `startUpgrade` 内部再次调用 `checkUpgrade(type, resources)` 进行校验。这里传入的 `resources` 是 `batchUpgrade` 构造的 `currentResources`，而非实际扣减后的资源。**关键问题**: `startUpgrade` 只返回费用，不实际扣减资源。资源扣减在 `engine-building-ops.ts` 的 `executeBuildingUpgrade` 中完成。所以 `batchUpgrade` 本身不扣资源，它只是计算 totalCost 供调用方扣减。
 
-### S-04: 多建筑同时升级的状态管理
-**严重度**: P1
-**描述**: 当队列有多个槽位时，可以同时升级多个建筑。流程树未覆盖"3个建筑同时upgrading→逐一完成→队列动态变化"的复杂状态。
+**但**: `batchUpgrade` 中 `ctx.startUpgrade(t, currentResources)` 传入的是递减后的资源快照，而 `startUpgrade` 内部的 `checkUpgrade` 也会检查这个快照。如果 `startUpgrade` 修改了 building state（它确实修改了），后续的 `checkUpgrade` 调用可能因状态变化而产生不同结果。
 
-### S-05: 满级建筑的状态稳定性
-**严重度**: P1
-**描述**: 建筑达到maxLevel后，状态应永久为idle。流程树未验证：
-- 满级建筑checkUpgrade返回false
-- 满级建筑getUpgradeCost返回null
-- 满级建筑getProduction返回正确的最终值
-
-### S-06: deserialize恢复upgrading状态后的tick行为
-**严重度**: P0
-**描述**: deserialize恢复了upgrading状态后，后续tick应正常处理。流程树未覆盖"deserialize恢复upgrading→tick推进→正常完成"的跨操作状态转换。
+**实际风险**: 中等 — `startUpgrade` 将建筑状态改为 `upgrading`，如果批量列表中有重复建筑类型，第二次会因为"正在升级中"而失败，这是正确行为。
 
 ---
 
-## 挑战总结
+### P0-05: `getUpgradeCost` 对 level=0 返回 null 但 `startUpgrade` 未检查
 
-### 遗漏严重度分布
+**位置**: `BuildingSystem.ts` L195-210
 
-| 严重度 | 数量 | 说明 |
-|--------|------|------|
-| P0 | 14 | 核心流程缺失，必须补充 |
-| P1 | 13 | 重要边界/异常，应补充 |
-| P2 | 5 | 次要场景，建议补充 |
+**问题描述**: `startUpgrade` 调用 `getUpgradeCost(type)` 并使用非空断言 `!`：
+```typescript
+const cost = this.getUpgradeCost(type)!;
+```
+如果 `checkUpgrade` 通过但 `getUpgradeCost` 返回 null（理论上不应发生，因为 checkUpgrade 检查了 maxLevel），则 `cost` 为 null，后续 `cost.timeSeconds` 会抛 TypeError。
 
-### 关键遗漏 TOP 5
+**实际风险**: 低 — checkUpgrade 已防护，但缺少防御性编程。
 
-1. **完整升级生命周期串联** (N-01) — 最核心的用户流程未端到端覆盖
-2. **状态转换矩阵** (S-01) — 3状态×3状态的完整转换未枚举
-3. **主城升级→队列扩容实时生效** (C-05) — 跨系统时序关键路径
-4. **解锁链路的精确触发** (N-02) — 8种建筑的4个解锁阈值未逐一覆盖
-5. **批量升级资源递减** (N-04) — 批量操作的核心资源管理逻辑
+---
 
-### API覆盖缺口评估
+## P1 遗漏（严重 — 应该修复）
 
-当前枚举覆盖了39个公开API中的39个（100%），但以下API的**分支路径**覆盖不足：
-- `checkUpgrade()`: 缺少多条件同时失败的组合场景
-- `tick()`: 缺少多建筑同时到期的处理
-- `deserialize()`: 缺少数据损坏/不完整的恢复场景
-- `batchUpgrade()`: 缺少资源递减导致的级联失败
+### P1-01: `checkUpgrade` 未检查 `type` 参数有效性
 
-### 建议补充方向
+**问题**: 如果传入不存在的 `BuildingType` 字符串（如 `'hospital'`），`this.buildings[type]` 返回 `undefined`，后续访问 `.status` 会抛 TypeError。
 
-1. 增加端到端生命周期流程节点
-2. 补充状态转换矩阵的完整枚举
-3. 补充跨系统交互的数据流节点
-4. 补充边界值的精确测试场景
-5. 补充异常数据恢复的鲁棒性测试
+**缺失测试**: F3-Error 维度未覆盖无效 BuildingType。
+
+---
+
+### P1-02: `getProduction` 对超出 levelTable 范围的 level 无防护
+
+**位置**: `BuildingSystem.ts` L170-174
+
+```typescript
+getProduction(type: BuildingType, level?: number): number {
+    const lv = level ?? this.buildings[type].level;
+    if (lv <= 0) return 0;
+    const data = BUILDING_DEFS[type].levelTable[lv - 1];
+    return data?.production ?? 0;  // ← 超出范围返回 0，但未明确文档化
+}
+```
+
+**问题**: 当 `level > maxLevel` 时，`levelTable[lv-1]` 为 undefined，返回 0。这可能是正确行为（防御性），但缺少测试覆盖。
+
+---
+
+### P1-03: `getCastleBonusMultiplier` NaN 防护但 `getCastleBonusPercent` 无防护
+
+**位置**: `BuildingSystem.ts` L177-183
+
+```typescript
+getCastleBonusMultiplier(): number {
+    const pct = this.getCastleBonusPercent();
+    if (!Number.isFinite(pct)) return 1.0; // FIX-402 防护
+    return 1 + pct / 100;
+}
+```
+
+**问题**: 如果 `getCastleBonusPercent` 返回 NaN（通过篡改存档 level 超出 levelTable），`getCastleBonusPercent` 本身返回 NaN，但 `getCastleBonusMultiplier` 有防护。然而 `getCastleBonusPercent` 的调用方如果直接使用其返回值，可能收到 NaN。
+
+---
+
+### P1-04: `calculateTotalProduction` 遗漏 smithy/clinic 的产出
+
+**位置**: `BuildingSystem.ts` L268-278
+
+```typescript
+calculateTotalProduction(): Record<string, number> {
+    for (const t of BUILDING_TYPES) {
+        if (t === 'castle') continue;
+        const def = BUILDING_DEFS[t];
+        if (!def.production) continue;  // ← smithy/clinic/wall 无 production 字段
+        // ...
+    }
+}
+```
+
+**问题**: `smithy`、`clinic`、`wall` 在 `BUILDING_DEFS` 中没有设置 `production` 字段（只有 `levelTable` 中的 `production` 数值），所以 `calculateTotalProduction` 会跳过它们。这是设计意图（它们的产出不是标准资源类型），但：
+- `academy` 有 `production: { resourceType: 'techPoint', ... }`，会产出 techPoint
+- `smithy` 没有 production 配置，但其 levelTable 有 production 值
+
+**潜在问题**: academy 的 techPoint 产出是否正确计入？需要验证 `resourceType: 'techPoint'` 是否被资源系统识别。
+
+---
+
+### P1-05: `checkAndUnlockBuildings` 可能重复解锁
+
+**位置**: `BuildingSystem.ts` L104-112
+
+```typescript
+checkAndUnlockBuildings(): BuildingType[] {
+    for (const t of BUILDING_TYPES) {
+        const s = this.buildings[t];
+        if (s.status === 'locked' && this.checkUnlock(t)) {
+            s.status = 'idle';
+            s.level = 1;
+            unlocked.push(t);
+        }
+    }
+    return unlocked;
+}
+```
+
+**问题**: 如果在 `tick()` 中主城升级完成触发 `checkAndUnlockBuildings()`，同时 `deserialize` 也调用了 `checkAndUnlockBuildings()`，不会重复解锁（因为第二次调用时 status 已不是 'locked'）。但 `tick()` 和 `deserialize` 的调用顺序如果颠倒，可能导致解锁时机不一致。
+
+---
+
+### P1-06: `engine-building-ops.ts` 资源扣减与 startUpgrade 非原子
+
+**位置**: `engine-building-ops.ts` L44-56
+
+```typescript
+export function executeBuildingUpgrade(ctx, type) {
+    const resources = ctx.resource.getResources();
+    const check = ctx.building.checkUpgrade(type, resources);
+    if (!check.canUpgrade) throw new Error(...);
+    const cost = ctx.building.getUpgradeCost(type);
+    ctx.resource.consumeBatch({ grain: cost.grain, gold: cost.gold, troops: cost.troops });
+    ctx.building.startUpgrade(type, resources);  // ← 使用的是旧的 resources 快照
+    // ...
+}
+```
+
+**问题**: 
+1. `consumeBatch` 先扣资源，`startUpgrade` 后执行。如果 `startUpgrade` 抛错，资源已扣但建筑未进入升级状态。
+2. `startUpgrade` 传入的 `resources` 是扣减前的快照，内部 `checkUpgrade` 检查的是旧资源，理论上应该通过（因为刚才检查过了），但存在 TOCTOU 问题。
+
+---
+
+## P2 遗漏（一般 — 建议修复）
+
+### P2-01: `BuildingRecommender` 无效 context 回退策略未测试
+
+`recommendUpgradePath` 对无效 context 使用 `newbieOrder` 回退，但缺少测试。
+
+### P2-02: `getUpgradeProgress` 总时间为0时返回1
+
+```typescript
+getUpgradeProgress(type: BuildingType): number {
+    const total = s.upgradeEndTime - s.upgradeStartTime;
+    return total <= 0 ? 1 : Math.min(1, (Date.now() - s.upgradeStartTime) / total);
+}
+```
+当 `timeSeconds=0` 时（如 castle Lv1 的 upgradeCost），total=0，直接返回 1（100%）。这是合理的，但缺少测试。
+
+### P2-03: `getAppearanceStage` 边界值
+- level=5 → humble, level=6 → orderly
+- level=12 → orderly, level=13 → refined  
+- level=20 → refined, level=21 → glorious
+这些精确边界值缺少测试。
+
+### P2-04: `getBuildingDef` 返回可变引用
+`getBuildingDef` 直接返回 `BUILDING_DEFS[type]`，调用方可以修改配置对象。应返回深拷贝或 Readonly 类型。
+
+### P2-05: `BuildingStateHelpers.createInitialState` 不检查 BUILDING_UNLOCK_LEVELS 一致性
+如果 `BUILDING_UNLOCK_LEVELS` 和 `BUILDING_DEFS` 的 `unlockCastleLevel` 不一致，初始状态可能错误。
+
+---
+
+## P3 遗漏（轻微 — 可选修复）
+
+### P3-01: `BUILDING_TYPES` 数组硬编码了所有类型
+如果新增建筑类型但忘记更新 `BUILDING_TYPES`，会导致遍历遗漏。
+
+### P3-02: `BUILDING_LABELS`/`BUILDING_ICONS` 缺少 Record 完整性检查
+TypeScript 的 Record 类型在运行时不强制检查。
+
+### P3-03: `getUpgradeRemainingTime` 精度问题
+返回值是浮点秒数，可能因浮点精度导致 UI 显示闪烁。
+
+### P3-04: `batchUpgrade` 中 `totalCost.timeSeconds` 的语义不明确
+是所有建筑升级时间的总和还是最大值？当前实现是总和，但实际等待时间取决于并行队列。
+
+---
+
+## 源码真实缺陷汇总
+
+| # | 缺陷ID | 严重度 | 位置 | 描述 |
+|---|--------|--------|------|------|
+| 1 | **BUG-CANCEL-01** | **P0** | `cancelUpgrade` | deserialize篡改level后退款金额错误 |
+| 2 | BUG-DESER-01 | P0 | `deserialize` | 不校验 level/status 一致性 |
+| 3 | BUG-OPS-01 | P1 | `engine-building-ops` | consumeBatch与startUpgrade非原子 |
+| 4 | BUG-DEF-01 | P2 | `getBuildingDef` | 返回可变引用，配置可被篡改 |
+| 5 | BUG-COST-01 | P2 | `getUpgradeProgress` | total=0时返回1未测试 |
+| 6 | BUG-PROD-01 | P2 | `calculateTotalProduction` | 跳过无production字段的建筑（设计意图？） |
+
+---
+
+## 对 Builder 流程树的补充分支
+
+以下是 Builder 流程树中完全遗漏的分支：
+
+### 新增 F3-07: 输入验证攻击
+```
+F3-07 输入验证攻击
+├── 无效BuildingType字符串 → TypeError
+├── undefined作为type → TypeError  
+├── null作为type → TypeError
+├── 数字作为type → TypeError
+└── 空字符串作为type → undefined access
+```
+
+### 新增 F2-07: 配置一致性边界
+```
+F2-07 配置一致性
+├── BUILDING_MAX_LEVELS vs levelTable.length 一致性
+├── BUILDING_UNLOCK_LEVELS vs BUILDING_DEFS.unlockCastleLevel 一致性
+├── levelTable索引连续性（无空洞）
+└── 所有建筑levelTable[0]存在性
+```
+
+### 新增 F5-06: 并发/时序攻击
+```
+F5-06 并发/时序
+├── tick()在startUpgrade中间调用
+├── deserialize在upgrading状态时调用
+├── reset在upgrading状态时调用
+├── 连续快速tick() → 无重复完成
+└── tick()→cancelUpgrade()→tick() 状态一致
+```
+
+---
+
+## Challenger 评分
+
+| 评估项 | Builder得分 | Challenger扣分 | 调整后得分 |
+|--------|------------|---------------|-----------|
+| F1-Normal 覆盖 | 88% | -13% | **75%** |
+| F2-Boundary 覆盖 | 81% | -13% | **68%** |
+| F3-Error 覆盖 | 71% | -19% | **52%** |
+| F4-Cross 覆盖 | 67% | -17% | **50%** |
+| F5-Lifecycle 覆盖 | 67% | -12% | **55%** |
+| **综合覆盖率** | **76%** | **-16%** | **60%** |
+
+**结论**: Builder 的流程树基本完整，但在 **错误路径（F3）** 和 **跨系统交互（F4）** 维度存在显著遗漏。发现 1 个 P0 级真实缺陷（cancelUpgrade 退款计算）和 1 个 P0 级设计缺陷（deserialize 不校验一致性）。
