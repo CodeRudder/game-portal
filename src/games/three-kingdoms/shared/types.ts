@@ -334,6 +334,9 @@ export interface GameSaveData {
   // ── 新手引导系统 (FIX-T04: Tutorial R1 存档接入) ──
   /** 新手引导系统数据（可选） */
   tutorialGuide?: import('../engine/tutorial/tutorial-config').TutorialGuideSaveData;
+  // ── 羁绊系统 (FIX-B04: Bond R1 存档接入) ──
+  /** 羁绊系统数据（可选） */
+  bond?: import('../core/bond').BondSaveData;
 }
 
 // ─────────────────────────────────────────────

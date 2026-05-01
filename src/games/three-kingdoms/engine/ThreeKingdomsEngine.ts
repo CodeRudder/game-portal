@@ -885,6 +885,8 @@ export class ThreeKingdomsEngine {
       mapEvent: this.mapSystems.mapEvent,
       // ── 新手引导系统 (FIX-T04: Tutorial R1 存档接入) ──
       tutorialGuide: this.tutorialGuide,
+      // ── 羁绊系统 (FIX-B04: Bond R1 存档接入) ──
+      bond: this.bondSystem,
     };
   }
   private finalizeLoad(): void {

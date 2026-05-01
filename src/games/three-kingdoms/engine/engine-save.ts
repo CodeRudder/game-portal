@@ -162,6 +162,8 @@ export interface SaveContext {
   setSocialState?: (state: import('../core/social/social.types').SocialState) => void;
   // ── 新手引导系统 (FIX-T04: Tutorial R1 存档接入) ──
   readonly tutorialGuide?: import('./tutorial/tutorial-system').TutorialSystem;
+  // ── 羁绊系统 (FIX-B04: Bond R1 存档接入) ──
+  readonly bond?: import('./bond/BondSystem').BondSystem;
 }
 
 // ─────────────────────────────────────────────
@@ -261,6 +263,8 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     leaderboard: ctx.socialLeaderboardSystem?.serialize(),
     // ── 新手引导系统 (FIX-T04: Tutorial R1 存档接入) ──
     tutorialGuide: ctx.tutorialGuide?.serialize(),
+    // ── 羁绊系统 (FIX-B04: Bond R1 存档接入) ──
+    bond: ctx.bond?.serialize(),
   };
 }
 
@@ -874,6 +878,14 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
     gameLog.info('[Save] 新手引导系统存档恢复成功');
   } else {
     gameLog.info('[Save] 新手引导存档迁移：无引导数据，自动初始化默认引导状态');
+  }
+
+  // ── 羁绊系统 (FIX-B04: Bond R1 存档接入) ──
+  if (data.bond && ctx.bond) {
+    ctx.bond.loadSaveData(data.bond);
+    gameLog.info('[Save] 羁绊系统存档恢复成功');
+  } else {
+    gameLog.info('[Save] 羁绊系统存档迁移：无羁绊数据，自动初始化默认状态');
   }
 
   syncBuildingToResource({

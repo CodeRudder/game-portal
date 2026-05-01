@@ -48,6 +48,9 @@ import {
 
 /** 羁绊效果配置表 */
 
+/** FIX-B02: 好感度上限 */
+const MAX_FAVORABILITY = 99999;
+
 // ─────────────────────────────────────────────
 // BondSystem 类
 // ─────────────────────────────────────────────
@@ -105,7 +108,10 @@ export class BondSystem implements ISubsystem {
   getFactionDistribution(heroes: GeneralData[]): Record<Faction, number> {
     const dist: Record<Faction, number> = { shu: 0, wei: 0, wu: 0, qun: 0 };
     for (const hero of heroes) {
-      dist[hero.faction]++;
+      // FIX-B08: faction有效性检查，防止undefined key污染
+      if (hero && hero.faction && hero.faction in dist) {
+        dist[hero.faction]++;
+      }
     }
     return dist;
   }
@@ -260,13 +266,18 @@ export class BondSystem implements ISubsystem {
 
   /** 增加武将好感度 */
   addFavorability(heroId: string, amount: number): void {
+    // FIX-B01: NaN/Infinity/负数防护（BR-001, BR-017, BR-019）
+    if (!heroId || !Number.isFinite(amount) || amount <= 0) return;
     const fav = this.favorabilities.get(heroId) ?? { heroId, value: 0, triggeredEvents: [] };
-    fav.value += amount;
+    // FIX-B02: 好感度上限保护（BR-022）
+    fav.value = Math.min(fav.value + amount, MAX_FAVORABILITY);
     this.favorabilities.set(heroId, fav);
   }
 
   /** 检查可触发的故事事件 */
   getAvailableStoryEvents(heroes: Map<string, GeneralData>): StoryEventDef[] {
+    // FIX-B07: null/undefined防护
+    if (!heroes) return [];
     const available: StoryEventDef[] = [];
 
     for (const event of STORY_EVENTS) {
@@ -315,12 +326,23 @@ export class BondSystem implements ISubsystem {
     rewards?: StoryEventReward;
     reason?: string;
   } {
+    // FIX-B06: deps未初始化防护（BR-006）
+    if (!this.deps) return { success: false, reason: '系统未初始化' };
+
     const event = STORY_EVENTS.find(e => e.id === eventId);
     if (!event) return { success: false, reason: '事件不存在' };
 
     // 已完成且不可重复
     if (this.completedStoryEvents.has(eventId) && !event.repeatable) {
       return { success: false, reason: '事件已完成' };
+    }
+
+    // FIX-B05: 前置条件校验 — 好感度必须满足（BR-020）
+    for (const heroId of event.condition.heroIds) {
+      const fav = this.getFavorability(heroId);
+      if (!Number.isFinite(fav.value) || fav.value < event.condition.minFavorability) {
+        return { success: false, reason: `武将${heroId}好感度不足` };
+      }
     }
 
     // 标记完成
@@ -356,13 +378,18 @@ export class BondSystem implements ISubsystem {
   }
 
   loadSaveData(data: BondSaveData): void {
+    // FIX-B03: null/undefined输入防护（BR-010）
+    if (!data) return;
     this.favorabilities.clear();
     this.completedStoryEvents.clear();
     for (const [key, value] of Object.entries(data.favorabilities ?? {})) {
-      this.favorabilities.set(key, value);
+      // FIX-B03: 反序列化数据校验 — 跳过无效条目
+      if (key && value && Number.isFinite(value.value)) {
+        this.favorabilities.set(key, value);
+      }
     }
     for (const eventId of data.completedStoryEvents ?? []) {
-      this.completedStoryEvents.add(eventId);
+      if (eventId) this.completedStoryEvents.add(eventId);
     }
   }
 }
