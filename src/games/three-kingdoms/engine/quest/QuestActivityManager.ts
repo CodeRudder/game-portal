@@ -103,11 +103,21 @@ export class QuestActivityManager {
 
   /** 从外部恢复状态 */
   restoreState(state: ActivityState): void {
+    // FIX-Q03: null顶层防护 — 安全回退到初始状态
+    if (!state) {
+      this.fullReset();
+      return;
+    }
+    // FIX-Q08: NaN防护 — currentPoints必须为有限数
+    const safeCurrentPoints = (typeof state.currentPoints === 'number' && Number.isFinite(state.currentPoints))
+      ? state.currentPoints : 0;
+    const safeMaxPoints = (typeof state.maxPoints === 'number' && Number.isFinite(state.maxPoints))
+      ? state.maxPoints : MAX_ACTIVITY_POINTS;
     this.state = {
-      currentPoints: state.currentPoints,
-      maxPoints: state.maxPoints,
-      milestones: state.milestones.map((m) => ({ ...m })),
-      lastResetDate: state.lastResetDate,
+      currentPoints: safeCurrentPoints,
+      maxPoints: safeMaxPoints,
+      milestones: state.milestones ? state.milestones.map((m) => ({ ...m })) : DEFAULT_ACTIVITY_MILESTONES.map((m) => ({ ...m })),
+      lastResetDate: state.lastResetDate ?? '',
     };
   }
 }

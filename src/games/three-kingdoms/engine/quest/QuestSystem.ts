@@ -430,6 +430,11 @@ export class QuestSystem implements ISubsystem {
   }
 
   deserialize(data: QuestSystemSaveData): void {
+    // FIX-Q01: null顶层防护 — 存档损坏时安全回退
+    if (!data) {
+      this.reset();
+      return;
+    }
     const result = deserializeQuestState(data, this.activeQuests, this.completedQuestIds);
     this.dailyRefreshDate = result.dailyRefreshDate;
     this.dailyQuestInstanceIds = result.dailyQuestInstanceIds;

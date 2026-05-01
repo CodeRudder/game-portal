@@ -1053,3 +1053,314 @@ describe('补充: 关键风险验证', () => {
     expect(claimActivityMilestone(state, 0)).toBeNull();
   });
 });
+
+
+// ═══════════════════════════════════════════════
+// R1 Adversarial FIX Tests — FIX-Q01 ~ FIX-Q07
+// ═══════════════════════════════════════════════
+
+describe('Quest R1 Adversarial — FIX-Q01~Q07', () => {
+  // ─── FIX-Q01: QuestSystem.deserialize(null) ───
+
+  describe('FIX-Q01: QuestSystem.deserialize(null) 安全回退', () => {
+    it('deserialize(null) 不崩溃，执行reset', () => {
+      const qs = new QuestSystem();
+      qs.init({ eventBus: { emit: jest.fn(), on: jest.fn() } } as any);
+      qs.acceptQuest('quest-main-001'); // 创建一些状态
+      expect(qs.getActiveQuests().length).toBeGreaterThan(0);
+
+      qs.deserialize(null as any);
+      expect(qs.getActiveQuests()).toHaveLength(0);
+      expect(qs.getCompletedQuestIds()).toHaveLength(0);
+    });
+
+    it('deserialize(undefined) 不崩溃', () => {
+      const qs = new QuestSystem();
+      qs.init({ eventBus: { emit: jest.fn(), on: jest.fn() } } as any);
+      qs.deserialize(undefined as any);
+      expect(qs.getActiveQuests()).toHaveLength(0);
+    });
+  });
+
+  // ─── FIX-Q02: ActivitySystem.deserialize(null) ───
+
+  describe('FIX-Q02: ActivitySystem.deserialize(null) 安全回退', () => {
+    it('deserialize(null) 不崩溃，恢复初始状态', () => {
+      const as = new ActivitySystem();
+      as.init({ eventBus: { emit: jest.fn(), on: jest.fn() } } as any);
+      as.addPoints(50);
+      expect(as.getCurrentPoints()).toBe(50);
+
+      as.deserialize(null as any);
+      expect(as.getCurrentPoints()).toBe(0);
+      expect(as.getMaxPoints()).toBe(100);
+    });
+
+    it('deserialize({ activityState: null }) 不崩溃', () => {
+      const as = new ActivitySystem();
+      as.init({ eventBus: { emit: jest.fn(), on: jest.fn() } } as any);
+      as.addPoints(50);
+
+      as.deserialize({ activityState: null } as any);
+      expect(as.getCurrentPoints()).toBe(0);
+    });
+  });
+
+  // ─── FIX-Q03: QuestActivityManager.restoreState(null) ───
+
+  describe('FIX-Q03: QuestActivityManager.restoreState(null) 安全回退', () => {
+    it('restoreState(null) 不崩溃，执行fullReset', () => {
+      const mgr = new QuestActivityManager();
+      mgr.addPoints(50);
+      expect(mgr.getCurrentPoints()).toBe(50);
+
+      mgr.restoreState(null as any);
+      expect(mgr.getCurrentPoints()).toBe(0);
+      expect(mgr.getMaxPoints()).toBe(100);
+    });
+
+    it('restoreState(undefined) 不崩溃', () => {
+      const mgr = new QuestActivityManager();
+      mgr.addPoints(30);
+      mgr.restoreState(undefined as any);
+      expect(mgr.getCurrentPoints()).toBe(0);
+    });
+  });
+
+  // ─── FIX-Q04: 周常刷新 autoClaim ───
+
+  describe('FIX-Q04: 周常刷新autoClaim已完成未领取奖励', () => {
+    it('周常任务completed+!rewardClaimed → refresh时autoClaim', () => {
+      const emitted: Array<{ event: string; data: unknown }> = [];
+      const activeQuests = new Map<string, any>();
+      const completedIds = new Set<string>();
+
+      // 模拟一个已完成未领取的周常任务
+      const fakeInstance = {
+        instanceId: 'weekly-old-1',
+        questDefId: 'weekly-001',
+        status: 'completed',
+        objectives: [],
+        acceptedAt: Date.now(),
+        completedAt: Date.now(),
+        rewardClaimed: false,
+      };
+      activeQuests.set('weekly-old-1', fakeInstance);
+
+      const { refreshWeeklyQuestsLogic } = require('../QuestSystem.helpers');
+      const result = refreshWeeklyQuestsLogic({
+        activeQuests,
+        weeklyQuestInstanceIds: ['weekly-old-1'],
+        weeklyRefreshDate: '2020-01-01', // 旧日期，触发刷新
+        registerQuest: jest.fn(),
+        acceptQuest: jest.fn(() => null),
+        emit: (event: string, data: unknown) => emitted.push({ event, data }),
+      });
+
+      // 验证autoClaim事件
+      const autoClaimed = emitted.find(e => e.event === 'quest:autoClaimed');
+      expect(autoClaimed).toBeDefined();
+      expect((autoClaimed as any).data).toMatchObject({
+        instanceId: 'weekly-old-1',
+        questId: 'weekly-001',
+        reason: 'weekly_refresh',
+      });
+
+      // 验证rewardClaimed被标记
+      expect(fakeInstance.rewardClaimed).toBe(true);
+      expect(fakeInstance.status).toBe('expired');
+    });
+
+    it('周常任务active+未完成 → refresh时正常expired，无autoClaim', () => {
+      const emitted: Array<{ event: string; data: unknown }> = [];
+      const activeQuests = new Map<string, any>();
+      const fakeInstance = {
+        instanceId: 'weekly-old-2',
+        questDefId: 'weekly-002',
+        status: 'active',
+        objectives: [],
+        acceptedAt: Date.now(),
+        completedAt: null,
+        rewardClaimed: false,
+      };
+      activeQuests.set('weekly-old-2', fakeInstance);
+
+      const { refreshWeeklyQuestsLogic } = require('../QuestSystem.helpers');
+      refreshWeeklyQuestsLogic({
+        activeQuests,
+        weeklyQuestInstanceIds: ['weekly-old-2'],
+        weeklyQuestInstanceIds: ['weekly-old-2'],
+        weeklyRefreshDate: '2020-01-01',
+        registerQuest: jest.fn(),
+        acceptQuest: jest.fn(() => null),
+        emit: (event: string, data: unknown) => emitted.push({ event, data }),
+      });
+
+      expect(fakeInstance.status).toBe('expired');
+      expect(fakeInstance.rewardClaimed).toBe(false);
+      const autoClaimed = emitted.find(e => e.event === 'quest:autoClaimed');
+      expect(autoClaimed).toBeUndefined();
+    });
+  });
+
+  // ─── FIX-Q05: QuestSerialization 活跃度 NaN 防护 ───
+
+  describe('FIX-Q05: deserializeQuestState 活跃度NaN防护', () => {
+    it('currentPoints=NaN → 重置为0', () => {
+      const activeQuests = new Map();
+      const completedIds = new Set<string>();
+      const result = deserializeQuestState({
+        activeQuests: [],
+        completedQuestIds: [],
+        activityState: {
+          currentPoints: NaN,
+          maxPoints: 100,
+          milestones: [],
+          lastResetDate: '',
+        },
+        dailyRefreshDate: '',
+        dailyQuestInstanceIds: [],
+        version: 1,
+      }, activeQuests, completedIds);
+
+      expect(result.activityState.currentPoints).toBe(0);
+    });
+
+    it('currentPoints=Infinity → 重置为0', () => {
+      const activeQuests = new Map();
+      const completedIds = new Set<string>();
+      const result = deserializeQuestState({
+        activeQuests: [],
+        completedQuestIds: [],
+        activityState: {
+          currentPoints: Infinity,
+          maxPoints: 100,
+          milestones: [],
+          lastResetDate: '',
+        },
+        dailyRefreshDate: '',
+        dailyQuestInstanceIds: [],
+        version: 1,
+      }, activeQuests, completedIds);
+
+      expect(result.activityState.currentPoints).toBe(0);
+    });
+
+    it('maxPoints=NaN → 重置为100', () => {
+      const activeQuests = new Map();
+      const completedIds = new Set<string>();
+      const result = deserializeQuestState({
+        activeQuests: [],
+        completedQuestIds: [],
+        activityState: {
+          currentPoints: 50,
+          maxPoints: NaN,
+          milestones: [],
+          lastResetDate: '',
+        },
+        dailyRefreshDate: '',
+        dailyQuestInstanceIds: [],
+        version: 1,
+      }, activeQuests, completedIds);
+
+      expect(result.activityState.maxPoints).toBe(100);
+    });
+  });
+
+  // ─── FIX-Q06/Q07: ActivitySystem.deserialize NaN 防护 ───
+
+  describe('FIX-Q06/Q07: ActivitySystem.deserialize NaN防护', () => {
+    it('currentPoints=NaN → 重置为0', () => {
+      const as = new ActivitySystem();
+      as.init({ eventBus: { emit: jest.fn(), on: jest.fn() } } as any);
+      as.deserialize({
+        version: 1,
+        activityState: {
+          currentPoints: NaN,
+          maxPoints: 100,
+          milestones: [],
+          lastResetDate: '',
+        },
+      });
+      expect(as.getCurrentPoints()).toBe(0);
+    });
+
+    it('currentPoints=Infinity → 重置为0', () => {
+      const as = new ActivitySystem();
+      as.init({ eventBus: { emit: jest.fn(), on: jest.fn() } } as any);
+      as.deserialize({
+        version: 1,
+        activityState: {
+          currentPoints: Infinity,
+          maxPoints: 100,
+          milestones: [],
+          lastResetDate: '',
+        },
+      });
+      expect(as.getCurrentPoints()).toBe(0);
+    });
+
+    it('maxPoints=NaN → 重置为100', () => {
+      const as = new ActivitySystem();
+      as.init({ eventBus: { emit: jest.fn(), on: jest.fn() } } as any);
+      as.deserialize({
+        version: 1,
+        activityState: {
+          currentPoints: 50,
+          maxPoints: NaN,
+          milestones: [],
+          lastResetDate: '',
+        },
+      });
+      expect(as.getMaxPoints()).toBe(100);
+    });
+  });
+
+  // ─── FIX-Q08: QuestActivityManager.restoreState NaN 防护 ───
+
+  describe('FIX-Q08: QuestActivityManager.restoreState NaN防护', () => {
+    it('currentPoints=NaN → 重置为0', () => {
+      const mgr = new QuestActivityManager();
+      mgr.restoreState({
+        currentPoints: NaN,
+        maxPoints: 100,
+        milestones: [],
+        lastResetDate: '',
+      } as any);
+      expect(mgr.getCurrentPoints()).toBe(0);
+    });
+
+    it('currentPoints=Infinity → 重置为0', () => {
+      const mgr = new QuestActivityManager();
+      mgr.restoreState({
+        currentPoints: Infinity,
+        maxPoints: 100,
+        milestones: [],
+        lastResetDate: '',
+      } as any);
+      expect(mgr.getCurrentPoints()).toBe(0);
+    });
+
+    it('maxPoints=NaN → 重置为100', () => {
+      const mgr = new QuestActivityManager();
+      mgr.restoreState({
+        currentPoints: 50,
+        maxPoints: NaN,
+        milestones: [],
+        lastResetDate: '',
+      } as any);
+      expect(mgr.getMaxPoints()).toBe(100);
+    });
+
+    it('milestones=undefined → 使用默认里程碑', () => {
+      const mgr = new QuestActivityManager();
+      mgr.restoreState({
+        currentPoints: 50,
+        maxPoints: 100,
+        lastResetDate: '',
+      } as any);
+      const milestones = mgr.getMilestones();
+      expect(milestones.length).toBeGreaterThan(0);
+    });
+  });
+});

@@ -456,11 +456,22 @@ export function refreshWeeklyQuestsLogic(deps: WeeklyQuestDeps): {
     };
   }
 
-  // 清除旧的周常任务
+  // 清除旧的周常任务（FIX-Q05: 与日常一致，已完成未领取的奖励自动领取）
   for (const id of deps.weeklyQuestInstanceIds) {
     const instance = deps.activeQuests.get(id);
     if (instance) {
-      instance.status = 'expired';
+      if (instance.status === 'completed' && !instance.rewardClaimed) {
+        // autoClaim: 避免奖励丢失
+        instance.rewardClaimed = true;
+        instance.status = 'expired';
+        deps.emit('quest:autoClaimed', {
+          instanceId: id,
+          questId: instance.questDefId,
+          reason: 'weekly_refresh',
+        });
+      } else {
+        instance.status = 'expired';
+      }
       deps.activeQuests.delete(id);
     }
   }

@@ -80,8 +80,8 @@ export function deserializeQuestState(
 
   const activityState: ActivityStateData = saveData.activityState
     ? {
-        currentPoints: saveData.activityState.currentPoints,
-        maxPoints: saveData.activityState.maxPoints,
+        currentPoints: Number.isFinite(saveData.activityState.currentPoints) ? saveData.activityState.currentPoints : 0,
+        maxPoints: Number.isFinite(saveData.activityState.maxPoints) ? saveData.activityState.maxPoints : 100,
         milestones: saveData.activityState.milestones.map((m) => ({ ...m })),
         lastResetDate: saveData.activityState.lastResetDate ?? '',
       }

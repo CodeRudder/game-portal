@@ -236,12 +236,22 @@ export class ActivitySystem implements ISubsystem {
 
   /** 导入存档 */
   deserialize(data: ActivitySaveData): void {
-    if (data.activityState) {
-      this.state = {
-        ...data.activityState,
-        milestones: data.activityState.milestones.map((m) => ({ ...m })),
-      };
+    // FIX-Q02: null顶层防护 — 存档损坏时安全回退
+    if (!data || !data.activityState) {
+      this.state = this.createInitialState();
+      return;
     }
+    // FIX-Q07: NaN防护 — currentPoints必须为有限数
+    if (typeof data.activityState.currentPoints === 'number' && !Number.isFinite(data.activityState.currentPoints)) {
+      data.activityState.currentPoints = 0;
+    }
+    if (typeof data.activityState.maxPoints === 'number' && !Number.isFinite(data.activityState.maxPoints)) {
+      data.activityState.maxPoints = 100;
+    }
+    this.state = {
+      ...data.activityState,
+      milestones: data.activityState.milestones.map((m) => ({ ...m })),
+    };
   }
 
   // ─── 内部方法 ──────────────────────────────
