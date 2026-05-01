@@ -129,7 +129,12 @@ export class OfflineEventHandler {
   private autoChooseOption(eventDef: EventDef): AutoResolveResult {
     const options = eventDef.options;
     if (options.length === 0) {
-      throw new Error(`事件 ${eventDef.id} 没有选项`);
+      // F-07: 空选项安全返回（不再throw中断离线处理）
+      return {
+        chosenOptionId: '',
+        reason: 'first_available',
+        consequences: { description: '无可用选项' },
+      };
     }
 
     // 查找默认选项

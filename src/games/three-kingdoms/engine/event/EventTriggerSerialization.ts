@@ -61,7 +61,9 @@ export function deserializeEventTriggerState(
   const cooldowns = new Map<EventId, number>();
   if (data.cooldowns) {
     for (const [eventId, turn] of Object.entries(data.cooldowns)) {
-      cooldowns.set(eventId, turn);
+      // F-08: NaN/非数值防护
+      const safeTurn = typeof turn === 'number' && Number.isFinite(turn) ? turn : 0;
+      cooldowns.set(eventId, safeTurn);
     }
   }
 

@@ -143,6 +143,8 @@ export class EventTriggerSystem implements ISubsystem {
    * 每回合事件触发检查
    */
   checkAndTriggerEvents(currentTurn: number): EventInstance[] {
+    // F-06: 校验回合数为有限非负数
+    if (!Number.isFinite(currentTurn) || currentTurn < 0) return [];
     this._currentTurn = currentTurn;
     const counterRef = { value: this.instanceCounter };
     const result = checkAndTriggerEventsLogic({
@@ -310,6 +312,7 @@ export class EventTriggerSystem implements ISubsystem {
   }
 
   deserialize(data: EventSystemSaveData): void {
+    if (!data) return; // F-01: null/undefined guard
     const restored = deserializeEventTriggerState(data);
     this.activeEvents.clear();
     for (const [k, v] of restored.activeEvents) {

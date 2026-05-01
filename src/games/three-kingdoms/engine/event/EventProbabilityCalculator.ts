@@ -24,27 +24,30 @@ import type {
 export function calculateProbability(probCondition: ProbabilityCondition): ProbabilityResult {
   const { baseProbability, modifiers } = probCondition;
 
+  // F-02: baseProbability NaN防护
+  const safeBase = Number.isFinite(baseProbability) ? baseProbability : 0;
+
   // 仅计算 active 的修正因子
   const activeModifiers = modifiers.filter((m) => m.active);
 
-  // Σ(additive) — 所有活跃加法修正之和
+  // Σ(additive) — 所有活跃加法修正之和 (F-03: 过滤NaN)
   const additiveTotal = activeModifiers.reduce(
-    (sum, m) => sum + m.additiveBonus, 0,
+    (sum, m) => sum + (Number.isFinite(m.additiveBonus) ? m.additiveBonus : 0), 0,
   );
 
-  // Π(multiplicative) — 所有活跃乘法修正之积
+  // Π(multiplicative) — 所有活跃乘法修正之积 (F-03: 过滤NaN)
   const multiplicativeTotal = activeModifiers.reduce(
-    (product, m) => product * m.multiplicativeBonus, 1,
+    (product, m) => product * (Number.isFinite(m.multiplicativeBonus) ? m.multiplicativeBonus : 1), 1,
   );
 
   // P = clamp(base + Σ(add) × Π(mul), 0, 1)
   const finalProbability = Math.max(
-    0, Math.min(1, (baseProbability + additiveTotal) * multiplicativeTotal),
+    0, Math.min(1, (safeBase + additiveTotal) * multiplicativeTotal),
   );
 
   return {
     finalProbability,
-    baseProbability,
+    baseProbability: safeBase,
     additiveTotal,
     multiplicativeTotal,
     triggered: Math.random() < finalProbability,

@@ -69,9 +69,10 @@ export function evaluateTurnRangeCondition(
   const maxTurn = params['maxTurn'] as number | undefined;
   const turnInterval = params['turnInterval'] as number | undefined;
 
-  if (minTurn !== undefined && currentTurn < minTurn) return false;
-  if (maxTurn !== undefined && currentTurn > maxTurn) return false;
-  if (turnInterval !== undefined && currentTurn % turnInterval !== 0) return false;
+  // F-04: NaN防护 — 非有限数视为未设置
+  if (minTurn !== undefined && Number.isFinite(minTurn) && currentTurn < minTurn) return false;
+  if (maxTurn !== undefined && Number.isFinite(maxTurn) && currentTurn > maxTurn) return false;
+  if (turnInterval !== undefined && Number.isFinite(turnInterval) && turnInterval > 0 && currentTurn % turnInterval !== 0) return false;
 
   return true;
 }
@@ -152,9 +153,10 @@ export function compareValue(
   actual: number,
   params: Record<string, unknown>,
 ): boolean {
-  const expected = params['value'] as number | undefined
-    ?? params['minAmount'] as number | undefined
-    ?? 0;
+  const rawExpected = params['value'] as number | undefined
+    ?? params['minAmount'] as number | undefined;
+  // F-05: NaN防护 — 非有限expected默认为0
+  const expected = (rawExpected !== undefined && Number.isFinite(rawExpected)) ? rawExpected : 0;
   const operator = (params['operator'] as string) ?? '>=';
 
   switch (operator) {
