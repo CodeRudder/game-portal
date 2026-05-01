@@ -375,16 +375,21 @@ export class ArenaSystem implements ISubsystem {
     highestRankId?: string,
   ): import('../../core/pvp/pvp.types').ArenaSaveData {
     const state = playerState ?? this.playerState;
+    // 安全合并 season：确保所有必需字段存在，防止传入不完整对象
+    const defaultSeason = {
+      seasonId: '',
+      startTime: 0,
+      endTime: 0,
+      currentDay: 1,
+      isSettled: false,
+    };
+    const safeSeason = (season && typeof season === 'object')
+      ? { ...defaultSeason, ...season }
+      : defaultSeason;
     return {
       version: ARENA_SAVE_VERSION,
       state: { ...state },
-      season: season ?? {
-        seasonId: '',
-        startTime: 0,
-        endTime: 0,
-        currentDay: 1,
-        isSettled: false,
-      },
+      season: safeSeason,
       highestRankId: highestRankId ?? state.rankId,
     };
   }

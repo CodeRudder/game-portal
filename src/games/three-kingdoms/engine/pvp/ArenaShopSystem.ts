@@ -143,14 +143,14 @@ export class ArenaShopSystem implements ISubsystem {
       throw new Error('竞技币不足');
     }
 
-    // 更新商品已购数量
-    this.items[itemIdx] = { ...item, purchased: item.purchased + count };
-
-    // 更新玩家状态
+    // 更新玩家状态（先于内部状态修改，确保异常安全）
     const newState: ArenaPlayerState = {
       ...playerState,
       arenaCoins: playerState.arenaCoins - totalCost,
     };
+
+    // 最后才修改内部商品状态（确保无异常路径导致不一致）
+    this.items[itemIdx] = { ...item, purchased: item.purchased + count };
 
     return { state: newState, item: { ...this.items[itemIdx] } };
   }
