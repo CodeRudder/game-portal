@@ -29,6 +29,8 @@ export const DEFAULT_SEASON_THEMES: SeasonTheme[] = [
  * 获取当前赛季主题
  */
 export function getCurrentSeasonTheme(seasonIndex: number): SeasonTheme {
+  // FIX-SEAS-022: NaN防护
+  if (!Number.isFinite(seasonIndex) || seasonIndex < 0) seasonIndex = 0;
   const idx = seasonIndex % DEFAULT_SEASON_THEMES.length;
   return DEFAULT_SEASON_THEMES[idx];
 }
@@ -69,6 +71,10 @@ export function updateSeasonRecord(
   const losses = record.losses + (won ? 0 : 1);
   const total = wins + losses;
 
+  // FIX-SEAS-023: NaN防护 — currentRanking为NaN时保持原值
+  const safeRanking = Number.isFinite(currentRanking) ? currentRanking : record.highestRanking;
+  const safeOldRanking = Number.isFinite(record.highestRanking) ? record.highestRanking : safeRanking;
+
   return {
     ...record,
     wins,
@@ -76,7 +82,7 @@ export function updateSeasonRecord(
     total,
     winRate: total > 0 ? Math.round((wins / total) * 100) : 0,
     highestRank: currentRank,
-    highestRanking: Math.min(currentRanking, record.highestRanking || currentRanking),
+    highestRanking: Math.min(safeRanking, safeOldRanking),
   };
 }
 

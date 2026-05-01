@@ -114,8 +114,15 @@ export class OfflineRewardSystem implements ISubsystem {
 
   /** 计算6档衰减快照 */
   calculateSnapshot(offlineSeconds: number, productionRates: Readonly<Resources>): OfflineSnapshot {
-    if (offlineSeconds <= 0) {
+    // [FIX-801] NaN/Infinity 入口防护
+    if (!Number.isFinite(offlineSeconds) || offlineSeconds <= 0) {
       return { timestamp: Date.now(), offlineSeconds: 0, tierDetails: [], totalEarned: zeroRes(), overallEfficiency: 0, isCapped: false };
+    }
+    // [FIX-801] productionRates 各字段 NaN/负值/Infinity 防护
+    const safeRates: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
+    for (const key of ['grain', 'gold', 'troops', 'mandate', 'techPoint', 'recruitToken', 'skillBook'] as const) {
+      const v = productionRates[key];
+      safeRates[key] = (Number.isFinite(v) && v >= 0) ? v : 0;
     }
 
     const capped = offlineSeconds > MAX_OFFLINE_SECONDS;
@@ -135,7 +142,7 @@ export class OfflineRewardSystem implements ISubsystem {
 
       const tierEarned = zeroRes();
       for (const key of ['grain', 'gold', 'troops', 'mandate'] as const) {
-        const gain = productionRates[key] * tierSeconds * tier.efficiency;
+        const gain = safeRates[key] * tierSeconds * tier.efficiency;
         tierEarned[key] = gain;
         totalEarned[key] += gain;
       }
@@ -152,11 +159,23 @@ export class OfflineRewardSystem implements ISubsystem {
   // ─────────────────────────────────────────────
 
   /** 应用翻倍 */
-  applyDouble(earned: Readonly<Resources>, request: DoubleRequest): DoubleResult {
-    const multiplier = request.multiplier;
+  applyDouble(earned: Readonly<Resources>, request: DoubleRequest, vipLevel: number = 0): DoubleResult {
+    // [FIX-806] multiplier NaN/负值/零值防护
+    const multiplier = (!Number.isFinite(request.multiplier) || request.multiplier < 1) ? 1 : request.multiplier;
+
+    // [FIX-817] 广告翻倍日限检查
+    if (request.source === 'ad') {
+      const adDailyLimit = 3;
+      // 使用 vipDoubleUsedToday 作为通用翻倍日限计数器
+      if (this.vipDoubleUsedToday >= adDailyLimit) {
+        return { success: false, originalEarned: cloneRes(earned), doubledEarned: cloneRes(earned), appliedMultiplier: 1, reason: '今日广告翻倍次数已用完' };
+      }
+      this.vipDoubleUsedToday++;
+    }
 
     if (request.source === 'vip') {
-      const vipBonus = this.getVipBonus();
+      // [FIX-817] 使用传入的 vipLevel 而非默认值0
+      const vipBonus = this.getVipBonus(vipLevel);
       if (this.vipDoubleUsedToday >= vipBonus.dailyDoubleLimit) {
         return { success: false, originalEarned: cloneRes(earned), doubledEarned: cloneRes(earned), appliedMultiplier: 1, reason: 'VIP今日翻倍次数已用完' };
       }
@@ -214,7 +233,7 @@ export class OfflineRewardSystem implements ISubsystem {
 
   getBoostItems(): OfflineBoostItem[] { return getBoostItemList(this.boostInventory); }
   addBoostItem(itemId: string, count: number): void {
-    if (count <= 0) return;
+    if (!Number.isFinite(count) || count <= 0) return;
     this.boostInventory.set(itemId, (this.boostInventory.get(itemId) ?? 0) + count);
   }
   useBoostItemAction(itemId: string, productionRates: Readonly<Resources>): BoostUseResult {
@@ -283,12 +302,17 @@ export class OfflineRewardSystem implements ISubsystem {
   getResourceProtection(resourceType: string, currentAmount: number): number {
     const protection = RESOURCE_PROTECTIONS.find(p => p.resourceType === resourceType);
     if (!protection) return 0;
-    return Math.max(currentAmount * protection.protectionRatio, protection.protectionFloor);
+    // [FIX-814] NaN 防护
+    const safeAmount = (!Number.isFinite(currentAmount) || currentAmount < 0) ? 0 : currentAmount;
+    return Math.max(safeAmount * protection.protectionRatio, protection.protectionFloor);
   }
 
   applyResourceProtection(resourceType: string, currentAmount: number, requestedAmount: number): number {
+    // [FIX-814] NaN 防护
+    if (!Number.isFinite(requestedAmount) || requestedAmount < 0) return 0;
     const protectedAmount = this.getResourceProtection(resourceType, currentAmount);
-    return Math.min(requestedAmount, Math.max(0, currentAmount - protectedAmount));
+    const safeCurrent = (!Number.isFinite(currentAmount) || currentAmount < 0) ? 0 : currentAmount;
+    return Math.min(requestedAmount, Math.max(0, safeCurrent - protectedAmount));
   }
 
   // ─────────────────────────────────────────────
@@ -385,6 +409,8 @@ export class OfflineRewardSystem implements ISubsystem {
   }
 
   deserialize(data: OfflineSaveData): void {
+    // [FIX-804] null/undefined 防护
+    if (!data) return;
     this.lastOfflineTime = data.lastOfflineTime;
     this.vipDoubleUsedToday = data.vipDoubleUsedToday;
     this.vipDoubleResetDate = data.vipDoubleResetDate;
@@ -529,7 +555,8 @@ export class OfflineRewardSystem implements ISubsystem {
     offlineSeconds: number,
     activities: ActivityPointsConfig[],
   ): ActivityPointsResult[] {
-    const effectiveSeconds = Math.min(offlineSeconds, MAX_OFFLINE_SECONDS);
+    // [FIX-815] NaN/负值防护
+    const safeSeconds = (!Number.isFinite(offlineSeconds) || offlineSeconds <= 0) ? 0 : Math.min(offlineSeconds, MAX_OFFLINE_SECONDS);
     const results: ActivityPointsResult[] = [];
 
     for (const activity of activities) {
@@ -537,7 +564,7 @@ export class OfflineRewardSystem implements ISubsystem {
         ? SEASON_ACTIVITY_OFFLINE_EFFICIENCY
         : TIMED_ACTIVITY_OFFLINE_EFFICIENCY;
 
-      const offlineHours = effectiveSeconds / 3600;
+      const offlineHours = safeSeconds / 3600;
       const points = Math.floor(activity.basePointsPerHour * offlineHours * efficiency);
       const tokens = Math.floor(activity.baseTokensPerHour * offlineHours * efficiency);
 
@@ -567,6 +594,11 @@ export class OfflineRewardSystem implements ISubsystem {
    * @returns 离线经验计算结果
    */
   calculateOfflineExp(offlineSeconds: number, expBonus: number = 0): OfflineExpResult {
+    // [FIX-807] NaN/Infinity 入口防护
+    if (!Number.isFinite(offlineSeconds) || offlineSeconds <= 0) {
+      return { baseExp: 0, decayedExp: 0, bonusExp: 0, finalExp: 0, didLevelUp: false, previousLevel: this.currentLevel, newLevel: this.currentLevel, levelUpRewards: [] };
+    }
+    const safeExpBonus = Number.isFinite(expBonus) ? Math.max(0, Math.min(expBonus, 1.0)) : 0;
     const effectiveSeconds = Math.min(offlineSeconds, MAX_OFFLINE_SECONDS);
 
     // 基础经验
@@ -588,7 +620,7 @@ export class OfflineRewardSystem implements ISubsystem {
     const decayedExp = Math.floor(baseExp * decayFactor);
 
     // 加成后经验
-    const cappedBonus = Math.min(expBonus, 1.0);
+    const cappedBonus = Math.min(safeExpBonus, 1.0);
     const bonusExp = Math.floor(decayedExp * cappedBonus);
     const finalExp = decayedExp + bonusExp;
 
@@ -698,14 +730,19 @@ export class OfflineRewardSystem implements ISubsystem {
     let mailSent = false;
 
     if (mailSystem) {
-      const mail = mailSystem.sendMail({
-        category: 'system',
-        title: '离线数据异常通知',
-        content: '检测到离线数据异常，已使用默认数据计算收益，请检查游戏状态。',
-        sender: '系统',
-      });
-      mailId = mail.id;
-      mailSent = true;
+      try {
+        const mail = mailSystem.sendMail({
+          category: 'system',
+          title: '离线数据异常通知',
+          content: '检测到离线数据异常，已使用默认数据计算收益，请检查游戏状态。',
+          sender: '系统',
+        });
+        mailId = mail.id;
+        mailSent = true;
+      } catch {
+        // [FIX-810] 邮件系统异常静默处理，不影响主流程
+        mailSent = false;
+      }
     }
 
     this.degradationNotified = true;
@@ -732,23 +769,26 @@ export class OfflineRewardSystem implements ISubsystem {
     success: boolean,
     loot: Resources | null = null,
   ): SiegeResult {
+    // [FIX-808] NaN/负值防护
+    const safeTroops = (!Number.isFinite(dispatchedTroops) || dispatchedTroops < 0) ? 0 : Math.floor(dispatchedTroops);
+
     if (success) {
       return {
         success: true,
-        dispatchedTroops,
+        dispatchedTroops: safeTroops,
         lostTroops: 0,
-        remainingTroops: dispatchedTroops,
+        remainingTroops: safeTroops,
         loot: loot ? cloneRes(loot) : null,
       };
     }
 
     // 攻城失败：损失30%出征兵力
-    const lostTroops = Math.floor(dispatchedTroops * SIEGE_FAILURE_TROOP_LOSS_RATIO);
-    const remainingTroops = dispatchedTroops - lostTroops;
+    const lostTroops = Math.floor(safeTroops * SIEGE_FAILURE_TROOP_LOSS_RATIO);
+    const remainingTroops = safeTroops - lostTroops;
 
     return {
       success: false,
-      dispatchedTroops,
+      dispatchedTroops: safeTroops,
       lostTroops,
       remainingTroops,
       loot: null,
@@ -779,14 +819,16 @@ export class OfflineRewardSystem implements ISubsystem {
     let rates = cloneRes(currentRates);
 
     for (const tech of sorted) {
+      // [FIX-809] productionBonus NaN/负值防护
+      const bonus = (!Number.isFinite(tech.productionBonus) || tech.productionBonus < 0) ? 0 : tech.productionBonus;
       // 应用科技加成到产出速率
-      rates = mulRes(rates, 1 + tech.productionBonus);
+      rates = mulRes(rates, 1 + bonus);
       rates = floorRes(rates);
 
       updates.push({
         techId: tech.techId as unknown as number,
         completedAt: tech.endTime,
-        productionBonus: tech.productionBonus,
+        productionBonus: bonus,
         updatedRates: cloneRes(rates),
       });
     }
@@ -851,17 +893,23 @@ export class OfflineRewardSystem implements ISubsystem {
     totalReward: Resources;
     noDuplicates: boolean;
   } {
-    // 各系统独立计算
+    // [FIX-803] 各系统按权重分配基础快照收益，而非简单相加（防止3倍膨胀）
+    // 权重 = 各系统修正系数 / 修正系数总和
     const resourceSnapshot = this.calculateSnapshot(offlineSeconds, productionRates);
-    const resourceEarned = this.applySystemModifier(resourceSnapshot.totalEarned, 'resource');
+    const baseEarned = resourceSnapshot.totalEarned;
 
-    const buildingEarned = this.applySystemModifier(resourceSnapshot.totalEarned, 'building');
+    const resourceWeight = this.getSystemModifier('resource');   // 1.0
+    const buildingWeight = this.getSystemModifier('building');   // 1.2
+    const expeditionWeight = this.getSystemModifier('expedition'); // 0.85
+    const totalWeight = resourceWeight + buildingWeight + expeditionWeight; // 3.05
 
-    const expeditionEarned = this.applySystemModifier(resourceSnapshot.totalEarned, 'expedition');
+    // 按权重分配基础收益
+    const resourceEarned = mulRes(baseEarned, resourceWeight / totalWeight);
+    const buildingEarned = mulRes(baseEarned, buildingWeight / totalWeight);
+    const expeditionEarned = mulRes(baseEarned, expeditionWeight / totalWeight);
 
-    // 各系统收益不重叠（各系统使用不同的修正系数，但基于同一基础快照）
-    // 去重策略：每个系统只发放自己系统的收益
-    const totalReward = addRes(addRes(resourceEarned, buildingEarned), expeditionEarned);
+    // 总收益 = 基础快照收益（无膨胀）
+    const totalReward = cloneRes(baseEarned);
 
     return {
       resourceReward: floorRes(resourceEarned),

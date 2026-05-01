@@ -30,6 +30,9 @@ export function calculateOfflineProgress(
   offlineDurationMs: number,
   offlineEfficiency: OfflineEfficiencyConfig,
 ): OfflineActivityResult[] {
+  // FIX-ACT-006: NaN和负值防护
+  if (!Number.isFinite(offlineDurationMs) || offlineDurationMs <= 0) return [];
+
   const results: OfflineActivityResult[] = [];
   const durationSeconds = offlineDurationMs / 1000;
 

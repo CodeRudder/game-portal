@@ -154,6 +154,9 @@ export class SignInSystem implements ISubsystem {
     reward: SignInReward;
     bonusPercent: number;
   } {
+    // FIX-SIGN-007: NaN防护
+    if (!Number.isFinite(now)) throw new Error('时间参数异常');
+
     if (data.todaySigned && isSameDay(data.lastSignInTime, now)) {
       throw new Error('今日已签到');
     }
@@ -208,6 +211,11 @@ export class SignInSystem implements ISubsystem {
     data: SignInData;
     goldCost: number;
   } {
+    // FIX-SIGN-007b: NaN防护
+    if (!Number.isFinite(now)) throw new Error('时间参数异常');
+    // FIX-SIGN-008: NaN防护 — goldAvailable为NaN时拒绝
+    if (!Number.isFinite(goldAvailable)) throw new Error('元宝数据异常');
+
     // 检查是否需要补签（今天已签到则无需补签）
     if (data.todaySigned && isSameDay(data.lastSignInTime, now)) {
       throw new Error('今日已签到，无需补签');
@@ -229,12 +237,23 @@ export class SignInSystem implements ISubsystem {
       throw new Error('元宝不足');
     }
 
+    // FIX-SIGN-009: 补签连续性修正 — 补签视为"补上漏签的那一天"
+    // 设计意图：补签消耗元宝，目的是维持连续天数，因此consecutiveDays+1
+    // 但如果从未签到过（lastSignInTime=0），补签视为首次签到
+    let newConsecutiveDays: number;
+    if (data.lastSignInTime === 0) {
+      // 从未签到过，补签视为首次
+      newConsecutiveDays = 1;
+    } else {
+      // 已有签到记录，补签视为补上漏签的那一天
+      newConsecutiveDays = data.consecutiveDays + 1;
+    }
+
     const newData: SignInData = {
       ...data,
       weeklyRetroactiveCount: weeklyCount + 1,
       lastRetroactiveResetWeek: currentWeek,
-      // 补签后视为今日已签到，连续天数+1
-      consecutiveDays: data.consecutiveDays + 1,
+      consecutiveDays: newConsecutiveDays,
       todaySigned: true,
       lastSignInTime: now,
     };

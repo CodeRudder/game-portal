@@ -69,6 +69,22 @@ export class OfflineSnapshotSystem implements ISubsystem {
     expeditionQueue?: ExpeditionQueueSnapshot[];
     tradeCaravans?: TradeCaravanSnapshot[];
   }): SystemSnapshot {
+    // [FIX-811] null/undefined 防护
+    if (!systemState) {
+      const emptySnapshot: SystemSnapshot = {
+        resources: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
+        productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
+        caps: { grain: 0, gold: null, troops: 0, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
+        buildingQueue: [],
+        techQueue: [],
+        expeditionQueue: [],
+        tradeCaravans: [],
+      };
+      this.snapshot = emptySnapshot;
+      this.saveData.lastOfflineTime = Date.now();
+      this.persistSaveData();
+      return this.snapshot;
+    }
     this.snapshot = {
       resources: { ...systemState.resources },
       productionRates: { ...systemState.productionRates },
@@ -209,11 +225,14 @@ export class OfflineSnapshotSystem implements ISubsystem {
       skillBook: Math.floor((productionRates.skillBook ?? 0) * addedSeconds * bonusMultiplier),
     };
 
+    // [FIX-812] 实际扣减道具数量
+    item.count -= 1;
+
     return {
       success: true,
       addedSeconds,
       addedEarned,
-      remainingCount: item.count - 1,
+      remainingCount: item.count,
     };
   }
 
@@ -336,6 +355,9 @@ export class OfflineSnapshotSystem implements ISubsystem {
       if (raw) {
         const parsed = JSON.parse(raw) as OfflineSaveData;
         if (parsed.version === OFFLINE_SAVE_VERSION) {
+          // [FIX-816] 关键数值字段 NaN 防护
+          if (!Number.isFinite(parsed.lastOfflineTime)) parsed.lastOfflineTime = 0;
+          if (!Number.isFinite(parsed.vipDoubleUsedToday)) parsed.vipDoubleUsedToday = 0;
           this.saveData = parsed;
         }
       }

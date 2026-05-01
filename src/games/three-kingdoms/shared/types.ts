@@ -307,6 +307,11 @@ export interface GameSaveData {
   siegeEnhancer?: import('../core/map/siege-enhancer.types').SiegeEnhancerSaveData;
   /** 地图事件系统数据（可选，v20.0+） */
   mapEvent?: import('../engine/map/MapEventSystem').MapEventSaveData;
+  // ── 离线收益系统 v9.0+ (FIX-816: R1 存档接入) ──
+  /** 离线收益系统数据（可选，v9.0+） */
+  offlineReward?: import('../engine/offline/offline.types').OfflineSaveData;
+  /** 离线快照系统数据（可选，v9.0+） */
+  offlineSnapshot?: import('../engine/offline/offline.types').OfflineSaveData;
 }
 
 // ─────────────────────────────────────────────

@@ -135,18 +135,39 @@ export class ActivitySystem implements ISubsystem {
     state: ActivityState,
     type: ActivityType,
   ): { canStart: boolean; reason: string } {
-    const activeOfType = Object.values(state.activities)
-      .filter(a => a.status === ActivityStatus.ACTIVE)
-      .filter(a => {
-        // 需要通过defId判断类型，这里简化处理
-        // 实际需要ActivityDef映射
-        return true;
-      });
+    // FIX-ACT-001: NaN防护 — 验证maxTotal为有限数
+    if (!Number.isFinite(this.concurrencyConfig.maxTotal) || this.concurrencyConfig.maxTotal <= 0) {
+      return { canStart: false, reason: '并行配置异常' };
+    }
+
+    const activeActivities = Object.values(state.activities)
+      .filter(a => a.status === ActivityStatus.ACTIVE);
+
+    // FIX-ACT-001: 检查分类型上限（修复filter始终return true的逻辑缺陷）
+    const typePrefixMap: Record<ActivityType, string> = {
+      [ActivityType.SEASON]: 'season_',
+      [ActivityType.LIMITED_TIME]: 'limited_',
+      [ActivityType.DAILY]: 'daily_',
+      [ActivityType.FESTIVAL]: 'festival_',
+      [ActivityType.ALLIANCE]: 'alliance_',
+    };
+    const typeLimitMap: Record<ActivityType, { limit: number; label: string }> = {
+      [ActivityType.SEASON]: { limit: this.concurrencyConfig.maxSeason, label: '赛季' },
+      [ActivityType.LIMITED_TIME]: { limit: this.concurrencyConfig.maxLimitedTime, label: '限时' },
+      [ActivityType.DAILY]: { limit: this.concurrencyConfig.maxDaily, label: '日常' },
+      [ActivityType.FESTIVAL]: { limit: this.concurrencyConfig.maxFestival, label: '节日' },
+      [ActivityType.ALLIANCE]: { limit: this.concurrencyConfig.maxAlliance, label: '联盟' },
+    };
+
+    const prefix = typePrefixMap[type];
+    const typeConfig = typeLimitMap[type];
+    const activeOfType = activeActivities.filter(a => a.defId.startsWith(prefix)).length;
+    if (typeConfig && activeOfType >= typeConfig.limit) {
+      return { canStart: false, reason: `${typeConfig.label}活动已达上限(${typeConfig.limit}个)` };
+    }
 
     // 检查总上限
-    const totalActive = Object.values(state.activities)
-      .filter(a => a.status === ActivityStatus.ACTIVE).length;
-    if (totalActive >= this.concurrencyConfig.maxTotal) {
+    if (activeActivities.length >= this.concurrencyConfig.maxTotal) {
       return { canStart: false, reason: '活动总数已达上限' };
     }
 
@@ -163,9 +184,13 @@ export class ActivitySystem implements ISubsystem {
     milestones: ActivityMilestone[],
     now: number,
   ): ActivityState {
+    // FIX-ACT-005: null guard
+    if (!def) throw new Error('活动定义不能为空');
+    if (!Number.isFinite(now)) throw new Error('时间参数异常');
+
     const instance = createActivityInstance(def, now);
-    instance.tasks = taskDefs.map(d => createActivityTask(d));
-    instance.milestones = milestones.map(m => ({ ...m, status: MilestoneStatus.LOCKED }));
+    instance.tasks = (taskDefs ?? []).map(d => createActivityTask(d));
+    instance.milestones = (milestones ?? []).map(m => ({ ...m, status: MilestoneStatus.LOCKED }));
 
     return {
       ...state,
@@ -184,6 +209,9 @@ export class ActivitySystem implements ISubsystem {
   ): ActivityState {
     const instance = state.activities[activityId];
     if (!instance) return state;
+
+    // FIX-ACT-026: NaN防护 — now或endTime为NaN时不执行状态变更
+    if (!Number.isFinite(now) || !Number.isFinite(endTime)) return state;
 
     if (instance.status === ActivityStatus.ACTIVE && now >= endTime) {
       return {
@@ -219,6 +247,9 @@ export class ActivitySystem implements ISubsystem {
   ): ActivityState {
     const instance = state.activities[activityId];
     if (!instance) return state;
+
+    // FIX-ACT-002/003: NaN和负值防护
+    if (!Number.isFinite(progress) || progress <= 0) return state;
 
     const tasks = instance.tasks.map(t => {
       if (t.defId !== taskDefId) return t;
@@ -265,11 +296,15 @@ export class ActivitySystem implements ISubsystem {
       t.defId === taskDefId ? { ...t, status: ActivityTaskStatus.CLAIMED } : t,
     );
 
+    // FIX-ACT-004: NaN防护 — 验证奖励值为有限数
+    const safePointReward = Number.isFinite(task.pointReward) ? task.pointReward : 0;
+    const safeTokenReward = Number.isFinite(task.tokenReward) ? task.tokenReward : 0;
+
     const updatedInstance: ActivityInstance = {
       ...instance,
       tasks,
-      points: instance.points + task.pointReward,
-      tokens: instance.tokens + task.tokenReward,
+      points: instance.points + safePointReward,
+      tokens: instance.tokens + safeTokenReward,
     };
 
     return {
@@ -277,8 +312,8 @@ export class ActivitySystem implements ISubsystem {
         ...state,
         activities: { ...state.activities, [activityId]: updatedInstance },
       },
-      points: task.pointReward,
-      tokens: task.tokenReward,
+      points: safePointReward,
+      tokens: safeTokenReward,
     };
   }
 
@@ -324,7 +359,8 @@ export class ActivitySystem implements ISubsystem {
 
     const milestones = instance.milestones.map(m => {
       if (m.status !== MilestoneStatus.LOCKED) return m;
-      if (instance.points >= m.requiredPoints) {
+      // FIX-ACT-005: NaN防护 — points为NaN时不解锁
+      if (Number.isFinite(instance.points) && instance.points >= m.requiredPoints) {
         return { ...m, status: MilestoneStatus.UNLOCKED };
       }
       return m;
@@ -438,11 +474,28 @@ export class ActivitySystem implements ISubsystem {
   // ── 存档序列化 ──────────────────────────
 
   serialize(state: ActivityState): ActivitySaveData {
+    // FIX-ACT-024: NaN清洗 — 序列化前将NaN替换为0
+    const cleanActivities: Record<string, ActivityInstance> = {};
+    for (const [id, inst] of Object.entries(state.activities)) {
+      cleanActivities[id] = {
+        ...inst,
+        points: Number.isFinite(inst.points) ? inst.points : 0,
+        tokens: Number.isFinite(inst.tokens) ? inst.tokens : 0,
+        tasks: inst.tasks.map(t => ({
+          ...t,
+          currentProgress: Number.isFinite(t.currentProgress) ? t.currentProgress : 0,
+          targetCount: Number.isFinite(t.targetCount) ? t.targetCount : 0,
+          tokenReward: Number.isFinite(t.tokenReward) ? t.tokenReward : 0,
+          pointReward: Number.isFinite(t.pointReward) ? t.pointReward : 0,
+        })),
+      };
+    }
+
     return {
       version: ACTIVITY_SAVE_VERSION,
       state: {
         ...state,
-        activities: { ...state.activities },
+        activities: cleanActivities,
       },
     };
   }

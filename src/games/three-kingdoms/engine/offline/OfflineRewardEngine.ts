@@ -119,8 +119,12 @@ const MAX_BONUS = 1.0; // +100%
  * 公式：1 + min(科技 + VIP + 声望, MAX_BONUS)
  */
 export function calculateBonusCoefficient(sources: BonusSources): number {
-  const total = (sources.tech ?? 0) + (sources.vip ?? 0) + (sources.reputation ?? 0);
-  return 1 + Math.min(total, MAX_BONUS);
+  // [FIX-802] NaN 防护：每个来源独立检查
+  const tech = Number.isFinite(sources.tech) ? (sources.tech ?? 0) : 0;
+  const vip = Number.isFinite(sources.vip) ? (sources.vip ?? 0) : 0;
+  const reputation = Number.isFinite(sources.reputation) ? (sources.reputation ?? 0) : 0;
+  const total = tech + vip + reputation;
+  return 1 + Math.min(Math.max(total, 0), MAX_BONUS);
 }
 
 // ─────────────────────────────────────────────
@@ -182,7 +186,9 @@ export function applyDouble(
   request: DoubleRequest,
   adUsedToday: number = 0,
 ): DoubleResult {
-  if (request.source === 'ad' && adUsedToday >= AD_DAILY_LIMIT) {
+  // [FIX-806] adUsedToday NaN 防护 + multiplier 下限防护
+  const safeAdUsed = Number.isFinite(adUsedToday) ? adUsedToday : 0;
+  if (request.source === 'ad' && safeAdUsed >= AD_DAILY_LIMIT) {
     return {
       success: false,
       originalEarned: cloneRes(earned),
@@ -192,7 +198,8 @@ export function applyDouble(
     };
   }
 
-  const multiplier = request.multiplier ?? 2;
+  const rawMultiplier = request.multiplier ?? 2;
+  const multiplier = (!Number.isFinite(rawMultiplier) || rawMultiplier < 1) ? 1 : rawMultiplier;
   return {
     success: true,
     originalEarned: cloneRes(earned),

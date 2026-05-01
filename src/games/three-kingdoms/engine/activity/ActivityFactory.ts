@@ -50,6 +50,8 @@ export function createDefaultActivityState(): ActivityState {
 
 /** 从活动定义创建活动实例 */
 export function createActivityInstance(def: ActivityDef, now: number): ActivityInstance {
+  // FIX-FACT-001: null guard
+  if (!def) throw new Error('活动定义不能为空');
   return {
     defId: def.id,
     status: ActivityStatus.ACTIVE,
@@ -63,6 +65,8 @@ export function createActivityInstance(def: ActivityDef, now: number): ActivityI
 
 /** 从任务定义创建任务实例 */
 export function createActivityTask(def: ActivityTaskDef): ActivityTask {
+  // FIX-FACT-002: null guard
+  if (!def) throw new Error('任务定义不能为空');
   return {
     defId: def.id,
     taskType: def.taskType,

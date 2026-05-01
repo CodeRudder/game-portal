@@ -136,6 +136,9 @@ export interface SaveContext {
   readonly garrison?: import('./map/GarrisonSystem').GarrisonSystem;
   readonly siegeEnhancer?: import('./map/SiegeEnhancer').SiegeEnhancer;
   readonly mapEvent?: import('./map/MapEventSystem').MapEventSystem;
+  // ── 离线收益系统 v9.0+ (FIX-816: R1 存档接入) ──
+  readonly offlineReward?: import('./offline/OfflineRewardSystem').OfflineRewardSystem;
+  readonly offlineSnapshot?: import('./offline/OfflineSnapshotSystem').OfflineSnapshotSystem;
 }
 
 // ─────────────────────────────────────────────
@@ -219,6 +222,9 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     garrison: ctx.garrison?.serialize(),
     siegeEnhancer: ctx.siegeEnhancer?.serialize(),
     mapEvent: ctx.mapEvent?.serialize(),
+    // ── 离线收益系统 v9.0 (FIX-816: R1 存档接入) ──
+    offlineReward: ctx.offlineReward?.serialize(),
+    offlineSnapshot: ctx.offlineSnapshot?.getSaveData(),
   };
 }
 
@@ -265,6 +271,9 @@ export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameSt
   if (data.expedition) subsystems.expedition = data.expedition;
   // ── NPC系统 v19.0 (FIX-008: R2 存档接入) ──
   if (data.npc) subsystems.npc = data.npc;
+  // ── 离线收益系统 v9.0 (FIX-816: R1 存档接入) ──
+  if (data.offlineReward) subsystems.offlineReward = data.offlineReward;
+  if (data.offlineSnapshot) subsystems.offlineSnapshot = data.offlineSnapshot;
 
   return {
     version: String(data.version),
@@ -323,6 +332,9 @@ export function fromIGameState(state: IGameState): GameSaveData {
     expedition: s.expedition as import('../core/expedition/expedition.types').ExpeditionSaveData | undefined,
     // ── NPC系统 v19.0 (FIX-008: R2 存档接入) ──
     npc: s.npc as import('../core/npc/npc.types').NPCSaveData | undefined,
+    // ── 离线收益系统 v9.0 (FIX-816: R1 存档接入) ──
+    offlineReward: s.offlineReward as import('./offline/offline.types').OfflineSaveData | undefined,
+    offlineSnapshot: s.offlineSnapshot as import('./offline/offline.types').OfflineSaveData | undefined,
   };
 }
 
@@ -696,6 +708,31 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
     ctx.mapEvent.deserialize(data.mapEvent);
   } else {
     gameLog.info('[Save] 地图存档迁移：无地图事件数据，自动初始化默认状态');
+  }
+
+  // ── 离线收益系统 v9.0 (FIX-816: R1 存档接入) ──
+  if (data.offlineReward && ctx.offlineReward) {
+    ctx.offlineReward.deserialize(data.offlineReward);
+  } else {
+    gameLog.info('[Save] v9.0 存档迁移：无离线收益数据，自动初始化默认状态');
+  }
+  if (data.offlineSnapshot && ctx.offlineSnapshot) {
+    // OfflineSnapshotSystem uses loadSaveData internally via constructor,
+    // but we also support explicit restore here
+    try {
+      const saveData = data.offlineSnapshot;
+      if (saveData.lastOfflineTime) {
+        ctx.offlineSnapshot.createSnapshot({
+          resources: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
+          productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
+          caps: { grain: 0, gold: null, troops: 0, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
+        });
+      }
+    } catch {
+      gameLog.info('[Save] 离线快照恢复失败，使用默认状态');
+    }
+  } else {
+    gameLog.info('[Save] v9.0 存档迁移：无离线快照数据，自动初始化默认状态');
   }
 
   syncBuildingToResource({

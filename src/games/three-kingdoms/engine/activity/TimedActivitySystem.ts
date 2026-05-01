@@ -193,6 +193,14 @@ export class TimedActivitySystem implements ISubsystem {
     activeStart: number,
     activeEnd: number,
   ): TimedActivityFlow {
+    // FIX-TIMED-016: NaN防护
+    if (!Number.isFinite(activeStart) || !Number.isFinite(activeEnd)) {
+      throw new Error('时间参数异常');
+    }
+    if (activeEnd <= activeStart) {
+      throw new Error('结束时间必须大于开始时间');
+    }
+
     const flow: TimedActivityFlow = {
       activityId,
       phase: 'preview',
@@ -213,6 +221,12 @@ export class TimedActivitySystem implements ISubsystem {
   updatePhase(activityId: string, now: number): TimedActivityPhase {
     const flow = this.flows.get(activityId);
     if (!flow) return 'closed';
+
+    // FIX-TIMED-010: NaN防护 — now为NaN时返回closed
+    if (!Number.isFinite(now)) {
+      flow.phase = 'closed';
+      return 'closed';
+    }
 
     if (now < flow.activeStart) {
       flow.phase = 'preview';
@@ -264,8 +278,13 @@ export class TimedActivitySystem implements ISubsystem {
   ): ActivityRankEntry[] {
     // 按积分降序排序
     const sorted = [...entries].sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      return b.tokens - a.tokens;
+      // FIX-TIMED-017: NaN防护 — NaN排到最后
+      const aPoints = Number.isFinite(a.points) ? a.points : -Infinity;
+      const bPoints = Number.isFinite(b.points) ? b.points : -Infinity;
+      if (bPoints !== aPoints) return bPoints - aPoints;
+      const aTokens = Number.isFinite(a.tokens) ? a.tokens : 0;
+      const bTokens = Number.isFinite(b.tokens) ? b.tokens : 0;
+      return bTokens - aTokens;
     });
 
     // 重新排名
@@ -370,6 +389,11 @@ export class TimedActivitySystem implements ISubsystem {
     activityType: string,
     offlineDurationMs: number,
   ): OfflineActivityResult {
+    // FIX-TIMED-018: NaN和负值防护
+    if (!Number.isFinite(offlineDurationMs) || offlineDurationMs <= 0) {
+      return { activityId, pointsEarned: 0, tokensEarned: 0, offlineDuration: 0 };
+    }
+
     const durationSeconds = offlineDurationMs / 1000;
 
     // 根据活动类型获取效率
@@ -454,8 +478,10 @@ export class TimedActivitySystem implements ISubsystem {
     flows: TimedActivityFlow[];
     leaderboards: Array<{ activityId: string; entries: ActivityRankEntry[] }>;
   }): void {
+    // FIX-TIMED-019: null guard
+    if (!data) return;
     this.flows.clear();
-    for (const flow of data.flows ?? []) {
+    for (const flow of (data.flows ?? [])) {
       this.flows.set(flow.activityId, { ...flow });
     }
 

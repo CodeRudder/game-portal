@@ -129,6 +129,11 @@ export class TokenShopSystem implements ISubsystem {
     tokensSpent: number;
     reason?: string;
   } {
+    // FIX-SHOP-010/011: NaN和负值/零值防护
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      return { success: false, rewards: {}, tokensSpent: 0, reason: '购买数量无效' };
+    }
+
     const item = this.items.get(itemId);
     if (!item) {
       return { success: false, rewards: {}, tokensSpent: 0, reason: '商品不存在' };
@@ -151,6 +156,10 @@ export class TokenShopSystem implements ISubsystem {
 
     // 代币余额检查
     const totalCost = item.tokenPrice * quantity;
+    // FIX-SHOP-010b: totalCost为NaN时拒绝
+    if (!Number.isFinite(totalCost) || totalCost <= 0) {
+      return { success: false, rewards: {}, tokensSpent: 0, reason: '价格异常' };
+    }
     if (this.tokenBalance < totalCost) {
       return {
         success: false,
@@ -166,9 +175,13 @@ export class TokenShopSystem implements ISubsystem {
 
     // 计算奖励
     const rewards: Record<string, number> = {};
-    if (item.rewards.resourceChanges) {
-      for (const [key, value] of Object.entries(item.rewards.resourceChanges as unknown as Record<string, number>)) {
-        rewards[key] = (value as number) * quantity;
+    // FIX-SHOP-012: null guard for resourceChanges
+    const resourceChanges = item.rewards?.resourceChanges as unknown as Record<string, number> | undefined;
+    if (resourceChanges && typeof resourceChanges === 'object') {
+      for (const [key, value] of Object.entries(resourceChanges)) {
+        if (typeof value === 'number' && Number.isFinite(value)) {
+          rewards[key] = value * quantity;
+        }
       }
     }
 
@@ -188,6 +201,8 @@ export class TokenShopSystem implements ISubsystem {
    * 增加代币
    */
   addTokens(amount: number): number {
+    // FIX-SHOP-013/014: NaN和负值防护
+    if (!Number.isFinite(amount) || amount <= 0) return this.tokenBalance;
     this.tokenBalance += amount;
     return this.tokenBalance;
   }
@@ -196,6 +211,10 @@ export class TokenShopSystem implements ISubsystem {
    * 消耗代币
    */
   spendTokens(amount: number): { success: boolean; newBalance: number } {
+    // FIX-SHOP-013b: NaN防护
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return { success: false, newBalance: this.tokenBalance };
+    }
     if (this.tokenBalance < amount) {
       return { success: false, newBalance: this.tokenBalance };
     }
@@ -306,10 +325,12 @@ export class TokenShopSystem implements ISubsystem {
     items: TokenShopItem[];
     tokenBalance: number;
   }): void {
+    // FIX-SHOP-015: null guard
+    if (!data) return;
     this.config = { ...data.config };
-    this.tokenBalance = data.tokenBalance;
+    this.tokenBalance = Number.isFinite(data.tokenBalance) ? data.tokenBalance : 0;
     this.items.clear();
-    for (const item of data.items) {
+    for (const item of (data.items ?? [])) {
       this.items.set(item.id, { ...item });
     }
   }

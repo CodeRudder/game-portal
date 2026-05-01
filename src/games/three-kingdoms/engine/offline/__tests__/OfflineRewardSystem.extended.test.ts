@@ -232,13 +232,15 @@ describe('OfflineRewardSystem 扩展功能', () => {
       expect(result.totalReward).toBeDefined();
     });
 
-    it('总收益应等于三系统之和', () => {
+    it('总收益应等于基础快照收益（按权重分配，无膨胀）', () => {
       const result = system.calculateCrossSystemReward(3600, PRODUCTION_RATES, currentResources, caps);
 
-      // totalReward = resourceReward + buildingReward + expeditionReward
-      expect(result.totalReward.grain).toBe(
-        result.resourceReward.grain + result.buildingReward.grain + result.expeditionReward.grain,
-      );
+      // [FIX-803] totalReward = 基础快照收益（按权重分配后各系统之和等于基础收益）
+      // 各系统按权重分配：resourceWeight/totalWeight, buildingWeight/totalWeight, expeditionWeight/totalWeight
+      // 所以 resourceReward + buildingReward + expeditionReward ≈ totalReward（因floorRes可能有舍入差异）
+      const sumOfParts = result.resourceReward.grain + result.buildingReward.grain + result.expeditionReward.grain;
+      // 允许舍入误差在±2以内
+      expect(Math.abs(result.totalReward.grain - sumOfParts)).toBeLessThanOrEqual(2);
     });
 
     it('noDuplicates 应为 true', () => {
