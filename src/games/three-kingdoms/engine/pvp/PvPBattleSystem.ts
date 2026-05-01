@@ -232,6 +232,7 @@ export class PvPBattleSystem implements ISubsystem {
     attackerState: ArenaPlayerState,
     defenderState: ArenaPlayerState,
     mode: PvPBattleMode = PvPBattleMode.AUTO,
+    now: number = Date.now(),
   ): PvPBattleResult {
     const attackerPower = this.estimatePower(attackerState);
     const defenderPower = this.estimatePower(defenderState) * (1 + this.battleConfig.defenseBonusRatio);
@@ -251,7 +252,7 @@ export class PvPBattleSystem implements ISubsystem {
     const newDefenderScore = Math.max(0, defenderState.score + defenderScoreChange);
 
     return {
-      battleId: `pvp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      battleId: `pvp_${now}_${Math.random().toString(36).slice(2, 8)}`,
       attackerId: attackerState.playerId || 'player_attacker',
       defenderId: defenderState.playerId || 'player_defender',
       attackerWon,

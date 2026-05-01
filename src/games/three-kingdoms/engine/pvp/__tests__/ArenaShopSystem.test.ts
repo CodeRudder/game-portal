@@ -113,7 +113,7 @@ describe('ArenaShopSystem — 购买逻辑', () => {
 
   test('购买数量为0时抛出异常', () => {
     const player = createPlayerWithCoins(10000);
-    expect(() => shop.buyItem(player, 'fragment_liubei', 0)).toThrow('购买数量必须大于0');
+    expect(() => shop.buyItem(player, 'fragment_liubei', 0)).toThrow('购买数量必须为正整数');
   });
 
   test('超出周限购数量时抛出异常', () => {

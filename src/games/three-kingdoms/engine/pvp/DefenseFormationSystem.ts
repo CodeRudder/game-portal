@@ -230,10 +230,11 @@ export class DefenseFormationSystem implements ISubsystem {
   addDefenseLog(
     logs: DefenseLogEntry[],
     entry: Omit<DefenseLogEntry, 'id'>,
+    now: number = Date.now(),
   ): DefenseLogEntry[] {
     const newEntry: DefenseLogEntry = {
       ...entry,
-      id: `def_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      id: `def_${now}_${Math.random().toString(36).slice(2, 6)}`,
     };
     return [newEntry, ...logs].slice(0, MAX_DEFENSE_LOGS);
   }

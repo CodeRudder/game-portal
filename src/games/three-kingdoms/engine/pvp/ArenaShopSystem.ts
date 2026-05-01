@@ -121,8 +121,8 @@ export class ArenaShopSystem implements ISubsystem {
     itemId: string,
     count: number = 1,
   ): { state: ArenaPlayerState; item: ArenaShopItem } {
-    if (count <= 0) {
-      throw new Error('购买数量必须大于0');
+    if (!Number.isInteger(count) || count <= 0) {
+      throw new Error('购买数量必须为正整数');
     }
 
     const itemIdx = this.items.findIndex((i) => i.itemId === itemId);
@@ -167,8 +167,8 @@ export class ArenaShopSystem implements ISubsystem {
     if (!item) {
       return { canBuy: false, reason: '商品不存在' };
     }
-    if (count <= 0) {
-      return { canBuy: false, reason: '购买数量必须大于0' };
+    if (!Number.isInteger(count) || count <= 0) {
+      return { canBuy: false, reason: '购买数量必须为正整数' };
     }
     if (item.weeklyLimit > 0 && item.purchased + count > item.weeklyLimit) {
       return { canBuy: false, reason: '超出周限购数量' };

@@ -122,7 +122,8 @@ export class ArenaSystem implements ISubsystem {
     const minPower = Math.floor(myPower * powerMinRatio);
     const maxPower = Math.ceil(myPower * powerMaxRatio);
 
-    // 排名范围筛选
+    // 排名范围筛选：使用 rankMaxOffset 作为搜索范围
+    // rankMinOffset 为预留参数（最小保证范围）
     const minRank = Math.max(1, myRanking - rankMaxOffset);
     const maxRank = myRanking + rankMaxOffset;
 
@@ -138,7 +139,8 @@ export class ArenaSystem implements ISubsystem {
 
     // 如果不够，从合格对手中补充（仅使用同时满足战力和排名范围的对手）
     if (selected.length < candidateCount) {
-      const remaining = eligible.filter((p) => !selected.includes(p));
+      const selectedIds = new Set(selected.map((p) => p.playerId));
+      const remaining = eligible.filter((p) => !selectedIds.has(p.playerId));
       while (selected.length < candidateCount && remaining.length > 0) {
         const idx = Math.floor(Math.random() * remaining.length);
         selected.push(remaining.splice(idx, 1)[0]);
@@ -207,10 +209,6 @@ export class ArenaSystem implements ISubsystem {
    * 检查是否可以挑战
    */
   canChallenge(playerState: ArenaPlayerState): boolean {
-    const totalChallenges =
-      playerState.dailyChallengesLeft +
-      (this.challengeConfig.dailyBuyLimit - playerState.dailyBoughtChallenges);
-    // 实际上 dailyChallengesLeft 已经包含了免费+购买的
     return playerState.dailyChallengesLeft > 0;
   }
 
@@ -292,7 +290,7 @@ export class ArenaSystem implements ISubsystem {
     now: number,
   ): ArenaPlayerState {
     const entry = {
-      id: `def_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      id: `def_${now}_${Math.random().toString(36).slice(2, 6)}`,
       ...log,
       timestamp: now,
     };
@@ -371,19 +369,23 @@ export class ArenaSystem implements ISubsystem {
   /**
    * 序列化玩家竞技场状态
    */
-  serialize(playerState?: ArenaPlayerState): import('../../core/pvp/pvp.types').ArenaSaveData {
+  serialize(
+    playerState?: ArenaPlayerState,
+    season?: import('../../core/pvp/pvp.types').SeasonData,
+    highestRankId?: string,
+  ): import('../../core/pvp/pvp.types').ArenaSaveData {
     const state = playerState ?? this.playerState;
     return {
       version: ARENA_SAVE_VERSION,
       state: { ...state },
-      season: {
+      season: season ?? {
         seasonId: '',
         startTime: 0,
         endTime: 0,
         currentDay: 1,
         isSettled: false,
       },
-      highestRankId: state.rankId,
+      highestRankId: highestRankId ?? state.rankId,
     };
   }
 

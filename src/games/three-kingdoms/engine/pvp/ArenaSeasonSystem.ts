@@ -171,6 +171,8 @@ export class ArenaSeasonSystem implements ISubsystem {
     const reward = this.getSeasonReward(highestRankId);
 
     // 积分重置到当前段位最低值
+    // NOTE: scoreResetRatio 为预留参数，当前重置策略为直接重置到段位最低值
+    // 未来可通过 scoreResetRatio 实现部分重置：minScore + range * ratio
     const currentRank = RANK_LEVEL_MAP.get(playerState.rankId);
     const resetScore = currentRank?.minScore ?? 0;
 

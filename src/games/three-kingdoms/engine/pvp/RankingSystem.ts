@@ -255,8 +255,21 @@ export class RankingSystem implements ISubsystem {
   deserialize(data: RankingSaveData): void {
     if (!data || data.version !== RANKING_SAVE_VERSION) return;
 
-    this.rankings.set(RankingDimension.SCORE, data.scoreRanking);
-    this.rankings.set(RankingDimension.POWER, data.powerRanking);
-    this.rankings.set(RankingDimension.SEASON, data.seasonRanking);
+    // 验证各维度数据完整性
+    const validateRankingData = (rd: unknown): rd is RankingData => {
+      if (!rd || typeof rd !== 'object') return false;
+      const d = rd as Record<string, unknown>;
+      return Array.isArray(d.entries) && typeof d.lastUpdateTime === 'number';
+    };
+
+    if (validateRankingData(data.scoreRanking)) {
+      this.rankings.set(RankingDimension.SCORE, data.scoreRanking);
+    }
+    if (validateRankingData(data.powerRanking)) {
+      this.rankings.set(RankingDimension.POWER, data.powerRanking);
+    }
+    if (validateRankingData(data.seasonRanking)) {
+      this.rankings.set(RankingDimension.SEASON, data.seasonRanking);
+    }
   }
 }
