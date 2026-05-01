@@ -93,6 +93,8 @@ function createFullEnv() {
     totalPower: () => totalPower,
     prestigeLevel: () => prestigeLevel,
     onReset: (rules) => { resetRules.push(...rules); },
+    campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+    achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
   });
 
   // HeritageSystem
