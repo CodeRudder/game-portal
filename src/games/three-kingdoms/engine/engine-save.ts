@@ -125,6 +125,8 @@ export interface SaveContext {
   readonly awakening?: import('./hero/AwakeningSystem').AwakeningSystem;
   /** 招贤令经济系统（可选，v17.0+） */
   readonly recruitTokenEconomy?: import('./hero/recruit-token-economy-system').RecruitTokenEconomySystem;
+  /** 远征系统（可选，v12.0+） */
+  readonly expedition?: import('./expedition/ExpeditionSystem').ExpeditionSystem;
 }
 
 // ─────────────────────────────────────────────
@@ -197,6 +199,8 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     heroDispatch: ctx.heroDispatch?.serialize(),
     awakening: ctx.awakening?.serialize(),
     recruitTokenEconomy: ctx.recruitTokenEconomy?.serialize(),
+    // ── 远征系统 v12.0 (FIX-601: R1 保存/加载覆盖) ──
+    expedition: ctx.expedition?.serialize(),
   };
 }
 
@@ -239,6 +243,8 @@ export function toIGameState(data: GameSaveData, onlineSeconds: number): IGameSt
   if (data.heroDispatch) subsystems.heroDispatch = data.heroDispatch;
   if (data.awakening) subsystems.awakening = data.awakening;
   if (data.recruitTokenEconomy) subsystems.recruitTokenEconomy = data.recruitTokenEconomy;
+  // ── 远征系统 v12.0 (FIX-601: R1 保存/加载覆盖) ──
+  if (data.expedition) subsystems.expedition = data.expedition;
 
   return {
     version: String(data.version),
@@ -293,6 +299,8 @@ export function fromIGameState(state: IGameState): GameSaveData {
     heroDispatch: s.heroDispatch as import('./hero/HeroDispatchSystem').DispatchSaveData | undefined,
     awakening: s.awakening as import('./hero/AwakeningSystem').AwakeningSaveData | undefined,
     recruitTokenEconomy: s.recruitTokenEconomy as import('./hero/recruit-token-economy-system').RecruitTokenEconomySaveData | undefined,
+    // ── 远征系统 v12.0 (FIX-601: R1 保存/加载覆盖) ──
+    expedition: s.expedition as import('../core/expedition/expedition.types').ExpeditionSaveData | undefined,
   };
 }
 
@@ -620,6 +628,13 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
     ctx.recruitTokenEconomy.deserialize(data.recruitTokenEconomy);
   } else {
     gameLog.info('[Save] v17.0 存档迁移：无招贤令经济数据，自动初始化默认状态');
+  }
+
+  // ── 远征系统 v12.0 (FIX-601: R1 保存/加载覆盖) ──
+  if (data.expedition && ctx.expedition) {
+    ctx.expedition.deserialize(data.expedition);
+  } else {
+    gameLog.info('[Save] v12.0 存档迁移：无远征数据，自动初始化默认远征状态');
   }
 
   syncBuildingToResource({

@@ -81,6 +81,7 @@ export class ExpeditionSystem implements ISubsystem {
 
   /** 根据主城等级更新队伍槽位 */
   updateSlots(castleLevel: number): number {
+    if (!Number.isFinite(castleLevel) || castleLevel < 0) return this.state.unlockedSlots;
     const slots = this.getSlotCount(castleLevel);
     this.state.unlockedSlots = slots;
     return slots;
@@ -312,12 +313,14 @@ export class ExpeditionSystem implements ISubsystem {
     if (!node || node.type !== NodeType.REST) return { healed: false, healAmount: 0 };
 
     const healPercent = node.healPercent ?? 0.20;
-    const healAmount = Math.round(team.maxTroops * healPercent);
+    const safeHealPercent = Number.isFinite(healPercent) && healPercent > 0 ? healPercent : 0;
+    const healAmount = Math.round(team.maxTroops * safeHealPercent);
     team.troopCount = Math.min(team.maxTroops, team.troopCount + healAmount);
     return { healed: true, healAmount };
   }
 
   completeRoute(teamId: string, stars: number): boolean {
+    if (!Number.isFinite(stars) || stars < 0 || stars > 3) return false;
     const team = this.state.teams[teamId];
     if (!team || !team.currentRouteId) return false;
 
@@ -405,6 +408,7 @@ export class ExpeditionSystem implements ISubsystem {
   // ─── 兵力恢复 ─────────────────────────────
 
   recoverTroops(elapsedSeconds: number): void {
+    if (!Number.isFinite(elapsedSeconds) || elapsedSeconds <= 0) return;
     const recoveryCycles = Math.floor(elapsedSeconds / TROOP_COST.recoveryIntervalSeconds);
     const recoveryAmount = recoveryCycles * TROOP_COST.recoveryAmount;
     for (const team of Object.values(this.state.teams)) {

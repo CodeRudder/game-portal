@@ -289,6 +289,8 @@ export interface GameSaveData {
   awakening?: import('../engine/hero/AwakeningSystem').AwakeningSaveData;
   /** 招贤令经济系统数据（可选，v17.0+） */
   recruitTokenEconomy?: import('../engine/hero/recruit-token-economy-system').RecruitTokenEconomySaveData;
+  /** 远征系统数据（可选，v12.0+） */
+  expedition?: import('../core/expedition/expedition.types').ExpeditionSaveData;
 }
 
 // ─────────────────────────────────────────────
