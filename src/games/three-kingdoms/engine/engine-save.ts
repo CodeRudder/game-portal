@@ -84,6 +84,10 @@ export interface SaveContext {
   readonly shop?: import('./shop/ShopSystem').ShopSystem;
   /** 声望系统（可选，v14.0+） */
   readonly prestige?: import('./prestige/PrestigeSystem').PrestigeSystem;
+  /** 转生系统（可选，v14.0+，FIX-508: R1 存档接入） */
+  readonly rebirth?: import('./prestige/RebirthSystem').RebirthSystem;
+  /** 声望商店系统（可选，v14.0+，FIX-506: R1 存档接入） */
+  readonly prestigeShop?: import('./prestige/PrestigeShopSystem').PrestigeShopSystem;
   /** 传承系统（可选，v14.0+） */
   readonly heritage?: import('./heritage/HeritageSystem').HeritageSystem;
   /** 成就系统（可选，v14.0+） */
@@ -603,6 +607,20 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
   // ── 声望系统 v14.0 ──
   if (data.prestige && ctx.prestige) {
     ctx.prestige.loadSaveData(data.prestige);
+  }
+
+  // FIX-508: 转生系统 v14.0 — 从 prestige save 中恢复 rebirth 数据
+  if (data.prestige?.rebirth && ctx.rebirth) {
+    ctx.rebirth.loadSaveData({ rebirth: data.prestige.rebirth });
+  }
+
+  // FIX-506: 声望商店系统 v14.0 — 恢复商店购买记录
+  if (data.prestige?.prestige && ctx.prestigeShop) {
+    ctx.prestigeShop.loadSaveData({
+      shopPurchases: data.prestige.prestige.shopPurchases,
+      prestigePoints: data.prestige.prestige.currentPoints,
+      prestigeLevel: data.prestige.prestige.currentLevel,
+    });
   }
 
   // ── 传承系统 v14.0 ──

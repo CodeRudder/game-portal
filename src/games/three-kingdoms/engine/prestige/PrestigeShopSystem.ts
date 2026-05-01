@@ -125,6 +125,15 @@ export class PrestigeShopSystem implements ISubsystem {
     cost?: number;
     rewards?: Record<string, number>;
   } {
+    // FIX-505: quantity NaN/负值/非有限数防护
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      return { success: false, reason: '购买数量无效' };
+    }
+    // FIX-505: prestigePoints NaN防护
+    if (!Number.isFinite(this.prestigePoints)) {
+      return { success: false, reason: '声望值数据异常' };
+    }
+
     const goodsDef = PRESTIGE_SHOP_GOODS.find((g) => g.id === goodsId);
     if (!goodsDef) {
       return { success: false, reason: '商品不存在' };
@@ -210,6 +219,31 @@ export class PrestigeShopSystem implements ISubsystem {
     for (const item of this.items) {
       item.purchased = purchases[item.defId] ?? 0;
     }
+  }
+
+  // FIX-506: 存档序列化/反序列化
+  /** 获取商店存档数据 */
+  getSaveData(): { shopPurchases: Record<string, number>; prestigePoints: number; prestigeLevel: number } {
+    return {
+      shopPurchases: this.getPurchaseHistory(),
+      prestigePoints: this.prestigePoints,
+      prestigeLevel: this.prestigeLevel,
+    };
+  }
+
+  /** 加载商店存档数据 */
+  loadSaveData(data: { shopPurchases?: Record<string, number>; prestigePoints?: number; prestigeLevel?: number }): void {
+    if (!data) return;
+    if (data.shopPurchases) {
+      this.loadPurchases(data.shopPurchases);
+    }
+    if (Number.isFinite(data.prestigePoints)) {
+      this.prestigePoints = data.prestigePoints!;
+    }
+    if (Number.isFinite(data.prestigeLevel) && data.prestigeLevel! > 0) {
+      this.prestigeLevel = data.prestigeLevel!;
+    }
+    this.updateUnlockStatus();
   }
 
   // ─── 内部方法 ───────────────────────────

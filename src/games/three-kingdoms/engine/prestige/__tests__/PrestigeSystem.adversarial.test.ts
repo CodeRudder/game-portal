@@ -188,31 +188,24 @@ describe('PrestigeSystem 对抗式测试', () => {
   // ═══════════════════════════════════════════
 
   describe('[F-Error] 异常路径', () => {
-    it('负数声望值：源码不拦截，作为实际声望被加上', () => {
-      // 源码 addPrestigePoints 不检查 basePoints < 0
-      // dailyCap 检查: dailyGained >= dailyCap => 0 >= 200 => false, 通过
-      // actualPoints = min(-100, 200-0) = -100
-      // currentPoints += -100 => -100
+    it('负数声望值：FIX-501 已修复，返回0', () => {
+      // FIX-501: 负数声望值被拦截，返回0
       const gained = sys.addPrestigePoints('battle_victory', -100);
-      expect(gained).toBe(-100);
-      expect(sys.getState().currentPoints).toBe(-100);
-      // ⚠️ 暴露P1缺陷：负数声望值未被防御
+      expect(gained).toBe(0);
+      expect(sys.getState().currentPoints).toBe(0);
     });
 
-    it('NaN声望值处理', () => {
-      // 源码不显式检查NaN
+    it('NaN声望值处理：FIX-501 已修复，返回0', () => {
+      // FIX-501: NaN声望值被拦截，返回0
       const gained = sys.addPrestigePoints('battle_victory', NaN);
-      // NaN comparisons are false, dailyCap check: NaN >= 200 => false, passes
-      // actualPoints = min(NaN, remaining) => NaN
-      // state.currentPoints += NaN => NaN
-      expect(gained).toBeNaN();
-      // ⚠️ 暴露P1缺陷：NaN声望值未被防御
+      expect(gained).toBe(0);
     });
 
-    it('Infinity声望值处理', () => {
+    it('Infinity声望值处理：FIX-501 已修复，返回0', () => {
+      // FIX-501: Infinity声望值被拦截，返回0
       const gained = sys.addPrestigePoints('main_quest', Infinity);
-      expect(gained).toBe(Infinity);
-      expect(sys.getState().currentPoints).toBe(Infinity);
+      expect(gained).toBe(0);
+      expect(sys.getState().currentPoints).toBe(0);
     });
 
     it('重复领取等级奖励被拒绝', () => {

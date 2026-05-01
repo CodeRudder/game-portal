@@ -152,13 +152,12 @@ describe('PrestigeShopSystem 对抗式测试', () => {
       expect(result.success).toBe(false);
     });
 
-    it('购买数量为0', () => {
+    it('购买数量为0：FIX-505 已修复，拒绝', () => {
       shop.updatePrestigeInfo(200, 1);
-      // quantity默认1，传0时totalCost=0，prestigePoints >= 0
+      // FIX-505: quantity=0 被拦截
       const result = shop.buyGoods('psg-001', 0);
-      // costPoints * 0 = 0, 200 >= 0 => success
-      expect(result.success).toBe(true);
-      expect(result.cost).toBe(0);
+      expect(result.success).toBe(false);
+      expect(result.reason).toBe('购买数量无效');
     });
 
     it('canBuyGoods与buyGoods结果一致', () => {

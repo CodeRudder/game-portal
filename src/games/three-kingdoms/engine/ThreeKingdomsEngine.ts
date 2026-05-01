@@ -856,6 +856,10 @@ export class ThreeKingdomsEngine {
       arena: this.r11.arenaSystem,
       arenaShop: this.r11.arenaShopSystem,
       ranking: this.r11.rankingSystem,
+      // FIX-508: Prestige R1 — rebirth + prestigeShop 存档接入
+      prestige: this.r11.prestigeSystem,
+      rebirth: this.r11.rebirthSystem,
+      prestigeShop: this.r11.prestigeShopSystem,
       eventTrigger: this.eventSystems.trigger,
       eventNotification: this.eventSystems.notification,
       eventUI: this.eventSystems.uiNotification,

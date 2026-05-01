@@ -239,7 +239,19 @@ export class RebirthSystem implements ISubsystem {
 
   // ─── 存档 ───────────────────────────────
 
-  loadSaveData(data: { rebirth: RebirthState }): void { this.state = { ...data.rebirth }; }
+  loadSaveData(data: { rebirth: RebirthState }): void {
+    // FIX-504: null防护
+    if (!data || !data.rebirth) return;
+    // FIX-504: 深拷贝+关键字段NaN防护
+    const loaded = { ...data.rebirth };
+    loaded.rebirthCount = Number.isFinite(loaded.rebirthCount) && loaded.rebirthCount >= 0 ? loaded.rebirthCount : 0;
+    loaded.currentMultiplier = Number.isFinite(loaded.currentMultiplier) && loaded.currentMultiplier > 0 ? loaded.currentMultiplier : 1.0;
+    loaded.accelerationDaysLeft = Number.isFinite(loaded.accelerationDaysLeft) && loaded.accelerationDaysLeft >= 0 ? loaded.accelerationDaysLeft : 0;
+    loaded.rebirthRecords = Array.isArray(loaded.rebirthRecords) ? loaded.rebirthRecords : [];
+    loaded.completedRebirthQuests = Array.isArray(loaded.completedRebirthQuests) ? loaded.completedRebirthQuests : [];
+    loaded.rebirthQuestProgress = loaded.rebirthQuestProgress && typeof loaded.rebirthQuestProgress === 'object' ? loaded.rebirthQuestProgress : {};
+    this.state = loaded;
+  }
 
   // ─── v16.0 委托方法 ─────────────────────
 

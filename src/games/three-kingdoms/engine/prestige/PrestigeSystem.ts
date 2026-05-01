@@ -199,26 +199,31 @@ export class PrestigeSystem implements ISubsystem {
    * @returns 实际获得的声望值（考虑每日上限）
    */
   addPrestigePoints(source: PrestigeSourceType, basePoints: number, relatedId?: string): number {
+    // FIX-501: NaN/负值/非有限数防护
+    if (!Number.isFinite(basePoints) || basePoints <= 0) return 0;
+
     const config = PRESTIGE_SOURCE_CONFIGS.find((c) => c.type === source);
     if (!config) return 0;
 
     // 检查每日上限
     const dailyGained = this.state.dailyGained[source] ?? 0;
-    if (config.dailyCap > 0 && dailyGained >= config.dailyCap) {
+    // FIX-501: NaN防护 — dailyGained为NaN时重置为0
+    const safeDailyGained = Number.isFinite(dailyGained) ? dailyGained : 0;
+    if (config.dailyCap > 0 && safeDailyGained >= config.dailyCap) {
       return 0;
     }
 
     // 计算实际获得（不超过每日上限）
     let actualPoints = basePoints;
     if (config.dailyCap > 0) {
-      const remaining = config.dailyCap - dailyGained;
+      const remaining = config.dailyCap - safeDailyGained;
       actualPoints = Math.min(basePoints, remaining);
     }
 
     // 更新状态
     this.state.currentPoints += actualPoints;
     this.state.totalPoints += actualPoints;
-    this.state.dailyGained[source] = dailyGained + actualPoints;
+    this.state.dailyGained[source] = safeDailyGained + actualPoints;
 
     // 检查升级 (#3)
     this.checkLevelUp();
@@ -325,8 +330,15 @@ export class PrestigeSystem implements ISubsystem {
 
   /** 加载存档数据 */
   loadSaveData(data: PrestigeSaveData): void {
-    if (data.version !== PRESTIGE_SAVE_VERSION) return;
-    this.state = { ...data.prestige };
+    if (!data || data.version !== PRESTIGE_SAVE_VERSION) return;
+    if (!data.prestige) return; // FIX-502: null防护
+    // FIX-502: 深拷贝+关键字段NaN防护
+    const loaded = { ...data.prestige };
+    loaded.currentPoints = Number.isFinite(loaded.currentPoints) ? loaded.currentPoints : 0;
+    loaded.totalPoints = Number.isFinite(loaded.totalPoints) ? loaded.totalPoints : 0;
+    loaded.currentLevel = Number.isFinite(loaded.currentLevel) && loaded.currentLevel > 0
+      ? Math.min(loaded.currentLevel, MAX_PRESTIGE_LEVEL) : 1;
+    this.state = { ...createInitialState(), ...loaded };
   }
 
   // ─── 内部方法 ───────────────────────────

@@ -62,6 +62,12 @@ export function calculateBuildTime(
   multiplier: number,
   accelerationDaysLeft: number,
 ): number {
+  // FIX-507: NaN/非正数防护
+  if (!Number.isFinite(baseTimeSeconds) || baseTimeSeconds <= 0) return baseTimeSeconds > 0 ? baseTimeSeconds : 1;
+  if (!Number.isFinite(buildingLevel) || buildingLevel < 0) buildingLevel = 0;
+  if (!Number.isFinite(multiplier) || multiplier <= 0) multiplier = 1.0;
+  if (!Number.isFinite(accelerationDaysLeft) || accelerationDaysLeft < 0) accelerationDaysLeft = 0;
+
   // 无转生加速（倍率为1.0且无加速期），直接返回原始时间
   if (multiplier <= 1.0 && accelerationDaysLeft <= 0) {
     return baseTimeSeconds;

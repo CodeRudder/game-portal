@@ -344,7 +344,8 @@ export interface PrestigeRebirthConfig {
  * @returns 转生倍率，保留两位小数
  */
 export function calcRebirthMultiplierFromConfig(count: number, config?: Partial<PrestigeRebirthConfig>): number {
-  if (count <= 0) return 1.0;
+  // FIX-503: NaN/非有限数防护
+  if (!Number.isFinite(count) || count <= 0) return 1.0;
 
   const cfg: PrestigeRebirthConfig = {
     maxRebirthCount: 100,

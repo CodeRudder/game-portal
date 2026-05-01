@@ -90,9 +90,9 @@ describe('RebirthSystem.helpers 对抗式测试', () => {
   // ═══════════════════════════════════════════
 
   describe('[F-Boundary] 边界条件', () => {
-    it('建筑时间计算：baseTime=0返回1（最小值）', () => {
-      // multiplier<=1.0 && accelerationDaysLeft<=0 => return baseTimeSeconds
-      expect(calculateBuildTime(0, 10, 1.0, 0)).toBe(0);
+    it('建筑时间计算：baseTime=0 FIX-507 返回1（最小值）', () => {
+      // FIX-507: baseTime=0 被防护，返回1（最小值）
+      expect(calculateBuildTime(0, 10, 1.0, 0)).toBe(1);
     });
 
     it('建筑时间计算：baseTime=1', () => {
