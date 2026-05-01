@@ -158,7 +158,8 @@ export class TerritorySystem implements ISubsystem {
    */
   captureTerritory(id: string, newOwner: OwnershipStatus): boolean {
     const t = this.territories.get(id);
-    if (!t) return false;
+    // FIX-711: null防护 — newOwner为空时拒绝
+    if (!t || !newOwner) return false;
 
     const previousOwner = t.ownership;
     t.ownership = newOwner;
@@ -314,10 +315,11 @@ export class TerritorySystem implements ISubsystem {
 
     for (const t of playerTerritories) {
       territoriesByRegion[t.region]++;
-      totalProduction.grain += t.currentProduction.grain;
-      totalProduction.gold += t.currentProduction.gold;
-      totalProduction.troops += t.currentProduction.troops;
-      totalProduction.mandate += t.currentProduction.mandate;
+      // FIX-713: NaN累加防护 — 跳过NaN产出值
+      totalProduction.grain += Number.isFinite(t.currentProduction.grain) ? t.currentProduction.grain : 0;
+      totalProduction.gold += Number.isFinite(t.currentProduction.gold) ? t.currentProduction.gold : 0;
+      totalProduction.troops += Number.isFinite(t.currentProduction.troops) ? t.currentProduction.troops : 0;
+      totalProduction.mandate += Number.isFinite(t.currentProduction.mandate) ? t.currentProduction.mandate : 0;
 
       details.push({
         id: t.id,
@@ -378,6 +380,8 @@ export class TerritorySystem implements ISubsystem {
 
   /** 从存档数据恢复 */
   deserialize(data: TerritorySaveData): void {
+    // FIX-705: null防护
+    if (!data) return;
     for (const [id, ownership] of Object.entries(data.owners)) {
       const t = this.territories.get(id);
       if (t) {
@@ -387,8 +391,10 @@ export class TerritorySystem implements ISubsystem {
     for (const [id, level] of Object.entries(data.levels)) {
       const t = this.territories.get(id);
       if (t) {
-        t.level = level;
-        t.currentProduction = calculateProduction(t.baseProduction, level);
+        // FIX-710: NaN防护 — level为NaN或非法值时使用默认等级1
+        const safeLevel = (!Number.isFinite(level) || level < 1) ? 1 as LandmarkLevel : level;
+        t.level = safeLevel;
+        t.currentProduction = calculateProduction(t.baseProduction, safeLevel);
       }
     }
   }

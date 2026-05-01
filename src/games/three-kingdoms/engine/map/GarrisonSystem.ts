@@ -210,8 +210,10 @@ export class GarrisonSystem implements ISubsystem {
    * @returns 驻防加成
    */
   calculateBonus(general: GeneralData, baseProduction: TerritoryProduction): GarrisonBonus {
+    // FIX-712: NaN防护 — defense/production为NaN时返回0
+    const defense = Number.isFinite(general.baseStats.defense) ? general.baseStats.defense : 0;
     // 防御加成：武将defense属性 × 系数
-    const defenseBonus = general.baseStats.defense * DEFENSE_BONUS_FACTOR;
+    const defenseBonus = defense * DEFENSE_BONUS_FACTOR;
 
     // 产出加成：基础产出 × 品质百分比
     const qualityBonus = QUALITY_PRODUCTION_BONUS[general.quality] ?? 0.05;
@@ -219,10 +221,10 @@ export class GarrisonSystem implements ISubsystem {
     return {
       defenseBonus: Math.round(defenseBonus * 1000) / 1000,
       productionBonus: {
-        grain: Math.round(baseProduction.grain * qualityBonus * 100) / 100,
-        gold: Math.round(baseProduction.gold * qualityBonus * 100) / 100,
-        troops: Math.round(baseProduction.troops * qualityBonus * 100) / 100,
-        mandate: Math.round(baseProduction.mandate * qualityBonus * 100) / 100,
+        grain: Math.round((Number.isFinite(baseProduction.grain) ? baseProduction.grain : 0) * qualityBonus * 100) / 100,
+        gold: Math.round((Number.isFinite(baseProduction.gold) ? baseProduction.gold : 0) * qualityBonus * 100) / 100,
+        troops: Math.round((Number.isFinite(baseProduction.troops) ? baseProduction.troops : 0) * qualityBonus * 100) / 100,
+        mandate: Math.round((Number.isFinite(baseProduction.mandate) ? baseProduction.mandate : 0) * qualityBonus * 100) / 100,
       },
     };
   }

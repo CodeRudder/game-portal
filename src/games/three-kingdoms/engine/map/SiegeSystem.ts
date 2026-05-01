@@ -72,6 +72,8 @@ export interface SiegeSaveData {
   dailySiegeCount: number;
   /** 最后攻城日期（YYYY-MM-DD），用于跨天重置判断 */
   lastSiegeDate: string;
+  /** FIX-704: 占领冷却时间戳（领土ID -> 时间戳ms） */
+  captureTimestamps?: Record<string, number>;
   version: number;
 }
 
@@ -176,6 +178,11 @@ export class SiegeSystem implements ISubsystem {
     availableTroops: number,
     availableGrain: number,
   ): SiegeConditionResult {
+    // FIX-701: NaN防护 — 兵力/粮草为NaN时拒绝攻城
+    if (!Number.isFinite(availableTroops) || !Number.isFinite(availableGrain)) {
+      return { canSiege: false, errorCode: 'INSUFFICIENT_TROOPS', errorMessage: '兵力或粮草数据异常' };
+    }
+
     const territory = this.territorySys?.getTerritoryById(targetId);
 
     if (!territory) {
@@ -217,8 +224,13 @@ export class SiegeSystem implements ISubsystem {
 
   /** 计算攻城消耗：兵力 = 基础 × 防御/100，粮草 = 固定500（⚠️PRD MAP-4统一声明） */
   calculateSiegeCost(territory: TerritoryData): SiegeCost {
+    // FIX-702: 防御值NaN/负值/零值防护
+    const defense = territory.defenseValue;
+    if (!Number.isFinite(defense) || defense <= 0) {
+      return { troops: MIN_SIEGE_TROOPS, grain: GRAIN_FIXED_COST };
+    }
     return {
-      troops: Math.ceil(MIN_SIEGE_TROOPS * (territory.defenseValue / 100) * TROOP_COST_FACTOR),
+      troops: Math.ceil(MIN_SIEGE_TROOPS * (defense / 100) * TROOP_COST_FACTOR),
       grain: GRAIN_FIXED_COST,
     };
   }
@@ -311,6 +323,8 @@ export class SiegeSystem implements ISubsystem {
     const WIN_RATE_MAX = 0.95;
     const WIN_RATE_BASE = 0.5;
 
+    // FIX-703: NaN防护 — 攻防战力为NaN时返回最低胜率
+    if (!Number.isFinite(attackerPower) || !Number.isFinite(defenderPower)) return WIN_RATE_MIN;
     if (attackerPower <= 0) return WIN_RATE_MIN;
     if (defenderPower <= 0) return WIN_RATE_MAX;
 
@@ -373,23 +387,40 @@ export class SiegeSystem implements ISubsystem {
   // ─── 序列化 ────────────────────────────────
 
   serialize(): SiegeSaveData {
+    // FIX-704: 保存captureTimestamps冷却时间戳
+    const captureTimestamps: Record<string, number> = {};
+    for (const [id, ts] of this.captureTimestamps) {
+      captureTimestamps[id] = ts;
+    }
     return {
       totalSieges: this.totalSieges,
       victories: this.victories,
       defeats: this.defeats,
       dailySiegeCount: this.dailySiegeCount,
       lastSiegeDate: this.lastSiegeDate,
+      captureTimestamps,
       version: SIEGE_SAVE_VERSION,
     };
   }
 
   deserialize(data: SiegeSaveData): void {
+    // FIX-705: null防护
+    if (!data) return;
     this.totalSieges = data.totalSieges;
     this.victories = data.victories;
     this.defeats = data.defeats;
     this.dailySiegeCount = data.dailySiegeCount ?? 0;
     this.lastSiegeDate = data.lastSiegeDate ?? '';
     this.history = [];
+    // FIX-704: 恢复captureTimestamps冷却时间戳
+    this.captureTimestamps.clear();
+    if (data.captureTimestamps) {
+      for (const [id, ts] of Object.entries(data.captureTimestamps)) {
+        if (Number.isFinite(ts)) {
+          this.captureTimestamps.set(id, ts);
+        }
+      }
+    }
   }
 
   // ─── 内部方法 ──────────────────────────────

@@ -247,7 +247,8 @@ export class WorldMapSystem implements ISubsystem {
   /** 升级地标等级 */
   upgradeLandmark(id: string): boolean {
     const landmark = this.landmarkMap.get(id);
-    if (!landmark || landmark.level >= 5) return false;
+    // FIX-706: NaN防护 — level为NaN时拒绝升级
+    if (!landmark || !Number.isFinite(landmark.level) || landmark.level >= 5) return false;
     landmark.level = (landmark.level + 1) as LandmarkLevel;
     landmark.productionMultiplier += 0.2;
 
@@ -291,6 +292,8 @@ export class WorldMapSystem implements ISubsystem {
 
   /** 设置缩放 */
   setZoom(zoom: number): void {
+    // FIX-707: NaN防护
+    if (!Number.isFinite(zoom)) return;
     const clamped = Math.max(VIEWPORT_CONFIG.minZoom, Math.min(VIEWPORT_CONFIG.maxZoom, zoom));
     this.viewport.zoom = clamped;
   }
@@ -331,6 +334,9 @@ export class WorldMapSystem implements ISubsystem {
 
   /** 从存档数据恢复 */
   deserialize(data: WorldMapSaveData): void {
+    // FIX-705: null防护
+    if (!data) return;
+
     // 恢复地标状态
     for (const [id, ownership] of Object.entries(data.landmarkOwnerships)) {
       const landmark = this.landmarkMap.get(id);

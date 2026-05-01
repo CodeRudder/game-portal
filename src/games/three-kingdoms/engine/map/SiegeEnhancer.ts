@@ -146,6 +146,8 @@ export class SiegeEnhancer implements ISubsystem {
    * - 驻防加成已计入 defenderPower，地形修正由外部传入
    */
   private computeWinRate(attackerPower: number, defenderPower: number, terrainBonus = 0): number {
+    // FIX-703: NaN防护 — 攻防战力为NaN时返回最低胜率（与SiegeSystem对称修复）
+    if (!Number.isFinite(attackerPower) || !Number.isFinite(defenderPower)) return WIN_RATE_MIN;
     if (attackerPower <= 0) return WIN_RATE_MIN;
     if (defenderPower <= 0) return WIN_RATE_MAX;
 
@@ -378,6 +380,8 @@ export class SiegeEnhancer implements ISubsystem {
   }
 
   deserialize(data: SiegeEnhancerSaveData): void {
+    // FIX-705: null防护
+    if (!data) return;
     this.totalRewardsGranted = data.totalRewardsGranted ?? 0;
   }
 

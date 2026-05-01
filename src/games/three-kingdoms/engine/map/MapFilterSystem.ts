@@ -72,6 +72,10 @@ export class MapFilterSystem implements ISubsystem {
     landmarks: LandmarkData[],
     criteria: MapFilterCriteria,
   ): MapFilterResult {
+    // FIX-709: null防护
+    tiles = tiles ?? [];
+    landmarks = landmarks ?? [];
+    criteria = criteria ?? {};
     let filteredTiles = tiles;
     let filteredLandmarks = landmarks;
 

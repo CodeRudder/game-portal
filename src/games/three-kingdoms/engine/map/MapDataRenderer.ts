@@ -78,7 +78,9 @@ export class MapDataRenderer implements ISubsystem {
   } {
     const { tileWidth, tileHeight } = GRID_CONFIG;
     const { width, height } = VIEWPORT_CONFIG;
-    const { offsetX, offsetY, zoom } = viewport;
+    // FIX-708: zoom=0/NaN除零防护
+    const zoom = (!viewport.zoom || !Number.isFinite(viewport.zoom)) ? VIEWPORT_CONFIG.defaultZoom : viewport.zoom;
+    const { offsetX, offsetY } = viewport;
 
     // 视口在世界坐标中的范围
     const worldLeft = -offsetX / zoom;
