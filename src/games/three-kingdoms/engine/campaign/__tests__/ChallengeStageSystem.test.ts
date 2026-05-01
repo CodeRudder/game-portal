@@ -388,14 +388,16 @@ describe('ChallengeStageSystem 挑战完成', () => {
     expect(deps.addFragment).toHaveBeenCalledWith('guanyu', 1);
   });
 
-  it('胜利：无预锁时 armyCost/staminaCost 为0', () => {
+  it('胜利：无预锁时 completeChallenge 返回失败（FIX-303 防免费刷奖励）', () => {
     const { deps } = createDepsWithResources();
     const sys = new ChallengeStageSystem(deps, createTestStages());
     // 直接调用 completeChallenge 不预锁（边界情况）
+    // FIX-303: 未预锁资源不允许完成挑战，返回 victory:false
     const result = sys.completeChallenge('test_1', true);
-    expect(result.victory).toBe(true);
+    expect(result.victory).toBe(false);
     expect(result.armyCost).toBe(0);
     expect(result.staminaCost).toBe(0);
+    expect(result.rewards).toHaveLength(0);
   });
 
   it('失败：返还预锁资源', () => {

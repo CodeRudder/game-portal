@@ -370,8 +370,10 @@ describe('BondAdversarial — 对抗式测试', () => {
 
   describe('[F-Lifecycle] trigger→serialize→load→trigger (FL-05)', () => {
     it('触发事件后序列化，加载到新实例后再次触发应失败', () => {
-      // 原实例触发
+      // 原实例触发 — story_001需要liubei/guanyu/zhangfei好感度≥50
       system.addFavorability('liubei', 60);
+      system.addFavorability('guanyu', 60);
+      system.addFavorability('zhangfei', 60);
       const r1 = system.triggerStoryEvent('story_001');
       expect(r1.success).toBe(true);
 
@@ -393,7 +395,8 @@ describe('BondAdversarial — 对抗式测试', () => {
 
     it('好感度在序列化→加载后保持一致', () => {
       system.addFavorability('liubei', 50);
-      system.addFavorability('guanyu', 30);
+      system.addFavorability('guanyu', 50);
+      system.addFavorability('zhangfei', 50);
       system.triggerStoryEvent('story_001');
 
       const saved = system.serialize();
@@ -403,8 +406,8 @@ describe('BondAdversarial — 对抗式测试', () => {
 
       // liubei: 50 + 20(event) = 70
       expect(system2.getFavorability('liubei').value).toBe(70);
-      // guanyu: 30 + 20(event) = 50
-      expect(system2.getFavorability('guanyu').value).toBe(50);
+      // guanyu: 50 + 20(event) = 70
+      expect(system2.getFavorability('guanyu').value).toBe(70);
     });
   });
 
@@ -477,6 +480,9 @@ describe('BondAdversarial — 对抗式测试', () => {
 
   describe('[F-Cross] emit payload结构完整性 (FC-01)', () => {
     it('triggerStoryEvent emit的payload包含eventId和rewards', () => {
+      system.addFavorability('liubei', 60);
+      system.addFavorability('guanyu', 60);
+      system.addFavorability('zhangfei', 60);
       system.triggerStoryEvent('story_001');
       expect(deps.eventBus.emit).toHaveBeenCalledWith(
         'bond:storyTriggered',
@@ -496,6 +502,8 @@ describe('BondAdversarial — 对抗式测试', () => {
     });
 
     it('triggerStoryEvent对不同事件emit正确的eventId', () => {
+      system.addFavorability('liubei', 70);
+      system.addFavorability('zhugeliang', 70);
       system.triggerStoryEvent('story_002');
       expect(deps.eventBus.emit).toHaveBeenCalledWith(
         'bond:storyTriggered',
@@ -506,7 +514,10 @@ describe('BondAdversarial — 对抗式测试', () => {
     });
 
     it('触发失败时不emit事件', () => {
-      // 先触发一次
+      // 先触发一次（需要足够好感度）
+      system.addFavorability('liubei', 60);
+      system.addFavorability('guanyu', 60);
+      system.addFavorability('zhangfei', 60);
       system.triggerStoryEvent('story_001');
       // 清除调用记录
       (deps.eventBus.emit as ReturnType<typeof vi.fn>).mockClear();
@@ -605,20 +616,22 @@ describe('BondAdversarial — 对抗式测试', () => {
         completedStoryEvents: ['story_001'],
       });
 
-      // 第二次加载：只有guanyu好感30
+      // 第二次加载：所有武将好感度足够触发story_001，且无completedStoryEvents
       system.loadSaveData({
         version: BOND_SAVE_VERSION,
         favorabilities: {
-          guanyu: { heroId: 'guanyu', value: 30, triggeredEvents: [] },
+          guanyu: { heroId: 'guanyu', value: 60, triggeredEvents: [] },
+          liubei: { heroId: 'liubei', value: 60, triggeredEvents: [] },
+          zhangfei: { heroId: 'zhangfei', value: 60, triggeredEvents: [] },
         },
         completedStoryEvents: [],
       });
 
-      // liubei 应被清除
-      expect(system.getFavorability('liubei').value).toBe(0);
+      // liubei 应被覆盖为60
+      expect(system.getFavorability('liubei').value).toBe(60);
       // guanyu 应存在
-      expect(system.getFavorability('guanyu').value).toBe(30);
-      // story_001 应被清除
+      expect(system.getFavorability('guanyu').value).toBe(60);
+      // story_001 应被清除，可以重新触发
       const r = system.triggerStoryEvent('story_001');
       expect(r.success).toBe(true);
     });
@@ -636,6 +649,10 @@ describe('BondAdversarial — 对抗式测试', () => {
     it('如果事件标记为repeatable=true，可以重复触发', () => {
       // 手动模拟repeatable事件：直接操作completedStoryEvents
       // 由于STORY_EVENTS是import的常量，我们通过逻辑验证
+      // 先设置足够好感度
+      system.addFavorability('liubei', 60);
+      system.addFavorability('guanyu', 60);
+      system.addFavorability('zhangfei', 60);
       // 已完成且repeatable=false → 失败
       system.triggerStoryEvent('story_001');
       const r2 = system.triggerStoryEvent('story_001');
@@ -648,51 +665,51 @@ describe('BondAdversarial — 对抗式测试', () => {
 
   describe('[F-Normal] 触发事件后所有关联武将好感度增加 (FN-03)', () => {
     it('桃园结义触发后刘备/关羽/张飞好感度都增加20', () => {
-      system.addFavorability('liubei', 10);
-      system.addFavorability('guanyu', 10);
-      system.addFavorability('zhangfei', 10);
+      system.addFavorability('liubei', 60);
+      system.addFavorability('guanyu', 60);
+      system.addFavorability('zhangfei', 60);
 
       system.triggerStoryEvent('story_001');
 
-      expect(system.getFavorability('liubei').value).toBe(30); // 10 + 20
-      expect(system.getFavorability('guanyu').value).toBe(30); // 10 + 20
-      expect(system.getFavorability('zhangfei').value).toBe(30); // 10 + 20
+      expect(system.getFavorability('liubei').value).toBe(80); // 60 + 20
+      expect(system.getFavorability('guanyu').value).toBe(80); // 60 + 20
+      expect(system.getFavorability('zhangfei').value).toBe(80); // 60 + 20
     });
 
     it('三顾茅庐触发后刘备/诸葛亮好感度都增加30', () => {
-      system.addFavorability('liubei', 10);
-      system.addFavorability('zhugeliang', 10);
+      system.addFavorability('liubei', 70);
+      system.addFavorability('zhugeliang', 70);
 
       system.triggerStoryEvent('story_002');
 
-      expect(system.getFavorability('liubei').value).toBe(40); // 10 + 30
-      expect(system.getFavorability('zhugeliang').value).toBe(40); // 10 + 30
+      expect(system.getFavorability('liubei').value).toBe(100); // 70 + 30
+      expect(system.getFavorability('zhugeliang').value).toBe(100); // 70 + 30
     });
 
     it('赤壁之战触发后三个武将好感度都增加40', () => {
-      system.addFavorability('zhouyu', 10);
-      system.addFavorability('zhugeliang', 10);
-      system.addFavorability('caocao', 10);
+      system.addFavorability('zhouyu', 80);
+      system.addFavorability('zhugeliang', 80);
+      system.addFavorability('caocao', 80);
 
       system.triggerStoryEvent('story_003');
 
-      expect(system.getFavorability('zhouyu').value).toBe(50); // 10 + 40
-      expect(system.getFavorability('zhugeliang').value).toBe(50); // 10 + 40
-      expect(system.getFavorability('caocao').value).toBe(50); // 10 + 40
+      expect(system.getFavorability('zhouyu').value).toBe(120); // 80 + 40
+      expect(system.getFavorability('zhugeliang').value).toBe(120); // 80 + 40
+      expect(system.getFavorability('caocao').value).toBe(120); // 80 + 40
     });
 
     it('过五关斩六将触发后关羽好感度增加25', () => {
-      system.addFavorability('guanyu', 10);
+      system.addFavorability('guanyu', 90);
       system.triggerStoryEvent('story_004');
-      expect(system.getFavorability('guanyu').value).toBe(35); // 10 + 25
+      expect(system.getFavorability('guanyu').value).toBe(115); // 90 + 25
     });
 
     it('草船借箭触发后诸葛亮/曹操好感度都增加20', () => {
-      system.addFavorability('zhugeliang', 10);
-      system.addFavorability('caocao', 10);
+      system.addFavorability('zhugeliang', 60);
+      system.addFavorability('caocao', 60);
       system.triggerStoryEvent('story_005');
-      expect(system.getFavorability('zhugeliang').value).toBe(30); // 10 + 20
-      expect(system.getFavorability('caocao').value).toBe(30); // 10 + 20
+      expect(system.getFavorability('zhugeliang').value).toBe(80); // 60 + 20
+      expect(system.getFavorability('caocao').value).toBe(80); // 60 + 20
     });
   });
 
@@ -857,10 +874,11 @@ describe('BondAdversarial — 对抗式测试', () => {
       expect(r.reason).toContain('不存在');
       // 空Map
       expect(system.getAvailableStoryEvents(new Map())).toEqual([]);
-      // 空字符串heroId
+      // 空字符串heroId — addFavorability会因!heroId而拒绝
       expect(system.getFavorability('').value).toBe(0);
       system.addFavorability('', 10);
-      expect(system.getFavorability('').value).toBe(10);
+      // 空字符串heroId被addFavorability的!heroId守卫拦截，值不变
+      expect(system.getFavorability('').value).toBe(0);
     });
   });
 

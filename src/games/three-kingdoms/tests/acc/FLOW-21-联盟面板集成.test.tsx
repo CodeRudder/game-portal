@@ -530,6 +530,28 @@ describe('FLOW-21 联盟面板集成测试', () => {
         '退出后玩家联盟ID应清空');
     });
 
+    it(accTest('FLOW-21-28b', '边界 — 盟主有多成员时不可直接退出（需先转让）'), () => {
+      const { alliance, playerState } = createTestAlliance(allianceSys);
+      // 添加第二个成员，使盟主不能直接解散
+      const memberPs = createPlayerState({ allianceId: alliance.id });
+      // 直接添加成员到 alliance.members（AllianceSystem 无 joinAlliance 方法）
+      alliance.members['p2'] = {
+        playerId: 'p2', playerName: '玩家2',
+        role: 'MEMBER' as AllianceRole, power: 5000,
+        joinTime: NOW, dailyContribution: 0, totalContribution: 0, dailyBossChallenges: 0,
+      };
+
+      let threw = false;
+      try {
+        allianceSys.leaveAlliance(alliance, playerState, 'p1');
+      } catch (e: any) {
+        threw = true;
+        assertStrict(e.message.includes('转让'), 'FLOW-21-28b',
+          `错误应包含"转让"，实际: ${e.message}`);
+      }
+      assertStrict(threw, 'FLOW-21-28b', '盟主退出应抛异常');
+    });
+
     it(accTest('FLOW-21-29', '边界 — 公会币不足购买失败'), () => {
       const ps = createPlayerState({ guildCoins: 0 });
 

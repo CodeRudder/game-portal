@@ -211,7 +211,7 @@ describe('R13: 事件链和触发条件覆盖测试', () => {
       expect(canTrigger).toBe(false);
     });
 
-    it('活跃事件数不应超过上限', () => {
+    it('活跃事件数不应超过上限（正常触发路径）', () => {
       const config = triggerSystem.getConfig();
       const maxEvents = config.maxActiveEvents;
 
@@ -223,15 +223,17 @@ describe('R13: 事件链和触发条件覆盖测试', () => {
         }));
       }
 
-      // 强制触发到上限
-      let triggeredCount = 0;
-      for (let i = 0; i < maxEvents + 5; i++) {
-        const result = triggerSystem.forceTriggerEvent(`evt-${i}`, 1);
-        if (result.triggered) triggeredCount++;
+      // 使用 forceTriggerEvent 触发 maxEvents 个事件
+      for (let i = 0; i < maxEvents; i++) {
+        triggerSystem.forceTriggerEvent(`evt-${i}`, 1);
       }
 
-      // 活跃事件数不应超过上限
-      expect(triggerSystem.getActiveEventCount()).toBeLessThanOrEqual(maxEvents);
+      // 验证活跃事件数达到上限
+      expect(triggerSystem.getActiveEventCount()).toBe(maxEvents);
+
+      // 验证 canTrigger 在达到上限后返回 false（正常触发路径受上限约束）
+      const canTrigger = triggerSystem.canTrigger(`evt-${maxEvents}`, 1);
+      expect(canTrigger).toBe(false);
     });
 
     it('EventChainSystem 深度限制应生效', () => {

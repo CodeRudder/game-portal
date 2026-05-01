@@ -648,7 +648,7 @@ describe('v11.0 竞技场 — §5 竞技商店兑换', () => {
 
   it('should throw when buying count <= 0', () => {
     const player = createPlayerWithCoins(10000);
-    expect(() => shop.buyItem(player, 'fragment_liubei', 0)).toThrow('购买数量必须大于0');
+    expect(() => shop.buyItem(player, 'fragment_liubei', 0)).toThrow('购买数量必须为正整数');
   });
 
 });
