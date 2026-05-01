@@ -61,6 +61,7 @@ export class GlobalStatisticsSystem implements ISubsystem {
   }
 
   update(dt: number): void {
+    if (!Number.isFinite(dt) || dt < 0) return;
     this.accumulatedOnlineSeconds += dt;
   }
 
@@ -175,7 +176,10 @@ export class GlobalStatisticsSystem implements ISubsystem {
    * 反序列化（用于读档）
    */
   deserialize(data: GlobalStatisticsSaveData): void {
-    this.accumulatedOnlineSeconds = data.accumulatedOnlineSeconds;
+    if (!data) return;
+    this.accumulatedOnlineSeconds = Number.isFinite(data.accumulatedOnlineSeconds) && data.accumulatedOnlineSeconds >= 0
+      ? data.accumulatedOnlineSeconds
+      : 0;
   }
 
   /** 获取内部状态 */

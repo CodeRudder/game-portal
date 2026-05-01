@@ -282,11 +282,15 @@ export class EndingSystem implements ISubsystem {
    * 根据上下文计算四维评分
    */
   private calculateScore(ctx: EndingContext): EndingScore {
-    const powerScore = Math.min(100, Math.round((ctx.totalPower / ctx.powerCap) * 100));
+    const powerScore = ctx.powerCap > 0
+      ? Math.min(100, Math.round((ctx.totalPower / ctx.powerCap) * 100))
+      : 0;
     const collectionScore = ctx.heroTotal > 0
       ? Math.min(100, Math.round((ctx.heroCount / ctx.heroTotal) * 100))
       : 0;
-    const prestigeScore = Math.min(100, Math.round((ctx.prestigeLevel / ctx.prestigeCap) * 100));
+    const prestigeScore = ctx.prestigeCap > 0
+      ? Math.min(100, Math.round((ctx.prestigeLevel / ctx.prestigeCap) * 100))
+      : 0;
     const territoryScore = ctx.territoryTotal > 0
       ? Math.min(100, Math.round((ctx.territoryOwned / ctx.territoryTotal) * 100))
       : 0;

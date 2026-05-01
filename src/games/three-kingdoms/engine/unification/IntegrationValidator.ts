@@ -184,40 +184,41 @@ export class IntegrationValidator implements ISubsystem {
 
   /** 验证跨系统数据流 */
   validateCrossSystemFlow(): CrossSystemFlowResult {
-    const p = this.provider;
-    const checks: DataFlowCheckResult[] = [];
+    try {
+      const p = this.provider;
+      const checks: DataFlowCheckResult[] = [];
 
-    // 资源→建筑
-    const grainRate = p.getResourceProductionRate('grain');
-    const farmLevel = p.getBuildingLevel('farm');
-    const farmCost = p.getBuildingUpgradeCost('farm', farmLevel + 1);
-    checks.push({
-      path: 'resource_to_building',
-      sourceValue: grainRate,
-      targetValue: farmCost,
-      consistent: grainRate > 0 && farmCost > 0,
-      deviation: farmCost > 0 ? Math.abs(grainRate * 86400 - farmCost) / farmCost : 0,
-    });
+      // 资源→建筑
+      const grainRate = p.getResourceProductionRate('grain');
+      const farmLevel = p.getBuildingLevel('farm');
+      const farmCost = p.getBuildingUpgradeCost('farm', farmLevel + 1);
+      checks.push({
+        path: 'resource_to_building',
+        sourceValue: grainRate,
+        targetValue: farmCost,
+        consistent: grainRate > 0 && farmCost > 0,
+        deviation: farmCost > 0 ? Math.abs(grainRate * 86400 - farmCost) / farmCost : 0,
+      });
 
-    // 建筑→武将
-    const heroStats = p.getHeroStats('hero_1');
-    checks.push({
-      path: 'building_to_hero',
-      sourceValue: farmLevel,
-      targetValue: heroStats?.attack ?? 0,
-      consistent: farmLevel >= 0 && (heroStats?.attack ?? 0) > 0,
-      deviation: 0,
-    });
+      // 建筑→武将
+      const heroStats = p.getHeroStats('hero_1');
+      checks.push({
+        path: 'building_to_hero',
+        sourceValue: farmLevel,
+        targetValue: heroStats?.attack ?? 0,
+        consistent: farmLevel >= 0 && (heroStats?.attack ?? 0) > 0,
+        deviation: 0,
+      });
 
-    // 武将→战斗
-    const formationPower = p.getFormationPower('main');
-    checks.push({
-      path: 'hero_to_battle',
-      sourceValue: heroStats?.attack ?? 0,
-      targetValue: formationPower,
-      consistent: formationPower > 0,
-      deviation: heroStats ? Math.abs(heroStats.attack * 3 - formationPower) / formationPower : 0,
-    });
+      // 武将→战斗
+      const formationPower = p.getFormationPower('main');
+      checks.push({
+        path: 'hero_to_battle',
+        sourceValue: heroStats?.attack ?? 0,
+        targetValue: formationPower,
+        consistent: formationPower > 0,
+        deviation: heroStats ? Math.abs(heroStats.attack * 3 - formationPower) / formationPower : 0,
+      });
 
     // 战斗→装备
     const equipBonus = p.getEquipmentBonus('equip_1');
@@ -261,6 +262,18 @@ export class IntegrationValidator implements ISubsystem {
     const allPassed = checks.every(c => c.consistent);
 
     return { checks, allPassed };
+    } catch (e) {
+      return {
+        checks: [{
+          path: `error: ${e instanceof Error ? e.message : String(e)}`,
+          sourceValue: 0,
+          targetValue: 0,
+          consistent: false,
+          deviation: 100,
+        }],
+        allPassed: false,
+      };
+    }
   }
 
   // ─── #3 转生循环验证 ──────────────────────
