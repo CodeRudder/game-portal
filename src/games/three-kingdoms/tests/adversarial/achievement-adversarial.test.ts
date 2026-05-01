@@ -378,12 +378,12 @@ describe('F-Error: 错误路径', () => {
 // ══════════════════════════════════════════════
 
 describe('F-Boundary: NaN / 负数 / 极端值', () => {
-  it('NaN 进度不应破坏系统', () => {
+  it('NaN 进度应被拒绝（FIX-901），进度保持 0', () => {
     const sys = createSystem();
     expect(() => sys.updateProgress('battle_wins', NaN)).not.toThrow();
     const ach = sys.getAchievement('ach-battle-001');
-    // NaN 比较结果为 false，所以进度应保持原值
-    expect(isNaN(ach!.instance.progress['battle_wins'])).toBe(true);
+    // FIX-901: NaN 被 !Number.isFinite 拦截，进度保持原值 0
+    expect(ach!.instance.progress['battle_wins']).toBe(0);
   });
 
   it('负数进度不应降低已有进度 (Math.max 保护)', () => {
@@ -407,10 +407,12 @@ describe('F-Boundary: NaN / 负数 / 极端值', () => {
     expect(sys.getAchievement('ach-battle-001')!.instance.status).toBe('completed');
   });
 
-  it('Infinity 进度应正常完成', () => {
+  it('Infinity 进度应被拒绝（FIX-901），不完成成就', () => {
     const sys = createSystem();
     sys.updateProgress('battle_wins', Infinity);
-    expect(sys.getAchievement('ach-battle-001')!.instance.status).toBe('completed');
+    // FIX-901: Infinity 被 !Number.isFinite 拦截
+    expect(sys.getAchievement('ach-battle-001')!.instance.status).toBe('in_progress');
+    expect(sys.getAchievement('ach-battle-001')!.instance.progress['battle_wins']).toBe(0);
   });
 
   it('刚好等于目标值应完成', () => {

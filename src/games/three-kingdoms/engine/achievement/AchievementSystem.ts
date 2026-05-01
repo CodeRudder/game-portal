@@ -161,7 +161,10 @@ export class AchievementSystem implements ISubsystem {
       // 更新匹配条件的进度
       for (const cond of def.conditions) {
         if (cond.type === conditionType) {
-          instance.progress[cond.type] = Math.max(instance.progress[cond.type], value);
+          // FIX-ACH-403: 已有进度为 NaN 时重置为 0 (P0)
+          const current = instance.progress[cond.type];
+          const safeCurrent = Number.isFinite(current) ? current : 0;
+          instance.progress[cond.type] = Math.max(safeCurrent, value);
         }
       }
 
@@ -201,8 +204,15 @@ export class AchievementSystem implements ISubsystem {
     instance.status = 'claimed';
     instance.claimedAt = Date.now();
 
+    // FIX-ACH-406: 验证积分值为正有限数 (P0)
+    const points = def.rewards.achievementPoints;
+    if (!Number.isFinite(points) || points <= 0) {
+      // 积分异常，仍标记为已领取但不累加积分
+      return { success: true, reward: def.rewards };
+    }
+
     // 更新积分
-    this.state.totalPoints += def.rewards.achievementPoints;
+    this.state.totalPoints += points;
 
     // 更新维度统计
     const dimStats = this.state.dimensionStats[def.dimension];
@@ -257,10 +267,18 @@ export class AchievementSystem implements ISubsystem {
 
   /** 获取存档数据 */
   getSaveData(): AchievementSaveData {
+    // FIX-ACH-404: 深拷贝每个 AchievementInstance 防止引用泄漏 (P0)
+    const achievements: Record<string, AchievementInstance> = {};
+    for (const [id, inst] of Object.entries(this.state.achievements)) {
+      achievements[id] = {
+        ...inst,
+        progress: { ...inst.progress },
+      };
+    }
     return {
       state: {
         ...this.state,
-        achievements: { ...this.state.achievements },
+        achievements,
         dimensionStats: { ...this.state.dimensionStats },
       },
       version: ACHIEVEMENT_SAVE_VERSION,
@@ -272,10 +290,43 @@ export class AchievementSystem implements ISubsystem {
     // FIX-904: null/undefined 输入防护 (P0-004)
     if (!data || !data.state) return;
     if (data.version !== ACHIEVEMENT_SAVE_VERSION) return;
+
+    // FIX-ACH-402: 验证关键字段存在 (P0)
+    const s = data.state;
+    if (!s.achievements || typeof s.achievements !== 'object') return;
+    if (!s.dimensionStats || typeof s.dimensionStats !== 'object') return;
+
+    // FIX-ACH-402: 验证 totalPoints 为有限数
+    const totalPoints = Number.isFinite(s.totalPoints) && (s.totalPoints as number) >= 0
+      ? s.totalPoints
+      : 0;
+
+    // FIX-ACH-402: 验证每个成就进度的数值合法性
+    const achievements: Record<string, AchievementInstance> = {};
+    for (const [id, inst] of Object.entries(s.achievements)) {
+      if (!inst) continue;
+      const progress: Record<string, number> = {};
+      for (const [key, val] of Object.entries(inst.progress || {})) {
+        // FIX-ACH-402: NaN/Infinity 进度重置为 0
+        progress[key] = (Number.isFinite(val) && val >= 0) ? val : 0;
+      }
+      achievements[id] = { ...inst, progress };
+    }
+
+    // FIX-ACH-405: 补全缺失的成就实例
+    for (const def of ALL_ACHIEVEMENTS) {
+      if (!achievements[def.id]) {
+        achievements[def.id] = createAchievementInstance(def);
+      }
+    }
+
     this.state = {
-      ...data.state,
-      achievements: { ...data.state.achievements },
-      dimensionStats: { ...data.state.dimensionStats },
+      ...s,
+      achievements,
+      totalPoints,
+      dimensionStats: { ...s.dimensionStats },
+      completedChains: Array.isArray(s.completedChains) ? [...s.completedChains] : [],
+      chainProgress: s.chainProgress && typeof s.chainProgress === 'object' ? { ...s.chainProgress } : {},
     };
     // 重建成就链进度
     this.checkChainProgress();

@@ -1,125 +1,130 @@
-# Achievement 模块 R1 对抗式测试 — Arbiter 裁决
+# Achievement R1 Verdict
 
-> Arbiter Agent | 2026-05-01
-> 5维度评分 + P0确认 + 修复优先级
+> Arbiter: AdversarialArbiter v1.8 | Time: 2026-05-01
+> 模块: achievement | 基于: round-1-tree.md + round-1-challenges.md
 
----
+## 评分
 
-## P0 确认裁决
+| 维度 | 分数 | 权重 | 加权分 |
+|------|------|------|--------|
+| F-Normal | 95/100 | 20% | 19.0 |
+| F-Error | 70/100 | 25% | 17.5 |
+| F-Boundary | 72/100 | 25% | 18.0 |
+| F-Cross | 88/100 | 15% | 13.2 |
+| F-Lifecycle | 55/100 | 15% | 8.3 |
+| **总分** | | **100%** | **76.0/100** |
 
-| ID | 描述 | Builder | Challenger | Arbiter裁决 | 理由 |
-|----|------|---------|------------|-------------|------|
-| P0-001 | updateProgress NaN污染进度 | FB-A01 | P0-001 | ✅ **确认P0** | Math.max(x,NaN)=NaN，进度不可恢复，经典NaN绕过 |
-| P0-002 | updateProgress 负值 | FB-A02 | P0-002 | ⬇️ **降级P2** | Math.max(0,-5)=0，负值被Math.max自然拦截，无实际危害 |
-| P0-003 | claimReward二次领取 | FB-A07 | P0-003 | ⬇️ **降级P1** | JS单线程无真正竞态，claimed!==completed返回失败，安全 |
-| P0-004 | loadSaveData null崩溃 | FE-A03/A04 | P0-004 | ✅ **确认P0** | data=null直接TypeError崩溃 |
-| P0-005 | loadSaveData版本不匹配静默 | FB-A10 | P0-005 | ⬇️ **降级P1** | 功能性问题非崩溃，不影响游戏运行 |
-| P0-006 | updateProgressFromSnapshot NaN透传 | FB-A14 | P0-006 | ✅ **确认P0** | 与P0-001联动，批量NaN污染入口 |
-| P0-007 | rewardCallback异常导致状态不一致 | FE-A02 | P0-007 | ✅ **确认P0** | 非原子操作，链检查+后续解锁被跳过 |
-| P0-008 | checkChainProgress链奖励异常 | FE-A07 | P0-008 | ✅ **确认P0** | completedChains已推入但奖励未发 |
-| P0-009 | reset未清理eventBus监听器 | FE-A08 | P0-009 | ✅ **确认P0** | reset+init后监听器翻倍，内存泄漏+重复触发 |
-| P0-010 | getState浅拷贝状态可篡改 | FE-A05 | P0-010 | ⬇️ **降级P1** | 需恶意代码才能利用，非外部输入漏洞 |
+## 判定: ⚠️ CONDITIONAL PASS（条件通过）
 
-**确认P0: 6个** (P0-002降P2, P0-003降P1, P0-005降P1, P0-010降P1)
-
-### P1 确认
-
-| ID | 描述 | 裁决 |
-|----|------|------|
-| P1-001 | Infinity值立即完成成就 | ✅ 确认P1 |
-| P1-002 | 无效维度不报错 | ✅ 确认P1 |
-| P1-003 | totalPoints无上限 | ✅ 确认P1 |
-| P1-004 | getSaveData浅拷贝 | ✅ 确认P1 |
-| P1-005 | init未检查eventBus | ✅ 确认P1 |
+需修复 6 个 P0 问题后方可进入 R2。
 
 ---
 
-## 5维度评分
+## P0 问题清单（必须修复）
 
-### D1: 节点覆盖率 (权重 25%)
-- 公开API: 19个
-- F-Normal: 24个 (每个API至少1个 ✅)
-- F-Boundary: 18个
-- F-Error: 8个
-- F-CrossSystem: 10个 (N=5×2=10, 实际10 ✅)
-- F-DataLifecycle: 6个
-- **覆盖率**: 66/19 = 347%
-- **评分**: **9.5/10**
+| # | FIX-ID | 挑战 | 描述 | 严重度 | 源码位置 |
+|---|--------|------|------|--------|---------|
+| 1 | FIX-ACH-401 | C1 | loadSaveData 缺失字段崩溃 | 🔴 P0 | AchievementSystem.ts:loadSaveData |
+| 2 | FIX-ACH-402 | C2+C3 | loadSaveData NaN 穿透（totalPoints + progress） | 🔴 P0 | AchievementSystem.ts:loadSaveData |
+| 3 | FIX-ACH-403 | C4 | updateProgress 已有 NaN 进度穿透 | 🔴 P0 | AchievementSystem.ts:updateProgress |
+| 4 | FIX-ACH-404 | C7 | getSaveData 浅拷贝引用泄漏 | 🔴 P0 | AchievementSystem.ts:getSaveData |
+| 5 | FIX-ACH-405 | C8 | loadSaveData 缺失成就实例 | 🔴 P0 | AchievementSystem.ts:loadSaveData |
+| 6 | FIX-ACH-406 | C2 | claimReward NaN 积分穿透 | 🔴 P0 | AchievementSystem.ts:claimReward |
 
-### D2: P0发现质量 (权重 30%)
-- NaN绕过: updateProgress + updateProgressFromSnapshot 两个入口
-- deserialize null: loadSaveData崩溃
-- 事务性: claimReward + checkChainProgress 非原子
-- 事件泄漏: 5个监听器无清理
-- 所有P0有源码行号支撑 ✅
-- NaN专项扫描表完整 ✅
-- **评分**: **9.0/10**
+## P1 建议清单（R2 跟进）
 
-### D3: 源码验证深度 (权重 20%)
-- 3个源文件全部读取 ✅
-- 类型定义 achievement.types.ts 验证 ✅
-- 配置 achievement-config.ts 验证 ✅
-- engine-save.ts 六处覆盖验证 ✅
-- AchievementHelpers.ts 验证 ✅
-- **评分**: **9.0/10**
-
-### D4: 跨系统链路 (权重 15%)
-- Achievement ↔ engine-save: 六处均已接入 ✅ (与多数模块不同)
-- Achievement ↔ EventBus: 5个事件监听验证 ✅
-- Achievement ↔ ResourceSystem(通过callback): 验证注入链路 ✅
-- Achievement → achievement:completed事件: 验证 ✅
-- Achievement → achievement:chainCompleted事件: 验证 ✅
-- **评分**: **8.5/10**
-
-### D5: 规则合规性 (权重 10%)
-- BR-006 (NaN绕过): ✅ 发现2处(updateProgress + snapshot)
-- BR-010 (deserialize覆盖): ✅ 发现loadSaveData null崩溃
-- BR-013 (事务性扫描): ✅ 发现claimReward/checkChainProgress非原子
-- BR-014/015 (保存/加载覆盖): ✅ 六处验证均已覆盖
-- BR-017 (战斗数值安全): ✅ NaN值污染
-- BR-018 (配置-枚举同步): ✅ 已验证一致
-- **评分**: **9.0/10**
+| # | 挑战 | 描述 | 建议 |
+|---|------|------|------|
+| 1 | C5 | createInitialState 未知维度 | 添加动态维度初始化 |
+| 2 | C6 | 事件监听器覆盖不足 | 为5个事件添加直接测试 |
+| 3 | C10 | reset 不清空 callback | reset 中清空 rewardCallback |
+| 4 | C11 | 链奖励 NaN 穿透 | rewardCallback 前验证 |
 
 ---
 
-## 综合评分
+## 修复方案
 
-| 维度 | 权重 | 得分 | 加权 |
-|------|------|------|------|
-| D1 节点覆盖率 | 25% | 9.5 | 2.375 |
-| D2 P0发现质量 | 30% | 9.0 | 2.700 |
-| D3 源码验证深度 | 20% | 9.0 | 1.800 |
-| D4 跨系统链路 | 15% | 8.5 | 1.275 |
-| D5 规则合规性 | 10% | 9.0 | 0.900 |
-| **总计** | **100%** | | **9.05/10** |
+### FIX-ACH-401: loadSaveData 缺失字段防护
+
+**合并到 FIX-ACH-402 中统一处理。**
+
+### FIX-ACH-402: loadSaveData 全面防护（NaN + 缺失字段 + 缺失实例）
+
+**修复位置**: `AchievementSystem.ts:loadSaveData`
+
+**修复内容**:
+1. 验证 `data.state.achievements` 存在且为对象
+2. 验证 `data.state.completedChains` 为数组
+3. 验证 `data.state.dimensionStats` 为对象
+4. 验证 `totalPoints` 为有限数
+5. 验证每个 `progress[type]` 为有限数
+6. 补全缺失的成就实例
+
+### FIX-ACH-403: updateProgress NaN 进度防护
+
+**修复位置**: `AchievementSystem.ts:updateProgress`
+
+**修复内容**:
+- 在 `Math.max(current, value)` 前，检查 `current` 是否为 NaN
+- 如果 `current` 为 NaN，重置为 0
+
+### FIX-ACH-404: getSaveData 深拷贝
+
+**修复位置**: `AchievementSystem.ts:getSaveData`
+
+**修复内容**:
+- 对每个 `AchievementInstance` 创建深拷贝（包括 `progress`）
+
+### FIX-ACH-405: loadSaveData 补全缺失成就
+
+**合并到 FIX-ACH-402 中统一处理。**
+
+### FIX-ACH-406: claimReward 积分验证
+
+**修复位置**: `AchievementSystem.ts:claimReward`
+
+**修复内容**:
+- 验证 `achievementPoints` 为正有限数
+- 验证失败时拒绝领取
 
 ---
 
-## 修复优先级
+## 覆盖率评估
 
-### 立即修复 (P0)
+| 子系统 | R1覆盖率 | 预期R2覆盖率 |
+|--------|---------|-------------|
+| AchievementSystem | 67.4% | 85%+ |
+| AchievementHelpers | 66.7% | 80%+ |
+| achievement-config | 100% | 100% |
+| achievement.types | 100% | 100% |
 
-| 优先级 | ID | 描述 | 修复方案 |
-|--------|-----|------|----------|
-| 1 | P0-001 | updateProgress NaN污染 | 入口添加 `!Number.isFinite(value) \|\| value < 0` 检查 |
-| 2 | P0-006 | snapshot NaN透传 | 循环内添加 Number.isFinite 检查 |
-| 3 | P0-004 | loadSaveData null崩溃 | 添加 `!data \|\| !data.state` 前置检查 |
-| 4 | P0-007 | claimReward非原子 | try-catch包裹rewardCallback |
-| 5 | P0-008 | checkChainProgress非原子 | try-catch包裹rewardCallback |
-| 6 | P0-009 | eventBus监听器泄漏 | init保存unsubscribe，reset调用 |
+## 穿透率评估
 
-### 后续修复 (P1)
+| 规则 | 穿透风险 | 说明 |
+|------|---------|------|
+| BR-001 NaN防护 | ✅ 已覆盖 | updateProgress value 参数 |
+| BR-010 FIX穿透 | ⚠️ 需验证 | loadSaveData 修复是否穿透到 getState |
+| BR-014 保存/加载覆盖 | ❌ 不充分 | loadSaveData 缺少字段验证 |
+| BR-017 战斗数值安全 | ❌ 不充分 | claimReward 积分未验证 |
+| BR-021 资源比较NaN | N/A | 成就系统无资源比较 |
 
-| 优先级 | ID | 描述 |
-|--------|-----|------|
-| 7 | P1-001 | Infinity值检查（与P0-001合并修复） |
-| 8 | P1-005 | init检查eventBus存在性 |
-| 9 | P0-005 | loadSaveData返回加载结果 |
-| 10 | P0-010 | getState使用structuredClone |
+## R2 建议
+
+1. 修复所有 P0 后运行完整回归测试
+2. 添加事件监听器直接测试（5个事件 × 3种payload）
+3. 添加 loadSaveData 全面的异常输入测试
+4. 考虑 reset() 中清空 rewardCallback
+5. 验证 getSaveData 深拷贝后的往返一致性
 
 ---
 
-## 封版判定
+## 修复优先级排序
 
-**SEALED** ✅
-评分 ≥ 9.0，P0已全部修复，封版通过。
+| 优先级 | FIX-ID | 原因 |
+|--------|--------|------|
+| 1 | FIX-ACH-402 | 影响 loadSaveData 所有路径（NaN + 缺失字段 + 缺失实例） |
+| 2 | FIX-ACH-403 | updateProgress 是核心路径，NaN 穿透影响所有进度更新 |
+| 3 | FIX-ACH-404 | getSaveData 引用泄漏可导致外部篡改 |
+| 4 | FIX-ACH-406 | claimReward 积分验证是防御性编程最佳实践 |
+
+**建议**: FIX-ACH-402 和 FIX-ACH-405 合并为一个修复（loadSaveData 全面防护），减少代码变更量。
