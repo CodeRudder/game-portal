@@ -129,6 +129,13 @@ export interface SaveContext {
   readonly expedition?: import('./expedition/ExpeditionSystem').ExpeditionSystem;
   /** NPC系统（可选，v19.0+，FIX-008: R2 存档接入） */
   readonly npc?: import('./npc/NPCSystem').NPCSystem;
+  // ── 地图子系统 (FIX-714: R2 存档接入) ──
+  readonly worldMap?: import('./map/WorldMapSystem').WorldMapSystem;
+  readonly territory?: import('./map/TerritorySystem').TerritorySystem;
+  readonly siege?: import('./map/SiegeSystem').SiegeSystem;
+  readonly garrison?: import('./map/GarrisonSystem').GarrisonSystem;
+  readonly siegeEnhancer?: import('./map/SiegeEnhancer').SiegeEnhancer;
+  readonly mapEvent?: import('./map/MapEventSystem').MapEventSystem;
 }
 
 // ─────────────────────────────────────────────
@@ -205,6 +212,13 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     expedition: ctx.expedition?.serialize(),
     // ── NPC系统 v19.0 (FIX-008: R2 存档接入) ──
     npc: ctx.npc?.exportSaveData(),
+    // ── 地图子系统 (FIX-714: R2 存档接入) ──
+    worldMap: ctx.worldMap?.serialize(),
+    territory: ctx.territory?.serialize(),
+    siege: ctx.siege?.serialize(),
+    garrison: ctx.garrison?.serialize(),
+    siegeEnhancer: ctx.siegeEnhancer?.serialize(),
+    mapEvent: ctx.mapEvent?.serialize(),
   };
 }
 
@@ -650,6 +664,38 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
     ctx.npc.importSaveData(data.npc);
   } else {
     gameLog.info('[Save] v19.0 存档迁移：无NPC数据，自动初始化默认NPC状态');
+  }
+
+  // ── 地图子系统 (FIX-714: R2 存档接入) ──
+  if (data.worldMap && ctx.worldMap) {
+    ctx.worldMap.deserialize(data.worldMap);
+  } else {
+    gameLog.info('[Save] 地图存档迁移：无世界地图数据，自动初始化默认状态');
+  }
+  if (data.territory && ctx.territory) {
+    ctx.territory.deserialize(data.territory);
+  } else {
+    gameLog.info('[Save] 地图存档迁移：无领土数据，自动初始化默认状态');
+  }
+  if (data.siege && ctx.siege) {
+    ctx.siege.deserialize(data.siege);
+  } else {
+    gameLog.info('[Save] 地图存档迁移：无攻城数据，自动初始化默认状态');
+  }
+  if (data.garrison && ctx.garrison) {
+    ctx.garrison.deserialize(data.garrison);
+  } else {
+    gameLog.info('[Save] 地图存档迁移：无驻防数据，自动初始化默认状态');
+  }
+  if (data.siegeEnhancer && ctx.siegeEnhancer) {
+    ctx.siegeEnhancer.deserialize(data.siegeEnhancer);
+  } else {
+    gameLog.info('[Save] 地图存档迁移：无攻城增强数据，自动初始化默认状态');
+  }
+  if (data.mapEvent && ctx.mapEvent) {
+    ctx.mapEvent.deserialize(data.mapEvent);
+  } else {
+    gameLog.info('[Save] 地图存档迁移：无地图事件数据，自动初始化默认状态');
   }
 
   syncBuildingToResource({

@@ -294,6 +294,19 @@ export interface GameSaveData {
   // ── NPC系统 v19.0+ ──
   /** NPC系统数据（可选，v19.0+，FIX-008: R2 存档接入） */
   npc?: import('../core/npc/npc.types').NPCSaveData;
+  // ── 地图子系统 v20.0+ (FIX-714: R2 存档接入) ──
+  /** 世界地图系统数据（可选，v20.0+） */
+  worldMap?: import('../core/map/world-map.types').WorldMapSaveData;
+  /** 领土系统数据（可选，v20.0+） */
+  territory?: import('../core/map/territory.types').TerritorySaveData;
+  /** 攻城系统数据（可选，v20.0+） */
+  siege?: import('../engine/map/SiegeSystem').SiegeSaveData;
+  /** 驻防系统数据（可选，v20.0+） */
+  garrison?: import('../core/map/garrison.types').GarrisonSaveData;
+  /** 攻城增强系统数据（可选，v20.0+） */
+  siegeEnhancer?: import('../core/map/siege-enhancer.types').SiegeEnhancerSaveData;
+  /** 地图事件系统数据（可选，v20.0+） */
+  mapEvent?: import('../engine/map/MapEventSystem').MapEventSaveData;
 }
 
 // ─────────────────────────────────────────────

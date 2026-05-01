@@ -856,6 +856,13 @@ export class ThreeKingdomsEngine {
       recruitTokenEconomy: this.recruitTokenEconomy,
       // ── NPC系统 v19.0 (FIX-008: R2 存档接入) ──
       npc: this.r11.npcSystem,
+      // ── 地图子系统 (FIX-714: R2 存档接入) ──
+      worldMap: this.mapSystems.worldMap,
+      territory: this.mapSystems.territory,
+      siege: this.mapSystems.siege,
+      garrison: this.mapSystems.garrison,
+      siegeEnhancer: this.mapSystems.siegeEnhancer,
+      mapEvent: this.mapSystems.mapEvent,
     };
   }
   private finalizeLoad(): void {
