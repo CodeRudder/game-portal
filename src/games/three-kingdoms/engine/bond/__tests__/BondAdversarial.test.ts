@@ -82,11 +82,12 @@ describe('BondAdversarial — 对抗式测试', () => {
   // [F-Error] P0: 未初始化即使用
 
   describe('[F-Error] 未初始化即使用 (FE-01)', () => {
-    it('未调用init直接调用triggerStoryEvent应抛出异常或优雅降级', () => {
+    it('未调用init直接调用triggerStoryEvent应优雅降级', () => {
       const rawSystem = new BondSystem();
-      // triggerStoryEvent 内部访问 this.deps.eventBus.emit
-      // 未初始化时 deps 为 undefined，应抛出 TypeError
-      expect(() => rawSystem.triggerStoryEvent('story_001')).toThrow();
+      // FIX-B06: 未初始化时优雅降级而非抛出异常
+      const result = rawSystem.triggerStoryEvent('story_001');
+      expect(result.success).toBe(false);
+      expect(result.reason).toBeTruthy();
     });
 
     it('未调用init直接调用serialize不应崩溃', () => {
@@ -110,14 +111,15 @@ describe('BondAdversarial — 对抗式测试', () => {
   // [F-Boundary] P1: 负数好感度
 
   describe('[F-Boundary] 负数好感度 (FB-01)', () => {
-    it('addFavorability传入负数时好感度变为负数（无下限保护）', () => {
+    it('addFavorability传入负数时被拒绝（FIX-B01: 负数防护）', () => {
       system.addFavorability('liubei', -10);
       const fav = system.getFavorability('liubei');
-      // 当前实现无下限保护，好感度可以为负
-      expect(fav.value).toBe(-10);
+      // FIX-B01: 负数被拒绝，好感度保持默认0
+      expect(fav.value).toBe(0);
     });
 
     it('负数好感度导致故事事件永远不可触发', () => {
+      // FIX-B01: 负数被拒绝，好感度保持0，事件不可触发
       system.addFavorability('liubei', -100);
       const heroes = new Map<string, GeneralData>();
       heroes.set('liubei', makeNamedHero('liubei', 'shu', 10));
@@ -129,30 +131,33 @@ describe('BondAdversarial — 对抗式测试', () => {
       expect(available.find(e => e.id === 'story_001')).toBeUndefined();
     });
 
-    it('先加正值再减到负值的好感度变化', () => {
+    it('先加正值再减到负值的好感度变化（FIX-B01: 负数被拒绝）', () => {
       system.addFavorability('liubei', 50);
       system.addFavorability('liubei', -80);
-      expect(system.getFavorability('liubei').value).toBe(-30);
+      // FIX-B01: -80被拒绝，好感度保持50
+      expect(system.getFavorability('liubei').value).toBe(50);
     });
   });
 
-  // [F-Error] P1: NaN/Infinity 好感度
+  // [F-Error] P0: NaN/Infinity 好感度
 
   describe('[F-Error] NaN/Infinity好感度 (FE-03)', () => {
-    it('addFavorability传入NaN时好感度变为NaN', () => {
+    it('addFavorability传入NaN时被拒绝（FIX-B01）', () => {
       system.addFavorability('liubei', 30);
       system.addFavorability('liubei', NaN);
       const fav = system.getFavorability('liubei');
-      expect(isNaN(fav.value)).toBe(true);
+      // FIX-B01: NaN被拒绝，好感度保持30
+      expect(fav.value).toBe(30);
     });
 
-    it('addFavorability传入Infinity时好感度变为Infinity', () => {
+    it('addFavorability传入Infinity时被拒绝（FIX-B01）', () => {
       system.addFavorability('liubei', Infinity);
       const fav = system.getFavorability('liubei');
-      expect(fav.value).toBe(Infinity);
+      // FIX-B01: Infinity被拒绝，好感度保持0
+      expect(fav.value).toBe(0);
     });
 
-    it('NaN好感度导致故事事件条件比较异常', () => {
+    it('NaN好感度不会注入系统（FIX-B01: NaN被拒绝）', () => {
       system.addFavorability('liubei', NaN);
       const heroes = new Map<string, GeneralData>();
       heroes.set('liubei', makeNamedHero('liubei', 'shu', 10));
@@ -160,12 +165,9 @@ describe('BondAdversarial — 对抗式测试', () => {
       heroes.set('zhangfei', makeNamedHero('zhangfei', 'shu', 10));
       system.addFavorability('guanyu', 60);
       system.addFavorability('zhangfei', 60);
-      // NaN < minFavorability → false, 但 NaN >= minFavorability → false too
-      // fav.value < condition.minFavorability → NaN < 50 → false → met stays true
+      // FIX-B01: NaN被拒绝，liubei好感度=0 < 50，事件不可用
       const available = system.getAvailableStoryEvents(heroes);
-      // 由于 NaN 比较的特殊性，条件检查中 NaN < 50 为 false，所以不会 break
-      // 但这取决于具体实现逻辑
-      expect(available).toBeDefined();
+      expect(available.find(e => e.id === 'story_001')).toBeUndefined();
     });
   });
 
@@ -193,6 +195,10 @@ describe('BondAdversarial — 对抗式测试', () => {
     });
 
     it('loadSaveData传入completedStoryEvents为null时应不崩溃', () => {
+      // FIX-B05: triggerStoryEvent needs precondition setup
+      system.addFavorability('liubei', 60);
+      system.addFavorability('guanyu', 60);
+      system.addFavorability('zhangfei', 60);
       system.triggerStoryEvent('story_001');
       expect(() => {
         system.loadSaveData({
@@ -314,8 +320,15 @@ describe('BondAdversarial — 对抗式测试', () => {
     });
 
     it('reset后可以正常触发故事事件', () => {
+      // FIX-B05: triggerStoryEvent needs precondition setup
+      system.addFavorability('liubei', 60);
+      system.addFavorability('guanyu', 60);
+      system.addFavorability('zhangfei', 60);
       system.triggerStoryEvent('story_001');
       system.reset();
+      system.addFavorability('liubei', 60);
+      system.addFavorability('guanyu', 60);
+      system.addFavorability('zhangfei', 60);
       const result = system.triggerStoryEvent('story_001');
       expect(result.success).toBe(true);
     });
@@ -330,6 +343,9 @@ describe('BondAdversarial — 对抗式测试', () => {
 
     it('reset后可以正常序列化', () => {
       system.addFavorability('liubei', 100);
+      // FIX-B05: triggerStoryEvent needs precondition setup
+      system.addFavorability('guanyu', 60);
+      system.addFavorability('zhangfei', 60);
       system.triggerStoryEvent('story_001');
       system.reset();
       const data = system.serialize();
@@ -339,6 +355,8 @@ describe('BondAdversarial — 对抗式测试', () => {
 
     it('reset后可以正常加载存档', () => {
       system.addFavorability('liubei', 80);
+      system.addFavorability('guanyu', 60);
+      system.addFavorability('zhangfei', 60);
       system.triggerStoryEvent('story_001');
       const saved = system.serialize();
 
