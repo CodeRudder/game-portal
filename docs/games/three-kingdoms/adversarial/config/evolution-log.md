@@ -26,11 +26,11 @@
 
 | 指标 | 当前值 |
 |------|--------|
-| 总进化次数 | 7 |
-| Builder规则版本 | v1.6 |
+| 总进化次数 | 8 |
+| Builder规则版本 | v1.7 |
 | Challenger规则版本 | v1.4 |
 | Arbiter规则版本 | v1.6 |
-| P0模式库条目 | 20 |
+| P0模式库条目 | 21 |
 | 覆盖模块数 | 17/35 |
 
 ---
@@ -188,3 +188,23 @@
 **P0模式库变更**: 无新模式 (R2新P0=0)
 
 **Campaign模块状态**: ✅ **SEALED** (R2封版)
+
+### 2026-05-01 — Building R1 进化
+
+**变更类型**: 规则进化 + 代码修复
+**触发**: Building R1 对抗测试发现系统性缺陷
+
+**代码修复 (5 P0)**:
+- FIX-401: checkUpgrade NaN绕过资源检查（`!Number.isFinite()` 防护，影响13个API入口）
+- FIX-402: getCastleBonusMultiplier NaN传播（返回1.0安全默认值）
+- FIX-403: deserialize null崩溃（null guard + reset回退）
+- FIX-404: batchUpgrade无事务回滚（两阶段执行：预验证→统一执行）
+- FIX-405: 升级计时NaN（`timeSeconds` 添加 `!Number.isFinite` 检查）
+
+**Builder规则变更**:
+- 新增1条通用规则（#21 资源比较NaN防护：资源比较前必须验证有限数）
+- 版本: v1.6 → v1.7
+
+**P0模式库变更**:
+- 新增1个模式（模式21: 资源比较NaN绕过）
+- 模式总数: 20 → 21

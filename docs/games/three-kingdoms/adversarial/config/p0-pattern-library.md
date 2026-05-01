@@ -1,6 +1,6 @@
 # P0缺陷模式库 — 三国霸业
 
-> 版本: v1.5 | 初始化: 2026-05-01
+> 版本: v1.6 | 初始化: 2026-05-01
 > 持续积累，每轮更新
 
 ## 已验证的P0模式（42个缺陷提炼）
@@ -129,3 +129,10 @@
 - **典型案例**: FIX-303 ChallengeStageSystem.completeChallenge未验证preLockedResources[stageId]是否存在，导致跳过preLockResources直接调用即可免费获得奖励
 - **修复模式**: 在complete/confirm类API入口添加前置状态检查，未满足条件时返回空结果而非执行业务逻辑
 - **关联规则**: Builder规则#20（关卡系统状态锁验证）
+
+### 模式21: 资源比较NaN绕过
+- **出现频率**: 系统级（Building R1发现，影响13个API入口）
+- **检查方法**: 搜索所有 `resources.x < cost.x` 或 `resources.x >= cost.x` 模式的比较，验证比较前是否有 `Number.isFinite` 检查
+- **典型案例**: FIX-401 `resources.grain=NaN` 时 `NaN < cost.grain` 返回 false，绕过"粮草不足"检查，允许无资源升级
+- **修复模式**: 在资源比较前添加 `if (!Number.isFinite(resources.grain) || !Number.isFinite(resources.gold) || !Number.isFinite(resources.troops)) { reasons.push('资源数据异常'); }`
+- **关联规则**: Builder规则#21（资源比较NaN防护）

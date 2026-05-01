@@ -22,6 +22,7 @@
 | hero | R2 | - | - | - | - | CONTINUE |
 | hero | R3 | - | - | - | - | CONTINUE |
 | battle | R1 | - | - | - | - | CONTINUE |
+| building | R1 | - | - | 5 | - | CONTINUE |
 
 ## 经验教训
 
@@ -42,6 +43,7 @@
 15. **Campaign R1新增**: 关卡系统状态锁验证——completeChallenge类API必须验证前置状态锁（preLock），未满足时拒绝执行
 16. **Campaign R1新增**: serialize/deserialize深拷贝一致性——必须与同类子系统实现对比，使用逐条深拷贝
 17. **Campaign R1新增**: 经济系统预锁→发奖链路完整性——所有发奖路径必须验证预锁状态
+18. **Building R1新增**: 资源比较NaN绕过——`NaN < cost` 返回false绕过检查，影响所有资源比较入口，必须前置 `Number.isFinite` 验证
 
 ## 改进方向
 

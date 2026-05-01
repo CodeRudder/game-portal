@@ -162,13 +162,18 @@ export class BuildingSystem implements ISubsystem {
       reasons.push('升级队列已满');
     }
 
-    // 资源检查
+    // 资源检查（FIX-401: NaN绕过防护 — NaN < cost 返回 false 绕过检查）
     if (resources && state.level < maxLv) {
-      const cost = this.getUpgradeCost(type);
-      if (cost) {
-        if (resources.grain < cost.grain) reasons.push(`粮草不足：需要 ${cost.grain}`);
-        if (resources.gold < cost.gold) reasons.push(`铜钱不足：需要 ${cost.gold}`);
-        if (cost.troops > 0 && resources.troops < cost.troops) reasons.push(`兵力不足：需要 ${cost.troops}`);
+      // 防护 NaN/Infinity 资源值绕过比较
+      if (!Number.isFinite(resources.grain) || !Number.isFinite(resources.gold) || !Number.isFinite(resources.troops)) {
+        reasons.push('资源数据异常（含NaN或Infinity）');
+      } else {
+        const cost = this.getUpgradeCost(type);
+        if (cost) {
+          if (resources.grain < cost.grain) reasons.push(`粮草不足：需要 ${cost.grain}`);
+          if (resources.gold < cost.gold) reasons.push(`铜钱不足：需要 ${cost.gold}`);
+          if (cost.troops > 0 && resources.troops < cost.troops) reasons.push(`兵力不足：需要 ${cost.troops}`);
+        }
       }
     }
 
@@ -197,9 +202,11 @@ export class BuildingSystem implements ISubsystem {
     return this.getProduction('castle');
   }
 
-  /** 主城加成乘数（8% → 1.08） */
+  /** 主城加成乘数（8% → 1.08）；FIX-402: NaN防护 */
   getCastleBonusMultiplier(): number {
-    return 1 + this.getCastleBonusPercent() / 100;
+    const pct = this.getCastleBonusPercent();
+    if (!Number.isFinite(pct)) return 1.0; // 安全默认值：无加成
+    return 1 + pct / 100;
   }
 
   // ── 5. 升级执行 ──
@@ -213,9 +220,12 @@ export class BuildingSystem implements ISubsystem {
     const state = this.buildings[type];
     const now = Date.now();
 
+    // FIX-405: 升级计时NaN防护
+    const timeSeconds = Number.isFinite(cost.timeSeconds) ? cost.timeSeconds : 0;
+
     state.status = 'upgrading';
     state.upgradeStartTime = now;
-    state.upgradeEndTime = now + cost.timeSeconds * 1000;
+    state.upgradeEndTime = now + timeSeconds * 1000;
 
     this.upgradeQueue.push({
       buildingType: type,
@@ -362,6 +372,13 @@ export class BuildingSystem implements ISubsystem {
   }
 
   deserialize(data: BuildingSaveData): void {
+    // FIX-403: null/undefined防护
+    if (!data || !data.buildings) {
+      gameLog.warn('BuildingSystem: deserialize收到无效数据，使用默认状态');
+      this.reset();
+      return;
+    }
+
     if (data.version !== BUILDING_SAVE_VERSION) {
       gameLog.warn(`BuildingSystem: 存档版本不匹配 (期望 ${BUILDING_SAVE_VERSION}，实际 ${data.version})`);
     }
