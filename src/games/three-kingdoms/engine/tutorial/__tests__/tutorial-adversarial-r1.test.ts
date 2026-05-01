@@ -377,4 +377,26 @@ describe('Tutorial R1 对抗式测试', () => {
       expect(state.startedAt).toBeNull();
     });
   });
+
+  // ── FIX-T03: completeCurrentStep 未初始化防护 ──
+  describe('FIX-T03: completeCurrentStep 未初始化防护', () => {
+    it('未调用 init() 时 completeCurrentStep 安全返回失败', () => {
+      const raw = new TutorialSystem();
+      const result = raw.completeCurrentStep('claim_newbie_pack');
+      expect(result.success).toBe(false);
+      expect(result.reason).toBe('系统未初始化');
+    });
+  });
+
+  // ── FIX-T06: skipTutorial 防重复 emit ──
+  describe('FIX-T06: skipTutorial 防重复 emit', () => {
+    it('重复调用 skipTutorial 只 emit 一次', () => {
+      system.skipTutorial();
+      expect(deps.eventBus.emit).toHaveBeenCalledTimes(1);
+
+      deps.eventBus.emit.mockClear();
+      system.skipTutorial();
+      expect(deps.eventBus.emit).not.toHaveBeenCalled();
+    });
+  });
 });
