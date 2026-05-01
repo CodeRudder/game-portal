@@ -208,12 +208,9 @@ describe('GAP-EXP 远征模块UI层ACC测试', () => {
       const exp = getExpedition(sim);
       const routes = exp.getAllRoutes();
       const lockedRoute = routes.find(r => !r.unlocked);
-      if (!lockedRoute) {
-        // 如果没有锁定路线，跳过
-        return;
-      }
+      assertStrict(!!lockedRoute, 'GAP-EXP-U1.3b', '应有锁定路线');
       renderPanel(sim, true);
-      const routeCard = screen.getByTestId(`expedition-panel-route-${lockedRoute.id}`);
+      const routeCard = screen.getByTestId(`expedition-panel-route-${lockedRoute!.id}`);
       // 未解锁路线应有opacity:0.4
       assertStrict(routeCard.style.opacity === '0.4', 'GAP-EXP-U1.3b',
         `未解锁路线应有opacity:0.4，实际: ${routeCard.style.opacity}`);
@@ -510,7 +507,7 @@ describe('GAP-EXP 远征模块UI层ACC测试', () => {
       // 弹窗应关闭
       const modalAfter = screen.queryByTestId('modal');
       // 确认后弹窗关闭（visible=false）
-      assertStrict(modalAfter === null || modalAfter !== null, 'GAP-EXP-U3.6',
+      assertStrict(modalAfter === null, 'GAP-EXP-U3.6',
         '确认编队后弹窗应关闭');
     });
     it(accTest('GAP-EXP-U3.7', '羁绊预览 — 同阵营≥3名显示羁绊激活'), () => {
@@ -527,8 +524,8 @@ describe('GAP-EXP 远征模块UI层ACC测试', () => {
       // 5名蜀将≥3名，应显示羁绊提示
       const modal = screen.getByTestId('modal');
       const modalText = modal.textContent ?? '';
-      assertStrict(modalText.includes('羁绊') || modalText.includes('阵营'), 'GAP-EXP-U3.7',
-        `编队弹窗应显示羁绊/阵营提示，实际文本: ${modalText.substring(0, 200)}`);
+      assertStrict(/羁绊激活|阵营羁绊/.test(modalText), 'GAP-EXP-U3.7',
+        `编队弹窗应显示羁绊激活提示，实际文本: ${modalText.substring(0, 200)}`);
     });
     it(accTest('GAP-EXP-U3.8', '出发按钮 — 选择路线后显示'), () => {
       const exp = getExpedition(sim);
@@ -555,11 +552,10 @@ describe('GAP-EXP 远征模块UI层ACC测试', () => {
       exp.completeRoute(dispatched!.teamId, 3);
       // 检查是否有快速重派配置
       const lastConfig = exp.getLastDispatchConfig?.();
+      assertStrict(!!lastConfig, 'GAP-EXP-U3.9-pre', '应有上次派遣配置（派遣后应记录）');
       renderPanel(sim, true);
-      if (lastConfig) {
-        const quickBtn = screen.queryByTestId('expedition-panel-quick-redeploy');
-        assertStrict(!!quickBtn, 'GAP-EXP-U3.9', '应有快速重派按钮');
-      }
+      const quickBtn = screen.queryByTestId('expedition-panel-quick-redeploy');
+      assertStrict(!!quickBtn, 'GAP-EXP-U3.9', '应有快速重派按钮');
     });
   });
   // ════════════════════════════════════════════════════════════
@@ -591,9 +587,9 @@ describe('GAP-EXP 远征模块UI层ACC测试', () => {
       const modalText = modal.textContent ?? '';
       // 战斗统计包含回合/伤害/HP等信息
       assertStrict(
-        modalText.includes('回合') || modalText.includes('战斗统计') || modalText.includes('战斗结算'),
+        /\d+回合/.test(modalText) || /战斗[统结]计?算/.test(modalText),
         'GAP-EXP-U4.2',
-        `结算弹窗应包含战斗统计信息，实际: ${modalText.substring(0, 200)}`,
+        `结算弹窗应包含具体回合数或战斗统计，实际: ${modalText.substring(0, 200)}`,
       );
     });
     it(accTest('GAP-EXP-U4.3', '奖励列表 — 显示铜钱和经验'), () => {
@@ -607,9 +603,9 @@ describe('GAP-EXP 远征模块UI层ACC测试', () => {
       const modal = screen.getByTestId('modal');
       const modalText = modal.textContent ?? '';
       assertStrict(
-        modalText.includes('铜钱') || modalText.includes('奖励') || modalText.includes('经验'),
+        /\d+铜钱/.test(modalText) || /\d+经验/.test(modalText) || /奖励/.test(modalText),
         'GAP-EXP-U4.3',
-        `结算弹窗应包含奖励信息，实际: ${modalText.substring(0, 200)}`,
+        `结算弹窗应包含具体铜钱/经验数值或奖励标题，实际: ${modalText.substring(0, 200)}`,
       );
     });
     it(accTest('GAP-EXP-U4.4', '胜利标题 — 显示战斗胜利'), () => {
@@ -636,9 +632,9 @@ describe('GAP-EXP 远征模块UI层ACC测试', () => {
       const modal = screen.getByTestId('modal');
       const modalText = modal.textContent ?? '';
       assertStrict(
-        modalText.includes('HP') || modalText.includes('%') || modalText.includes('武将'),
+        /\d+%/.test(modalText) || /\d+\/\d+/.test(modalText),
         'GAP-EXP-U4.5',
-        `结算弹窗应包含HP信息，实际: ${modalText.substring(0, 200)}`,
+        `结算弹窗应包含具体HP百分比或分数数据，实际: ${modalText.substring(0, 200)}`,
       );
     });
     it(accTest('GAP-EXP-U4.6', '继续按钮 — 关闭结算弹窗'), () => {
@@ -654,8 +650,8 @@ describe('GAP-EXP 远征模块UI层ACC测试', () => {
       fireEvent.click(confirmBtn);
       // 弹窗应关闭
       const modalAfter = screen.queryByTestId('modal');
-      // 继续后弹窗关闭
-      assertStrict(true, 'GAP-EXP-U4.6', '继续按钮点击完成');
+      // 继续后结算弹窗应关闭
+      assertStrict(modalAfter === null, 'GAP-EXP-U4.6', '继续后结算弹窗应关闭');
     });
     it(accTest('GAP-EXP-U4.7', '完成路线 — 显示通关奖励'), () => {
       const exp = getExpedition(sim);
@@ -715,9 +711,9 @@ describe('GAP-EXP 远征模块UI层ACC测试', () => {
       const modal = screen.getByTestId('modal');
       const modalText = modal.textContent ?? '';
       assertStrict(
-        modalText.includes('战力') || modalText.includes('推荐') || modalText.includes('⚔️'),
+        /\d+.*战力/.test(modalText) || /推荐.*\d/.test(modalText),
         'GAP-EXP-U5.2',
-        `配置弹窗应包含战力对比，实际: ${modalText.substring(0, 200)}`,
+        `配置弹窗应包含具体战力数值对比，实际: ${modalText.substring(0, 200)}`,
       );
     });
     it(accTest('GAP-EXP-U5.3', '配置弹窗 — 显示消耗与时长预览'), () => {
@@ -739,9 +735,9 @@ describe('GAP-EXP 远征模块UI层ACC测试', () => {
       const modal = screen.getByTestId('modal');
       const modalText = modal.textContent ?? '';
       assertStrict(
-        modalText.includes('消耗') || modalText.includes('兵力') || modalText.includes('时长') || modalText.includes('难度'),
+        /\d+.*消耗/.test(modalText) || /\d+.*兵力/.test(modalText) || /\d+.*时长/.test(modalText),
         'GAP-EXP-U5.3',
-        `配置弹窗应包含消耗/时长信息，实际: ${modalText.substring(0, 200)}`,
+        `配置弹窗应包含具体消耗/兵力/时长数值，实际: ${modalText.substring(0, 200)}`,
       );
     });
     it(accTest('GAP-EXP-U5.4', '配置弹窗 — 战力不足时显示警告'), () => {
@@ -763,15 +759,18 @@ describe('GAP-EXP 远征模块UI层ACC测试', () => {
       // 配置弹窗应包含战力不足警告
       const modal = screen.getByTestId('modal');
       const modalText = modal.textContent ?? '';
-      // 路线推荐战力远高于200时，应显示警告
-      const recommendedPower = unlockedRoute!.recommendedPower ?? unlockedRoute!.powerMultiplier ?? 0;
-      if (recommendedPower > team.totalPower) {
-        assertStrict(
-          modalText.includes('⚠') || modalText.includes('不足') || modalText.includes('战力'),
-          'GAP-EXP-U5.4',
-          `战力不足时应显示警告，实际: ${modalText.substring(0, 200)}`,
-        );
-      }
+      // 使用路线节点的recommendedPower（而非路线的powerMultiplier）来判断战力是否不足
+      const routeState = exp.getState().routes[unlockedRoute!.id];
+      const firstCombatNode = Object.values(routeState.nodes)
+        .find(n => n.recommendedPower > 0);
+      const nodeRecommendedPower = firstCombatNode?.recommendedPower ?? 0;
+      assertStrict(nodeRecommendedPower > team.totalPower, 'GAP-EXP-U5.4',
+        `弱队战力(${team.totalPower})应低于节点推荐战力(${nodeRecommendedPower})`);
+      assertStrict(
+        modalText.includes('⚠') || /战力不足/.test(modalText),
+        'GAP-EXP-U5.4',
+        `战力不足时应显示具体警告（⚠图标或"战力不足"），实际: ${modalText.substring(0, 200)}`,
+      );
     });
     it(accTest('GAP-EXP-U5.5', '配置弹窗 — 确认出发执行派遣'), () => {
       const exp = getExpedition(sim);

@@ -18,6 +18,7 @@ import type {
   IntegrationStep,
   CrossSystemFlowResult,
   DataFlowCheckResult,
+  DataFlowPath,
   RebirthCycleResult,
   RebirthCyclePhase,
   OfflineFullResult,
@@ -265,7 +266,7 @@ export class IntegrationValidator implements ISubsystem {
     } catch (e) {
       return {
         checks: [{
-          path: `error: ${e instanceof Error ? e.message : String(e)}`,
+          path: `error: ${e instanceof Error ? e.message : String(e)}` as DataFlowPath,
           sourceValue: 0,
           targetValue: 0,
           consistent: false,

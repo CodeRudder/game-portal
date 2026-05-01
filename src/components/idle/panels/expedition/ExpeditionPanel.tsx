@@ -372,7 +372,10 @@ export default function ExpeditionPanel({ engine, visible, onClose }: Expedition
                 <div style={{ display: 'flex', gap: 10, fontSize: 11, color: '#a0a0a0', marginTop: 2 }}>
                   <span style={{ color }}>{DIFF_LABELS[r.difficulty] ?? r.difficulty}</span><span>⭐ {stars}/3</span>
                   {/* R2: 推荐战力 */}
-                  {r.recommendedPower && <span>推荐⚔️{r.recommendedPower}</span>}
+                  {(() => {
+                    const rp = r.nodes ? Math.max(...Object.values(r.nodes).map((n: any) => n.recommendedPower ?? 0)) : (r.recommendedPower ?? 0);
+                    return rp > 0 ? <span>推荐⚔️{rp}</span> : null;
+                  })()}
                 </div>
               </div>
             );
@@ -467,15 +470,19 @@ export default function ExpeditionPanel({ engine, visible, onClose }: Expedition
           {(() => {
             const route = routes.find((r: any) => r.id === configRouteId);
             const team = teams.find((t: any) => t.id === configTeamId);
+            // 从路线节点中计算推荐战力（取最大值）
+            const routeRecommendedPower = route?.nodes
+              ? Math.max(...Object.values(route.nodes).map((n: any) => n.recommendedPower ?? 0))
+              : (route?.recommendedPower ?? 0);
             return (
               <>
                 <div style={s.configRow}><span style={s.configLabel}>路线</span><span style={s.configValue}>{route?.name ?? configRouteId}</span></div>
                 <div style={s.configRow}><span style={s.configLabel}>难度</span><span style={{ ...s.configValue, color: DIFF_COLORS[route?.difficulty] ?? '#a0a0a0' }}>{DIFF_LABELS[route?.difficulty] ?? '未知'}</span></div>
-                <div style={s.configRow}><span style={s.configLabel}>推荐战力</span><span style={s.configValue}>⚔️ {route?.recommendedPower ?? '未知'}</span></div>
-                <div style={s.configRow}><span style={s.configLabel}>队伍战力</span><span style={{ ...s.configValue, color: (team?.totalPower ?? 0) >= (route?.recommendedPower ?? 0) ? '#7EC850' : '#ff6464' }}>⚔️ {team?.totalPower ?? 0}</span></div>
+                <div style={s.configRow}><span style={s.configLabel}>推荐战力</span><span style={s.configValue}>⚔️ {routeRecommendedPower || '未知'}</span></div>
+                <div style={s.configRow}><span style={s.configLabel}>队伍战力</span><span style={{ ...s.configValue, color: (team?.totalPower ?? 0) >= routeRecommendedPower ? '#7EC850' : '#ff6464' }}>⚔️ {team?.totalPower ?? 0}</span></div>
                 <div style={s.configRow}><span style={s.configLabel}>兵力消耗</span><span style={s.configValue}>20/人 × {team?.heroIds?.length ?? 0}人</span></div>
                 <div style={s.configRow}><span style={s.configLabel}>预计时长</span><span style={s.configValue}>{route?.estimatedDuration ?? '30~45min'}</span></div>
-                {(team?.totalPower ?? 0) < (route?.recommendedPower ?? 0) && (
+                {(team?.totalPower ?? 0) < routeRecommendedPower && (
                   <div style={{ marginTop: 6, fontSize: 11, color: '#ff6464' }}>⚠️ 战力不足推荐值，战斗可能失败</div>
                 )}
               </>
