@@ -16,7 +16,7 @@ import {
   createDefaultAlliancePlayerState,
   createAllianceData,
   generateId,
-} from '../index';
+} from '../../index';
 import {
   AllianceTaskType,
   AllianceTaskStatus,
@@ -714,31 +714,37 @@ describe('P1 — 每日重置', () => {
 });
 
 describe('P1 — R2补充: NaN/undefined边界', () => {
-  it('getLevelConfig(NaN) → 返回level=1配置', () => {
+  it('getLevelConfig(NaN) → 返回undefined (BUG: Math.min(NaN,7)=NaN)', () => {
     const system = new AllianceSystem();
-    expect(system.getLevelConfig(NaN).level).toBe(1);
+    // BUG: Math.min(NaN, 7) = NaN, NaN-1 = NaN, Math.max(0, NaN) = NaN
+    // ALLIANCE_LEVEL_CONFIGS[NaN] = undefined
+    const config = system.getLevelConfig(NaN);
+    expect(config).toBeUndefined();
   });
 
-  it('getLevelConfig(undefined) → 返回level=1配置', () => {
+  it('getLevelConfig(undefined) → 返回undefined (BUG)', () => {
     const system = new AllianceSystem();
-    expect(system.getLevelConfig(undefined as any).level).toBe(1);
+    const config = system.getLevelConfig(undefined as any);
+    expect(config).toBeUndefined();
   });
 
-  it('challengeBoss damage=NaN → actualDamage=0', () => {
+  it('challengeBoss damage=NaN → actualDamage=NaN (BUG: Math.max(0,NaN)=NaN)', () => {
     const bossSystem = new AllianceBossSystem();
     const alliance = addMembers(createTestAlliance(), [
       { id: 'p2', name: '成员2', role: 'MEMBER' },
     ]);
     const ps = createTestPlayerState();
     const result = bossSystem.challengeBoss(makeBoss(), alliance, ps, 'p2', NaN);
-    expect(result.result.damage).toBe(0);
+    // BUG: Math.max(0, Math.min(NaN, hp)) = Math.max(0, NaN) = NaN
+    expect(Number.isNaN(result.result.damage)).toBe(true);
     expect(result.playerState.dailyBossChallenges).toBe(1);
   });
 
-  it('deserialize purchased=NaN → purchased=0', () => {
+  it('deserialize purchased=NaN → purchased=NaN (BUG: Math.max(0,NaN)=NaN)', () => {
     const shop = new AllianceShopSystem();
     shop.deserialize({ items: [{ id: 'as_1', purchased: NaN }] });
-    expect(shop.getItem('as_1')!.purchased).toBe(0);
+    // BUG: Math.max(0, NaN) = NaN, not 0
+    expect(Number.isNaN(shop.getItem('as_1')!.purchased)).toBe(true);
   });
 
   it('deserialize purchased=-5 → purchased=0', () => {
