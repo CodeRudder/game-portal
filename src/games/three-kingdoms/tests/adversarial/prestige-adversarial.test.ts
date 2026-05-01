@@ -23,7 +23,7 @@ import { RebirthSystem, calcRebirthMultiplier } from '../../engine/prestige/Rebi
 import { calculateBuildTime, getAutoRebuildPlan, getUnlockContentsV16, isFeatureUnlocked, generatePrestigeGrowthCurve, compareRebirthTiming } from '../../engine/prestige/RebirthSystem.helpers';
 import type { ISystemDeps } from '../../core/types';
 import type { PrestigeSourceType } from '../../core/prestige';
-import { MAX_PRESTIGE_LEVEL, PRESTIGE_BASE, PRESTIGE_EXPONENT, PRODUCTION_BONUS_PER_LEVEL, PRESTIGE_SOURCE_CONFIGS, PRESTIGE_SHOP_GOODS, LEVEL_UNLOCK_REWARDS, REBIRTH_CONDITIONS, REBIRTH_MULTIPLIER, REBIRTH_KEEP_RULES, REBIRTH_RESET_RULES, REBIRTH_ACCELERATION, REBIRTH_UNLOCK_CONTENTS, REBIRTH_INITIAL_GIFT, REBIRTH_INSTANT_BUILD, PRESTIGE_QUESTS, REBIRTH_QUESTS, calcRebirthMultiplierFromConfig } from '../../core/prestige';
+import { MAX_PRESTIGE_LEVEL, PRESTIGE_BASE, PRESTIGE_EXPONENT, PRODUCTION_BONUS_PER_LEVEL, PRESTIGE_SOURCE_CONFIGS, PRESTIGE_SHOP_GOODS, LEVEL_UNLOCK_REWARDS, REBIRTH_CONDITIONS, REBIRTH_MULTIPLIER, REBIRTH_KEEP_RULES, REBIRTH_RESET_RULES, REBIRTH_ACCELERATION, REBIRTH_UNLOCK_CONTENTS, REBIRTH_INITIAL_GIFT, REBIRTH_INSTANT_BUILD, PRESTIGE_QUESTS, REBIRTH_QUESTS, REBIRTH_COOLDOWN_MS, calcRebirthMultiplierFromConfig } from '../../core/prestige';
 // ── 测试辅助 ──────────────────────────────────
 function createMockDeps(): ISystemDeps {
   return {
@@ -42,14 +42,25 @@ function createPrestige() { const s = new PrestigeSystem(); s.init(createMockDep
 function createShop() { const s = new PrestigeShopSystem(); s.init(createMockDeps()); return s; }
 function createRebirth(overrides: {
   prestigeLevel?: number; castleLevel?: number; heroCount?: number; totalPower?: number;
+  campaignStage?: number; achievementChainCount?: number;
 } = {}): RebirthSystem {
   const sys = new RebirthSystem();
   sys.init(createMockDeps());
+  // 提供自动递增的 nowProvider，使连续 executeRebirth 不被冷却阻塞
+  let _now = Date.now();
+  const nowFn = () => {
+    const t = _now;
+    _now += REBIRTH_COOLDOWN_MS + 1; // 每次调用推进超过冷却期
+    return t;
+  };
   sys.setCallbacks({
     castleLevel: () => overrides.castleLevel ?? REBIRTH_CONDITIONS.minCastleLevel,
     heroCount: () => overrides.heroCount ?? REBIRTH_CONDITIONS.minHeroCount,
     totalPower: () => overrides.totalPower ?? REBIRTH_CONDITIONS.minTotalPower,
     prestigeLevel: () => overrides.prestigeLevel ?? REBIRTH_CONDITIONS.minPrestigeLevel,
+    campaignStage: () => overrides.campaignStage ?? REBIRTH_CONDITIONS.minCampaignStage,
+    achievementChainCount: () => overrides.achievementChainCount ?? REBIRTH_CONDITIONS.requiredAchievementChainCount,
+    nowProvider: nowFn,
   });
   sys.updatePrestigeLevel(overrides.prestigeLevel ?? REBIRTH_CONDITIONS.minPrestigeLevel);
   return sys;
@@ -335,6 +346,8 @@ describe('F-Cross: 转生保留/重置规则一致性', () => {
     sys.setCallbacks({
       castleLevel: () => 100, heroCount: () => 100,
       totalPower: () => 100000, prestigeLevel: () => 30,
+      campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+      achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
       onReset: (rules: string[]) => { resetRules.push(...rules); },
     });
     sys.updatePrestigeLevel(30);
@@ -607,6 +620,8 @@ describe('F-Boundary: 转生加速边界', () => {
     sys.setCallbacks({
       castleLevel: () => 100, heroCount: () => 100,
       totalPower: () => 100000, prestigeLevel: () => 30,
+      campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+      achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
     });
     sys.updatePrestigeLevel(30);
     sys.executeRebirth();
