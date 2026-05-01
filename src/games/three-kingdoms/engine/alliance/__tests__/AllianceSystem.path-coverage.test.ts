@@ -257,13 +257,13 @@ describe('AllianceSystem 路径覆盖测试', () => {
       expect(result.alliance!.members['p2']).toBeUndefined();
     });
 
-    it('盟主无法直接退出（需先转让）', () => {
+    it('盟主仅剩1人时可直接解散联盟', () => {
       const alliance = createTestAlliance();
       const playerState = createPlayerState({ allianceId: alliance.id });
 
-      expect(() => {
-        system.leaveAlliance(alliance, playerState, 'leader_1');
-      }).toThrow('盟主需先转让');
+      const result = system.leaveAlliance(alliance, playerState, 'leader_1');
+      expect(result.alliance).toBeNull();
+      expect(result.playerState.allianceId).toBe('');
     });
 
     it('非成员退出失败', () => {

@@ -193,7 +193,8 @@ export class AllianceShopSystem implements ISubsystem {
     const item = this.getItem(itemId);
     if (!item) return 0;
     if (item.weeklyLimit <= 0) return Infinity;
-    return Math.max(0, item.weeklyLimit - item.purchased);
+    const purchased = Number.isNaN(item.purchased) ? 0 : item.purchased;
+    return Math.max(0, item.weeklyLimit - purchased);
   }
 
   /**
@@ -224,7 +225,7 @@ export class AllianceShopSystem implements ISubsystem {
     for (const saved of data.items) {
       const item = this.shopItems.find(i => i.id === saved.id);
       if (item) {
-        item.purchased = Math.max(0, saved.purchased);
+        item.purchased = Number.isNaN(saved.purchased) ? 0 : Math.max(0, saved.purchased);
       }
     }
   }

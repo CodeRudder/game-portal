@@ -162,7 +162,7 @@ export class AllianceTaskSystem implements ISubsystem {
     if (!task) return null;
     if (task.status !== AllianceTaskStatus.ACTIVE) return task;
 
-    const safeProgress = Math.max(0, progress);
+    const safeProgress = Number.isNaN(progress) ? 0 : Math.max(0, progress);
     task.currentProgress += safeProgress;
 
     // 检查是否完成
@@ -187,7 +187,7 @@ export class AllianceTaskSystem implements ISubsystem {
     const member = alliance.members[playerId];
     if (!member) throw new Error('不是联盟成员');
 
-    const safeContribution = Math.max(0, contribution);
+    const safeContribution = Number.isNaN(contribution) ? 0 : Math.max(0, contribution);
     const updatedMembers = {
       ...alliance.members,
       [playerId]: {

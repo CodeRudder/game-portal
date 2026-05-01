@@ -364,13 +364,14 @@ describe('AllianceSystem 对抗式测试', () => {
   // ═══════════════════════════════════════════
 
   describe('TC-A-015: 最后一人退出', () => {
-    it('最后一人退出后 alliance 为 null', () => {
+    it('盟主仅剩1人时可直接解散联盟', () => {
       const alliance = createTestAlliance('only', '独狼');
       const ps = createState({ allianceId: alliance.id });
 
-      // 盟主不能直接退出，需先转让
-      expect(() => system.leaveAlliance(alliance, ps, 'only'))
-        .toThrow(/盟主需先转让/);
+      // 盟主仅剩1人时可直接解散
+      const result = system.leaveAlliance(alliance, ps, 'only');
+      expect(result.alliance).toBeNull();
+      expect(result.playerState.allianceId).toBe('');
     });
 
     it('非盟主退出正常', () => {

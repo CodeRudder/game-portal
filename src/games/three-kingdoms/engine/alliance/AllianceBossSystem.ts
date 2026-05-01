@@ -79,6 +79,10 @@ export class AllianceBossSystem implements ISubsystem {
   readonly name = 'AllianceBossSystem';
   private deps!: ISystemDeps;
   private config: AllianceBossConfig;
+  /** 缓存的Boss实例，避免每次getCurrentBoss重建丢失伤害记录 */
+  private _bossCache: AllianceBoss | null = null;
+  /** 缓存对应的联盟ID，用于判断缓存是否过期 */
+  private _bossCacheAllianceId: string | null = null;
 
   constructor(config?: Partial<AllianceBossConfig>) {
     this.config = { ...DEFAULT_BOSS_CONFIG, ...config };
@@ -101,7 +105,7 @@ export class AllianceBossSystem implements ISubsystem {
   }
 
   reset(): void {
-    /* Boss数据由外部管理，此处无内部状态需重置 */
+    this.clearBossCache();
   }
 
   // ── Boss管理 ──────────────────────────────
@@ -110,6 +114,7 @@ export class AllianceBossSystem implements ISubsystem {
    * 每日刷新Boss
    */
   refreshBoss(alliance: AllianceData, now: number): AllianceData {
+    this.clearBossCache();
     const boss = createBoss(alliance.level, now);
     return {
       ...alliance,
@@ -120,15 +125,46 @@ export class AllianceBossSystem implements ISubsystem {
   }
 
   /**
-   * 获取当前Boss（根据联盟数据重建）
+   * 获取当前Boss（优先使用缓存，避免重建丢失伤害记录）
    */
   getCurrentBoss(alliance: AllianceData): AllianceBoss {
+    // 如果有缓存且联盟ID匹配，直接返回缓存
+    if (this._bossCache && this._bossCacheAllianceId === alliance.id) {
+      // 同步bossKilledToday状态
+      if (alliance.bossKilledToday && this._bossCache.status !== BossStatus.KILLED) {
+        this._bossCache = {
+          ...this._bossCache,
+          status: BossStatus.KILLED,
+          currentHp: 0,
+        };
+      }
+      return this._bossCache;
+    }
+    // 无缓存时根据联盟数据重建
     const boss = createBoss(alliance.level, alliance.lastBossRefreshTime);
     if (alliance.bossKilledToday) {
       boss.status = BossStatus.KILLED;
       boss.currentHp = 0;
     }
+    this._bossCache = boss;
+    this._bossCacheAllianceId = alliance.id;
     return boss;
+  }
+
+  /**
+   * 更新缓存的Boss实例（challengeBoss后调用）
+   */
+  updateBossCache(boss: AllianceBoss, allianceId: string): void {
+    this._bossCache = boss;
+    this._bossCacheAllianceId = allianceId;
+  }
+
+  /**
+   * 清除Boss缓存（Boss刷新时调用）
+   */
+  clearBossCache(): void {
+    this._bossCache = null;
+    this._bossCacheAllianceId = null;
   }
 
   // ── Boss挑战 ──────────────────────────────
@@ -168,8 +204,9 @@ export class AllianceBossSystem implements ISubsystem {
       throw new Error('今日挑战次数已用完');
     }
 
-    // 限制伤害不超过当前HP，且不允许负数
-    const actualDamage = Math.max(0, Math.min(damage, boss.currentHp));
+    // 限制伤害不超过当前HP，且不允许负数；NaN视为0
+    const safeDamage = Number.isNaN(damage) ? 0 : damage;
+    const actualDamage = Math.max(0, Math.min(safeDamage, boss.currentHp));
     const isKillingBlow = boss.currentHp - actualDamage <= 0;
 
     // 更新Boss
@@ -225,6 +262,9 @@ export class AllianceBossSystem implements ISubsystem {
       members: updatedMembers,
       bossKilledToday: isKillingBlow ? true : alliance.bossKilledToday,
     };
+
+    // 更新Boss缓存
+    this.updateBossCache(updatedBoss, alliance.id);
 
     return {
       boss: updatedBoss,
@@ -303,7 +343,9 @@ export class AllianceBossSystem implements ISubsystem {
    * 获取玩家今日剩余挑战次数
    */
   getRemainingChallenges(playerState: AlliancePlayerState): number {
-    return Math.max(0, this.config.dailyChallengeLimit - playerState.dailyBossChallenges);
+    const challenges = playerState.dailyBossChallenges;
+    const used = Number.isNaN(challenges) ? 0 : challenges;
+    return Math.max(0, this.config.dailyChallengeLimit - used);
   }
 
   // ── 存档序列化 (FIX-P0-001: Alliance R1 存档接入) ──

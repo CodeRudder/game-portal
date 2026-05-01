@@ -234,10 +234,12 @@ describe('P0 — BUG验证: 联盟解散死锁 (BUG-001)', () => {
     system = new AllianceSystem();
   });
 
-  it('P0-1.1: 盟主退出(仅1人) → 失败', () => {
+  it('P0-1.1: 盟主退出(仅1人) → 成功解散', () => {
     const alliance = createTestAlliance('leader-1');
     const ps = createTestPlayerState({ allianceId: alliance.id });
-    expect(() => system.leaveAlliance(alliance, ps, 'leader-1')).toThrow('盟主需先转让');
+    const result = system.leaveAlliance(alliance, ps, 'leader-1');
+    expect(result.alliance).toBeNull();
+    expect(result.playerState.allianceId).toBe('');
   });
 
   it('P0-1.2: 盟主转让后退出 → 成功', () => {
@@ -250,42 +252,54 @@ describe('P0 — BUG验证: 联盟解散死锁 (BUG-001)', () => {
     expect(result.playerState.allianceId).toBe('');
   });
 
-  it('P0-1.4: 非盟主退出 → 剩盟主1人 → 盟主被困', () => {
+  it('P0-1.4: 非盟主退出 → 剩盟主1人 → 盟主可解散', () => {
     const alliance = addMembers(createTestAlliance(), [
       { id: 'p2', name: '成员2', role: 'MEMBER' },
     ]);
     const ps = createTestPlayerState({ allianceId: alliance.id });
     const result = system.leaveAlliance(alliance, ps, 'p2');
     expect(Object.keys(result.alliance!.members)).toHaveLength(1);
-    expect(() =>
-      system.leaveAlliance(
-        result.alliance!,
-        createTestPlayerState({ allianceId: alliance.id }),
-        'leader-1',
-      ),
-    ).toThrow('盟主需先转让');
+    // 盟主仅剩1人时可直接解散
+    const leaderPs = createTestPlayerState({ allianceId: alliance.id });
+    const leaderResult = system.leaveAlliance(
+      result.alliance!,
+      leaderPs,
+      'leader-1',
+    );
+    expect(leaderResult.alliance).toBeNull();
+    expect(leaderResult.playerState.allianceId).toBe('');
   });
 });
 
 describe('P0 — BUG验证: createAllianceSimple硬编码ID (BUG-002)', () => {
-  it('P0-2.1: leaderId为硬编码player-1', () => {
+  it('P0-2.1: 不传playerId → 生成随机ID(非硬编码player-1)', () => {
     const system = new AllianceSystem();
     system.setCurrencyCallbacks({ spend: () => true, getBalance: () => 1000 });
     system.resetAllianceData(null);
     const result = system.createAllianceSimple('测试联盟', '玩家');
     expect(result.success).toBe(true);
-    expect(system.getAlliance()!.leaderId).toBe('player-1');
+    expect(system.getAlliance()!.leaderId).not.toBe('player-1');
+    expect(system.getAlliance()!.leaderId).toBeTruthy();
   });
 
-  it('P0-2.3: 用非player-1 ID操作 → 失败', () => {
+  it('P0-2.2: 传入playerId → 使用传入的ID', () => {
     const system = new AllianceSystem();
     system.setCurrencyCallbacks({ spend: () => true, getBalance: () => 1000 });
     system.resetAllianceData(null);
-    system.createAllianceSimple('测试联盟', '玩家');
+    const result = system.createAllianceSimple('测试联盟', '玩家', 'real-player');
+    expect(result.success).toBe(true);
+    expect(system.getAlliance()!.leaderId).toBe('real-player');
+  });
+
+  it('P0-2.3: 用传入playerId操作 → 成功', () => {
+    const system = new AllianceSystem();
+    system.setCurrencyCallbacks({ spend: () => true, getBalance: () => 1000 });
+    system.resetAllianceData(null);
+    system.createAllianceSimple('测试联盟', '玩家', 'real-player');
     const alliance = system.getAlliance()!;
     expect(() =>
       system.sendMessage(alliance, 'real-player', '真实玩家', '消息', Date.now()),
-    ).toThrow('不是联盟成员');
+    ).not.toThrow();
   });
 
   it('P0-2.5: 无回调设置 → 跳过余额检查直接创建', () => {
@@ -306,16 +320,27 @@ describe('P0 — BUG验证: kickMember不清理playerState (BUG-003)', () => {
     expect(result.members['p2']).toBeUndefined();
   });
 
-  it('P0-4.2: 被踢者allianceId未清空 → 无法创建新联盟', () => {
+  it('P0-4.2: kickMemberWithCleanup清空被踢者allianceId', () => {
     const system = new AllianceSystem();
     const alliance = addMembers(createTestAlliance(), [
       { id: 'p2', name: '成员2', role: 'MEMBER' },
     ]);
-    system.kickMember(alliance, 'leader-1', 'p2');
     const kickedPs = createTestPlayerState({ allianceId: alliance.id });
-    expect(() => system.createAlliance(kickedPs, '新联盟', '', 'p2', '玩家2', Date.now())).toThrow(
-      '已在联盟中',
-    );
+    const result = system.kickMemberWithCleanup(alliance, kickedPs, 'leader-1', 'p2');
+    expect(result.alliance.members['p2']).toBeUndefined();
+    expect(result.playerState.allianceId).toBe('');
+  });
+
+  it('P0-4.3: 被踢者allianceId清空后可创建新联盟', () => {
+    const system = new AllianceSystem();
+    const alliance = addMembers(createTestAlliance(), [
+      { id: 'p2', name: '成员2', role: 'MEMBER' },
+    ]);
+    const kickedPs = createTestPlayerState({ allianceId: alliance.id });
+    const result = system.kickMemberWithCleanup(alliance, kickedPs, 'leader-1', 'p2');
+    expect(() =>
+      system.createAlliance(result.playerState, '新联盟', '', 'p2', '玩家2', Date.now()),
+    ).not.toThrow();
   });
 
   it('P0-4.5: 外部清空allianceId后可创建新联盟', () => {
@@ -332,15 +357,28 @@ describe('P0 — BUG验证: kickMember不清理playerState (BUG-003)', () => {
 });
 
 describe('P0 — BUG验证: approveApplication双重联盟 (BUG-004)', () => {
-  it('P0-5.1: 申请A → 加入B → A审批通过 → 数据不一致', () => {
+  it('P0-5.1: 申请A → 加入B → A审批通过(无playerState检查)', () => {
     const system = new AllianceSystem();
     const allianceA = createTestAlliance('leaderA', '盟主A');
     const ps = createTestPlayerState();
     const allianceAWithApp = system.applyToJoin(allianceA, ps, 'p1', '玩家1', 1000, Date.now());
     const appId = allianceAWithApp.applications[0].id;
-    // 玩家加入联盟B (外部操作)
+    // 不传applicantPlayerState时保持兼容，不检查双重联盟
     const result = system.approveApplication(allianceAWithApp, appId, 'leaderA', Date.now());
     expect(result.members['p1']).toBeDefined();
+  });
+
+  it('P0-5.2: 申请A → 加入B → A审批拒绝(传入已加入的playerState)', () => {
+    const system = new AllianceSystem();
+    const allianceA = createTestAlliance('leaderA', '盟主A');
+    const ps = createTestPlayerState();
+    const allianceAWithApp = system.applyToJoin(allianceA, ps, 'p1', '玩家1', 1000, Date.now());
+    const appId = allianceAWithApp.applications[0].id;
+    // 玩家已加入联盟B
+    const joinedPs = createTestPlayerState({ allianceId: 'allianceB' });
+    expect(() =>
+      system.approveApplication(allianceAWithApp, appId, 'leaderA', Date.now(), joinedPs),
+    ).toThrow('申请人已加入联盟');
   });
 });
 
@@ -463,7 +501,7 @@ describe('P1 — Boss系统', () => {
     expect(result.alliance.members['p2'].dailyContribution).toBe(0.5);
   });
 
-  it('P1-4: getCurrentBoss每次重建丢失状态', () => {
+  it('P1-4: getCurrentBoss缓存保留状态', () => {
     const bossSystem = new AllianceBossSystem();
     const alliance = createTestAlliance();
     const boss1 = bossSystem.getCurrentBoss(alliance);
@@ -728,23 +766,23 @@ describe('P1 — R2补充: NaN/undefined边界', () => {
     expect(config).toBeUndefined();
   });
 
-  it('challengeBoss damage=NaN → actualDamage=NaN (BUG: Math.max(0,NaN)=NaN)', () => {
+  it('challengeBoss damage=NaN → actualDamage=0 (FIXED: NaN视为0)', () => {
     const bossSystem = new AllianceBossSystem();
     const alliance = addMembers(createTestAlliance(), [
       { id: 'p2', name: '成员2', role: 'MEMBER' },
     ]);
     const ps = createTestPlayerState();
     const result = bossSystem.challengeBoss(makeBoss(), alliance, ps, 'p2', NaN);
-    // BUG: Math.max(0, Math.min(NaN, hp)) = Math.max(0, NaN) = NaN
-    expect(Number.isNaN(result.result.damage)).toBe(true);
+    // FIXED: NaN → 0, actualDamage = 0
+    expect(result.result.damage).toBe(0);
     expect(result.playerState.dailyBossChallenges).toBe(1);
   });
 
-  it('deserialize purchased=NaN → purchased=NaN (BUG: Math.max(0,NaN)=NaN)', () => {
+  it('deserialize purchased=NaN → purchased=0 (FIXED: NaN视为0)', () => {
     const shop = new AllianceShopSystem();
     shop.deserialize({ items: [{ id: 'as_1', purchased: NaN }] });
-    // BUG: Math.max(0, NaN) = NaN, not 0
-    expect(Number.isNaN(shop.getItem('as_1')!.purchased)).toBe(true);
+    // FIXED: Math.max(0, NaN) → NaN check → 0
+    expect(shop.getItem('as_1')!.purchased).toBe(0);
   });
 
   it('deserialize purchased=-5 → purchased=0', () => {

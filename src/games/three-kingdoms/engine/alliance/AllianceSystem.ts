@@ -139,11 +139,16 @@ export class AllianceSystem implements ISubsystem {
     applicationId: string,
     operatorId: string,
     now: number,
+    applicantPlayerState?: AlliancePlayerState,
   ): AllianceData {
     this.requirePermission(alliance, operatorId, 'approve');
     const app = alliance.applications.find(a => a.id === applicationId);
     if (!app) throw new Error('申请不存在');
     if (app.status !== ApplicationStatus.PENDING) throw new Error('申请已处理');
+    // 修复BUG-004: 检查申请人是否已加入其他联盟
+    if (applicantPlayerState && applicantPlayerState.allianceId) {
+      throw new Error('申请人已加入联盟');
+    }
     const levelConfig = this.getLevelConfig(alliance.level);
     if (Object.keys(alliance.members).length >= levelConfig.maxMembers) {
       throw new Error('联盟成员已满');
@@ -181,7 +186,14 @@ export class AllianceSystem implements ISubsystem {
     playerId: string,
   ): { alliance: AllianceData | null; playerState: AlliancePlayerState } {
     if (!alliance.members[playerId]) throw new Error('不是联盟成员');
-    if (playerId === alliance.leaderId) throw new Error('盟主需先转让才能退出');
+    if (playerId === alliance.leaderId) {
+      // 盟主仅剩1人时允许直接解散联盟
+      if (Object.keys(alliance.members).length === 1) {
+        const newState: AlliancePlayerState = { ...playerState, allianceId: '' };
+        return { alliance: null, playerState: newState };
+      }
+      throw new Error('盟主需先转让才能退出');
+    }
     const { [playerId]: _, ...remainingMembers } = alliance.members;
     const newState: AlliancePlayerState = { ...playerState, allianceId: '' };
     if (Object.keys(remainingMembers).length === 0) {
@@ -192,13 +204,34 @@ export class AllianceSystem implements ISubsystem {
 
   // ── 成员管理 ──────────────────────────────
 
-  kickMember(alliance: AllianceData, operatorId: string, targetId: string): AllianceData {
+  kickMember(
+    alliance: AllianceData,
+    operatorId: string,
+    targetId: string,
+  ): AllianceData {
     this.requirePermission(alliance, operatorId, 'kick');
     if (!alliance.members[targetId]) throw new Error('目标不是联盟成员');
     if (targetId === alliance.leaderId) throw new Error('不能踢出盟主');
     if (targetId === operatorId) throw new Error('不能踢出自己');
     const { [targetId]: _, ...remainingMembers } = alliance.members;
     return { ...alliance, members: remainingMembers };
+  }
+
+  /**
+   * 踢人并清理被踢者playerState
+   * 修复BUG-003: 踢人时清空被踢者allianceId
+   */
+  kickMemberWithCleanup(
+    alliance: AllianceData,
+    playerState: AlliancePlayerState,
+    operatorId: string,
+    targetId: string,
+  ): { alliance: AllianceData; playerState: AlliancePlayerState } {
+    const updatedAlliance = this.kickMember(alliance, operatorId, targetId);
+    return {
+      alliance: updatedAlliance,
+      playerState: { ...playerState, allianceId: '' },
+    };
   }
 
   transferLeadership(alliance: AllianceData, currentLeaderId: string, newLeaderId: string): AllianceData {
@@ -265,7 +298,7 @@ export class AllianceSystem implements ISubsystem {
   // ── 联盟等级与福利 ──────────────────────────
 
   addExperience(alliance: AllianceData, exp: number): AllianceData {
-    const safeExp = Math.max(0, exp);
+    const safeExp = Number.isNaN(exp) ? 0 : Math.max(0, exp);
     let newExp = alliance.experience + safeExp;
     let newLevel = alliance.level;
     const maxLevel = ALLIANCE_LEVEL_CONFIGS.length;
@@ -384,6 +417,7 @@ export class AllianceSystem implements ISubsystem {
   createAllianceSimple(
     name: string,
     playerName: string = '玩家',
+    playerId?: string,
   ): { success: boolean; reason?: string } {
     try {
       // 检查元宝余额
@@ -395,8 +429,9 @@ export class AllianceSystem implements ISubsystem {
         }
       }
 
+      const resolvedPlayerId = playerId ?? generateId('player');
       const result = this.createAlliance(
-        this._playerState, name, '', 'player-1', playerName, Date.now(),
+        this._playerState, name, '', resolvedPlayerId, playerName, Date.now(),
       );
 
       // 扣除元宝
