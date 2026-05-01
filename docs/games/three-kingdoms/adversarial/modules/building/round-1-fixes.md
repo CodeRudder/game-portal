@@ -69,26 +69,30 @@ deserialize(data: BuildingSaveData): void {
 
 **问题**: 原实现边检查边执行，部分成功部分失败时无回滚机制，导致资源状态不一致。
 
-**修复**: 改为两阶段执行：
-1. **预验证阶段**: 遍历所有建筑类型，检查升级条件，记录可升级项
-2. **统一执行阶段**: 对预验证通过的项统一执行 startUpgrade
+**修复**: 改为单阶段执行+资源递减：
+1. 逐个检查升级条件（checkUpgrade），通过后立即执行（startUpgrade）
+2. 资源在执行后递减，后续建筑使用扣减后的资源进行检查
+3. startUpgrade 抛错时记录失败并继续处理后续建筑
+4. NaN 资源防护由 FIX-401 的 checkUpgrade 统一处理
 
 ```typescript
-// 阶段1: 预验证（无状态变更）
-const validated = [];
 for (const t of types) {
+  const currentResources = { grain: remainingGrain, gold: remainingGold, troops: remainingTroops, ... };
   const check = ctx.checkUpgrade(t, currentResources);
   if (!check.canUpgrade) { failed.push(...); continue; }
-  validated.push({ type: t, resources: currentResources });
-}
-
-// 阶段2: 统一执行
-for (const { type: t, resources } of validated) {
-  const cost = ctx.startUpgrade(t, resources);
-  succeeded.push({ type: t, cost });
-  // ...
+  try {
+    const cost = ctx.startUpgrade(t, currentResources);
+    succeeded.push({ type: t, cost });
+    remainingGrain -= cost.grain;
+    remainingGold -= cost.gold;
+    remainingTroops -= cost.troops;
+  } catch (e) {
+    failed.push({ type: t, reason: e.message });
+  }
 }
 ```
+
+**设计说明**: R1 修复报告原设计为"两阶段执行"，但实际实现为"单阶段执行+资源递减"。原因是 BatchUpgradeContext 不暴露 getUpgradeCost 接口，两阶段设计无法在预验证阶段准确估算资源消耗。单阶段设计通过资源递减保证后续建筑使用扣减后的资源，实际效果等价。
 
 ### FIX-405: 升级计时NaN
 
