@@ -139,7 +139,8 @@ export function applyEarningsToResources(
  * ```
  */
 export function formatOfflineTime(seconds: number): string {
-  if (seconds <= 0) return '刚刚';
+  // FIX-R2-P1-008: NaN 输入防护
+  if (!Number.isFinite(seconds) || seconds <= 0) return '刚刚';
   if (seconds < 60) return `${Math.floor(seconds)}秒`;
 
   const minutes = Math.floor(seconds / 60);
@@ -168,7 +169,8 @@ export function formatOfflineTime(seconds: number): string {
  * @returns 效率百分比（0~100）
  */
 export function getOfflineEfficiencyPercent(offlineSeconds: number): number {
-  if (offlineSeconds <= 0) return 100;
+  // FIX-R2-P1-009: NaN 输入防护
+  if (!Number.isFinite(offlineSeconds) || offlineSeconds <= 0) return 100;
 
   const clamped = Math.min(offlineSeconds, OFFLINE_MAX_SECONDS);
   let totalEffective = 0;

@@ -264,10 +264,12 @@ export class CopperEconomySystem implements ISubsystem {
   }
 
   private trySpend(cost: number, category: SpendCategory): number {
+    // FIX-R2-P1-005: 非空断言 → null 安全检查
+    if (!this.economyDeps) return 0;
     this.checkDailyReset();
     if (cost <= 0) return 0;
-    if (this.economyDeps!.getGoldAmount() - cost < COPPER_SAFETY_LINE) return 0;
-    if (!this.economyDeps!.consumeGold(cost)) return 0;
+    if (this.economyDeps.getGoldAmount() - cost < COPPER_SAFETY_LINE) return 0;
+    if (!this.economyDeps.consumeGold(cost)) return 0;
     this.recordSpend(category, cost);
     return cost;
   }

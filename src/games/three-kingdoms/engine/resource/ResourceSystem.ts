@@ -341,6 +341,10 @@ export class ResourceSystem implements ISubsystem {
   /** 截断超出上限的资源 */
   private enforceCaps(): void {
     for (const type of RESOURCE_TYPES) {
+      // FIX-R2-P1-007: NaN 资源纵深防护
+      if (!Number.isFinite(this.resources[type])) {
+        this.resources[type] = 0;
+      }
       const cap = this.caps[type];
       if (cap !== null && this.resources[type] > cap) {
         this.resources[type] = cap;

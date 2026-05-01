@@ -58,7 +58,8 @@ export function calculateBonusMultiplier(bonuses?: Bonuses): number {
     if (value !== undefined) {
       // FIX-708: NaN bonus 防护
       if (!Number.isFinite(value)) continue;
-      multiplier *= (1 + value);
+      // FIX-R2-P1-002: 负加成下界防护（-1 → multiplier=0 → 产出归零）
+      multiplier *= Math.max(0, 1 + value);
     }
   }
   return multiplier;
@@ -80,6 +81,9 @@ export function lookupCap(level: number, table: 'granary' | 'barracks'): number 
   const keys = Object.keys(capacityTable)
     .map(Number)
     .sort((a, b) => a - b);
+
+  // FIX-R2-P1-017: 空 capacityTable 兜底
+  if (keys.length === 0) return 0;
 
   let result = capacityTable[1]; // 最低等级
   for (const key of keys) {
@@ -108,6 +112,8 @@ export function lookupCap(level: number, table: 'granary' | 'barracks'): number 
 
 /** 根据百分比判定警告等级 */
 export function getWarningLevel(percentage: number): CapWarningLevel {
+  // FIX-R2-P1-004: NaN 百分比返回 'safe' 掩盖异常
+  if (!Number.isFinite(percentage)) return 'safe';
   if (percentage >= 1) return 'full';
   if (percentage >= CAP_WARNING_THRESHOLDS.urgent) return 'urgent';
   if (percentage >= CAP_WARNING_THRESHOLDS.warning) return 'warning';
