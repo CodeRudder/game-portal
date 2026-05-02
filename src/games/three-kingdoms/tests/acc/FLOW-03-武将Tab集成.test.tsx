@@ -40,6 +40,7 @@ vi.mock('@/components/idle/common/Toast.css', () => ({}));
 function createHeroSim(): GameEventSimulator {
   const sim = createSim();
   sim.engine.resource.setCap('grain', 50_000_000);
+  sim.engine.resource.setCap('gold', 100_000_000);
   sim.engine.resource.setCap('troops', 10_000_000);
   sim.addResources({ grain: 5000000, gold: 10000000, troops: 500000 });
   return sim;

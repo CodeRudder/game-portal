@@ -46,6 +46,7 @@ const onRecruitComplete = vi.fn();
 /** 创建带充足招募资源的 sim */
 function createRecruitSim(opts: { goldAmount?: number; tokenAmount?: number } = {}): GameEventSimulator {
   const sim = createSim();
+  sim.engine.resource.setCap('gold', 100_000_000);
   sim.addResources({ gold: opts.goldAmount ?? 50000, recruitToken: opts.tokenAmount ?? 5000 });
   return sim;
 }

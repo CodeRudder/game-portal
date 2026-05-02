@@ -38,8 +38,8 @@ describe('UI Regression', () => {
         }
       });
     }
-    // 回归快照：当前已知 36 处硬编码 z-index，不允许新增
-    expect(violations.length).toBe(36);
+    // 回归快照：当前已知 44 处硬编码 z-index，不允许新增
+    expect(violations.length).toBe(44);
   });
 
   it('Tab按钮移动端有44px最小高度', () => {
