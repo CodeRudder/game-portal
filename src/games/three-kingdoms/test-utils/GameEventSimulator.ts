@@ -143,7 +143,7 @@ export class GameEventSimulator {
    * 用于 initMidGameState 等需要大量资源的场景，
    * 因为 completePendingUpgrades 会根据建筑等级重置上限。
    */
-  private upgradeBuildingToWithHighCaps(type: BuildingType, targetLevel: number): this {
+  upgradeBuildingToWithHighCaps(type: BuildingType, targetLevel: number): this {
     const currentLevel = this.engine.building.getLevel(type);
     for (let i = currentLevel; i < targetLevel; i++) {
       // 确保资源上限和资源量充足（升级消耗可能很大）

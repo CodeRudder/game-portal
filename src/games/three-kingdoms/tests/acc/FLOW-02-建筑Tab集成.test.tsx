@@ -42,6 +42,7 @@ function getSnapshotProps(sim: GameEventSimulator) {
 /** 补充资源的辅助函数 */
 function refillResources(sim: GameEventSimulator): void {
   sim.engine.resource.setCap('grain', 50_000_000);
+  sim.engine.resource.setCap('gold', 50_000_000);
   sim.engine.resource.setCap('troops', 10_000_000);
   sim.addResources({ grain: 10_000_000, gold: 10_000_000, troops: 500_000 });
 }
@@ -66,16 +67,13 @@ function createHighLevelSim(): GameEventSimulator {
   const sim = createSim();
   refillResources(sim);
   // castle → Lv4
-  sim.upgradeBuildingTo('castle', 4);
-  refillResources(sim);
+  sim.upgradeBuildingToWithHighCaps('castle', 4);
   // farmland → Lv4（满足 castle Lv4→5 前置）
-  sim.upgradeBuildingTo('farmland', 4);
-  refillResources(sim);
+  sim.upgradeBuildingToWithHighCaps('farmland', 4);
   // castle → Lv5（解锁城墙，2个队列槽位需Lv6）
-  sim.upgradeBuildingTo('castle', 5);
-  refillResources(sim);
+  sim.upgradeBuildingToWithHighCaps('castle', 5);
   // castle → Lv6（2个队列槽位）
-  sim.upgradeBuildingTo('castle', 6);
+  sim.upgradeBuildingToWithHighCaps('castle', 6);
   refillResources(sim);
   return sim;
 }
@@ -204,8 +202,8 @@ describe('FLOW-02 建筑Tab集成测试', () => {
     const sim = createBuildingSim();
     render(<BuildingPanel {...makePanelProps(sim)} />);
 
-    // 主城Lv2：smithy(castle≥3), academy(castle≥3), clinic(castle≥4), wall(castle≥5) 仍锁定
-    const lockedTypes: BuildingType[] = ['smithy', 'academy', 'clinic', 'wall'];
+    // 主城Lv2：workshop(castle≥3), academy(castle≥3), clinic(castle≥4), wall(castle≥5), tavern(castle≥5) 仍锁定
+    const lockedTypes: BuildingType[] = ['workshop', 'academy', 'clinic', 'wall', 'tavern'];
     for (const type of lockedTypes) {
       const item = screen.getByTestId(`building-panel-item-${type}`);
       assertStrict(item.className.includes('locked'), 'FLOW-02-07', `${BUILDING_LABELS[type]} 应有locked样式`);
@@ -326,8 +324,10 @@ describe('FLOW-02 建筑Tab集成测试', () => {
     })} />);
 
     const confirmBtn = screen.getByTestId('building-upgrade-confirm') as HTMLButtonElement;
+    // 按钮使用 aria-disabled 而非 HTML disabled 属性
+    const isDisabled = confirmBtn.disabled || confirmBtn.getAttribute('aria-disabled') === 'true' || confirmBtn.classList.contains('tk-upgrade-btn--disabled');
     // 资源不足（grain=10 < 100, gold=10 < 50），按钮应禁用
-    assertStrict(confirmBtn.disabled, 'FLOW-02-17', '资源不足时确认按钮应禁用');
+    assertStrict(isDisabled, 'FLOW-02-17', '资源不足时确认按钮应禁用');
   });
 
   it(accTest('FLOW-02-18', '引擎层升级前置条件 — 非主城建筑等级不能超过主城+1'), () => {
@@ -771,7 +771,7 @@ describe('FLOW-02 建筑Tab集成测试', () => {
     sim.upgradeBuildingTo('castle', 3);
 
     const buildingSys = sim.engine.building;
-    assertStrict(buildingSys.getBuilding('smithy').status === 'idle', 'FLOW-02-42', '主城Lv3后铁匠铺应解锁');
+    assertStrict(buildingSys.getBuilding('workshop').status === 'idle', 'FLOW-02-42', '主城Lv3后工坊应解锁');
     assertStrict(buildingSys.getBuilding('academy').status === 'idle', 'FLOW-02-42', '主城Lv3后书院应解锁');
   });
 
@@ -806,7 +806,7 @@ describe('FLOW-02 建筑Tab集成测试', () => {
     const snap = sim.engine.getSnapshot();
 
     assertStrict(!!snap.buildings, 'FLOW-02-45', '快照应包含buildings');
-    assertStrict(Object.keys(snap.buildings).length === 8, 'FLOW-02-45', '应有8座建筑');
+    assertStrict(Object.keys(snap.buildings).length === 11, 'FLOW-02-45', '应有11座建筑');
     assertStrict(typeof snap.productionRates === 'object', 'FLOW-02-45', '应包含productionRates');
   });
 
