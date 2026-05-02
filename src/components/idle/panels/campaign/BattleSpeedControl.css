@@ -54,7 +54,6 @@
   background: var(--tk-bg-active, #4a3c2e);
   border-color: var(--tk-accent-gold, #d4a853);
   color: var(--tk-accent-gold, #d4a853);
-  box-shadow: 0 0 8px rgba(212, 168, 83, 0.3);
 }
 
 /* ═══════════════════════════════════════════
@@ -69,7 +68,6 @@
   background: linear-gradient(135deg, #5c1a1a, #3d1212);
   border-color: #ff4444;
   color: #ff6b6b;
-  box-shadow: 0 0 12px rgba(231, 76, 60, 0.45);
   border-width: 2px;
 }
 

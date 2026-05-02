@@ -314,8 +314,8 @@
 
 @keyframes tk-reveal-fine-anim {
   0% { opacity: 0; transform: scale(0.6); }
-  50% { opacity: 1; transform: scale(1.05); box-shadow: 0 0 20px rgba(76, 175, 80, 0.5); }
-  100% { opacity: 1; transform: scale(1); box-shadow: 0 0 6px rgba(76, 175, 80, 0.15); }
+  50% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 /* 稀有 → 蓝色脉冲 */
@@ -325,9 +325,9 @@
 
 @keyframes tk-reveal-rare-anim {
   0% { opacity: 0; transform: scale(0.5); }
-  40% { opacity: 1; transform: scale(1.08); box-shadow: 0 0 24px rgba(33, 150, 243, 0.6); }
+  40% { opacity: 1; transform: scale(1.08); }
   70% { transform: scale(0.96); }
-  100% { opacity: 1; transform: scale(1); box-shadow: 0 0 8px rgba(33, 150, 243, 0.2); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 /* 史诗 → 紫色爆发 */
@@ -337,9 +337,9 @@
 
 @keyframes tk-reveal-epic-anim {
   0% { opacity: 0; transform: scale(0.3); }
-  30% { opacity: 1; transform: scale(1.15); box-shadow: 0 0 30px rgba(156, 39, 176, 0.7), 0 0 60px rgba(156, 39, 176, 0.25); }
+  30% { opacity: 1; transform: scale(1.15); }
   60% { transform: scale(0.95); }
-  100% { opacity: 1; transform: scale(1); box-shadow: 0 0 12px rgba(156, 39, 176, 0.3); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 /* 传说 → 金色光芒 */
@@ -349,10 +349,10 @@
 
 @keyframes tk-reveal-legendary-anim {
   0% { opacity: 0; transform: scale(0.2); }
-  25% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 40px rgba(255, 152, 0, 0.8), 0 0 80px rgba(255, 152, 0, 0.3); }
-  50% { transform: scale(0.92); box-shadow: 0 0 30px rgba(255, 152, 0, 0.5); }
+  25% { opacity: 1; transform: scale(1.2); }
+  50% { transform: scale(0.92); }
   75% { transform: scale(1.04); }
-  100% { opacity: 1; transform: scale(1); box-shadow: 0 0 16px rgba(255, 152, 0, 0.35), 0 0 32px rgba(255, 152, 0, 0.1); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 /* 神话 → 红色爆发 */
@@ -362,50 +362,30 @@
 
 @keyframes tk-reveal-mythic-anim {
   0% { opacity: 0; transform: scale(0.15); }
-  20% { opacity: 1; transform: scale(1.25); box-shadow: 0 0 48px rgba(244, 67, 54, 0.9), 0 0 96px rgba(244, 67, 54, 0.35); }
-  45% { transform: scale(0.9); box-shadow: 0 0 36px rgba(244, 67, 54, 0.6); }
+  20% { opacity: 1; transform: scale(1.25); }
+  45% { transform: scale(0.9); }
   70% { transform: scale(1.06); }
-  100% { opacity: 1; transform: scale(1); box-shadow: 0 0 20px rgba(244, 67, 54, 0.4), 0 0 40px rgba(244, 67, 54, 0.12); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
-/* 传说持续金色脉冲 */
+/* 传说静态金色光效 */
 .tk-reveal-legendary.tk-recruit-result-card--revealed .tk-recruit-result-glow {
-  animation: tk-legendary-glow-pulse 2s ease-in-out infinite;
+  opacity: 0.1;
 }
 
-@keyframes tk-legendary-glow-pulse {
-  0%, 100% { opacity: 0.06; }
-  50% { opacity: 0.15; }
-}
-
-/* 史诗持续紫色微光 */
+/* 史诗静态紫色微光 */
 .tk-reveal-epic.tk-recruit-result-card--revealed .tk-recruit-result-glow {
-  animation: tk-epic-glow-pulse 2.5s ease-in-out infinite;
+  opacity: 0.08;
 }
 
-@keyframes tk-epic-glow-pulse {
-  0%, 100% { opacity: 0.04; }
-  50% { opacity: 0.12; }
-}
-
-/* 稀有持续蓝色微光 */
+/* 稀有静态蓝色微光 */
 .tk-reveal-rare.tk-recruit-result-card--revealed .tk-recruit-result-glow {
-  animation: tk-rare-glow-pulse 3s ease-in-out infinite;
+  opacity: 0.05;
 }
 
-@keyframes tk-rare-glow-pulse {
-  0%, 100% { opacity: 0.03; }
-  50% { opacity: 0.08; }
-}
-
-/* 神话持续红色微光 */
+/* 神话静态红色微光 */
 .tk-reveal-mythic.tk-recruit-result-card--revealed .tk-recruit-result-glow {
-  animation: tk-mythic-glow-pulse 2s ease-in-out infinite;
-}
-
-@keyframes tk-mythic-glow-pulse {
-  0%, 100% { opacity: 0.06; }
-  50% { opacity: 0.18; }
+  opacity: 0.12;
 }
 
 .tk-recruit-result-quality {
@@ -620,7 +600,7 @@
 
 .tk-recruit-btn--formation:hover:not(:disabled) {
   background: linear-gradient(135deg, #6b5aae, #8c6ccf) !important;
-  box-shadow: 0 0 12px rgba(124, 92, 191, 0.4);
+  box-shadow: none;
 }
 
 /* P1-2 修复：概率0%标注"无法获得"样式 */

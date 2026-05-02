@@ -257,6 +257,7 @@ describe('GuideReplayButton', () => {
       getTutorialStepManager: vi.fn(() => ({
         startReplay: mockStartReplay,
         getNextStep: vi.fn(() => null),
+        getStepDefinition: vi.fn(() => null),
         getState: vi.fn(() => ({ activeStepId: null })),
       })),
       getTutorialStateMachine: vi.fn(() => ({

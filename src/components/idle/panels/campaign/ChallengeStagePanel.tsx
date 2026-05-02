@@ -22,6 +22,7 @@ import type {
 import type { Stage } from '@/games/three-kingdoms/engine/campaign/campaign.types';
 import BattleFormationModal from './BattleFormationModal';
 import BattleResultModal from './BattleResultModal';
+import { formatNum, getResourceLabel } from '@/components/idle/shared/ui-utils';
 import './ChallengeStagePanel.css';
 
 // ─────────────────────────────────────────────
@@ -31,37 +32,6 @@ interface ChallengeStagePanelProps {
   engine: ThreeKingdomsEngine;
   snapshotVersion: number;
   onClose: () => void;
-}
-
-// ─────────────────────────────────────────────
-// 资源名称映射
-// ─────────────────────────────────────────────
-const RESOURCE_LABELS: Record<string, string> = {
-  grain: '粮草',
-  gold: '铜钱',
-  troops: '兵力',
-  mandate: '天命',
-  exp_book_small: '经验书·小',
-  exp_book_medium: '经验书·中',
-  exp_book_large: '经验书·大',
-  tiger_tally: '虎符',
-  war_script: '兵法',
-  forge_stone: '锻造石',
-};
-
-/** 获取资源中文名 */
-function getResourceLabel(type: string): string {
-  if (type.startsWith('fragment_')) {
-    const heroName = type.replace('fragment_', '');
-    return `${heroName}碎片`;
-  }
-  return RESOURCE_LABELS[type] ?? type;
-}
-
-/** 格式化数字 */
-function formatNum(n: number): string {
-  if (n >= 10000) return `${(n / 10000).toFixed(1)}万`;
-  return n.toLocaleString();
 }
 
 /** 计算距离明日0点的剩余秒数 */

@@ -79,11 +79,10 @@
 }
 .tk-stage-node--available .tk-stage-node-circle {
   border-color: var(--tk-gold);
-  box-shadow: 0 0 12px rgba(200,168,76,0.4), inset 0 0 8px rgba(200,168,76,0.1);
-  animation: tk-pulse-available 2s ease-in-out infinite;
+  box-shadow: none;
 }
-.tk-stage-node--cleared .tk-stage-node-circle { border-color: var(--tk-green); background: rgba(126,200,80,0.15); box-shadow: 0 0 8px rgba(126,200,80,0.3); }
-.tk-stage-node--three-star .tk-stage-node-circle { border-color: var(--tk-gold-light); background: rgba(201,168,76,0.2); box-shadow: 0 0 16px rgba(201,168,76,0.5), 0 0 4px rgba(201,168,76,0.3); }
+.tk-stage-node--cleared .tk-stage-node-circle { border-color: var(--tk-green); background: rgba(126,200,80,0.15); box-shadow: none; }
+.tk-stage-node--three-star .tk-stage-node-circle { border-color: var(--tk-gold-light); background: rgba(201,168,76,0.2); box-shadow: none; }
 .tk-stage-node--locked .tk-stage-node-circle { border-color: rgba(100,100,100,0.3); background: rgba(40,40,50,0.8); }
 
 /* 节点内容 */
@@ -111,7 +110,7 @@
   cursor: pointer; transition: all 0.15s; letter-spacing: 1px;
   font-family: inherit; white-space: nowrap;
 }
-.tk-stage-sweep-btn:hover { background: rgba(200,168,76,0.3); border-color: var(--tk-gold); box-shadow: 0 0 8px rgba(200,168,76,0.3); }
+.tk-stage-sweep-btn:hover { background: rgba(200,168,76,0.3); border-color: var(--tk-gold); box-shadow: none; }
 
 /* 底部进度 */
 .tk-campaign-progress { flex-shrink: 0; padding: 10px 0 4px; border-top: 1px solid rgba(200,168,76,0.12); }
@@ -119,12 +118,6 @@
 .tk-campaign-progress-stars { color: var(--tk-gold); font-weight: 500; }
 .tk-campaign-progress-bar { width: 100%; height: 6px; background: rgba(200,168,76,0.1); border-radius: 3px; overflow: hidden; }
 .tk-campaign-progress-fill { height: 100%; background: linear-gradient(90deg, var(--tk-green), var(--tk-gold)); border-radius: 3px; transition: width 0.4s var(--tk-ease-out); }
-
-/* 动画 */
-@keyframes tk-pulse-available {
-  0%, 100% { box-shadow: 0 0 12px rgba(200,168,76,0.4), inset 0 0 8px rgba(200,168,76,0.1); }
-  50% { box-shadow: 0 0 20px rgba(200,168,76,0.6), inset 0 0 12px rgba(200,168,76,0.2); }
-}
 
 /* ═══════════════════════════════════════════
    底部功能入口按钮

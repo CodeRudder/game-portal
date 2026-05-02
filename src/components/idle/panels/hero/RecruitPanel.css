@@ -24,7 +24,7 @@
 .tk-rp-balance-label { font-size: 14px; color: #a0a0a0; }
 .tk-rp-balance-value {
   font-size: 32px; font-weight: 800; color: #ffd700;
-  text-shadow: 0 0 8px rgba(255,215,0,0.3); font-family: 'Georgia',serif;
+  text-shadow: none; font-family: 'Georgia',serif;
 }
 
 /* 模式切换 */

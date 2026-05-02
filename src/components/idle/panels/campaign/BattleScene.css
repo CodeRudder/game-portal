@@ -207,7 +207,7 @@
 }
 .tk-bs-unit--acting {
   border-color: var(--tk-gold);
-  box-shadow: 0 0 12px rgba(200, 168, 76, 0.3);
+  box-shadow: none;
   transform: scale(1.05);
 }
 .tk-bs-unit-avatar {
@@ -471,7 +471,7 @@
   border-radius: 4px;
 }
 .tk-bs-controls .tk-speed-btn--active {
-  box-shadow: 0 0 4px rgba(212, 168, 83, 0.3);
+  box-shadow: none;
 }
 
 /* ═══════════════════════════════════════════

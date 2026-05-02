@@ -231,31 +231,25 @@
 
 .tk-bld-pin--normal:hover .tk-bld-pin-icon {
   border-color: rgba(200, 168, 76, 0.7);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 0 12px rgba(200, 168, 76, 0.15);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 }
 
 /* 可升级状态 */
 .tk-bld-pin--upgradable .tk-bld-pin-icon {
   border-color: rgba(39, 174, 96, 0.6);
   background: rgba(39, 174, 96, 0.08);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), 0 0 8px rgba(39, 174, 96, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
 .tk-bld-pin--upgradable:hover .tk-bld-pin-icon {
   border-color: rgba(39, 174, 96, 0.85);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 0 16px rgba(39, 174, 96, 0.25);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 }
 
 /* 升级中状态 */
 .tk-bld-pin--upgrading .tk-bld-pin-icon {
   border-color: rgba(52, 152, 219, 0.6);
   background: rgba(52, 152, 219, 0.08);
-  animation: tk-bld-pulse 2s ease-in-out infinite;
-}
-
-@keyframes tk-bld-pulse {
-  0%, 100% { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), 0 0 0 0 rgba(52, 152, 219, 0); }
-  50% { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), 0 0 16px 4px rgba(52, 152, 219, 0.2); }
 }
 
 /* 锁定状态 */
@@ -273,12 +267,12 @@
    P0-2: 升级完成闪光动画
    ═══════════════════════════════════════════ */
 @keyframes tk-bld-flash-icon {
-  0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); transform: scale(1); }
-  15% { box-shadow: 0 0 24px 8px rgba(255, 215, 0, 0.6); transform: scale(1.15); }
-  30% { box-shadow: 0 0 16px 4px rgba(255, 215, 0, 0.4); transform: scale(1.05); }
-  50% { box-shadow: 0 0 20px 6px rgba(255, 215, 0, 0.5); transform: scale(1.1); }
-  70% { box-shadow: 0 0 12px 3px rgba(255, 215, 0, 0.2); transform: scale(1.02); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); transform: scale(1); }
+  0% { transform: scale(1); }
+  15% { transform: scale(1.15); }
+  30% { transform: scale(1.05); }
+  50% { transform: scale(1.1); }
+  70% { transform: scale(1.02); }
+  100% { transform: scale(1); }
 }
 
 @keyframes tk-bld-flash-badge {

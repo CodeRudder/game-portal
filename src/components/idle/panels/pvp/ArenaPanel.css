@@ -32,12 +32,6 @@
   border: 1px solid rgba(212, 165, 116, 0.35);
   border-radius: var(--tk-radius-lg, 10px);
   text-align: center;
-  animation: tk-arena-guide-pulse 2s ease-in-out infinite;
-}
-
-@keyframes tk-arena-guide-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(212, 165, 116, 0.25); }
-  50% { box-shadow: 0 0 12px 4px rgba(212, 165, 116, 0.15); }
 }
 
 .tk-arena-guide-icon {
@@ -105,13 +99,10 @@
   border-radius: var(--tk-radius-md, 6px);
   font-size: 12px;
   color: #ffc107;
-  animation: tk-arena-tip-highlight 3s ease-in-out infinite;
+  animation: none;
 }
 
-@keyframes tk-arena-tip-highlight {
-  0%, 100% { border-color: rgba(255, 193, 7, 0.25); }
-  50% { border-color: rgba(255, 193, 7, 0.5); }
-}
+/* Static accent — no animated pulse */
 
 .tk-arena-strategy-tip-icon {
   font-size: 14px;
@@ -291,7 +282,7 @@
 .tk-arena-summary-grade {
   font-size: 32px;
   font-weight: 900;
-  text-shadow: 0 0 12px currentColor;
+  text-shadow: none;
 }
 
 .tk-arena-summary-grade-label {

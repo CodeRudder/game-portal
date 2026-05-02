@@ -327,7 +327,7 @@
 .tk-upgrade-castle-bonus-next {
   color: #FFD700;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+  text-shadow: none;
 }
 
 .tk-upgrade-castle-bonus-detail {
@@ -429,7 +429,7 @@
   color: #4caf50;
   font-weight: 700;
   font-size: 14px;
-  text-shadow: 0 0 6px rgba(76, 175, 80, 0.2);
+  text-shadow: none;
 }
 
 .tk-upgrade-summary-tip {

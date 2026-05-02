@@ -115,7 +115,7 @@
 
 .tk-brm-result-title--victory {
   color: var(--tk-gold-light);
-  text-shadow: 0 0 20px rgba(200, 168, 76, 0.4);
+  text-shadow: none;
 }
 
 .tk-brm-result-title--defeat {
