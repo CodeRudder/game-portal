@@ -256,6 +256,9 @@ export class ExpeditionSystem implements ISubsystem {
     const route = this.state.routes[routeId];
     if (!team || !route || !route.unlocked) return false;
 
+    // DEF-027/028: 已在远征中的队伍不能重复派遣
+    if (team.isExpeditioning) return false;
+
     const expeditioningCount = Object.values(this.state.teams).filter(t => t.isExpeditioning).length;
     if (expeditioningCount >= this.state.unlockedSlots) return false;
 

@@ -292,7 +292,7 @@ describe('P0-2: 快速派遣+队伍状态检查', () => {
   test('所有队伍都在远征时快速重派失败', () => {
     const heroes = createShuHeroes(3);
     const heroMap = createHeroMap(heroes);
-    system.updateSlots(1); // 只有1个槽位
+    system.updateSlots(5); // 主城5级解锁1个槽位
 
     const { teamId, success } = setupAndDispatchTeam(system, ['shu_0', 'shu_1', 'shu_2'], heroMap);
     expect(success).toBe(true);
@@ -553,7 +553,7 @@ describe('P0-4: 负数/零值输入', () => {
   test('F-Boundary: 槽位满时不能派遣', () => {
     const heroes = createShuHeroes(5);
     const heroMap = createHeroMap(heroes);
-    system.updateSlots(1); // 只有1个槽位
+    system.updateSlots(5); // 主城5级解锁1个槽位
 
     // 派遣第一支队伍
     const { teamId: tid1, success: s1 } = setupAndDispatchTeam(
