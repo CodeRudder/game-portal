@@ -184,7 +184,7 @@ const OfflinePushPanel: React.FC<OfflinePushPanelProps> = ({
           <div className="tk-offline-push-timer">
             <div className="tk-offline-push-timer-info">
               <span className="tk-offline-push-timer-label">已累积</span>
-              <span className="tk-offline-push-timer-value" data-testid="offline-push-timer">
+              <span className="tk-offline-push-timer-value" data-testid="offline-push-timer" aria-live="polite">
                 {formatDuration(accumulatedSeconds)}
               </span>
             </div>

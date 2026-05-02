@@ -94,6 +94,18 @@ export function useBattleAnimation(
   const cancelledRef = useRef(false);
   const logAreaRef = useRef<HTMLDivElement>(null!) as React.RefObject<HTMLDivElement>;
 
+  // ── P2: 追踪所有 setTimeout ID，组件卸载时统一清理 ──
+  const timerRefs = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+
+  /** 安全 setTimeout：自动追踪，卸载后不再 setState */
+  const safeTimeout = useCallback((fn: () => void, ms: number) => {
+    const id = setTimeout(() => {
+      timerRefs.current.delete(id);
+      if (!cancelledRef.current) fn();
+    }, ms);
+    timerRefs.current.add(id);
+  }, []);
+
   // 跟踪已死亡的单位（避免重复触发死亡动画）
   const deadUnitsRef = useRef<Set<string>>(new Set());
 
@@ -105,8 +117,8 @@ export function useBattleAnimation(
   const addDamageFloat = useCallback((unitId: string, value: number, isCritical: boolean, isHeal: boolean) => {
     const id = ++floatIdRef.current;
     setDamageFloats((prev) => [...prev, { id, unitId, value, isCritical, isHeal }]);
-    setTimeout(() => setDamageFloats((prev) => prev.filter((f) => f.id !== id)), 1000);
-  }, []);
+    safeTimeout(() => setDamageFloats((prev) => prev.filter((f) => f.id !== id)), 1000);
+  }, [safeTimeout]);
 
   useEffect(() => { if (logAreaRef.current) logAreaRef.current.scrollTop = logAreaRef.current.scrollHeight; }, [logs]);
 
@@ -177,18 +189,18 @@ export function useBattleAnimation(
 
           // 受击闪烁
           setHitUnitIds(new Set(newHitIds));
-          setTimeout(() => setHitUnitIds(new Set()), 400);
+          safeTimeout(() => setHitUnitIds(new Set()), 400);
 
           // 暴击屏幕震动
           if (hasCrit) {
             setCritShake(true);
-            setTimeout(() => setCritShake(false), 450);
+            safeTimeout(() => setCritShake(false), 450);
           }
 
           // 死亡动画
           if (newDeadIds.length > 0) {
             setDyingUnitIds(new Set(newDeadIds));
-            setTimeout(() => setDyingUnitIds(new Set()), 900);
+            safeTimeout(() => setDyingUnitIds(new Set()), 900);
           }
 
           setBattleState({ ...cur });
@@ -219,7 +231,12 @@ export function useBattleAnimation(
     };
 
     playBattle();
-    return () => { cancelledRef.current = true; };
+    return () => {
+      cancelledRef.current = true;
+      // P2: 清理所有未完成的 setTimeout
+      for (const id of timerRefs.current) clearTimeout(id);
+      timerRefs.current.clear();
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
