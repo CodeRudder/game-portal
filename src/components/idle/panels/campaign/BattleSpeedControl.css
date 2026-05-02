@@ -67,15 +67,10 @@
 
 .tk-speed-btn--fast.tk-speed-btn--active {
   background: linear-gradient(135deg, #5c1a1a, #3d1212);
-  border-color: var(--tk-accent-red, #e74c3c);
+  border-color: #ff4444;
   color: #ff6b6b;
-  box-shadow: 0 0 12px rgba(231, 76, 60, 0.4);
-  animation: tk-speed-fast-pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes tk-speed-fast-pulse {
-  0%, 100% { box-shadow: 0 0 8px rgba(231, 76, 60, 0.3); }
-  50% { box-shadow: 0 0 16px rgba(231, 76, 60, 0.6); }
+  box-shadow: 0 0 12px rgba(231, 76, 60, 0.45);
+  border-width: 2px;
 }
 
 /* ═══════════════════════════════════════════

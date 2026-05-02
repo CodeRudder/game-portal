@@ -23,7 +23,8 @@ import {
   MAX_STARS,
 } from '@/games/three-kingdoms/engine';
 import type { BattleResult } from '@/games/three-kingdoms/engine';
-import { BattleOutcome } from '@/games/three-kingdoms/engine';
+import { BattleOutcome, StarRating } from '@/games/three-kingdoms/engine';
+import type { SweepBatchResult } from '@/games/three-kingdoms/engine';
 import BattleFormationModal from './BattleFormationModal';
 import BattleResultModal from './BattleResultModal';
 import SweepModal from './SweepModal';
@@ -163,7 +164,7 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
           // 将 SweepBatchResult 转换为 BattleResult 格式以复用弹窗
           const result: BattleResult = {
             outcome: BattleOutcome.VICTORY,
-            stars: 3 as any,
+            stars: StarRating.THREE,
             totalTurns: batchResult.executedCount ?? count,
             allySurvivors: 0,
             enemySurvivors: 0,
@@ -189,12 +190,34 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
           const stage = sweepTarget;
           if (stage) setSweepStage(stage);
           setSweepTarget(null);
-          return null as any;
+          return {
+            success: false,
+            stageId,
+            requestedCount: count,
+            executedCount: 0,
+            results: [],
+            totalResources: {},
+            totalExp: 0,
+            totalFragments: {},
+            ticketsUsed: 0,
+            failureReason: '降级为普通战斗',
+          } satisfies SweepBatchResult;
         }
       } catch (e) {
         console.error('扫荡失败:', e);
         setSweepTarget(null);
-        return null as any;
+        return {
+          success: false,
+          stageId,
+          requestedCount: count,
+          executedCount: 0,
+          results: [],
+          totalResources: {},
+          totalExp: 0,
+          totalFragments: {},
+          ticketsUsed: 0,
+          failureReason: e instanceof Error ? e.message : '未知错误',
+        } satisfies SweepBatchResult;
       }
     },
     [engine, sweepTarget],

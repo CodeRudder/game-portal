@@ -23,7 +23,7 @@ import type {
   BattleUnit,
   BattleTeam,
 } from '@/games/three-kingdoms/engine';
-import { BattleMode, BattleOutcome } from '@/games/three-kingdoms/engine';
+import { BattleMode, BattleOutcome, StarRating } from '@/games/three-kingdoms/engine';
 import type { Stage } from '@/games/three-kingdoms/engine';
 import { STAGE_TYPE_LABELS } from '@/games/three-kingdoms/engine';
 import { useBattleAnimation } from './BattleAnimation';
@@ -50,6 +50,27 @@ interface BattleSceneProps {
   stage: Stage;
   /** 战斗结束回调 */
   onBattleEnd: (result: BattleResult) => void;
+}
+
+/**
+ * 创建一个安全的"放弃/异常"战斗结果（用于空编队、主动退出等场景）
+ *
+ * 表示玩家未正常完成战斗，星级为 NONE。
+ */
+function createDefaultBattleResult(): BattleResult {
+  return {
+    outcome: BattleOutcome.DEFEAT,
+    stars: StarRating.NONE,
+    totalTurns: 0,
+    allySurvivors: 0,
+    enemySurvivors: 0,
+    allyTotalDamage: 0,
+    enemyTotalDamage: 0,
+    maxSingleDamage: 0,
+    maxCombo: 0,
+    summary: '战斗未完成',
+    fragmentRewards: {},
+  };
 }
 
 // ─────────────────────────────────────────────
@@ -166,7 +187,7 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
     return (
       <div className="tk-bs-overlay">
         <div className="tk-bs-empty-msg">编队为空，请先配置武将</div>
-        <button onClick={() => onBattleEnd(null as any)}>返回</button>
+        <button onClick={() => onBattleEnd(createDefaultBattleResult())}>返回</button>
       </div>
     );
   }
@@ -183,8 +204,8 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
     (mode: BattleMode) => {
       setBattleMode(mode);
       // 通知引擎切换模式
-      if (battleEngine && typeof (battleEngine as any).setBattleMode === 'function') {
-        (battleEngine as any).setBattleMode(mode);
+      if (battleEngine && typeof battleEngine.setBattleMode === 'function') {
+        battleEngine.setBattleMode(mode);
       }
     },
     [battleEngine],
@@ -204,7 +225,7 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
   // ── v3.0：放弃战斗 ──
   const handleQuitBattle = useCallback(() => {
     setPaused(false);
-    onBattleEnd(null as any);
+    onBattleEnd(createDefaultBattleResult());
   }, [onBattleEnd]);
 
   // ── v3.0：进入动画完成 → 切换到 active ──
@@ -223,8 +244,8 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
       setUltimateVisible(false);
       setUltimateReadyItems([]);
       // 通知引擎确认释放大招
-      if (battleEngine && typeof (battleEngine as any).confirmUltimate === 'function') {
-        (battleEngine as any).confirmUltimate(unitId, skillId);
+      if (battleEngine && typeof battleEngine.confirmUltimate === 'function') {
+        battleEngine.confirmUltimate(unitId, skillId);
       }
     },
     [battleEngine],
@@ -235,8 +256,8 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
     setUltimateVisible(false);
     setUltimateReadyItems([]);
     // 通知引擎取消大招
-    if (battleEngine && typeof (battleEngine as any).cancelUltimate === 'function') {
-      (battleEngine as any).cancelUltimate();
+    if (battleEngine && typeof battleEngine.cancelUltimate === 'function') {
+      battleEngine.cancelUltimate();
     }
   }, [battleEngine]);
 
@@ -247,7 +268,7 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
     if (battleMode === BattleMode.AUTO) return;
 
     // 只在半自动/手动模式下检测
-    const ultimateSystem = (battleEngine as any)?.getUltimateSystem?.();
+    const ultimateSystem = battleEngine?.getUltimateSystem?.();
     if (!ultimateSystem) return;
 
     // 检测我方队伍大招就绪
@@ -292,8 +313,8 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
 
   // ── 渲染武将行 ──
   const renderUnitRow = (units: BattleUnit[], side: 'ally' | 'enemy', position: 'front' | 'back') => {
-    const padded = [...units];
-    while (padded.length < 3) padded.push(null as unknown as BattleUnit);
+    const padded: (BattleUnit | null)[] = [...units];
+    while (padded.length < 3) padded.push(null);
     return padded.map((unit, idx) => {
       if (!unit) return <div key={`empty-${side}-${position}-${idx}`} className="tk-bs-unit-empty" />;
       const floats = filterDamageFloats(damageFloats, unit.id);
