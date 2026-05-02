@@ -59,7 +59,7 @@ function createMockDeps(): ISystemDeps {
 
 /** 创建零资源 */
 function zeroResources(): Resources {
-  return { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
+  return { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
 }
 
 /** 创建基础产出速率 */
@@ -690,7 +690,7 @@ describe('离线进度衰减公式', () => {
 
   describe('翻倍机制', () => {
     it('广告翻倍成功', () => {
-      const earned: Resources = { grain: 1000, gold: 500, troops: 100, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
+      const earned: Resources = { grain: 1000, gold: 500, troops: 100, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
       const result = applyDouble(earned, { source: 'ad', multiplier: 2 }, 0);
       expect(result.success).toBe(true);
       expect(result.appliedMultiplier).toBe(2);
@@ -698,14 +698,14 @@ describe('离线进度衰减公式', () => {
     });
 
     it('广告翻倍每日上限3次', () => {
-      const earned: Resources = { grain: 1000, gold: 500, troops: 100, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
+      const earned: Resources = { grain: 1000, gold: 500, troops: 100, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
       const result = applyDouble(earned, { source: 'ad', multiplier: 2 }, 3);
       expect(result.success).toBe(false);
       expect(result.reason).toContain('已用完');
     });
 
     it('元宝翻倍无限制', () => {
-      const earned: Resources = { grain: 1000, gold: 500, troops: 100, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
+      const earned: Resources = { grain: 1000, gold: 500, troops: 100, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
       const result = applyDouble(earned, { source: 'gold', multiplier: 2 }, 999);
       expect(result.success).toBe(true);
     });

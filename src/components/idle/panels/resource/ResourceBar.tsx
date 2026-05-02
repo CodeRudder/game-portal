@@ -38,6 +38,8 @@ interface ResourceBarProps {
 const RESOURCE_ICONS: Record<ResourceType, string> = {
   grain: '🌾',
   gold: '💰',
+  ore: '⛏️',
+  wood: '🪵',
   troops: '⚔️',
   mandate: '👑',
   techPoint: '🔬',
@@ -49,6 +51,8 @@ const RESOURCE_ICONS: Record<ResourceType, string> = {
 const RESOURCE_COLORS: Record<ResourceType, string> = {
   grain: '#7EC850',
   gold: '#C9A84C',
+  ore: '#8B7355',
+  wood: '#6B8E23',
   troops: '#B8423A',
   mandate: '#7B5EA7',
   techPoint: '#4FC3F7',
@@ -57,7 +61,7 @@ const RESOURCE_COLORS: Record<ResourceType, string> = {
 };
 
 /** 资源排列顺序 */
-const RESOURCE_ORDER: ResourceType[] = ['grain', 'gold', 'troops', 'mandate', 'techPoint', 'recruitToken', 'skillBook'];
+const RESOURCE_ORDER: ResourceType[] = ['grain', 'gold', 'ore', 'wood', 'troops', 'mandate', 'techPoint', 'recruitToken', 'skillBook'];
 
 /* [需求变更] 移除资源产出脉冲动画 — 避免持续脉冲影响用户注意力 */
 

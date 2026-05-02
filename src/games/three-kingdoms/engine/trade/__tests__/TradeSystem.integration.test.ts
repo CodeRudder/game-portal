@@ -124,7 +124,7 @@ describe('§3.1 商路开通', () => {
 
   it('应包含8条商路定义', () => {
     const defs = trade.getRouteDefs();
-    expect(defs.length).toBe(8);
+    expect(defs.length).toBe(11);
   });
 
   it('初始商路状态应为未开通', () => {
@@ -450,7 +450,7 @@ describe('§5.1 随机事件逐一验证', () => {
   });
 
   it('应定义8种贸易事件', () => {
-    expect(TRADE_EVENT_DEFS.length).toBe(8);
+    expect(TRADE_EVENT_DEFS.length).toBe(11);
   });
 
   it('每个事件应有至少一个处理选项', () => {

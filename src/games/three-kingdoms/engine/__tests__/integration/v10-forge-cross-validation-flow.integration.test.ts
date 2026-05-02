@@ -38,7 +38,7 @@ describe('v10.0 兵强马壮 — §5.1 铁匠铺功能入口', () => {
 
   it('FORGE-FLOW-1: 铁匠铺建筑应存在于建筑类型中', () => {
     const sim = createSim();
-    const buildingLevel = sim.engine.building.getLevel('smithy');
+    const buildingLevel = sim.engine.building.getLevel('workshop');
     expect(typeof buildingLevel).toBe('number');
     expect(buildingLevel).toBeGreaterThanOrEqual(0);
   });
@@ -50,8 +50,8 @@ describe('v10.0 兵强马壮 — §5.1 铁匠铺功能入口', () => {
     sim.engine.resource.setCap('troops', 10_000_000);
     sim.upgradeBuildingTo('castle', 3);
     sim.addResources(MASSIVE_RESOURCES);
-    sim.upgradeBuildingTo('smithy', 1);
-    const level = sim.engine.building.getLevel('smithy');
+    sim.upgradeBuildingTo('workshop', 1);
+    const level = sim.engine.building.getLevel('workshop');
     expect(level).toBeGreaterThanOrEqual(1);
   });
 });
@@ -72,17 +72,17 @@ describe('v10.0 兵强马壮 — §5.2 铁匠铺等级与功能解锁', () => {
     sim.addResources(MASSIVE_RESOURCES);
     sim.engine.resource.setCap('grain', 50_000_000);
     sim.engine.resource.setCap('troops', 10_000_000);
-    // 交错升级: castle→4, farmland→4, castle→5, smithy→3
+    // 交错升级: castle→4, farmland→4, castle→5, workshop→3
     sim.upgradeBuildingTo('castle', 4);
     sim.addResources(MASSIVE_RESOURCES);
     sim.upgradeBuildingTo('farmland', 4);
     sim.addResources(MASSIVE_RESOURCES);
     sim.upgradeBuildingTo('castle', 5);
     sim.addResources(MASSIVE_RESOURCES);
-    sim.upgradeBuildingTo('smithy', 3);
+    sim.upgradeBuildingTo('workshop', 3);
     const castleLevel = sim.engine.building.getLevel('castle');
-    const smithyLevel = sim.engine.building.getLevel('smithy');
-    expect(smithyLevel).toBeLessThanOrEqual(castleLevel);
+    const workshopLevel = sim.engine.building.getLevel('workshop');
+    expect(workshopLevel).toBeLessThanOrEqual(castleLevel);
   });
 });
 

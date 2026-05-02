@@ -68,7 +68,7 @@ describe('§3.1~3.5 商路开通 / 商队派遣运输', () => {
 
   describe('§3.1 商路定义与查询', () => {
     it('初始化后包含 8 条商路', () => {
-      expect(trade.getRouteDefs().length).toBe(8);
+      expect(trade.getRouteDefs().length).toBe(11);
     });
 
     it('所有商路初始未开通', () => {

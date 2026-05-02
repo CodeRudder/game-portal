@@ -233,7 +233,7 @@ describe('ThreeKingdomsEngine — 战斗/关卡系统集成', () => {
           resources: { grain: 100, gold: 100, troops: 100, mandate: 0 },
           lastSaveTime: Date.now(),
           productionRates: { grain: 1, gold: 1, troops: 1, mandate: 0 },
-          caps: { grain: 1000, gold: null, troops: 1000, mandate: null },
+          caps: { grain: 1000, gold: 2000, troops: 1000, mandate: null },
           version: 1,
         },
         building: {

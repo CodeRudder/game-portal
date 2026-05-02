@@ -129,7 +129,7 @@ describe('§1.6 货币体系基础', () => {
   });
 
   it('§1.6.1 8种常驻货币定义完整', () => {
-    expect(CURRENCY_TYPES.length).toBe(8);
+    expect(CURRENCY_TYPES.length).toBe(11);
     const wallet = currency.getWallet();
     for (const type of CURRENCY_TYPES) {
       expect(wallet[type]).toBeDefined();

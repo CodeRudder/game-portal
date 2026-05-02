@@ -17,9 +17,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { OfflineRewardSystem } from '../OfflineRewardSystem';
 
-const PRODUCTION_RATES = { grain: 1, gold: 2, troops: 0.5, mandate: 0.1, techPoint: 0, recruitToken: 0, skillBook: 0 };
-const CURRENT_RES = { grain: 100, gold: 200, troops: 50, mandate: 10, techPoint: 0, recruitToken: 0, skillBook: 0 };
-const CAPS = { grain: 10000, gold: null, troops: 5000, mandate: null, techPoint: null, recruitToken: null, skillBook: null };
+const PRODUCTION_RATES = { grain: 1, gold: 2, troops: 0.5, mandate: 0.1, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
+const CURRENT_RES = { grain: 100, gold: 200, troops: 50, mandate: 10, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
+const CAPS = { grain: 10000, gold: 2000, troops: 5000, mandate: null, techPoint: null, recruitToken: null, skillBook: null };
 
 describe('OfflineRewardSystem', () => {
   let system: OfflineRewardSystem;
@@ -113,18 +113,18 @@ describe('OfflineRewardSystem', () => {
 
   describe('applyCapAndOverflow', () => {
     it('有上限的资源应截断', () => {
-      const earned = { grain: 20000, gold: 100, troops: 100, mandate: 10, techPoint: 0, recruitToken: 0, skillBook: 0 };
-      const current = { grain: 5000, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
-      const caps = { grain: 10000, gold: null, troops: null, mandate: null, techPoint: null, recruitToken: null, skillBook: null };
+      const earned = { grain: 20000, gold: 100, troops: 100, mandate: 10, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
+      const current = { grain: 5000, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
+      const caps = { grain: 10000, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null, skillBook: null };
       const { cappedEarned, overflowResources } = system.applyCapAndOverflow(earned, current, caps);
       expect(cappedEarned.grain).toBe(5000);
       expect(overflowResources.grain).toBe(15000);
     });
 
     it('无上限的资源应全量获得', () => {
-      const earned = { grain: 0, gold: 100, troops: 0, mandate: 10, techPoint: 0, recruitToken: 0, skillBook: 0 };
-      const current = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
-      const caps = { grain: null, gold: null, troops: null, mandate: null, techPoint: null, recruitToken: null, skillBook: null };
+      const earned = { grain: 0, gold: 100, troops: 0, mandate: 10, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
+      const current = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
+      const caps = { grain: null, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null, skillBook: null };
       const { cappedEarned, overflowResources } = system.applyCapAndOverflow(earned, current, caps);
       expect(cappedEarned.gold).toBe(100);
       expect(overflowResources.gold).toBe(0);

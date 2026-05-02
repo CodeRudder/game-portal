@@ -56,10 +56,10 @@ describe('R22-5: 存档系统异常路径', () => {
     it('ResourceSystem deserialize 版本不匹配时兼容加载', () => {
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       rs.deserialize({
-        resources: { grain: 100, gold: 200, troops: 50, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
+        resources: { grain: 100, gold: 200, troops: 50, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 },
         lastSaveTime: Date.now(),
-        productionRates: { grain: 1, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
-        caps: { grain: 2000, gold: null, troops: 500, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
+        productionRates: { grain: 1, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 },
+        caps: { grain: 2000, gold: 2000, troops: 500, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
         version: 999, // 不存在的版本
       });
       // 应该兼容加载
@@ -172,10 +172,10 @@ describe('R22-5: 存档系统异常路径', () => {
       const rs = new ResourceSystem();
       rs.init(deps);
       rs.deserialize({
-        resources: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
+        resources: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 },
         lastSaveTime: 0,
-        productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
-        caps: { grain: 2000, gold: null, troops: 500, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
+        productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 },
+        caps: { grain: 2000, gold: 2000, troops: 500, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
         version: SAVE_VERSION,
       });
       expect(rs.getAmount('grain')).toBe(0);

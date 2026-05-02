@@ -105,8 +105,8 @@ describe('V1 E2E-FLOW 端到端验证', () => {
       expect(goldRateAfter).toBeGreaterThan(goldRateBefore);
     });
 
-    it('should unlock smithy and academy at castle level 3', () => {
-      // E2E-FLOW-1 步骤6: upgradeBuildingTo('castle', 3) → 解锁 smithy/academy
+    it('should unlock workshop and academy at castle level 3', () => {
+      // E2E-FLOW-1 步骤6: upgradeBuildingTo('castle', 3) → 解锁 workshop/academy
       const sim = createSim();
       sim.addResources(MASSIVE_RESOURCES);
 
@@ -114,9 +114,9 @@ describe('V1 E2E-FLOW 端到端验证', () => {
       sim.upgradeBuildingTo('castle', 3);
       expect(sim.getBuildingLevel('castle')).toBe(3);
 
-      // 升级 smithy
-      sim.upgradeBuilding('smithy');
-      expect(sim.getBuildingLevel('smithy')).toBeGreaterThan(0);
+      // 升级 workshop
+      sim.upgradeBuilding('workshop');
+      expect(sim.getBuildingLevel('workshop')).toBeGreaterThan(0);
 
       // 升级 academy
       sim.upgradeBuilding('academy');
@@ -220,18 +220,18 @@ describe('V1 E2E-FLOW 端到端验证', () => {
       expect(sim.getBuildingLevel('castle')).toBe(3);
 
       // 步骤10: 验证铁匠铺和书院解锁
-      expect(sim.engine.building.getBuilding('smithy').status).not.toBe('locked');
+      expect(sim.engine.building.getBuilding('workshop').status).not.toBe('locked');
       expect(sim.engine.building.getBuilding('academy').status).not.toBe('locked');
 
       // 升级铁匠铺和书院
-      sim.upgradeBuilding('smithy');
+      sim.upgradeBuilding('workshop');
       sim.upgradeBuilding('academy');
-      expect(sim.getBuildingLevel('smithy')).toBeGreaterThan(0);
+      expect(sim.getBuildingLevel('workshop')).toBeGreaterThan(0);
       expect(sim.getBuildingLevel('academy')).toBeGreaterThan(0);
 
       // 步骤11: 验证完整升级链 — 所有已解锁建筑等级 >= 1
       const buildings = sim.engine.building.getAllBuildings();
-      const unlockedTypes = ['castle', 'farmland', 'market', 'barracks', 'smithy', 'academy'];
+      const unlockedTypes = ['castle', 'farmland', 'market', 'barracks', 'workshop', 'academy'];
       for (const bt of unlockedTypes) {
         expect(buildings[bt].status).not.toBe('locked');
         expect(sim.getBuildingLevel(bt)).toBeGreaterThanOrEqual(1);
@@ -404,9 +404,9 @@ describe('V1 CROSS-FLOW 交叉验证', () => {
 
       sim.upgradeBuildingTo('castle', 3);
 
-      // smithy 和 academy 应该可以升级
-      sim.upgradeBuilding('smithy');
-      expect(sim.getBuildingLevel('smithy')).toBeGreaterThan(0);
+      // workshop 和 academy 应该可以升级
+      sim.upgradeBuilding('workshop');
+      expect(sim.getBuildingLevel('workshop')).toBeGreaterThan(0);
 
       sim.upgradeBuilding('academy');
       expect(sim.getBuildingLevel('academy')).toBeGreaterThan(0);

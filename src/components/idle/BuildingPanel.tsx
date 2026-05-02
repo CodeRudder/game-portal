@@ -21,11 +21,14 @@ const BUILDING_EFFECTS: Record<BuildingType, string> = {
   castle: '全资源加成',
   farmland: '粮草/秒',
   market: '铜钱/秒',
+  mine: '矿石/秒',
+  lumberMill: '木材/秒',
   barracks: '兵力/秒',
-  smithy: '装备强化',
+  workshop: '装备锻造',
   academy: '科技点/秒',
   clinic: '伤兵恢复',
   wall: '城防值',
+  tavern: '武将招募',
 };
 
 function formatTime(seconds: number): string {

@@ -90,8 +90,8 @@ describe('R22-2: 建筑系统异常路径', () => {
   describe('锁定建筑升级', () => {
     it('锁定建筑无法升级', () => {
       // 初始状态下，部分高级建筑是锁定的
-      // smithy 需要 castle Lv3 解锁
-      const check = bs.checkUpgrade('smithy');
+      // workshop 需要 castle Lv3 解锁
+      const check = bs.checkUpgrade('workshop');
       expect(check.canUpgrade).toBe(false);
       expect(check.reasons).toContain('建筑尚未解锁');
     });
@@ -101,7 +101,7 @@ describe('R22-2: 建筑系统异常路径', () => {
         grain: 50000, gold: 50000, troops: 50000,
         mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0,
       };
-      expect(() => bs.startUpgrade('smithy', resources)).toThrow(/无法升级/);
+      expect(() => bs.startUpgrade('workshop', resources)).toThrow(/无法升级/);
     });
   });
 

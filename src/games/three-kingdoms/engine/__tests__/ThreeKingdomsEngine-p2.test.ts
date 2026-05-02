@@ -159,7 +159,7 @@ describe('v1.0 存档迁移（无武将数据）', () => {
         resources: { grain: 5000, gold: 2000, troops: 500, mandate: 10 },
         lastSaveTime: Date.now() - 1000,
         productionRates: { grain: 2, gold: 1, troops: 0.5, mandate: 0 },
-        caps: { grain: 10000, gold: null, troops: 5000, mandate: null },
+        caps: { grain: 10000, gold: 2000, troops: 5000, mandate: null },
         version: 1,
       },
       building: {
@@ -168,7 +168,7 @@ describe('v1.0 存档迁移（无武将数据）', () => {
           farmland: { type: 'farmland',  level: 3, status: 'idle', upgradeStartTime: null, upgradeEndTime: null },
           market:   { type: 'market',    level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null },
           barracks: { type: 'barracks',  level: 0, status: 'locked', upgradeStartTime: null, upgradeEndTime: null },
-          smithy:   { type: 'smithy',    level: 0, status: 'locked', upgradeStartTime: null, upgradeEndTime: null },
+          workshop:   { type: 'workshop',    level: 0, status: 'locked', upgradeStartTime: null, upgradeEndTime: null },
           academy:  { type: 'academy',   level: 0, status: 'locked', upgradeStartTime: null, upgradeEndTime: null },
           clinic:   { type: 'clinic',    level: 0, status: 'locked', upgradeStartTime: null, upgradeEndTime: null },
           wall:     { type: 'wall',      level: 0, status: 'locked', upgradeStartTime: null, upgradeEndTime: null },

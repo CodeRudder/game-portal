@@ -45,7 +45,7 @@ function makeRates(overrides: Partial<ProductionRate> = {}): ProductionRate {
 }
 
 function makeCaps(overrides: Partial<ResourceCap> = {}): ResourceCap {
-  return { grain: 5000, gold: null, troops: 1000, mandate: null, techPoint: null, ...overrides };
+  return { grain: 5000, gold: 2000, troops: 1000, mandate: null, techPoint: null, ...overrides };
 }
 
 function makeCurrentRes(overrides: Partial<Resources> = {}): Resources {
@@ -448,7 +448,7 @@ describe('v9-int §5 完整离线收益计算流程', () => {
       offlineSeconds: HOUR_S * 24,
       productionRates: makeRates({ gold: 1000 }),
       currentResources: makeCurrentRes({ gold: 999999 }),
-      caps: makeCaps(), // gold: null
+      caps: makeCaps(), // gold: 2000
       bonusSources: {},
       vipLevel: 0,
       adUsedToday: 0,

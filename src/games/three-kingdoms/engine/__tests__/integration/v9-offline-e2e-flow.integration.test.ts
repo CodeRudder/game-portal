@@ -70,7 +70,7 @@ function createSnapshotParams() {
   return {
     resources: { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 },
     productionRates: createProductionRates(),
-    caps: { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
+    caps: { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
     buildingQueue: [],
     techQueue: [],
     expeditionQueue: [],
@@ -83,7 +83,7 @@ function createFullSnapshotParams() {
   return {
     resources: { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 10, recruitToken: 5 },
     productionRates: createFullRates(),
-    caps: { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
+    caps: { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
     buildingQueue: [
       { buildingType: 'farmland', startTime: now, endTime: now + 7200000 },
       { buildingType: 'market', startTime: now, endTime: now + 14400000 },
@@ -111,7 +111,7 @@ describe('v9.0 E2E — §7.5 离线收益→邮件系统→活动奖励三系统
     const offlineReward = sim.engine.getOfflineRewardSystem();
     const rates = createProductionRates();
     const current: Resources = { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
 
     // 计算离线收益
     const result = offlineReward.calculateOfflineReward(36000, rates, current, caps, 0, 'resource');
@@ -130,7 +130,7 @@ describe('v9.0 E2E — §7.5 离线收益→邮件系统→活动奖励三系统
     const offlineReward = sim.engine.getOfflineRewardSystem();
     const rates = createProductionRates();
     const current: Resources = { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
 
     // 计算跨系统收益
     const crossResult = offlineReward.calculateCrossSystemReward(36000, rates, current, caps, 0);
@@ -266,7 +266,7 @@ describe('v9.0 E2E — §7.8 资源保护→离线收益→溢出提示联动', 
 
     // 粮草95%满
     const current: Resources = { grain: 47500, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
 
     const result = offlineReward.calculateFullReward(28800, rates, current, caps, 0, 'resource');
 
@@ -281,7 +281,7 @@ describe('v9.0 E2E — §7.8 资源保护→离线收益→溢出提示联动', 
     const rates = createProductionRates();
 
     const current: Resources = { grain: 47500, gold: 999999, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
 
     const result = offlineReward.calculateFullReward(28800, rates, current, caps, 0, 'resource');
 
@@ -296,7 +296,7 @@ describe('v9.0 E2E — §7.8 资源保护→离线收益→溢出提示联动', 
     const rates = createProductionRates();
 
     const current: Resources = { grain: 1000, gold: 500, troops: 9500, mandate: 50, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
 
     const result = offlineReward.calculateFullReward(28800, rates, current, caps, 0, 'resource');
 
@@ -326,7 +326,7 @@ describe('v9.0 E2E — §7.10 回归流程完整性验证', () => {
     // 2. 计算离线收益（模拟12h后上线）
     const offlineSeconds = 43200; // 12h
     const current: Resources = { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 10, recruitToken: 5 };
-    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
 
     const result = offlineReward.calculateOfflineReward(offlineSeconds, rates, current, caps, 3, 'building');
 
@@ -790,7 +790,7 @@ describe('v9.0 E2E — §7.22 五系统全链路端到端验证', () => {
 
     // 3. 计算完整离线收益
     const current: Resources = { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 10, recruitToken: 5 };
-    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
 
     const result = offlineReward.calculateFullReward(43200, rates, current, caps, 3, 'building');
 
@@ -834,7 +834,7 @@ describe('v9.0 E2E — §7.22 五系统全链路端到端验证', () => {
     const offlineReward = sim.engine.getOfflineRewardSystem();
     const rates = createFullRates();
     const current: Resources = { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 10, recruitToken: 5 };
-    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
 
     // 计算收益
     const result = offlineReward.calculateOfflineReward(43200, rates, current, caps, 0, 'resource');
@@ -853,7 +853,7 @@ describe('v9.0 E2E — §7.22 五系统全链路端到端验证', () => {
     const offlineReward = sim.engine.getOfflineRewardSystem();
     const rates = createFullRates();
     const current: Resources = { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 10, recruitToken: 5 };
-    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
 
     // 计算收益
     const result = offlineReward.calculateOfflineReward(43200, rates, current, caps, 0, 'resource');
@@ -971,7 +971,7 @@ describe('v9.0 E2E — 防重复领取', () => {
     const offlineReward = sim.engine.getOfflineRewardSystem();
     const rates = createProductionRates();
     const current: Resources = { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
 
     const result = offlineReward.calculateOfflineReward(3600, rates, current, caps, 0, 'resource');
 
@@ -989,7 +989,7 @@ describe('v9.0 E2E — 防重复领取', () => {
     const offlineReward = sim.engine.getOfflineRewardSystem();
     const rates = createProductionRates();
     const current: Resources = { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
 
     // 第一次计算+领取
     const result1 = offlineReward.calculateOfflineReward(3600, rates, current, caps, 0, 'resource');

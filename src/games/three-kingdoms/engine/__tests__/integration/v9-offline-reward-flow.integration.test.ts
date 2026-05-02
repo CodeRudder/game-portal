@@ -76,7 +76,7 @@ function createSnapshotParams() {
   return {
     resources: { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 },
     productionRates: createProductionRates(),
-    caps: { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
+    caps: { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
     buildingQueue: [],
     techQueue: [],
     expeditionQueue: [],
@@ -90,7 +90,7 @@ function createSnapshotWithBuildings() {
   return {
     resources: { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 },
     productionRates: createProductionRates(),
-    caps: { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
+    caps: { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
     buildingQueue: [
       { buildingType: 'farmland', startTime: now, endTime: now + 7200000 },   // 2h后完成
       { buildingType: 'market', startTime: now, endTime: now + 14400000 },    // 4h后完成
@@ -600,7 +600,7 @@ describe('v9.0 离线收益核心 — §3 离线资源', () => {
     // Play: 粮草截断至粮仓容量、兵力截断至兵营容量
     const earned: Resources = { grain: 50000, gold: 1000, troops: 20000, mandate: 100, techPoint: 0, recruitToken: 0 };
     const current: Resources = { grain: 45000, gold: 500, troops: 9000, mandate: 50, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
 
     const result = applyOverflowRules(earned, current, caps);
 
@@ -620,7 +620,7 @@ describe('v9.0 离线收益核心 — §3 离线资源', () => {
   it('§3.2 无上限资源(铜钱/天命)应全额发放', () => {
     const earned: Resources = { grain: 0, gold: 5000, troops: 0, mandate: 300, techPoint: 0, recruitToken: 0 };
     const current: Resources = { grain: 0, gold: 100000, troops: 0, mandate: 50, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: null, gold: null, troops: null, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: null, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null };
 
     const result = applyOverflowRules(earned, current, caps);
     expect(result.cappedEarned.gold).toBe(5000);

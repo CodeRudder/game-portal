@@ -20,6 +20,8 @@ import type {
 export const INITIAL_RESOURCES: Readonly<Resources> = {
   grain: 500,
   gold: 300,
+  ore: 0,
+  wood: 0,
   troops: 50,
   mandate: 0,
   techPoint: 0,
@@ -39,7 +41,9 @@ export const INITIAL_RESOURCES: Readonly<Resources> = {
  */
 export const INITIAL_PRODUCTION_RATES: Readonly<ProductionRate> = {
   grain: 0.8,
-  gold: 0,
+  gold: 0.8,
+  ore: 0.8,
+  wood: 0.8,
   troops: 0,
   mandate: 0,
   techPoint: 0,
@@ -54,7 +58,9 @@ export const INITIAL_PRODUCTION_RATES: Readonly<ProductionRate> = {
 /** 新游戏初始上限（对应建筑 Lv.1） */
 export const INITIAL_CAPS: Readonly<ResourceCap> = {
   grain: 2000,
-  gold: null,
+  gold: 2000,
+  ore: 2000,
+  wood: 2000,
   troops: 500,
   mandate: null,
   techPoint: null,

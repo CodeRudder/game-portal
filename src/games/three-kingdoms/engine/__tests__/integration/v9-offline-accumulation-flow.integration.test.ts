@@ -71,7 +71,7 @@ function createSnapshotParams() {
   return {
     resources: { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 },
     productionRates: createProductionRates(),
-    caps: { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
+    caps: { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
     buildingQueue: [],
     techQueue: [],
     expeditionQueue: [],
@@ -84,7 +84,7 @@ function createSnapshotWithBuildings() {
   return {
     resources: { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 },
     productionRates: createProductionRates(),
-    caps: { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
+    caps: { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
     buildingQueue: [
       { buildingType: 'farmland', startTime: now, endTime: now + 7200000 },
       { buildingType: 'market', startTime: now, endTime: now + 14400000 },
@@ -123,7 +123,7 @@ describe('v9.0 累积计算 — §7.1 离线收益→资源→仓库联动', () 
     // Play: 有上限资源截断至仓库容量
     const earned: Resources = { grain: 60000, gold: 1000, troops: 30000, mandate: 100, techPoint: 0, recruitToken: 0 };
     const current: Resources = { grain: 48000, gold: 500, troops: 9500, mandate: 50, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
 
     const result = applyOverflowRules(earned, current, caps);
 
@@ -142,7 +142,7 @@ describe('v9.0 累积计算 — §7.1 离线收益→资源→仓库联动', () 
   it('§7.1 无上限资源应全额入账', () => {
     const earned: Resources = { grain: 0, gold: 99999, troops: 0, mandate: 88888, techPoint: 0, recruitToken: 0 };
     const current: Resources = { grain: 0, gold: 999999, troops: 0, mandate: 999999, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: null, gold: null, troops: null, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: null, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null };
 
     const result = applyOverflowRules(earned, current, caps);
     expect(result.cappedEarned.gold).toBe(99999);
@@ -156,7 +156,7 @@ describe('v9.0 累积计算 — §7.1 离线收益→资源→仓库联动', () 
     const offlineReward = sim.engine.getOfflineRewardSystem();
     const rates = createProductionRates();
     const current: Resources = { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
 
     const result = offlineReward.calculateFullReward(36000, rates, current, caps, 3, 'building');
 
@@ -520,7 +520,7 @@ describe('v9.0 累积计算 — §7.16 预估面板异常与边界验证', () =>
 
     // 粮草接近上限
     const current: Resources = { grain: 49000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
 
     const result = offlineReward.calculateFullReward(36000, rates, current, caps, 0, 'resource');
     // 应有溢出
@@ -733,7 +733,7 @@ describe('v9.0 累积计算 — §7.21 离线天命产出', () => {
   it('§7.21 天命无上限不截断', () => {
     const earned: Resources = { grain: 0, gold: 0, troops: 0, mandate: 999999, techPoint: 0, recruitToken: 0 };
     const current: Resources = { grain: 0, gold: 0, troops: 0, mandate: 999999, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: null, gold: null, troops: null, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: null, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null };
 
     const result = applyOverflowRules(earned, current, caps);
     expect(result.cappedEarned.mandate).toBe(999999);

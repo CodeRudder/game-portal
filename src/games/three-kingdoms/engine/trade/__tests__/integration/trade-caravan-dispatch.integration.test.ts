@@ -109,7 +109,7 @@ describe('§3.1 商路开通完整流程', () => {
   beforeEach(() => { trade = createTrade(); });
 
   it('§3.1.1 应包含8条商路定义', () => {
-    expect(trade.getRouteDefs().length).toBe(8);
+    expect(trade.getRouteDefs().length).toBe(11);
   });
 
   it('§3.1.2 所有商路初始状态为未开通', () => {

@@ -42,7 +42,7 @@ function makeValidSaveData(overrides: Record<string, unknown> = {}): Record<stri
         farmland: { level: 2, status: 'idle' },
         market: { level: 1, status: 'idle' },
         barracks: { level: 1, status: 'idle' },
-        smithy: { level: 1, status: 'idle' },
+        workshop: { level: 1, status: 'idle' },
         academy: { level: 1, status: 'idle' },
         clinic: { level: 1, status: 'idle' },
         wall: { level: 1, status: 'idle' },
@@ -352,7 +352,7 @@ describe('GameDataValidator', () => {
       farmland: { level: 2, status: 'idle' },
       market: { level: 1, status: 'idle' },
       barracks: { level: 1, status: 'idle' },
-      smithy: { level: 1, status: 'idle' },
+      workshop: { level: 1, status: 'idle' },
       academy: { level: 1, status: 'idle' },
       clinic: { level: 1, status: 'idle' },
       wall: { level: 1, status: 'idle' },
@@ -377,7 +377,7 @@ describe('GameDataValidator', () => {
       const issues = validator.validateBuilding({
         buildings: { castle: { level: 1, status: 'idle' } },
       });
-      // 应该有 7 个缺失建筑（farmland, market, barracks, smithy, academy, clinic, wall）
+      // 应该有 7 个缺失建筑（farmland, market, barracks, workshop, academy, clinic, wall）
       const missingErrors = issues.filter(i => i.severity === 'error' && i.message.includes('数据缺失'));
       expect(missingErrors.length).toBe(7);
     });

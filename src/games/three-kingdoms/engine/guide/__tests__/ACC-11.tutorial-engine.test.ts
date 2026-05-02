@@ -405,7 +405,7 @@ describe('ACC-11 引导系统引擎层验收', () => {
 
   describe('ACC-11-27: 剧情事件触发时机正确', () => {
     it('ACC-11-27: 8段剧情事件定义完整', () => {
-      expect(STORY_EVENT_DEFINITIONS.length).toBe(8);
+      expect(STORY_EVENT_DEFINITIONS.length).toBe(11);
     });
 
     it('ACC-11-27: e1_桃园结义触发条件为 first_enter', () => {

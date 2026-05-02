@@ -236,8 +236,8 @@ describe('V1 RDP-FLOW 红点系统', () => {
       // 检查各解锁状态
       const buildings = sim.engine.building.getAllBuildings();
 
-      // 主城 Lv3 应解锁 smithy 和 academy
-      expect(buildings.smithy.status).not.toBe('locked');
+      // 主城 Lv3 应解锁 workshop 和 academy
+      expect(buildings.workshop.status).not.toBe('locked');
       expect(buildings.academy.status).not.toBe('locked');
 
       // clinic 仍锁定（需要主城 Lv4）

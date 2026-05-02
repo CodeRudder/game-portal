@@ -57,14 +57,17 @@ interface MapPosition {
 
 /** 建筑在地图上的固定位置（百分比） */
 const BUILDING_MAP_POSITIONS: Record<BuildingType, MapPosition> = {
-  smithy:   { top: 5,  left: 42 },  // 顶部中央
-  farmland: { top: 28, left: 10 },  // 左侧
   castle:   { top: 30, left: 42 },  // 核心中央
+  farmland: { top: 28, left: 10 },  // 左侧
   market:   { top: 28, left: 74 },  // 右侧
+  mine:     { top: 5,  left: 10 },  // 顶部左侧
+  lumberMill: { top: 5, left: 74 }, // 顶部右侧
   barracks: { top: 55, left: 10 },  // 左下
+  workshop: { top: 5,  left: 42 },  // 顶部中央
   academy:  { top: 55, left: 42 },  // 中下
-  wall:     { top: 55, left: 74 },  // 右下
   clinic:   { top: 78, left: 42 },  // 底部中央
+  wall:     { top: 55, left: 74 },  // 右下
+  tavern:   { top: 78, left: 10 },  // 底部左侧
 };
 
 // ─────────────────────────────────────────────
@@ -74,11 +77,14 @@ const BUILDING_EFFECTS: Record<BuildingType, string> = {
   castle: '全资源加成',
   farmland: '粮草/秒',
   market: '铜钱/秒',
+  mine: '矿石/秒',
+  lumberMill: '木材/秒',
   barracks: '兵力/秒',
-  smithy: '装备强化',
+  workshop: '装备锻造',
   academy: '科技点/秒',
   clinic: '伤兵恢复',
   wall: '城防值',
+  tavern: '武将招募',
 };
 
 // ─────────────────────────────────────────────
@@ -102,15 +108,18 @@ function getProductionText(type: BuildingType, engine: ThreeKingdomsEngine): str
   switch (type) {
     case 'farmland': return `+${prod.toFixed(1)} 粮草/s`;
     case 'market': return `+${prod.toFixed(1)} 铜钱/s`;
+    case 'mine': return `+${prod.toFixed(1)} 矿石/s`;
+    case 'lumberMill': return `+${prod.toFixed(1)} 木材/s`;
     case 'barracks': return `+${prod.toFixed(1)} 兵力/s`;
     case 'academy': return `+${prod.toFixed(1)} 科技点/s`;
-    case 'smithy': return `+${prod.toFixed(1)} 材料/h`;
+    case 'workshop': return `锻造 +${prod.toFixed(0)}%`;
     case 'clinic': return `恢复 +${prod.toFixed(0)}%`;
     case 'wall': {
       const defense = engine.building?.getWallDefense?.() ?? 0;
       return `城防 ${defense} / 防御 +${prod.toFixed(0)}%`;
     }
     case 'castle': return `全资源 +${prod}%`;
+    case 'tavern': return `招募 +${prod.toFixed(0)}%`;
     default: return BUILDING_EFFECTS[type];
   }
 }

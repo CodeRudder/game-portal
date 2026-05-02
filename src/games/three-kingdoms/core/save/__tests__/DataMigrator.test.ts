@@ -35,7 +35,7 @@ function makeBaseSaveData(version: number, overrides: Record<string, unknown> = 
         farmland: { level: 2, status: 'idle' },
         market: { level: 1, status: 'idle' },
         barracks: { level: 1, status: 'idle' },
-        smithy: { level: 1, status: 'idle' },
+        workshop: { level: 1, status: 'idle' },
         academy: { level: 1, status: 'idle' },
         clinic: { level: 1, status: 'idle' },
         wall: { level: 1, status: 'idle' },

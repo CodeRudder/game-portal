@@ -37,7 +37,7 @@ import { MAX_OFFLINE_SECONDS, OFFLINE_POPUP_THRESHOLD } from '../offline-config'
 
 const RATES: ProductionRate = { grain: 10, gold: 5, troops: 2, mandate: 1 };
 const ZERO_RATES: ProductionRate = { grain: 0, gold: 0, troops: 0, mandate: 0 };
-const CAPS: ResourceCap = { grain: 50000, gold: null, troops: 10000, mandate: null };
+const CAPS: ResourceCap = { grain: 50000, gold: 2000, troops: 10000, mandate: null };
 
 function sumResources(r: Resources): number {
   return r.grain + r.gold + r.troops + r.mandate;
@@ -235,7 +235,7 @@ describe('OfflineRewardEngine — 资源溢出', () => {
   it('有上限资源截断', () => {
     const current: Resources = { grain: 48000, gold: 0, troops: 9000, mandate: 0 };
     const earned: Resources = { grain: 5000, gold: 1000, troops: 2000, mandate: 500 };
-    const caps: ResourceCap = { grain: 50000, gold: null, troops: 10000, mandate: null };
+    const caps: ResourceCap = { grain: 50000, gold: 2000, troops: 10000, mandate: null };
 
     const { cappedEarned, overflowResources } = applyOverflowRules(earned, current, caps);
 
@@ -416,7 +416,7 @@ describe('OfflineRewardEngine — 完整离线收益', () => {
       offlineSeconds: MAX_OFFLINE_SECONDS,
       productionRates: RATES,
       currentResources: { grain: 49999, gold: 0, troops: 9999, mandate: 0 },
-      caps: { grain: 50000, gold: null, troops: 10000, mandate: null },
+      caps: { grain: 50000, gold: 2000, troops: 10000, mandate: null },
       bonusSources: {},
       vipLevel: 0,
       adUsedToday: 0,

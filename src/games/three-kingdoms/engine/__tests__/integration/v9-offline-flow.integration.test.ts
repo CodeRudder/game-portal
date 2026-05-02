@@ -71,7 +71,7 @@ function createSnapshotParams() {
   return {
     resources: { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 },
     productionRates: createProductionRates(),
-    caps: { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
+    caps: { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
     buildingQueue: [],
     techQueue: [],
     expeditionQueue: [],
@@ -85,7 +85,7 @@ function createFullSnapshotParams() {
   return {
     resources: { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 10, recruitToken: 5 },
     productionRates: createFullRates(),
-    caps: { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
+    caps: { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
     buildingQueue: [
       { buildingType: 'farmland', startTime: now, endTime: now + 7200000 },
       { buildingType: 'market', startTime: now, endTime: now + 14400000 },
@@ -450,7 +450,7 @@ describe('OFFLINE-FLOW-2: 离线收益领取（全额领取、双倍领取）', 
     const offlineReward = sim.engine.getOfflineRewardSystem();
     const rates = createProductionRates();
     const current: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: null, gold: null, troops: null, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: null, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null };
 
     const reward = offlineReward.calculateOfflineReward(3600, rates, current, caps, 0, 'resource');
 
@@ -470,7 +470,7 @@ describe('OFFLINE-FLOW-2: 离线收益领取（全额领取、双倍领取）', 
     const offlineReward = sim.engine.getOfflineRewardSystem();
     const rates = createProductionRates();
     const current: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: null, gold: null, troops: null, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: null, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null };
 
     const reward1 = offlineReward.calculateOfflineReward(3600, rates, current, caps, 0, 'resource');
     const claim1 = offlineReward.claimReward(reward1);
@@ -493,7 +493,7 @@ describe('OFFLINE-FLOW-2: 离线收益领取（全额领取、双倍领取）', 
     const snapshotSys = sim.engine.getOfflineSnapshotSystem();
     const rates = createProductionRates();
     const current: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: null, gold: null, troops: null, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: null, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null };
 
     // 1. 创建快照
     snapshotSys.createSnapshot(createSnapshotParams());
@@ -635,7 +635,7 @@ describe('OFFLINE-FLOW-4: 离线事件（随机事件触发、处理）', () => 
     snapshotSys.createSnapshot({
       resources: { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 },
       productionRates: createProductionRates(),
-      caps: { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
+      caps: { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
       buildingQueue: [
         { buildingType: 'farmland', startTime: now - 7200000, endTime: now - 3600000 }, // 1h前完成
         { buildingType: 'market', startTime: now - 3600000, endTime: now + 3600000 },   // 1h后完成
@@ -659,7 +659,7 @@ describe('OFFLINE-FLOW-4: 离线事件（随机事件触发、处理）', () => 
     snapshotSys.createSnapshot({
       resources: { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 },
       productionRates: createProductionRates(),
-      caps: { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
+      caps: { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
       buildingQueue: [],
       techQueue: [
         { techId: 'tech_tuntian', startTime: now - 14400000, endTime: now - 3600000 }, // 1h前完成
@@ -682,7 +682,7 @@ describe('OFFLINE-FLOW-4: 离线事件（随机事件触发、处理）', () => 
     snapshotSys.createSnapshot({
       resources: { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 },
       productionRates: createProductionRates(),
-      caps: { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
+      caps: { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
       buildingQueue: [],
       techQueue: [],
       expeditionQueue: [
@@ -705,7 +705,7 @@ describe('OFFLINE-FLOW-4: 离线事件（随机事件触发、处理）', () => 
     snapshotSys.createSnapshot({
       resources: { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 },
       productionRates: createProductionRates(),
-      caps: { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
+      caps: { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
       buildingQueue: [],
       techQueue: [],
       expeditionQueue: [],
@@ -799,7 +799,7 @@ describe('OFFLINE-FLOW-5: 离线保护（防作弊、时间上限）', () => {
 
     const earned: Resources = { grain: 50000, gold: 1000, troops: 20000, mandate: 100, techPoint: 0, recruitToken: 0 };
     const current: Resources = { grain: 49000, gold: 500, troops: 9500, mandate: 50, techPoint: 0, recruitToken: 0 };
-    const caps: Record<string, number | null> = { grain: 50000, gold: null, troops: 10000, mandate: null };
+    const caps: Record<string, number | null> = { grain: 50000, gold: 2000, troops: 10000, mandate: null };
 
     const result = offlineReward.applyCapAndOverflow(earned, current, caps);
 
@@ -827,7 +827,7 @@ describe('OFFLINE-FLOW-5: 离线保护（防作弊、时间上限）', () => {
 
     const earned: Resources = { grain: 1000, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 };
     const current: Resources = { grain: 50000, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 };
-    const caps: Record<string, number | null> = { grain: 50000, gold: null, troops: 10000, mandate: null };
+    const caps: Record<string, number | null> = { grain: 50000, gold: 2000, troops: 10000, mandate: null };
 
     const result = offlineReward.applyCapAndOverflow(earned, current, caps);
     expect(result.cappedEarned.grain).toBe(0);
@@ -1036,7 +1036,7 @@ describe('OFFLINE-FLOW-6: 离线收益预览（预估显示）', () => {
       offlineSeconds: 10 * HOUR_S,
       productionRates: rates,
       currentResources: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 },
-      caps: { grain: null, gold: null, troops: null, mandate: null, techPoint: null, recruitToken: null },
+      caps: { grain: null, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null },
       bonusSources: { tech: 0.1 },
       vipLevel: 0,
       adUsedToday: 0,

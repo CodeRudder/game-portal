@@ -41,12 +41,14 @@ export type {
 // ─────────────────────────────────────────────
 
 /** 核心资源类型 */
-export type ResourceType = 'grain' | 'gold' | 'troops' | 'mandate' | 'techPoint' | 'recruitToken' | 'skillBook';
+export type ResourceType = 'grain' | 'gold' | 'ore' | 'wood' | 'troops' | 'mandate' | 'techPoint' | 'recruitToken' | 'skillBook';
 
 /** 资源数量集合 */
 export interface Resources {
   grain: number;
   gold: number;
+  ore: number;
+  wood: number;
   troops: number;
   mandate: number;
   techPoint: number;
@@ -58,6 +60,8 @@ export interface Resources {
 export interface ProductionRate {
   grain: number;
   gold: number;
+  ore: number;
+  wood: number;
   troops: number;
   mandate: number;
   techPoint: number;
@@ -68,7 +72,9 @@ export interface ProductionRate {
 /** 资源上限（null 表示无上限） */
 export interface ResourceCap {
   grain: number;
-  gold: null;
+  gold: number;
+  ore: number;
+  wood: number;
   troops: number;
   mandate: null;
   techPoint: null;
@@ -129,16 +135,19 @@ export interface ResourceSaveData {
 // 0. 建筑域基础类型（唯一真相源，engine/building/building.types.ts re-export）
 // ─────────────────────────────────────────────
 
-/** 8 种建筑类型标识 */
+/** 11 种建筑类型标识 */
 export type BuildingType =
   | 'castle'
   | 'farmland'
   | 'market'
+  | 'mine'
+  | 'lumberMill'
   | 'barracks'
-  | 'smithy'
+  | 'workshop'
   | 'academy'
   | 'clinic'
-  | 'wall';
+  | 'wall'
+  | 'tavern';
 
 /** 建筑升级状态 */
 export type BuildingStatus = 'locked' | 'idle' | 'upgrading';
@@ -156,6 +165,8 @@ export interface BuildingState {
 export interface UpgradeCost {
   grain: number;
   gold: number;
+  ore: number;
+  wood: number;
   troops: number;
   timeSeconds: number;
 }

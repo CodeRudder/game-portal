@@ -115,7 +115,7 @@ describe('resource-calculator', () => {
 
   describe('calculateCapWarnings', () => {
     it('应为有上限的资源生成警告', () => {
-      const resources: Resources = { grain: 90, gold: 50, troops: 10, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
+      const resources: Resources = { grain: 90, gold: 50, troops: 10, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
       const caps = {
         grain: 100, gold: 100, troops: 100, mandate: null, techPoint: null, recruitToken: null, skillBook: null,
       };
@@ -124,9 +124,9 @@ describe('resource-calculator', () => {
     });
 
     it('无上限资源不应生成警告', () => {
-      const resources: Resources = { grain: 0, gold: 0, troops: 0, mandate: 999, techPoint: 0, recruitToken: 0, skillBook: 0 };
+      const resources: Resources = { grain: 0, gold: 0, troops: 0, mandate: 999, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
       const caps = {
-        grain: null, gold: null, troops: null, mandate: null, techPoint: null, recruitToken: null, skillBook: null,
+        grain: null, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null, skillBook: null,
       };
       const warnings = calculateCapWarnings(resources, caps as Record<string, number | null>);
       expect(warnings.length).toBe(0);
@@ -138,7 +138,7 @@ describe('resource-calculator', () => {
   describe('calculateCapWarning', () => {
     it('无上限资源应返回 null', () => {
       const resources: Resources = zeroResources();
-      const caps = { grain: null, gold: null, troops: null, mandate: null, techPoint: null, recruitToken: null, skillBook: null };
+      const caps = { grain: null, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null, skillBook: null };
       const warning = calculateCapWarning('grain', resources, caps as Record<string, number | null>);
       expect(warning).toBeNull();
     });

@@ -2,7 +2,7 @@
  * 建筑系统 Play 流程集成测试 (v1.0 BLD-FLOW-1~6)
  *
  * 覆盖范围：
- * - BLD-FLOW-1: 8座建筑展示与总览
+ * - BLD-FLOW-1: 11座建筑展示与总览
  * - BLD-FLOW-2: 建筑升级完整流程
  * - BLD-FLOW-3: 升级后产出增加验证
  * - BLD-FLOW-4: 建筑解锁条件验证
@@ -26,19 +26,19 @@ import { createSim, ALL_BUILDING_TYPES, SUFFICIENT_RESOURCES, MASSIVE_RESOURCES 
 import type { BuildingType } from '../../../shared/types';
 
 // ═══════════════════════════════════════════════
-// BLD-FLOW-1: 8座建筑展示与总览
+// BLD-FLOW-1: 11座建筑展示与总览
 // ═══════════════════════════════════════════════
 describe('V1 BLD-FLOW 建筑系统', () => {
-  describe('BLD-FLOW-1: 8座建筑展示与总览', () => {
+  describe('BLD-FLOW-1: 11座建筑展示与总览', () => {
     it('should return all 8 building types from getAllBuildingLevels', () => {
-      // BLD-FLOW-1 步骤1: init() → 验证 getAllBuildingLevels() 返回8座建筑
+      // BLD-FLOW-1 步骤1: init() → 验证 getAllBuildingLevels() 返回11座建筑
       const sim = createSim();
 
       const levels = sim.getAllBuildingLevels();
       const keys = Object.keys(levels) as BuildingType[];
 
       // 验证包含全部 8 种建筑
-      expect(keys.length).toBe(8);
+      expect(keys.length).toBe(11);
       for (const bt of ALL_BUILDING_TYPES) {
         expect(keys).toContain(bt);
       }
@@ -66,7 +66,7 @@ describe('V1 BLD-FLOW 建筑系统', () => {
       expect(levels.barracks).toBe(0);
 
       // 铁匠铺和书院需要主城 Lv3 解锁
-      expect(levels.smithy).toBe(0);
+      expect(levels.workshop).toBe(0);
       expect(levels.academy).toBe(0);
 
       // 医馆需要主城 Lv4 解锁
@@ -88,7 +88,7 @@ describe('V1 BLD-FLOW 建筑系统', () => {
 
       // 其余建筑应为 locked
       const lockedTypes: BuildingType[] = [
-        'market', 'barracks', 'smithy', 'academy', 'clinic', 'wall',
+        'market', 'barracks', 'workshop', 'academy', 'clinic', 'wall',
       ];
       for (const bt of lockedTypes) {
         expect(buildings[bt].status).toBe('locked');
@@ -101,15 +101,15 @@ describe('V1 BLD-FLOW 建筑系统', () => {
     // 引擎 BuildingSystem 未提供专用筛选/排序 API，但提供了 getAllBuildings() 返回
     // 完整建筑数据。以下测试通过客户端侧筛选逻辑验证 PRD 定义的筛选需求。
 
-    it('should filter "全部" to return all 8 buildings', () => {
-      // BLD-FLOW-1 筛选步骤1: 筛选"全部"返回8座建筑
+    it('should filter "全部" to return all 11 buildings', () => {
+      // BLD-FLOW-1 筛选步骤1: 筛选"全部"返回11座建筑
       const sim = createSim();
 
       const buildings = sim.engine.building.getAllBuildings();
       const allTypes = Object.keys(buildings) as BuildingType[];
 
-      // 全部筛选应返回8座建筑
-      expect(allTypes.length).toBe(8);
+      // 全部筛选应返回11座建筑
+      expect(allTypes.length).toBe(11);
       for (const bt of ALL_BUILDING_TYPES) {
         expect(allTypes).toContain(bt);
       }
@@ -441,7 +441,7 @@ describe('V1 BLD-FLOW 建筑系统', () => {
 
       // 其余建筑锁定
       const shouldLocked: BuildingType[] = [
-        'market', 'barracks', 'smithy', 'academy', 'clinic', 'wall',
+        'market', 'barracks', 'workshop', 'academy', 'clinic', 'wall',
       ];
       for (const bt of shouldLocked) {
         expect(buildings[bt].status).toBe('locked');
@@ -461,13 +461,13 @@ describe('V1 BLD-FLOW 建筑系统', () => {
       expect(buildings.market.status).not.toBe('locked');
       expect(buildings.barracks.status).not.toBe('locked');
 
-      // smithy 和 academy 仍然锁定（需要主城 Lv3）
-      expect(buildings.smithy.status).toBe('locked');
+      // workshop 和 academy 仍然锁定（需要主城 Lv3）
+      expect(buildings.workshop.status).toBe('locked');
       expect(buildings.academy.status).toBe('locked');
     });
 
-    it('should unlock smithy and academy at castle Lv3', () => {
-      // BLD-FLOW-4: upgradeBuildingTo('castle', 3) → smithy 和 academy 解锁
+    it('should unlock workshop and academy at castle Lv3', () => {
+      // BLD-FLOW-4: upgradeBuildingTo('castle', 3) → workshop 和 academy 解锁
       const sim = createSim();
 
       sim.addResources(SUFFICIENT_RESOURCES);
@@ -475,8 +475,8 @@ describe('V1 BLD-FLOW 建筑系统', () => {
 
       const buildings = sim.engine.building.getAllBuildings();
 
-      // smithy 和 academy 应已解锁
-      expect(buildings.smithy.status).not.toBe('locked');
+      // workshop 和 academy 应已解锁
+      expect(buildings.workshop.status).not.toBe('locked');
       expect(buildings.academy.status).not.toBe('locked');
 
       // clinic 仍然锁定（需要主城 Lv4）
@@ -760,7 +760,7 @@ describe('V1 BLD-FLOW 建筑系统', () => {
       const buildings = sim.engine.building.getAllBuildings();
       const maxLevels = {
         castle: 30, farmland: 25, market: 25, barracks: 25,
-        smithy: 20, academy: 20, clinic: 20, wall: 20,
+        workshop: 20, academy: 20, clinic: 20, wall: 20,
       };
 
       for (const [type, maxLevel] of Object.entries(maxLevels)) {
@@ -776,7 +776,7 @@ describe('V1 BLD-FLOW 建筑系统', () => {
       expect(maxLevels.farmland).toBe(25);
       expect(maxLevels.market).toBe(25);
       expect(maxLevels.barracks).toBe(25);
-      expect(maxLevels.smithy).toBe(20);
+      expect(maxLevels.workshop).toBe(20);
       expect(maxLevels.academy).toBe(20);
       expect(maxLevels.clinic).toBe(20);
       expect(maxLevels.wall).toBe(20);
@@ -789,7 +789,7 @@ describe('V1 BLD-FLOW 建筑系统', () => {
       const buildings = sim.engine.building.getAllBuildings();
       const BUILDING_LABELS: Record<BuildingType, string> = {
         castle: '主城', farmland: '农田', market: '市集', barracks: '兵营',
-        smithy: '铁匠铺', academy: '书院', clinic: '医馆', wall: '城墙',
+        workshop: '铁匠铺', academy: '书院', clinic: '医馆', wall: '城墙',
       };
 
       const sortedByName = (Object.keys(buildings) as BuildingType[])

@@ -60,7 +60,7 @@ export function createSimForResourceUpgrade(): GameEventSimulator {
 /** 所有 8 种建筑类型 */
 export const ALL_BUILDING_TYPES: BuildingType[] = [
   'castle', 'farmland', 'market', 'barracks',
-  'smithy', 'academy', 'clinic', 'wall',
+  'workshop', 'academy', 'clinic', 'wall',
 ];
 
 // ── 资源常量 ──

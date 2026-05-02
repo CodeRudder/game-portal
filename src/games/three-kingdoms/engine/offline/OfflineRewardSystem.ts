@@ -119,7 +119,7 @@ export class OfflineRewardSystem implements ISubsystem {
       return { timestamp: Date.now(), offlineSeconds: 0, tierDetails: [], totalEarned: zeroRes(), overallEfficiency: 0, isCapped: false };
     }
     // [FIX-801] productionRates 各字段 NaN/负值/Infinity 防护
-    const safeRates: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
+    const safeRates: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
     for (const key of ['grain', 'gold', 'troops', 'mandate', 'techPoint', 'recruitToken', 'skillBook'] as const) {
       const v = productionRates[key];
       safeRates[key] = (Number.isFinite(v) && v >= 0) ? v : 0;
@@ -358,7 +358,7 @@ export class OfflineRewardSystem implements ISubsystem {
     const vipBoostedEarned = this.applyVipBonus(snapshot.totalEarned, vipLevel);
     const systemModifiedEarned = this.applySystemModifier(vipBoostedEarned, primarySystem);
     const { cappedEarned, overflowResources } = this.applyCapAndOverflow(systemModifiedEarned, currentResources, caps);
-    const tradeSummary = this.simulateOfflineTrade(offlineSeconds, { grain: 0, gold: 10, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 });
+    const tradeSummary = this.simulateOfflineTrade(offlineSeconds, { grain: 0, gold: 10, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 });
     const panelData = this.generateReturnPanel(offlineSeconds, productionRates, vipLevel);
     return { snapshot, vipBoostedEarned, systemModifiedEarned, cappedEarned, overflowResources, tradeSummary, panelData };
   }
@@ -859,6 +859,8 @@ export class OfflineRewardSystem implements ISubsystem {
       const boostedEarned: Resources = {
         grain: Math.floor(baseSnapshot.totalEarned.grain * multiplier),
         gold: Math.floor(baseSnapshot.totalEarned.gold * multiplier),
+        ore: Math.floor(baseSnapshot.totalEarned.ore * multiplier),
+        wood: Math.floor(baseSnapshot.totalEarned.wood * multiplier),
         troops: Math.floor(baseSnapshot.totalEarned.troops * multiplier),
         mandate: Math.floor(baseSnapshot.totalEarned.mandate * multiplier),
         techPoint: Math.floor(baseSnapshot.totalEarned.techPoint * multiplier),

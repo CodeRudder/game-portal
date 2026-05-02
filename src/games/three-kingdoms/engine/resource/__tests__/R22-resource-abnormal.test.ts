@@ -126,7 +126,7 @@ describe('R22-1: 资源系统异常路径', () => {
   describe('空值和异常值处理', () => {
     it('deserialize NaN 资源值时修正为 0', () => {
       rs.deserialize({
-        resources: { grain: NaN, gold: 300, troops: 50, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } as any,
+        resources: { grain: NaN, gold: 300, troops: 50, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 } as any,
         lastSaveTime: Date.now(),
         productionRates: rs.getProductionRates() as any,
         caps: rs.getCaps() as any,
@@ -137,7 +137,7 @@ describe('R22-1: 资源系统异常路径', () => {
 
     it('deserialize undefined 资源值时修正为 0', () => {
       rs.deserialize({
-        resources: { gold: 300, troops: 50, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } as any,
+        resources: { gold: 300, troops: 50, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 } as any,
         lastSaveTime: Date.now(),
         productionRates: rs.getProductionRates() as any,
         caps: rs.getCaps() as any,
@@ -148,7 +148,7 @@ describe('R22-1: 资源系统异常路径', () => {
 
     it('deserialize 负数资源值时修正为 0', () => {
       rs.deserialize({
-        resources: { grain: -500, gold: 300, troops: 50, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } as any,
+        resources: { grain: -500, gold: 300, troops: 50, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 } as any,
         lastSaveTime: Date.now(),
         productionRates: rs.getProductionRates() as any,
         caps: rs.getCaps() as any,
@@ -160,7 +160,7 @@ describe('R22-1: 资源系统异常路径', () => {
     it('consumeResource 对 NaN 当前值抛出错误', () => {
       // 通过 deserialize 注入 NaN
       rs.deserialize({
-        resources: { grain: NaN, gold: 300, troops: 50, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 } as any,
+        resources: { grain: NaN, gold: 300, troops: 50, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 } as any,
         lastSaveTime: Date.now(),
         productionRates: rs.getProductionRates() as any,
         caps: rs.getCaps() as any,

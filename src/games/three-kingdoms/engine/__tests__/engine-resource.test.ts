@@ -98,9 +98,9 @@ describe('ThreeKingdomsEngine — 资源域', () => {
       const grainCapBefore = engine.getSnapshot().caps.grain;
 
       // 升级铁匠铺
-      const smithyCheck = engine.checkUpgrade('smithy');
-      if (smithyCheck.canUpgrade) {
-        engine.upgradeBuilding('smithy');
+      const workshopCheck = engine.checkUpgrade('workshop');
+      if (workshopCheck.canUpgrade) {
+        engine.upgradeBuilding('workshop');
         engine.tick(999999999);
       }
 

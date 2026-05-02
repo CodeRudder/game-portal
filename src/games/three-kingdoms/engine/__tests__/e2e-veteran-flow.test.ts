@@ -90,7 +90,7 @@ function createMidGameEngine(): ThreeKingdomsEngine {
   upgradeTo(eng, 'castle', 5);
   upgradeTo(eng, 'market', 5);
   upgradeTo(eng, 'barracks', 5);
-  upgradeTo(eng, 'smithy', 5);
+  upgradeTo(eng, 'workshop', 5);
   upgradeTo(eng, 'academy', 5);
   upgradeTo(eng, 'farmland', 5);
 

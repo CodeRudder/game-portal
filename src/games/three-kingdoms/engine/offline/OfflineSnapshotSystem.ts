@@ -72,9 +72,9 @@ export class OfflineSnapshotSystem implements ISubsystem {
     // [FIX-811] null/undefined 防护
     if (!systemState) {
       const emptySnapshot: SystemSnapshot = {
-        resources: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
-        productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
-        caps: { grain: 0, gold: null, troops: 0, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
+        resources: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 },
+        productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 },
+        caps: { grain: 0, gold: 0, ore: 0, wood: 0, troops: 0, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
         buildingQueue: [],
         techQueue: [],
         expeditionQueue: [],
@@ -202,11 +202,11 @@ export class OfflineSnapshotSystem implements ISubsystem {
   ): BoostUseResult {
     const item = items.find(i => i.id === itemId);
     if (!item) {
-      return { success: false, addedSeconds: 0, addedEarned: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 }, remainingCount: 0, reason: '道具不存在' };
+      return { success: false, addedSeconds: 0, addedEarned: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 }, remainingCount: 0, reason: '道具不存在' };
 
     }
     if (item.count <= 0) {
-      return { success: false, addedSeconds: 0, addedEarned: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 }, remainingCount: 0, reason: '道具数量不足' };
+      return { success: false, addedSeconds: 0, addedEarned: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 }, remainingCount: 0, reason: '道具数量不足' };
     }
 
     const addedSeconds = item.boostHours * 3600;
@@ -218,6 +218,8 @@ export class OfflineSnapshotSystem implements ISubsystem {
     const addedEarned: Resources = {
       grain: Math.floor(productionRates.grain * addedSeconds * bonusMultiplier),
       gold: Math.floor(productionRates.gold * addedSeconds * bonusMultiplier),
+      ore: Math.floor(productionRates.ore * addedSeconds * bonusMultiplier),
+      wood: Math.floor(productionRates.wood * addedSeconds * bonusMultiplier),
       troops: Math.floor(productionRates.troops * addedSeconds * bonusMultiplier),
       mandate: Math.floor(productionRates.mandate * addedSeconds * bonusMultiplier),
       techPoint: Math.floor(productionRates.techPoint * addedSeconds * bonusMultiplier),

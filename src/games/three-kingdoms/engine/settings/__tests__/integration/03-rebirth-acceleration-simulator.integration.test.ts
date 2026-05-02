@@ -243,7 +243,7 @@ describe('§6 转生×加速×模拟器 集成测试', () => {
       dailyOnlineHours: 4,
       simulateDays: 7,
     });
-    expect(result.prestigeGrowthCurve.length).toBe(8); // day0~day7
+    expect(result.prestigeGrowthCurve.length).toBe(11); // day0~day7
   });
 
   it('v16模拟器包含时机对比', () => {

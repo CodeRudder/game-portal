@@ -32,11 +32,14 @@ export const BUILDING_TYPES: readonly BuildingType[] = [
   'castle',
   'farmland',
   'market',
+  'mine',
+  'lumberMill',
   'barracks',
-  'smithy',
+  'workshop',
   'academy',
   'clinic',
   'wall',
+  'tavern',
 ] as const;
 
 /** 建筑中文名映射 */
@@ -44,11 +47,14 @@ export const BUILDING_LABELS: Record<BuildingType, string> = {
   castle: '主城',
   farmland: '农田',
   market: '市集',
+  mine: '矿场',
+  lumberMill: '伐木场',
   barracks: '兵营',
-  smithy: '铁匠铺',
+  workshop: '工坊',
   academy: '书院',
   clinic: '医馆',
   wall: '城墙',
+  tavern: '酒馆',
 };
 
 /** 建筑图标映射 */
@@ -56,26 +62,32 @@ export const BUILDING_ICONS: Record<BuildingType, string> = {
   castle: '🏛️',
   farmland: '🌾',
   market: '💰',
+  mine: '⛏️',
+  lumberMill: '🪓',
   barracks: '⚔️',
-  smithy: '🔨',
+  workshop: '⚒️',
   academy: '📚',
   clinic: '🏥',
   wall: '🏯',
+  tavern: '🍺',
 };
 
 /** 建筑分区 */
-export type BuildingZone = 'core' | 'civilian' | 'military' | 'cultural' | 'defense';
+export type BuildingZone = 'core' | 'resource' | 'military' | 'cultural' | 'defense';
 
 /** 建筑分区映射 */
 export const BUILDING_ZONES: Record<BuildingType, BuildingZone> = {
   castle: 'core',
-  farmland: 'civilian',
-  market: 'civilian',
+  farmland: 'resource',
+  market: 'resource',
+  mine: 'resource',
+  lumberMill: 'resource',
   barracks: 'military',
-  smithy: 'military',
+  workshop: 'military',
   academy: 'cultural',
   clinic: 'cultural',
   wall: 'defense',
+  tavern: 'core',
 };
 
 // ─────────────────────────────────────────────

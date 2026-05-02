@@ -40,7 +40,7 @@ describe('OfflineRewardSystem v9.0 — 集成与序列化', () => {
     it('无上限资源应全部获得', () => {
       const earned = { grain: 0, gold: 1000, troops: 0, mandate: 0 };
       const current = zeroRes();
-      const caps = { grain: 500, gold: null, troops: 200, mandate: null };
+      const caps = { grain: 500, gold: 2000, troops: 200, mandate: null };
 
       const { cappedEarned, overflowResources } = system.applyCapAndOverflow(earned, current, caps);
       expect(cappedEarned.gold).toBe(1000);
@@ -50,7 +50,7 @@ describe('OfflineRewardSystem v9.0 — 集成与序列化', () => {
     it('有上限资源应截断溢出', () => {
       const earned = { grain: 1000, gold: 0, troops: 0, mandate: 0 };
       const current = { grain: 400, gold: 0, troops: 0, mandate: 0 };
-      const caps = { grain: 500, gold: null, troops: 200, mandate: null };
+      const caps = { grain: 500, gold: 2000, troops: 200, mandate: null };
 
       const { cappedEarned, overflowResources } = system.applyCapAndOverflow(earned, current, caps);
       // space = 500 - 400 = 100
@@ -61,7 +61,7 @@ describe('OfflineRewardSystem v9.0 — 集成与序列化', () => {
     it('当前资源已达上限应全部溢出', () => {
       const earned = { grain: 100, gold: 0, troops: 0, mandate: 0 };
       const current = { grain: 500, gold: 0, troops: 0, mandate: 0 };
-      const caps = { grain: 500, gold: null, troops: 200, mandate: null };
+      const caps = { grain: 500, gold: 2000, troops: 200, mandate: null };
 
       const { cappedEarned, overflowResources } = system.applyCapAndOverflow(earned, current, caps);
       expect(cappedEarned.grain).toBe(0);
@@ -164,7 +164,7 @@ describe('OfflineRewardSystem v9.0 — 集成与序列化', () => {
         10 * HOUR_S,
         makeRates(),
         zeroRes(),
-        { grain: 5000, gold: null, troops: 1000, mandate: null },
+        { grain: 5000, gold: 2000, troops: 1000, mandate: null },
         0,
       );
 
@@ -182,14 +182,14 @@ describe('OfflineRewardSystem v9.0 — 集成与序列化', () => {
         10 * HOUR_S,
         makeRates({ grain: 10 }),
         zeroRes(),
-        { grain: 999999, gold: null, troops: 999999, mandate: null },
+        { grain: 999999, gold: 2000, troops: 999999, mandate: null },
         0,
       );
       const result3 = system.calculateFullReward(
         10 * HOUR_S,
         makeRates({ grain: 10 }),
         zeroRes(),
-        { grain: 999999, gold: null, troops: 999999, mandate: null },
+        { grain: 999999, gold: 2000, troops: 999999, mandate: null },
         3,
       );
 
@@ -201,7 +201,7 @@ describe('OfflineRewardSystem v9.0 — 集成与序列化', () => {
         10 * HOUR_S,
         makeRates({ grain: 10 }),
         zeroRes(),
-        { grain: 999999, gold: null, troops: 999999, mandate: null },
+        { grain: 999999, gold: 2000, troops: 999999, mandate: null },
         0,
         'building',
       );
@@ -209,7 +209,7 @@ describe('OfflineRewardSystem v9.0 — 集成与序列化', () => {
         10 * HOUR_S,
         makeRates({ grain: 10 }),
         zeroRes(),
-        { grain: 999999, gold: null, troops: 999999, mandate: null },
+        { grain: 999999, gold: 2000, troops: 999999, mandate: null },
         0,
         'trade',
       );

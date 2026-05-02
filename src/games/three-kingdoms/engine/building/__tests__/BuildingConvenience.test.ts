@@ -134,10 +134,10 @@ describe('建筑便捷功能 — 自动升级开关', () => {
     const result = simulateAutoUpgrade(system, resources);
 
     // 初始锁定建筑（market 需要 castle Lv2, barracks 需要 castle Lv2,
-    // smithy 需要 castle Lv3, academy 需要 castle Lv3, clinic 需要 castle Lv4, wall 需要 castle Lv5）
+    // workshop 需要 castle Lv3, academy 需要 castle Lv3, clinic 需要 castle Lv4, wall 需要 castle Lv5）
     // 注意：simulateAutoUpgrade 中 forceCompleteUpgrades 会触发 checkAndUnlockBuildings
     // castle 升级后可能解锁 market/barracks（castle Lv2），所以只检查始终锁定的
-    const alwaysLocked: BuildingType[] = ['smithy', 'academy', 'clinic', 'wall'];
+    const alwaysLocked: BuildingType[] = ['workshop', 'academy', 'clinic', 'wall'];
     for (const locked of alwaysLocked) {
       expect(result.upgraded).not.toContain(locked);
     }

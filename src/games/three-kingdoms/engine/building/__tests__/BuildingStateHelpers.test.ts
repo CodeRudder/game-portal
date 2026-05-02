@@ -94,8 +94,8 @@ describe('BuildingStateHelpers — createInitialState', () => {
     expect(market.status).toBe('locked');
 
     // 铁匠铺需要主城 Lv3
-    const smithy = createInitialState('smithy');
-    expect(smithy.status).toBe('locked');
+    const workshop = createInitialState('workshop');
+    expect(workshop.status).toBe('locked');
 
     // 城墙需要主城 Lv5
     const wall = createInitialState('wall');
@@ -103,7 +103,7 @@ describe('BuildingStateHelpers — createInitialState', () => {
   });
 
   it('返回的状态包含正确的 type 字段', () => {
-    const types: BuildingType[] = ['castle', 'farmland', 'market', 'barracks', 'smithy', 'academy', 'clinic', 'wall'];
+    const types: BuildingType[] = ['castle', 'farmland', 'market', 'barracks', 'workshop', 'academy', 'clinic', 'wall'];
     for (const t of types) {
       const state = createInitialState(t);
       expect(state.type).toBe(t);
@@ -140,7 +140,7 @@ describe('BuildingStateHelpers — createAllStates', () => {
     // 市集（主城Lv2）、兵营（主城Lv2）、铁匠铺（主城Lv3）、书院（主城Lv3）、医馆（主城Lv4）、城墙（主城Lv5）
     expect(states.market.status).toBe('locked');
     expect(states.barracks.status).toBe('locked');
-    expect(states.smithy.status).toBe('locked');
+    expect(states.workshop.status).toBe('locked');
     expect(states.academy.status).toBe('locked');
     expect(states.clinic.status).toBe('locked');
     expect(states.wall.status).toBe('locked');

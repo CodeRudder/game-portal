@@ -215,7 +215,7 @@ describe('ResourceSystem 对抗式测试', () => {
         resources: { grain: NaN, gold: NaN, troops: NaN, mandate: NaN, techPoint: NaN, recruitToken: NaN, skillBook: NaN },
         lastSaveTime: Date.now(),
         productionRates: { ...INITIAL_PRODUCTION_RATES },
-        caps: { grain: 2000, gold: null, troops: 500, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
+        caps: { grain: 2000, gold: 2000, troops: 500, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
         version: SAVE_VERSION,
       };
       rs.deserialize(badData);
@@ -231,7 +231,7 @@ describe('ResourceSystem 对抗式测试', () => {
         resources: { grain: -100, gold: -200, troops: -50, mandate: -10, techPoint: -5, recruitToken: -1, skillBook: -3 },
         lastSaveTime: Date.now(),
         productionRates: { ...INITIAL_PRODUCTION_RATES },
-        caps: { grain: 2000, gold: null, troops: 500, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
+        caps: { grain: 2000, gold: 2000, troops: 500, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
         version: SAVE_VERSION,
       };
       rs.deserialize(badData);
@@ -246,7 +246,7 @@ describe('ResourceSystem 对抗式测试', () => {
         resources: { grain: undefined, gold: undefined, troops: undefined, mandate: undefined, techPoint: undefined, recruitToken: undefined, skillBook: undefined },
         lastSaveTime: Date.now(),
         productionRates: { ...INITIAL_PRODUCTION_RATES },
-        caps: { grain: 2000, gold: null, troops: 500, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
+        caps: { grain: 2000, gold: 2000, troops: 500, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
         version: SAVE_VERSION,
       } as unknown as ResourceSaveData;
       rs.deserialize(badData);
@@ -270,10 +270,10 @@ describe('ResourceSystem 对抗式测试', () => {
       const r = rs.getResources();
       // 直接deserialize设置undefined值
       const badData = {
-        resources: { grain: 100, gold: undefined, troops: 50, mandate: 0, techPoint: 0, recruitToken: 30, skillBook: 0 },
+        resources: { grain: 100, gold: undefined, troops: 50, mandate: 0, techPoint: 0, recruitToken: 30, skillBook: 0, ore: 0, wood: 0 },
         lastSaveTime: Date.now(),
         productionRates: { ...INITIAL_PRODUCTION_RATES },
-        caps: { grain: 2000, gold: null, troops: 500, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
+        caps: { grain: 2000, gold: 2000, troops: 500, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
         version: SAVE_VERSION,
       } as unknown as ResourceSaveData;
       rs.deserialize(badData);
@@ -286,7 +286,7 @@ describe('ResourceSystem 对抗式测试', () => {
         resources: { ...INITIAL_RESOURCES },
         lastSaveTime: Date.now(),
         productionRates: { ...INITIAL_PRODUCTION_RATES },
-        caps: { grain: 2000, gold: null, troops: 500, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
+        caps: { grain: 2000, gold: 2000, troops: 500, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
         version: 999,
       };
       // 不应抛出异常，只是警告
@@ -406,10 +406,10 @@ describe('ResourceSystem 对抗式测试', () => {
 
     it('deserialize后执行enforceCaps', () => {
       const data: ResourceSaveData = {
-        resources: { grain: 99999, gold: 100, troops: 50, mandate: 0, techPoint: 0, recruitToken: 30, skillBook: 0 },
+        resources: { grain: 99999, gold: 100, troops: 50, mandate: 0, techPoint: 0, recruitToken: 30, skillBook: 0, ore: 0, wood: 0 },
         lastSaveTime: Date.now(),
         productionRates: { ...INITIAL_PRODUCTION_RATES },
-        caps: { grain: 2000, gold: null, troops: 500, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
+        caps: { grain: 2000, gold: 2000, troops: 500, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
         version: SAVE_VERSION,
       };
       rs.deserialize(data);

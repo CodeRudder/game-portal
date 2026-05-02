@@ -76,19 +76,19 @@ describe('F-Error: 建筑升级异常路径', () => {
   it('锁定建筑不能升级', () => expect(sys.checkUpgrade('market', res).canUpgrade).toBe(false));
   it('升级中建筑不能再次升级', () => { sys.startUpgrade('farmland', res); expect(sys.checkUpgrade('farmland', res).reasons).toContain('建筑正在升级中'); });
   it('资源不足不能升级', () => {
-    const p: Resources = { grain: 1, gold: 1, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
+    const p: Resources = { grain: 1, gold: 1, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
     expect(sys.checkUpgrade('castle', p).canUpgrade).toBe(false);
   });
   it('NaN资源判定异常', () => {
-    const r: Resources = { grain: NaN, gold: NaN, troops: NaN, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
+    const r: Resources = { grain: NaN, gold: NaN, troops: NaN, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
     expect(sys.checkUpgrade('farmland', r).reasons.some(x => x.includes('异常'))).toBe(true);
   });
   it('Infinity资源判定异常', () => {
-    const r: Resources = { grain: Infinity, gold: Infinity, troops: Infinity, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
+    const r: Resources = { grain: Infinity, gold: Infinity, troops: Infinity, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
     expect(sys.checkUpgrade('farmland', r).canUpgrade).toBe(false);
   });
   it('startUpgrade资源不足抛错', () => {
-    const p: Resources = { grain: 1, gold: 1, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
+    const p: Resources = { grain: 1, gold: 1, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
     expect(() => sys.startUpgrade('castle', p)).toThrow();
   });
   it('getUpgradeCost满级返回null', () => {
@@ -387,9 +387,9 @@ describe('F-Boundary: 建筑解锁条件', () => {
     const s = createBuilding(); upgradeTo(s, 'castle', 2);
     expect(s.isUnlocked('market')).toBe(true); expect(s.isUnlocked('barracks')).toBe(true);
   });
-  it('主城Lv3解锁smithy/academy', () => {
+  it('主城Lv3解锁workshop/academy', () => {
     const s = createBuilding(); upgradeTo(s, 'castle', 3);
-    expect(s.isUnlocked('smithy')).toBe(true); expect(s.isUnlocked('academy')).toBe(true);
+    expect(s.isUnlocked('workshop')).toBe(true); expect(s.isUnlocked('academy')).toBe(true);
   });
   it('主城Lv4解锁clinic', () => {
     const s = createBuilding(); upgradeTo(s, 'castle', 4);

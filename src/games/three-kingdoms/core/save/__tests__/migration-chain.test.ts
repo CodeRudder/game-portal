@@ -46,8 +46,8 @@ function makeResourceSave(overrides?: Record<string, number>) {
   return {
     version: 1,
     resources: { ...MINIMAL_RESOURCES, ...overrides },
-    productionRates: { grain: 1, gold: 0.5, troops: 0.1, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
-    caps: { grain: 1000, gold: null, troops: 500, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
+    productionRates: { grain: 1, gold: 0.5, troops: 0.1, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 },
+    caps: { grain: 1000, gold: 2000, troops: 500, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
     capWarnings: [],
     lastSaveTime: Date.now(),
   };

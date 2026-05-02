@@ -936,16 +936,16 @@ describe('BuildingSystem 对抗式测试 — 解锁链验证', () => {
 
     expect(bs.isUnlocked('market')).toBe(true);
     expect(bs.isUnlocked('barracks')).toBe(true);
-    // smithy 还不应解锁（需要 Lv3）
-    expect(bs.isUnlocked('smithy')).toBe(false);
+    // workshop 还不应解锁（需要 Lv3）
+    expect(bs.isUnlocked('workshop')).toBe(false);
   });
 
-  it('TR-UNLOCK-006: 主城 Lv3 解锁 smithy + academy', () => {
+  it('TR-UNLOCK-006: 主城 Lv3 解锁 workshop + academy', () => {
     // deserialize 时自动调用 checkAndUnlockBuildings
     bs.deserialize(makeSave({ castle: { level: 3 } }));
-    expect(bs.isUnlocked('smithy')).toBe(true);
+    expect(bs.isUnlocked('workshop')).toBe(true);
     expect(bs.isUnlocked('academy')).toBe(true);
-    expect(bs.getLevel('smithy')).toBe(1);
+    expect(bs.getLevel('workshop')).toBe(1);
     expect(bs.getLevel('academy')).toBe(1);
   });
 
@@ -989,15 +989,15 @@ describe('BuildingSystem 对抗式测试 — 推荐系统', () => {
     expect(rec[0].type).toBe('castle');
   });
 
-  it('TR-REC-002: development 阶段 smithy/academy 靠前', () => {
+  it('TR-REC-002: development 阶段 workshop/academy 靠前', () => {
     bs.deserialize(makeSave({ castle: { level: 5 } }));
     const rec = bs.recommendUpgradePath('development');
     expect(rec.length).toBeGreaterThan(0);
     expect(rec[0].type).toBe('castle');
-    // smithy 应在 farmland 之前
-    const smithyIdx = rec.findIndex((r) => r.type === 'smithy');
+    // workshop 应在 farmland 之前
+    const workshopIdx = rec.findIndex((r) => r.type === 'workshop');
     const farmlandIdx = rec.findIndex((r) => r.type === 'farmland');
-    expect(smithyIdx).toBeLessThan(farmlandIdx);
+    expect(workshopIdx).toBeLessThan(farmlandIdx);
   });
 
   it('TR-REC-003: late 阶段 wall/clinic 靠前', () => {

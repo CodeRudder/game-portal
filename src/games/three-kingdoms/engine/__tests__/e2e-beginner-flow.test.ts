@@ -63,7 +63,7 @@ function upgradeAndComplete(eng: ThreeKingdomsEngine, type: BuildingType): void 
 
 /** 辅助：获取所有建筑等级 */
 function getAllBuildingLevels(eng: ThreeKingdomsEngine): Record<string, number> {
-  const types: BuildingType[] = ['castle', 'farmland', 'market', 'barracks', 'smithy', 'academy', 'clinic', 'wall'];
+  const types: BuildingType[] = ['castle', 'farmland', 'market', 'barracks', 'workshop', 'academy', 'clinic', 'wall'];
   const levels: Record<string, number> = {};
   for (const t of types) {
     levels[t] = eng.building.getLevel(t);

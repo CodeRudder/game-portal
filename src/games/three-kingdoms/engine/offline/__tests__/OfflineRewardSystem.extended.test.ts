@@ -109,7 +109,7 @@ describe('OfflineRewardSystem 扩展功能', () => {
     });
 
     it('攻城成功有战利品', () => {
-      const loot: Resources = { grain: 500, gold: 200, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
+      const loot: Resources = { grain: 500, gold: 200, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
       const result = system.calculateSiegeResult(1000, true, loot);
       expect(result.loot).toEqual(loot);
     });
@@ -129,7 +129,7 @@ describe('OfflineRewardSystem 扩展功能', () => {
     });
 
     it('攻城失败无战利品（即使传入loot）', () => {
-      const loot: Resources = { grain: 500, gold: 200, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
+      const loot: Resources = { grain: 500, gold: 200, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
       const result = system.calculateSiegeResult(1000, false, loot);
       expect(result.loot).toBeNull();
     });
@@ -143,7 +143,7 @@ describe('OfflineRewardSystem 扩展功能', () => {
         { techId: 'tech1', endTime: 1000, productionBonus: 0.1 },
         { techId: 'tech2', endTime: 2000, productionBonus: 0.2 },
       ];
-      const currentRates: Resources = { grain: 100, gold: 50, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
+      const currentRates: Resources = { grain: 100, gold: 50, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
 
       const updates = system.updateProductionRatesAfterTech(completedTech, currentRates);
       expect(updates).toHaveLength(2);
@@ -155,7 +155,7 @@ describe('OfflineRewardSystem 扩展功能', () => {
       const completedTech = [
         { techId: 'tech1', endTime: 1000, productionBonus: 0.1 },
       ];
-      const currentRates: Resources = { grain: 100, gold: 50, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
+      const currentRates: Resources = { grain: 100, gold: 50, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
 
       const updates = system.updateProductionRatesAfterTech(completedTech, currentRates);
       // 产出 = 100 * 1.1 = 110
@@ -163,7 +163,7 @@ describe('OfflineRewardSystem 扩展功能', () => {
     });
 
     it('空科技列表返回空数组', () => {
-      const currentRates: Resources = { grain: 100, gold: 50, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
+      const currentRates: Resources = { grain: 100, gold: 50, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
       const updates = system.updateProductionRatesAfterTech([], currentRates);
       expect(updates).toHaveLength(0);
     });
@@ -173,7 +173,7 @@ describe('OfflineRewardSystem 扩展功能', () => {
         { techId: 'tech2', endTime: 2000, productionBonus: 0.2 },
         { techId: 'tech1', endTime: 1000, productionBonus: 0.1 },
       ];
-      const currentRates: Resources = { grain: 100, gold: 50, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
+      const currentRates: Resources = { grain: 100, gold: 50, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
 
       const updates = system.updateProductionRatesAfterTech(completedTech, currentRates);
       expect(updates[0].techId).toBe('tech1');
@@ -219,7 +219,7 @@ describe('OfflineRewardSystem 扩展功能', () => {
       techPoint: 0, recruitToken: 0, skillBook: 0,
     };
     const caps: Record<string, number | null> = {
-      grain: 10000, gold: null, troops: 5000, mandate: null,
+      grain: 10000, gold: 2000, troops: 5000, mandate: null,
       techPoint: null, recruitToken: null, skillBook: null,
     };
 

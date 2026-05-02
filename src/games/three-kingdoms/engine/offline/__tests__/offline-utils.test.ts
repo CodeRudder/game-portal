@@ -52,7 +52,7 @@ describe('offline-utils', () => {
   describe('addRes', () => {
     it('应正确相加', () => {
       const a: Resources = { grain: 10, gold: 20, troops: 30, mandate: 5, techPoint: 1, recruitToken: 2, skillBook: 3 };
-      const b: Resources = { grain: 5, gold: 10, troops: 15, mandate: 2, techPoint: 1, recruitToken: 1, skillBook: 1 };
+      const b: Resources = { grain: 5, gold: 10, troops: 15, mandate: 2, techPoint: 1, recruitToken: 1, skillBook: 1, ore: 0, wood: 0 };
       const result = addRes(a, b);
       expect(result.grain).toBe(15);
       expect(result.gold).toBe(30);

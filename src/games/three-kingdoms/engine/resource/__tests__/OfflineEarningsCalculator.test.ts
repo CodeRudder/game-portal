@@ -61,8 +61,8 @@ describe('OfflineEarningsCalculator', () => {
   // ─── applyEarningsToResources ─────────────
 
   describe('applyEarningsToResources', () => {
-    const current: Resources = { grain: 100, gold: 50, troops: 20, mandate: 5, techPoint: 0, recruitToken: 0, skillBook: 0 };
-    const earnings: Resources = { grain: 50, gold: 30, troops: 10, mandate: 2, techPoint: 0, recruitToken: 0, skillBook: 0 };
+    const current: Resources = { grain: 100, gold: 50, troops: 20, mandate: 5, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
+    const earnings: Resources = { grain: 50, gold: 30, troops: 10, mandate: 2, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
     const caps: Record<keyof Resources, number | null> = {
       grain: 200, gold: 100, troops: 50, mandate: null, techPoint: null, recruitToken: null, skillBook: null,
     };

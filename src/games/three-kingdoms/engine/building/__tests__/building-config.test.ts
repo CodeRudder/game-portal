@@ -23,7 +23,7 @@ import {
 } from '../building-config';
 import type { BuildingType } from '../building.types';
 
-const ALL_BUILDING_TYPES: BuildingType[] = ['castle', 'farmland', 'market', 'barracks', 'smithy', 'academy', 'clinic', 'wall'];
+const ALL_BUILDING_TYPES: BuildingType[] = ['castle', 'farmland', 'market', 'barracks', 'workshop', 'academy', 'clinic', 'wall'];
 
 // ─────────────────────────────────────────────
 // 建筑等级上限
@@ -51,7 +51,7 @@ describe('BUILDING_MAX_LEVELS', () => {
   });
 
   it('铁匠铺/书院/医馆/城墙等级上限为 20', () => {
-    expect(BUILDING_MAX_LEVELS.smithy).toBe(20);
+    expect(BUILDING_MAX_LEVELS.workshop).toBe(20);
     expect(BUILDING_MAX_LEVELS.academy).toBe(20);
     expect(BUILDING_MAX_LEVELS.clinic).toBe(20);
     expect(BUILDING_MAX_LEVELS.wall).toBe(20);
@@ -78,7 +78,7 @@ describe('BUILDING_UNLOCK_LEVELS', () => {
   });
 
   it('铁匠铺和书院主城 3 级解锁', () => {
-    expect(BUILDING_UNLOCK_LEVELS.smithy).toBe(3);
+    expect(BUILDING_UNLOCK_LEVELS.workshop).toBe(3);
     expect(BUILDING_UNLOCK_LEVELS.academy).toBe(3);
   });
 

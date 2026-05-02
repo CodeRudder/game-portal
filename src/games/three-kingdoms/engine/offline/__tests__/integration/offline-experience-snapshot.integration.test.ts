@@ -47,7 +47,7 @@ function makeRates(overrides: Partial<ProductionRate> = {}): ProductionRate {
 }
 
 function makeCaps(overrides: Partial<ResourceCap> = {}): ResourceCap {
-  return { grain: 5000, gold: null, troops: 1000, mandate: null, techPoint: null, ...overrides };
+  return { grain: 5000, gold: 2000, troops: 1000, mandate: null, techPoint: null, ...overrides };
 }
 
 function makeCurrentRes(overrides: Partial<Resources> = {}): Resources {
@@ -170,7 +170,7 @@ describe('§2.2 溢出处理', () => {
   it('§2.2.1 有上限资源：收益未超上限时全额发放', () => {
     const earned: Resources = { grain: 100, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
     const current: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
-    const caps: ResourceCap = { grain: 1000, gold: null, troops: 500, mandate: null, techPoint: null };
+    const caps: ResourceCap = { grain: 1000, gold: 2000, troops: 500, mandate: null, techPoint: null };
     const { cappedEarned, overflowResources } = applyOverflowRules(earned, current, caps);
     expect(cappedEarned.grain).toBe(100);
     expect(overflowResources.grain).toBe(0);
@@ -179,7 +179,7 @@ describe('§2.2 溢出处理', () => {
   it('§2.2.2 有上限资源：收益超出上限时截断', () => {
     const earned: Resources = { grain: 5000, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
     const current: Resources = { grain: 4800, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
-    const caps: ResourceCap = { grain: 5000, gold: null, troops: 500, mandate: null, techPoint: null };
+    const caps: ResourceCap = { grain: 5000, gold: 2000, troops: 500, mandate: null, techPoint: null };
     const { cappedEarned, overflowResources } = applyOverflowRules(earned, current, caps);
     expect(cappedEarned.grain).toBe(200); // 5000 - 4800
     expect(overflowResources.grain).toBe(4800); // 5000 - 200
@@ -188,7 +188,7 @@ describe('§2.2 溢出处理', () => {
   it('§2.2.3 无上限资源（gold:null）永不截断', () => {
     const earned: Resources = { grain: 0, gold: 999999, troops: 0, mandate: 0, techPoint: 0 };
     const current: Resources = { grain: 0, gold: 999999, troops: 0, mandate: 0, techPoint: 0 };
-    const caps: ResourceCap = { grain: 5000, gold: null, troops: 500, mandate: null, techPoint: null };
+    const caps: ResourceCap = { grain: 5000, gold: 2000, troops: 500, mandate: null, techPoint: null };
     const { cappedEarned, overflowResources } = applyOverflowRules(earned, current, caps);
     expect(cappedEarned.gold).toBe(999999);
     expect(overflowResources.gold).toBe(0);
@@ -197,7 +197,7 @@ describe('§2.2 溢出处理', () => {
   it('§2.2.4 无上限资源（mandate:null）永不截断', () => {
     const earned: Resources = { grain: 0, gold: 0, troops: 0, mandate: 50000, techPoint: 0 };
     const current: Resources = { grain: 0, gold: 0, troops: 0, mandate: 50000, techPoint: 0 };
-    const caps: ResourceCap = { grain: 5000, gold: null, troops: 500, mandate: null, techPoint: null };
+    const caps: ResourceCap = { grain: 5000, gold: 2000, troops: 500, mandate: null, techPoint: null };
     const { cappedEarned, overflowResources } = applyOverflowRules(earned, current, caps);
     expect(cappedEarned.mandate).toBe(50000);
     expect(overflowResources.mandate).toBe(0);
@@ -206,7 +206,7 @@ describe('§2.2 溢出处理', () => {
   it('§2.2.5 仓库已满时收益全部溢出', () => {
     const earned: Resources = { grain: 1000, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
     const current: Resources = { grain: 5000, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
-    const caps: ResourceCap = { grain: 5000, gold: null, troops: 500, mandate: null, techPoint: null };
+    const caps: ResourceCap = { grain: 5000, gold: 2000, troops: 500, mandate: null, techPoint: null };
     const { cappedEarned, overflowResources } = applyOverflowRules(earned, current, caps);
     expect(cappedEarned.grain).toBe(0);
     expect(overflowResources.grain).toBe(1000);
@@ -232,7 +232,7 @@ describe('§2.2 溢出处理', () => {
     sys.reset();
     const earned: Resources = { grain: 5000, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
     const current: Resources = { grain: 4800, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
-    const caps: Record<string, number | null> = { grain: 5000, gold: null, troops: 500, mandate: null, techPoint: null };
+    const caps: Record<string, number | null> = { grain: 5000, gold: 2000, troops: 500, mandate: null, techPoint: null };
     const sysResult = sys.applyCapAndOverflow(earned, current, caps);
     const engineResult = applyOverflowRules(earned, current, caps as ResourceCap);
     expect(sysResult.cappedEarned.grain).toBe(engineResult.cappedEarned.grain);

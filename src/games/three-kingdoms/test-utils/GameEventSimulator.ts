@@ -337,7 +337,7 @@ export class GameEventSimulator {
     this.upgradeBuildingToWithHighCaps('farmland', 4);
     this.upgradeBuildingToWithHighCaps('castle', 5);
     // 其余建筑升级到5
-    const midBuildings: BuildingType[] = ['market', 'barracks', 'smithy', 'academy'];
+    const midBuildings: BuildingType[] = ['market', 'barracks', 'workshop', 'academy'];
     for (const bt of midBuildings) {
       this.upgradeBuildingToWithHighCaps(bt, 5);
     }

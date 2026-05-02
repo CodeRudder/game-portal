@@ -15,7 +15,7 @@ import type { Resources } from '../../shared/types';
 
 /** 创建零资源对象 */
 export function zeroRes(): Resources {
-  return { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
+  return { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
 }
 
 /** 克隆资源对象（浅拷贝） */
@@ -28,6 +28,8 @@ export function addRes(a: Resources, b: Readonly<Resources>): Resources {
   return {
     grain: a.grain + b.grain,
     gold: a.gold + b.gold,
+    ore: a.ore + b.ore,
+    wood: a.wood + b.wood,
     troops: a.troops + b.troops,
     mandate: a.mandate + b.mandate,
     techPoint: a.techPoint + b.techPoint,
@@ -41,6 +43,8 @@ export function mulRes(r: Readonly<Resources>, f: number): Resources {
   return {
     grain: r.grain * f,
     gold: r.gold * f,
+    ore: r.ore * f,
+    wood: r.wood * f,
     troops: r.troops * f,
     mandate: r.mandate * f,
     techPoint: r.techPoint * f,
@@ -54,6 +58,8 @@ export function floorRes(r: Resources): Resources {
   return {
     grain: Math.floor(r.grain),
     gold: Math.floor(r.gold),
+    ore: Math.floor(r.ore),
+    wood: Math.floor(r.wood),
     troops: Math.floor(r.troops),
     mandate: Math.floor(r.mandate),
     techPoint: Math.floor(r.techPoint),

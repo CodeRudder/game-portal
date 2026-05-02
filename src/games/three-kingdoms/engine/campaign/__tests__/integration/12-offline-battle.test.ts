@@ -433,7 +433,7 @@ describe('§10.2a 离线收益领取弹窗', () => {
     const current: Resources = { grain: 8000, gold: 0, troops: 400, mandate: 0, techPoint: 0 };
     const caps: Partial<Record<keyof Resources, number | null>> = {
       grain: 10000,
-      gold: null,
+      gold: 2000,
       troops: 500,
       mandate: null,
       techPoint: null,

@@ -65,7 +65,7 @@ function createSnapshotParams() {
   return {
     resources: { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 },
     productionRates: createProductionRates(),
-    caps: { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
+    caps: { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
     buildingQueue: [],
     techQueue: [],
     expeditionQueue: [],
@@ -78,7 +78,7 @@ function createFullSnapshotParams() {
   return {
     resources: { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 10, recruitToken: 5 },
     productionRates: createFullRates(),
-    caps: { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
+    caps: { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
     buildingQueue: [
       { buildingType: 'farmland', startTime: now, endTime: now + 7200000 },
       { buildingType: 'market', startTime: now, endTime: now + 14400000 },
@@ -122,7 +122,7 @@ describe('E2E-FLOW-1: 离线→建筑升级联动', () => {
     snapshotSys.createSnapshot({
       resources: { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 },
       productionRates: createProductionRates(),
-      caps: { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
+      caps: { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
       buildingQueue: [
         { buildingType: 'farmland', startTime: now - 14400000, endTime: now - 10800000 }, // 3h前完成(2h预计)
         { buildingType: 'market', startTime: now - 14400000, endTime: now - 7200000 },     // 2h前完成(4h预计)
@@ -149,7 +149,7 @@ describe('E2E-FLOW-1: 离线→建筑升级联动', () => {
     snapshotSys.createSnapshot({
       resources: { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 },
       productionRates: createProductionRates(),
-      caps: { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
+      caps: { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
       buildingQueue: [
         { buildingType: 'farmland', startTime: now - 7200000, endTime: now - 3600000 }, // 已完成
         { buildingType: 'market', startTime: now - 7200000, endTime: now + 7200000 },    // 未完成
@@ -170,7 +170,7 @@ describe('E2E-FLOW-1: 离线→建筑升级联动', () => {
     const offlineReward = sim.engine.getOfflineRewardSystem();
     const rates = createProductionRates();
     const current: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: null, gold: null, troops: null, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: null, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null };
 
     // 建筑系统修正
     const result = offlineReward.calculateFullReward(10 * HOUR_S, rates, current, caps, 0, 'building');
@@ -248,7 +248,7 @@ describe('E2E-FLOW-2: 离线→武将经验联动', () => {
       offlineSeconds: 8 * HOUR_S,
       productionRates: rates,
       currentResources: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 },
-      caps: { grain: null, gold: null, troops: null, mandate: null, techPoint: null, recruitToken: null },
+      caps: { grain: null, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null },
       bonusSources: { tech: 0.1, vip: 0.05 },
       vipLevel: 1,
       adUsedToday: 0,
@@ -293,7 +293,7 @@ describe('E2E-FLOW-3: 离线→资源产出联动', () => {
     const rates = createProductionRates();
     // 使用无上限caps确保不溢出
     const current: Resources = { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: null, gold: null, troops: null, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: null, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null };
 
     const result = offlineReward.calculateFullReward(10 * HOUR_S, rates, current, caps, 0, 'resource');
 
@@ -318,7 +318,7 @@ describe('E2E-FLOW-3: 离线→资源产出联动', () => {
 
     // 粮草接近上限
     const current: Resources = { grain: 49000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
 
     const result = offlineReward.calculateFullReward(10 * HOUR_S, rates, current, caps, 0, 'resource');
 
@@ -334,7 +334,7 @@ describe('E2E-FLOW-3: 离线→资源产出联动', () => {
     const rates = createProductionRates();
 
     const current: Resources = { grain: 0, gold: 999999, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
 
     const result = offlineReward.calculateFullReward(10 * HOUR_S, rates, current, caps, 0, 'resource');
 
@@ -350,7 +350,7 @@ describe('E2E-FLOW-3: 离线→资源产出联动', () => {
     const rates = createProductionRates();
 
     const current: Resources = { grain: 0, gold: 0, troops: 9900, mandate: 0, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
 
     const result = offlineReward.calculateFullReward(10 * HOUR_S, rates, current, caps, 0, 'resource');
 
@@ -366,7 +366,7 @@ describe('E2E-FLOW-3: 离线→资源产出联动', () => {
     const rates = createFullRates();
 
     const current: Resources = { grain: 0, gold: 0, troops: 0, mandate: 999, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
 
     const result = offlineReward.calculateFullReward(24 * HOUR_S, rates, current, caps, 0, 'resource');
 
@@ -381,7 +381,7 @@ describe('E2E-FLOW-3: 离线→资源产出联动', () => {
     const offlineReward = sim.engine.getOfflineRewardSystem();
     const rates = createProductionRates();
     const current: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: null, gold: null, troops: null, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: null, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null };
 
     const resultExpedition = offlineReward.calculateFullReward(10 * HOUR_S, rates, current, caps, 0, 'expedition');
     const resultResource = offlineReward.calculateFullReward(10 * HOUR_S, rates, current, caps, 0, 'resource');
@@ -412,7 +412,7 @@ describe('E2E-FLOW-3: 离线→资源产出联动', () => {
     // 用新产出计算离线收益应更多
     const offlineReward = sim.engine.getOfflineRewardSystem();
     const current: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: null, gold: null, troops: null, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: null, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null };
 
     const resultBefore = offlineReward.calculateFullReward(8 * HOUR_S, { grain: ratesBefore.grain, gold: ratesBefore.gold ?? 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 }, current, caps, 0, 'resource');
     const resultAfter = offlineReward.calculateFullReward(8 * HOUR_S, { grain: ratesAfter.grain, gold: ratesAfter.gold ?? 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 }, current, caps, 0, 'resource');
@@ -426,7 +426,7 @@ describe('E2E-FLOW-3: 离线→资源产出联动', () => {
     const offlineReward = sim.engine.getOfflineRewardSystem();
     const rates = createFullRates();
     const current: Resources = { grain: 49000, gold: 999, troops: 9900, mandate: 0, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
 
     const result = offlineReward.calculateFullReward(8 * HOUR_S, rates, current, caps, 0, 'resource');
 
@@ -520,7 +520,7 @@ describe('E2E-FLOW-4: 离线→贸易联动（商队继续运输）', () => {
     const offlineReward = sim.engine.getOfflineRewardSystem();
     const rates = createProductionRates();
     const current: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: null, gold: null, troops: null, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: null, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null };
 
     const resultTrade = offlineReward.calculateFullReward(10 * HOUR_S, rates, current, caps, 0, 'Trade');
     const resultResource = offlineReward.calculateFullReward(10 * HOUR_S, rates, current, caps, 0, 'resource');
@@ -551,7 +551,7 @@ describe('E2E-FLOW-4: 离线→贸易联动（商队继续运输）', () => {
     snapshotSys.createSnapshot({
       resources: { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 },
       productionRates: createProductionRates(),
-      caps: { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
+      caps: { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null },
       buildingQueue: [],
       techQueue: [],
       expeditionQueue: [],
@@ -610,7 +610,7 @@ describe('E2E-FLOW 交叉验证补充', () => {
     const offlineReward = sim.engine.getOfflineRewardSystem();
     const rates = createProductionRates();
     const current: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: null, gold: null, troops: null, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: null, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null };
 
     const result = offlineReward.calculateFullReward(10 * HOUR_S, rates, current, caps, 0, 'expedition');
 
@@ -641,7 +641,7 @@ describe('E2E-FLOW 交叉验证补充', () => {
 
     // 2. 计算离线收益
     const current: Resources = { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 10, recruitToken: 5 };
-    const caps = { grain: 50000, gold: null, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: 50000, gold: 2000, troops: 10000, mandate: null, techPoint: null, recruitToken: null };
 
     const result = offlineReward.calculateFullReward(12 * HOUR_S, rates, current, caps, 3, 'resource');
 
@@ -672,7 +672,7 @@ describe('E2E-FLOW 交叉验证补充', () => {
       offlineSeconds: 10 * HOUR_S,
       productionRates: rates,
       currentResources: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 },
-      caps: { grain: null, gold: null, troops: null, mandate: null, techPoint: null, recruitToken: null },
+      caps: { grain: null, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null },
       bonusSources: { tech: 0.1 },
       vipLevel: 0,
       adUsedToday: 0,
@@ -715,7 +715,7 @@ describe('E2E-FLOW 交叉验证补充', () => {
     // 用新产出计算离线收益
     const offlineReward = sim.engine.getOfflineRewardSystem();
     const current: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 };
-    const caps = { grain: null, gold: null, troops: null, mandate: null, techPoint: null, recruitToken: null };
+    const caps = { grain: null, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null };
 
     const resultLv1 = offlineReward.calculateFullReward(8 * HOUR_S,
       { grain: ratesLv1.grain, gold: ratesLv1.gold ?? 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0 },

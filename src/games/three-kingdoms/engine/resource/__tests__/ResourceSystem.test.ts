@@ -300,7 +300,7 @@ describe('ResourceSystem', () => {
         resources: { grain: 99999, gold: 0, troops: 0, mandate: 0 },
         lastSaveTime: Date.now(),
         productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0 },
-        caps: { grain: 2000, gold: null, troops: 500, mandate: null },
+        caps: { grain: 2000, gold: 2000, troops: 500, mandate: null },
         version: SAVE_VERSION,
       });
       expect(rs.getAmount('grain')).toBeLessThanOrEqual(2000);
@@ -311,7 +311,7 @@ describe('ResourceSystem', () => {
         resources: { grain: 100, gold: 50, troops: 25, mandate: 0 },
         lastSaveTime: Date.now(),
         productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0 },
-        caps: { grain: 2000, gold: null, troops: 500, mandate: null },
+        caps: { grain: 2000, gold: 2000, troops: 500, mandate: null },
         version: 999,
       });
       expect(spy).toHaveBeenCalledWith(expect.stringContaining('版本不匹配'));

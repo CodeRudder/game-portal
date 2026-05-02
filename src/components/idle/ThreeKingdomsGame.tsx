@@ -207,18 +207,21 @@ const ThreeKingdomsGame: React.FC = () => {
         upgradeEndTime: null,
       });
       return {
-        resources: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
-        productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
-        caps: { grain: 0, gold: null, troops: 0, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
+        resources: { grain: 0, gold: 0, ore: 0, wood: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
+        productionRates: { grain: 0, gold: 0, ore: 0, wood: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
+        caps: { grain: 0, gold: 0, ore: 0, wood: 0, troops: 0, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
         buildings: {
           castle: defaultBuildingState('castle'),
           farmland: defaultBuildingState('farmland'),
           market: defaultBuildingState('market'),
+          mine: defaultBuildingState('mine'),
+          lumberMill: defaultBuildingState('lumberMill'),
           barracks: defaultBuildingState('barracks'),
-          smithy: defaultBuildingState('smithy'),
+          workshop: defaultBuildingState('workshop'),
           academy: defaultBuildingState('academy'),
           clinic: defaultBuildingState('clinic'),
           wall: defaultBuildingState('wall'),
+          tavern: defaultBuildingState('tavern'),
         },
         calendar: {
           date: { year: 1, month: 1, day: 1, season: 'spring', eraName: '建安', yearInEra: 1 },
@@ -248,18 +251,21 @@ const ThreeKingdomsGame: React.FC = () => {
         upgradeEndTime: null,
       });
       return {
-        resources: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
-        productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
-        caps: { grain: 0, gold: null, troops: 0, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
+        resources: { grain: 0, gold: 0, ore: 0, wood: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
+        productionRates: { grain: 0, gold: 0, ore: 0, wood: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
+        caps: { grain: 0, gold: 0, ore: 0, wood: 0, troops: 0, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
         buildings: {
           castle: defaultBuildingState('castle'),
           farmland: defaultBuildingState('farmland'),
           market: defaultBuildingState('market'),
+          mine: defaultBuildingState('mine'),
+          lumberMill: defaultBuildingState('lumberMill'),
           barracks: defaultBuildingState('barracks'),
-          smithy: defaultBuildingState('smithy'),
+          workshop: defaultBuildingState('workshop'),
           academy: defaultBuildingState('academy'),
           clinic: defaultBuildingState('clinic'),
           wall: defaultBuildingState('wall'),
+          tavern: defaultBuildingState('tavern'),
         },
         calendar: {
           date: { year: 1, month: 1, day: 1, season: 'spring', eraName: '建安', yearInEra: 1 },

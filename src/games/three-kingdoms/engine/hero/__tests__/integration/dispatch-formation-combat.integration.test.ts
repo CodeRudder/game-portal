@@ -226,7 +226,7 @@ describe('派驻 → 编队 → 战斗 联动集成测试', () => {
       const generals = sim.getGenerals();
       const heroId = generals[0].id;
 
-      dispatch.dispatchHero(heroId, 'smithy' as BuildingType);
+      dispatch.dispatchHero(heroId, 'workshop' as BuildingType);
       const powerBefore = sim.engine.hero.calculatePower(
         sim.engine.hero.getGeneral(heroId)!,
       );

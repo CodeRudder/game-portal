@@ -350,8 +350,8 @@ describe('HeroDispatchSystem — attack 加成专项', () => {
         baseStats: { attack: 10, defense: 10, intelligence: 10, speed: 10 },
       });
 
-      system.dispatchHero('hero_multi', 'smithy');
-      const bonus1 = system.getDispatchBonus('smithy');
+      system.dispatchHero('hero_multi', 'workshop');
+      const bonus1 = system.getDispatchBonus('workshop');
 
       // 第一次升级
       generalMap['hero_multi'] = createMockGeneral({
@@ -581,7 +581,7 @@ describe('HeroDispatchSystem — attack 加成专项', () => {
         { id: 'tc3', level: 50, quality: 'LEGENDARY', attack: 500, building: 'academy' },
         { id: 'tc4', level: 25, quality: 'EPIC', attack: 250, building: 'barracks' },
         { id: 'tc5', level: 1, quality: 'LEGENDARY', attack: 0, building: 'castle' },
-        { id: 'tc6', level: 50, quality: 'COMMON', attack: 0, building: 'smithy' },
+        { id: 'tc6', level: 50, quality: 'COMMON', attack: 0, building: 'workshop' },
       ];
 
       for (const tc of testCases) {

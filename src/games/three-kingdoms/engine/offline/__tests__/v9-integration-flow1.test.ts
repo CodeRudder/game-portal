@@ -42,7 +42,7 @@ function makeRates(overrides: Partial<ProductionRate> = {}): ProductionRate {
 }
 
 function makeCaps(overrides: Partial<ResourceCap> = {}): ResourceCap {
-  return { grain: 5000, gold: null, troops: 1000, mandate: null, techPoint: null, recruitToken: null, skillBook: null, ...overrides };
+  return { grain: 5000, gold: 2000, troops: 1000, mandate: null, techPoint: null, recruitToken: null, skillBook: null, ...overrides };
 }
 
 // ─────────────────────────────────────────────
@@ -256,7 +256,7 @@ describe('v9 §7.1 离线收益→资源→仓库联动', () => {
   it('有上限资源(粮草)截断至仓库容量', () => {
     const earned: Resources = { grain: 3000, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
     const current: Resources = { grain: 4000, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
-    const caps: ResourceCap = { grain: 5000, gold: null, troops: 1000, mandate: null, techPoint: null };
+    const caps: ResourceCap = { grain: 5000, gold: 2000, troops: 1000, mandate: null, techPoint: null };
     const { cappedEarned, overflowResources } = applyOverflowRules(earned, current, caps);
     expect(cappedEarned.grain).toBe(1000); // 5000 - 4000 = 1000 space
     expect(overflowResources.grain).toBe(2000); // 3000 - 1000 = 2000 overflow
@@ -265,7 +265,7 @@ describe('v9 §7.1 离线收益→资源→仓库联动', () => {
   it('兵力截断至兵营容量', () => {
     const earned: Resources = { grain: 0, gold: 0, troops: 800, mandate: 0, techPoint: 0 };
     const current: Resources = { grain: 0, gold: 0, troops: 500, mandate: 0, techPoint: 0 };
-    const caps: ResourceCap = { grain: 5000, gold: null, troops: 1000, mandate: null, techPoint: null };
+    const caps: ResourceCap = { grain: 5000, gold: 2000, troops: 1000, mandate: null, techPoint: null };
     const { cappedEarned, overflowResources } = applyOverflowRules(earned, current, caps);
     expect(cappedEarned.troops).toBe(500); // 1000 - 500 = 500 space
     expect(overflowResources.troops).toBe(300);
@@ -275,7 +275,7 @@ describe('v9 §7.1 离线收益→资源→仓库联动', () => {
     const system = new OfflineRewardSystem();
     const rates = makeRates({ grain: 100, gold: 50 });
     const current: Resources = { grain: 4900, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
-    const caps = makeCaps({ grain: 5000, gold: null, troops: 1000, mandate: null, techPoint: null });
+    const caps = makeCaps({ grain: 5000, gold: 2000, troops: 1000, mandate: null, techPoint: null });
 
     const result = system.calculateFullReward(10 * HOUR_S, rates, current, caps, 0, 'resource');
 

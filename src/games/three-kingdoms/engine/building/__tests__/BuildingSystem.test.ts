@@ -42,7 +42,7 @@ describe('BuildingSystem', () => {
   // 1. 初始化
   // ═══════════════════════════════════════════
   describe('初始化', () => {
-    it('8座建筑全部存在', () => {
+    it('11座建筑全部存在', () => {
       const all = sys.getAllBuildings();
       expect(Object.keys(all)).toHaveLength(8);
       for (const t of BUILDING_TYPES) expect(all[t]).toBeDefined();
@@ -225,7 +225,7 @@ describe('BuildingSystem', () => {
       buildings.barracks = { type: 'barracks', level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null };
       sys.deserialize({ version: BUILDING_SAVE_VERSION, buildings });
 
-      expect(sys.getBuilding('smithy').status).toBe('idle');
+      expect(sys.getBuilding('workshop').status).toBe('idle');
       expect(sys.getBuilding('academy').status).toBe('idle');
     });
 

@@ -61,7 +61,7 @@ export function batchUpgrade(
 ): BatchUpgradeResult {
   const succeeded: Array<{ type: BuildingType; cost: UpgradeCost }> = [];
   const failed: Array<{ type: BuildingType; reason: string }> = [];
-  const totalCost: UpgradeCost = { grain: 0, gold: 0, troops: 0, timeSeconds: 0 };
+  const totalCost: UpgradeCost = { grain: 0, gold: 0, ore: 0, wood: 0, troops: 0, timeSeconds: 0 };
   let remainingGrain = resources.grain;
   let remainingGold = resources.gold;
   let remainingTroops = resources.troops;
@@ -70,6 +70,8 @@ export function batchUpgrade(
     const currentResources: Resources = {
       grain: remainingGrain,
       gold: remainingGold,
+      ore: resources.ore,
+      wood: resources.wood,
       troops: remainingTroops,
       mandate: resources.mandate,
       techPoint: resources.techPoint,

@@ -45,9 +45,9 @@ export function recommendUpgradePath(
 ): Array<{ type: BuildingType; reason: string }> {
   type Recommendation = { type: BuildingType; reason: string };
 
-  const newbieOrder: BuildingType[] = ['castle', 'farmland', 'market', 'barracks', 'smithy', 'academy', 'clinic', 'wall'];
-  const developmentOrder: BuildingType[] = ['castle', 'smithy', 'academy', 'barracks', 'farmland', 'market', 'wall', 'clinic'];
-  const lateOrder: BuildingType[] = ['castle', 'wall', 'clinic', 'barracks', 'smithy', 'academy', 'farmland', 'market'];
+  const newbieOrder: BuildingType[] = ['castle', 'farmland', 'market', 'barracks', 'workshop', 'academy', 'clinic', 'wall'];
+  const developmentOrder: BuildingType[] = ['castle', 'workshop', 'academy', 'barracks', 'farmland', 'market', 'wall', 'clinic'];
+  const lateOrder: BuildingType[] = ['castle', 'wall', 'clinic', 'barracks', 'workshop', 'academy', 'farmland', 'market'];
 
   const orderMap: Record<string, BuildingType[]> = {
     newbie: newbieOrder,
@@ -60,11 +60,14 @@ export function recommendUpgradePath(
     castle: '主城升级解锁新建筑并提升全资源加成',
     farmland: '农田提升粮草产出，保障基础资源',
     market: '市集提升铜钱产出，加速发展',
+    mine: '矿场提升矿石产出，支撑装备锻造',
+    lumberMill: '伐木场提升木材产出，支撑建筑升级',
     barracks: '兵营提升兵力产出，增强军力',
-    smithy: '铁匠铺强化装备，提升武将战力',
+    workshop: '工坊提升锻造效率，强化装备品质',
     academy: '书院加速科技研究，解锁高级科技',
     clinic: '医馆提升恢复速率，减少战损',
     wall: '城墙提升城防值，增强防御能力',
+    tavern: '酒馆提升招募概率，获取强力武将',
   };
 
   const result: Recommendation[] = [];

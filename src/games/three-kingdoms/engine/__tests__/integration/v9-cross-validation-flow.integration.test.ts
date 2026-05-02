@@ -48,7 +48,7 @@ function createSnapshotParams() {
   return {
     resources: { grain: 1000, gold: 500, troops: 100, mandate: 50, techPoint: 0, recruitToken: 0 },
     productionRates: createProductionRates(),
-    caps: { grain: 50000, gold: null as number | null, troops: 10000, mandate: null as number | null, techPoint: null as number | null, recruitToken: null as number | null },
+    caps: { grain: 50000, gold: 2000 as number | null, troops: 10000, mandate: null as number | null, techPoint: null as number | null, recruitToken: null as number | null },
     buildingQueue: [],
     techQueue: [],
     expeditionQueue: [],
@@ -172,7 +172,7 @@ describe('v9.0 离线收益 — §7.8 资源保护→溢出联动', () => {
     if (typeof offlineReward.applyCapAndOverflow === 'function') {
       const earned = { grain: 100000, gold: 50000, troops: 10000, mandate: 0, techPoint: 0, recruitToken: 0 };
       const currentResources = { grain: 40000, gold: 10000, troops: 5000, mandate: 0, techPoint: 0, recruitToken: 0 };
-      const caps = { grain: 50000, gold: null as number | null, troops: 10000, mandate: null as number | null, techPoint: null as number | null, recruitToken: null as number | null };
+      const caps = { grain: 50000, gold: 2000 as number | null, troops: 10000, mandate: null as number | null, techPoint: null as number | null, recruitToken: null as number | null };
       const result = offlineReward.applyCapAndOverflow(earned, currentResources, caps);
       expect(result).toBeDefined();
       // 有上限资源应被截断

@@ -41,7 +41,7 @@ const RESOURCE_TYPES: readonly ResourceType[] = [
 ];
 
 const BUILDING_TYPES: readonly string[] = [
-  'castle', 'farmland', 'market', 'barracks', 'smithy', 'academy', 'clinic', 'wall',
+  'castle', 'farmland', 'market', 'barracks', 'workshop', 'academy', 'clinic', 'wall',
 ];
 
 /** 检查数值有效 */

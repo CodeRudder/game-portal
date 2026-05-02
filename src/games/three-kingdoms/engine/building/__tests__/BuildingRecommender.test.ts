@@ -31,7 +31,7 @@ function makeState(type: BuildingType, overrides: Partial<BuildingState> = {}): 
 
 /** 创建全部建筑快照（所有建筑初始解锁，Lv1） */
 function makeAllBuildings(overrides: Partial<Record<BuildingType, Partial<BuildingState>>> = {}): BuildingSnapshot {
-  const allTypes: BuildingType[] = ['castle', 'farmland', 'market', 'barracks', 'smithy', 'academy', 'clinic', 'wall'];
+  const allTypes: BuildingType[] = ['castle', 'farmland', 'market', 'barracks', 'workshop', 'academy', 'clinic', 'wall'];
   const result = {} as BuildingSnapshot;
   for (const t of allTypes) {
     result[t] = makeState(t, overrides[t]);
@@ -91,8 +91,8 @@ describe('BuildingRecommender — recommendUpgradePath', () => {
       const result = recommendUpgradePath(buildings, 'development');
       const types = result.map((r) => r.type);
 
-      if (types.includes('smithy') && types.includes('barracks')) {
-        expect(types.indexOf('smithy')).toBeLessThan(types.indexOf('barracks'));
+      if (types.includes('workshop') && types.includes('barracks')) {
+        expect(types.indexOf('workshop')).toBeLessThan(types.indexOf('barracks'));
       }
     });
   });
@@ -238,7 +238,7 @@ describe('BuildingRecommender — getUpgradeRouteRecommendation', () => {
     const resultNoResources = getUpgradeRouteRecommendation(buildings, defaultGetProduction, defaultGetUpgradeCost);
 
     // 传 resources 但不足以支付
-    const resources = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
+    const resources = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
     const resultWithResources = getUpgradeRouteRecommendation(buildings, defaultGetProduction, defaultGetUpgradeCost, resources);
 
     // 找到非主城建筑对比优先级

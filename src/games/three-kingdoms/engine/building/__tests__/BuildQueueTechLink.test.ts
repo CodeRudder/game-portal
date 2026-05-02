@@ -47,7 +47,7 @@ function makeUnlockedSave(
     farmland: { level: 3, status: 'idle', upgradeStartTime: null, upgradeEndTime: null },
     market: { level: 2, status: 'idle', upgradeStartTime: null, upgradeEndTime: null },
     barracks: { level: 2, status: 'idle', upgradeStartTime: null, upgradeEndTime: null },
-    smithy: { level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null },
+    workshop: { level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null },
     academy: { level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null },
     clinic: { level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null },
     wall: { level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null },
@@ -785,12 +785,12 @@ describe('P0-3: 科技联动加成', () => {
 
     it('registerLinks 批量注册', () => {
       const links: TechLinkEffect[] = [
-        { id: 'batch_1', techId: 't1', target: 'building', targetSub: 'smithy', description: '批量1', value: 10 },
+        { id: 'batch_1', techId: 't1', target: 'building', targetSub: 'workshop', description: '批量1', value: 10 },
         { id: 'batch_2', techId: 't2', target: 'building', targetSub: 'clinic', description: '批量2', value: 15 },
       ];
       linkSys.registerLinks(links);
       linkSys.syncCompletedTechIds(['t1', 't2']);
-      expect(linkSys.getTechBonus('building', 'smithy')).toBe(10);
+      expect(linkSys.getTechBonus('building', 'workshop')).toBe(10);
       expect(linkSys.getTechBonus('building', 'clinic')).toBe(15);
     });
 

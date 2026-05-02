@@ -26,12 +26,12 @@ import {
 
 /** 创建一个全零的 Resources 对象 */
 export function zeroResources(): Resources {
-  return { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
+  return { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
 }
 
 /** 克隆 Resources */
 export function cloneResources(r: Resources): Resources {
-  return { grain: r.grain, gold: r.gold, troops: r.troops, mandate: r.mandate, techPoint: r.techPoint, recruitToken: r.recruitToken, skillBook: r.skillBook };
+  return { grain: r.grain, gold: r.gold, ore: r.ore, wood: r.wood, troops: r.troops, mandate: r.mandate, techPoint: r.techPoint, recruitToken: r.recruitToken, skillBook: r.skillBook };
 }
 
 // ─────────────────────────────────────────────

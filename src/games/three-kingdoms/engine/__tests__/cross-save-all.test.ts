@@ -83,7 +83,7 @@ describe('R12 交叉审查 — 存档↔全系统一致性', () => {
   it('保存/加载后 BuildingSystem 建筑等级一致', () => {
     const played = createPlayedEngine();
 
-    const buildingTypes: BuildingType[] = ['castle', 'farmland', 'market', 'barracks', 'smithy', 'academy', 'clinic', 'wall'];
+    const buildingTypes: BuildingType[] = ['castle', 'farmland', 'market', 'barracks', 'workshop', 'academy', 'clinic', 'wall'];
     const levelsBefore: Record<string, number> = {};
     const statusesBefore: Record<string, string> = {};
 

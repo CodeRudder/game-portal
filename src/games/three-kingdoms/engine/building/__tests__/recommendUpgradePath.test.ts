@@ -28,8 +28,8 @@ describe('C19 建筑升级路线推荐 (recommendUpgradePath)', () => {
     const result = bs.recommendUpgradePath('development');
     expect(result.length).toBeGreaterThan(1);
     expect(result[0].type).toBe('castle');
-    const smithyRec = result.find((r) => r.type === 'smithy');
-    expect(smithyRec).toBeDefined();
+    const workshopRec = result.find((r) => r.type === 'workshop');
+    expect(workshopRec).toBeDefined();
   });
 
   it('late 阶段城墙在推荐列表中（如果已解锁）', () => {

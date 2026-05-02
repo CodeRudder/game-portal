@@ -33,6 +33,8 @@ import type { ResourceType } from '../../shared/types';
 export const RESOURCE_TYPES: readonly ResourceType[] = [
   'grain',
   'gold',
+  'ore',
+  'wood',
   'troops',
   'mandate',
   'techPoint',
@@ -44,6 +46,8 @@ export const RESOURCE_TYPES: readonly ResourceType[] = [
 export const RESOURCE_LABELS: Record<ResourceType, string> = {
   grain: '粮草',
   gold: '铜钱',
+  ore: '矿石',
+  wood: '木材',
   troops: '兵力',
   mandate: '天命',
   techPoint: '科技点',
@@ -55,6 +59,8 @@ export const RESOURCE_LABELS: Record<ResourceType, string> = {
 export const RESOURCE_COLORS: Record<ResourceType, string> = {
   grain: '#7EC850',
   gold: '#C9A84C',
+  ore: '#8B7355',
+  wood: '#6B8E23',
   troops: '#B8423A',
   mandate: '#7B5EA7',
   techPoint: '#4A90D9',
@@ -97,6 +103,8 @@ export type Bonuses = Partial<Record<BonusType, number>>;
 export interface ResourceCost {
   grain?: number;
   gold?: number;
+  ore?: number;
+  wood?: number;
   troops?: number;
   mandate?: number;
   techPoint?: number;

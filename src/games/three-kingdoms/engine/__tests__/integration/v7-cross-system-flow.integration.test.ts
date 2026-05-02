@@ -350,7 +350,7 @@ describe('v7.0 R4补充: 跨系统联动深度流程', () => {
         { npc: '商人', building: 'market', castleLevel: 5 },
         { npc: '学者', building: 'academy', castleLevel: 8 },
         { npc: '斥候', building: null, castleLevel: 10 },
-        { npc: '流浪工匠', building: 'smithy', castleLevel: 0 },
+        { npc: '流浪工匠', building: 'workshop', castleLevel: 0 },
       ];
 
       // 验证每个NPC有解锁条件

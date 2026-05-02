@@ -163,7 +163,7 @@ describe('§2 剧情事件集成测试', () => {
   describe('§2.2 E2~E8剧情排队与触发', () => {
     it('8段剧情事件应全部有定义', () => {
       const events = bundle.storyPlayer.getAllStoryEvents();
-      expect(events.length).toBe(8);
+      expect(events.length).toBe(11);
       const ids = events.map(e => e.eventId);
       expect(ids).toContain('e1_peach_garden');
       expect(ids).toContain('e2_yellow_turban');

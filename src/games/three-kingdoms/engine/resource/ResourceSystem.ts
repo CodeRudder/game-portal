@@ -48,7 +48,7 @@ import { gameLog } from '../../core/logger';
 
 /** 创建默认上限 */
 function defaultCaps(): ResourceCap {
-  return { grain: INITIAL_CAPS.grain, gold: null, troops: INITIAL_CAPS.troops, mandate: null, techPoint: null, recruitToken: null, skillBook: null };
+  return { grain: INITIAL_CAPS.grain, gold: INITIAL_CAPS.gold, ore: INITIAL_CAPS.ore, wood: INITIAL_CAPS.wood, troops: INITIAL_CAPS.troops, mandate: null, techPoint: null, recruitToken: null, skillBook: null };
 }
 
 // ─────────────────────────────────────────────
@@ -286,6 +286,8 @@ export class ResourceSystem implements ISubsystem {
       techPoint: 0,
       recruitToken: 0,
       skillBook: 0,
+      ore: 0,
+      wood: 0,
     };
 
     // 累加各资源类型的产出值（已由 BuildingSystem 从 levelTable 查表计算）

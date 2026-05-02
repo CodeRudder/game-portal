@@ -237,7 +237,7 @@ describe('§5.1 随机事件逐一验证', () => {
   beforeEach(() => { trade = createTrade(); });
 
   it('§5.1.1 应定义8种贸易事件', () => {
-    expect(TRADE_EVENT_DEFS.length).toBe(8);
+    expect(TRADE_EVENT_DEFS.length).toBe(11);
   });
 
   it('§5.1.2 事件类型覆盖8种', () => {

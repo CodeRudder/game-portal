@@ -48,7 +48,7 @@ describe('OfflineSnapshotSystem', () => {
       const snap = system.createSnapshot({
         resources: { grain: 100, gold: 50, troops: 10, mandate: 5 },
         productionRates: { grain: 10, gold: 5, troops: 1, mandate: 0 },
-        caps: { grain: 5000, gold: null, troops: 500, mandate: null },
+        caps: { grain: 5000, gold: 2000, troops: 500, mandate: null },
       });
 
       expect(snap.resources.grain).toBe(100);
@@ -60,7 +60,7 @@ describe('OfflineSnapshotSystem', () => {
       const snap = system.createSnapshot({
         resources: { grain: 0, gold: 0, troops: 0, mandate: 0 },
         productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0 },
-        caps: { grain: 0, gold: null, troops: 0, mandate: null },
+        caps: { grain: 0, gold: 2000, troops: 0, mandate: null },
         buildingQueue: [
           { buildingType: 'farmland', startTime: NOW, endTime: NOW + 3600000 },
         ],
@@ -89,7 +89,7 @@ describe('OfflineSnapshotSystem', () => {
       system.createSnapshot({
         resources: { grain: 0, gold: 0, troops: 0, mandate: 0 },
         productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0 },
-        caps: { grain: 0, gold: null, troops: 0, mandate: null },
+        caps: { grain: 0, gold: 2000, troops: 0, mandate: null },
       });
       expect(system.getSnapshot()).not.toBeNull();
     });
@@ -108,7 +108,7 @@ describe('OfflineSnapshotSystem', () => {
       system.createSnapshot({
         resources: { grain: 0, gold: 0, troops: 0, mandate: 0 },
         productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0 },
-        caps: { grain: 0, gold: null, troops: 0, mandate: null },
+        caps: { grain: 0, gold: 2000, troops: 0, mandate: null },
       });
       expect(system.isSnapshotValid()).toBe(true);
     });
@@ -127,7 +127,7 @@ describe('OfflineSnapshotSystem', () => {
       system.createSnapshot({
         resources: { grain: 0, gold: 0, troops: 0, mandate: 0 },
         productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0 },
-        caps: { grain: 0, gold: null, troops: 0, mandate: null },
+        caps: { grain: 0, gold: 2000, troops: 0, mandate: null },
       });
       expect(system.getOfflineSeconds()).toBeGreaterThanOrEqual(0);
     });
@@ -144,7 +144,7 @@ describe('OfflineSnapshotSystem', () => {
       system.createSnapshot({
         resources: { grain: 0, gold: 0, troops: 0, mandate: 0 },
         productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0 },
-        caps: { grain: 0, gold: null, troops: 0, mandate: null },
+        caps: { grain: 0, gold: 2000, troops: 0, mandate: null },
         buildingQueue: [
           { buildingType: 'farmland', startTime: NOW, endTime: NOW + 1000 }, // 已完成
           { buildingType: 'castle', startTime: NOW, endTime: futureTime },    // 未完成
@@ -206,7 +206,7 @@ describe('OfflineSnapshotSystem', () => {
       system.createSnapshot({
         resources: { grain: 0, gold: 0, troops: 0, mandate: 0 },
         productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0 },
-        caps: { grain: 0, gold: null, troops: 0, mandate: null },
+        caps: { grain: 0, gold: 2000, troops: 0, mandate: null },
       });
       system.clearSnapshot();
       expect(system.getSnapshot()).toBeNull();
@@ -255,7 +255,7 @@ describe('OfflineSnapshotSystem', () => {
       sys.createSnapshot({
         resources: { grain: 0, gold: 0, troops: 0, mandate: 0 },
         productionRates: { grain: 0, gold: 0, troops: 0, mandate: 0 },
-        caps: { grain: 0, gold: null, troops: 0, mandate: null },
+        caps: { grain: 0, gold: 2000, troops: 0, mandate: null },
       });
       expect(storage.setItem).toHaveBeenCalled();
     });

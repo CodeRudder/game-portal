@@ -262,6 +262,8 @@ export class BuildingSystem implements ISubsystem {
     const refund: UpgradeCost = {
       grain: Math.floor(cost.grain * CANCEL_REFUND_RATIO),
       gold: Math.floor(cost.gold * CANCEL_REFUND_RATIO),
+      ore: Math.floor(cost.ore * CANCEL_REFUND_RATIO),
+      wood: Math.floor(cost.wood * CANCEL_REFUND_RATIO),
       troops: Math.floor(cost.troops * CANCEL_REFUND_RATIO),
       timeSeconds: 0,
     };

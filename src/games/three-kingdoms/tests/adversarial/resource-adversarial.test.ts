@@ -49,8 +49,11 @@ function createResource(): ResourceSystem {
 
 function fillResources(sys: ResourceSystem, amounts?: Partial<Resources>): void {
   sys.setCap('grain', null);
+  sys.setCap('gold', null);
+  sys.setCap('ore', null);
+  sys.setCap('wood', null);
   sys.setCap('troops', null);
-  const r = amounts ?? { grain: 99999, gold: 99999, troops: 99999, mandate: 99999, techPoint: 99999, recruitToken: 99999, skillBook: 99999 };
+  const r = amounts ?? { grain: 99999, gold: 99999, ore: 99999, wood: 99999, troops: 99999, mandate: 99999, techPoint: 99999, recruitToken: 99999, skillBook: 99999 };
   for (const type of RESOURCE_TYPES) {
     if (r[type] !== undefined) sys.setResource(type, r[type]!);
   }
@@ -81,11 +84,14 @@ describe('F-Error: 资源初始化异常', () => {
     for (const type of RESOURCE_TYPES) expect(Number.isFinite(rates[type])).toBe(true);
   });
 
-  it('初始上限 grain/troops 为正数，其余为 null', () => {
+  it('初始上限 grain/gold/ore/wood/troops 为正数，其余为 null', () => {
     const caps = createResource().getCaps();
     expect(caps.grain).toBeGreaterThan(0);
+    expect(caps.gold).toBeGreaterThan(0);
+    expect(caps.ore).toBeGreaterThan(0);
+    expect(caps.wood).toBeGreaterThan(0);
     expect(caps.troops).toBeGreaterThan(0);
-    for (const t of ['gold', 'mandate', 'techPoint', 'recruitToken', 'skillBook'] as const) expect(caps[t]).toBeNull();
+    for (const t of ['mandate', 'techPoint', 'recruitToken', 'skillBook'] as const) expect(caps[t]).toBeNull();
   });
 
   it('未调用 init 时系统仍可使用（deps 为 null）', () => {
@@ -237,8 +243,8 @@ describe('F-Cross: 上限联动与溢出事件', () => {
   });
 
   it('无上限资源不截断', () => {
-    sys.addResource('gold', 999999);
-    expect(sys.getAmount('gold')).toBeGreaterThanOrEqual(999999);
+    sys.addResource('mandate', 999999);
+    expect(sys.getAmount('mandate')).toBeGreaterThanOrEqual(999999);
   });
 
   it('updateCaps 后溢出资源被截断', () => {
@@ -370,7 +376,7 @@ describe('F-Lifecycle: 系统重置', () => {
     sys.reset();
     expect(sys.getResources()).toEqual(cloneResources(INITIAL_RESOURCES));
     expect(sys.getProductionRates()).toEqual({ ...INITIAL_PRODUCTION_RATES });
-    expect(sys.getCaps()).toEqual({ grain: INITIAL_CAPS.grain, gold: null, troops: INITIAL_CAPS.troops, mandate: null, techPoint: null, recruitToken: null, skillBook: null });
+    expect(sys.getCaps()).toEqual({ grain: INITIAL_CAPS.grain, gold: 2000, troops: INITIAL_CAPS.troops, mandate: null, techPoint: null, recruitToken: null, skillBook: null });
   });
 });
 
@@ -418,9 +424,9 @@ describe('F-Boundary: 上限截断边界', () => {
     expect(isAtCap(sys, 'grain')).toBe(false);
     sys.setResource('grain', cap);
     expect(isAtCap(sys, 'grain')).toBe(true);
-    expect(isAtCap(sys, 'gold')).toBe(false);
-    sys.addResource('gold', 999999);
-    expect(isAtCap(sys, 'gold')).toBe(false);
+    expect(isAtCap(sys, 'mandate')).toBe(false);
+    sys.addResource('mandate', 999999);
+    expect(isAtCap(sys, 'mandate')).toBe(false);
   });
 });
 
@@ -542,7 +548,7 @@ describe('F-Boundary: 容量警告边界', () => {
   });
 
   it('无上限资源返回 null，getWarningLevel NaN/Infinity 返回 safe', () => {
-    expect(sys.getCapWarning('gold')).toBeNull();
+    expect(sys.getCapWarning('mandate')).toBeNull();
     expect(getWarningLevel(NaN)).toBe('safe');
     expect(getWarningLevel(Infinity)).toBe('safe');
   });
@@ -773,7 +779,7 @@ describe('F-Boundary: 辅助函数边界', () => {
 
   it('calculateCapWarnings 无上限时返回空，calculateCapWarning 无上限返回 null', () => {
     const r = zeroResources();
-    const caps = { grain: null, gold: null, troops: null, mandate: null, techPoint: null, recruitToken: null, skillBook: null };
+    const caps = { grain: null, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null, skillBook: null };
     expect(calculateCapWarnings(r, caps)).toEqual([]);
     for (const type of RESOURCE_TYPES) expect(calculateCapWarning(type, r, caps)).toBeNull();
   });

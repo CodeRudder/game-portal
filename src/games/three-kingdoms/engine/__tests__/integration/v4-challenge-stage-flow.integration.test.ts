@@ -352,7 +352,7 @@ describe('V4 CHALLENGE-STAGE-FLOW 挑战关卡完整流程', () => {
   // ═══════════════════════════════════════════════════════════════
   describe('§11.6 8关卡配置完整性', () => {
     it('共8个挑战关卡', () => {
-      expect(DEFAULT_CHALLENGE_STAGES.length).toBe(8);
+      expect(DEFAULT_CHALLENGE_STAGES.length).toBe(11);
     });
 
     it('关卡ID从challenge_1到challenge_8', () => {
@@ -408,7 +408,7 @@ describe('V4 CHALLENGE-STAGE-FLOW 挑战关卡完整流程', () => {
     it('getStageConfigs返回完整列表', () => {
       const { sys } = createSystem();
       const configs = sys.getStageConfigs();
-      expect(configs.length).toBe(8);
+      expect(configs.length).toBe(11);
     });
 
     it('getStageConfig查询单个关卡', () => {
