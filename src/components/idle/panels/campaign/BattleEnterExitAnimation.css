@@ -1,0 +1,350 @@
+/**
+ * BattleEnterExitAnimation — 战斗进入/退出动画样式
+ *
+ * 三国古风视觉风格：水墨+铜金，无neon/glow
+ * 动画时长1-2秒，不循环不脉冲
+ */
+
+/* ═══════════════════════════════════════════
+   公共容器
+   ═══════════════════════════════════════════ */
+
+.tk-battle-anim {
+  position: absolute;
+  inset: 0;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════
+   进入动画
+   ═══════════════════════════════════════════ */
+
+.tk-battle-anim--enter {
+  animation: tk-anim-enter-fade 1.8s ease-out forwards;
+}
+
+@keyframes tk-anim-enter-fade {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  75% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* 背景 */
+.tk-battle-anim__bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(10, 14, 20, 0.95) 0%, rgba(17, 24, 32, 0.9) 50%, rgba(10, 14, 20, 0.95) 100%);
+  animation: tk-anim-bg-in 0.6s ease-out;
+}
+
+@keyframes tk-anim-bg-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 武将滑入容器 */
+.tk-battle-anim__ally-slide,
+.tk-battle-anim__enemy-slide {
+  display: flex;
+  gap: 16px;
+  z-index: 2;
+  position: relative;
+}
+
+/* 武将名称 */
+.tk-battle-anim__hero {
+  display: inline-block;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: var(--tk-font-title, serif);
+  padding: 6px 14px;
+  border-radius: 4px;
+  letter-spacing: 2px;
+  opacity: 0;
+  animation: tk-anim-hero-slide-in 0.5s ease-out forwards;
+}
+
+.tk-battle-anim__hero--ally {
+  color: #8bc34a;
+  background: rgba(126, 200, 80, 0.08);
+  border: 1px solid rgba(126, 200, 80, 0.2);
+  animation-name: tk-anim-hero-slide-left;
+}
+
+.tk-battle-anim__hero--enemy {
+  color: #e88;
+  background: rgba(200, 80, 80, 0.08);
+  border: 1px solid rgba(200, 80, 80, 0.2);
+  animation-name: tk-anim-hero-slide-right;
+}
+
+@keyframes tk-anim-hero-slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes tk-anim-hero-slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* VS 分隔 */
+.tk-battle-anim__vs {
+  font-size: 28px;
+  font-weight: 700;
+  font-family: var(--tk-font-title, serif);
+  color: var(--tk-gold, #c8a84c);
+  letter-spacing: 4px;
+  margin: 16px 0;
+  z-index: 2;
+  position: relative;
+  opacity: 0;
+  animation: tk-anim-vs-pop 0.4s ease-out 0.4s forwards;
+}
+
+@keyframes tk-anim-vs-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 回合文字 */
+.tk-battle-anim__turn-text {
+  font-size: 18px;
+  font-weight: 600;
+  font-family: var(--tk-font-title, serif);
+  color: var(--tk-gold-light, #d4a853);
+  letter-spacing: 4px;
+  z-index: 2;
+  position: relative;
+  opacity: 0;
+  animation: tk-anim-turn-in 0.4s ease-out 0.7s forwards;
+}
+
+@keyframes tk-anim-turn-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   退出动画 — 公共
+   ═══════════════════════════════════════════ */
+
+.tk-battle-anim--exit {
+  animation: tk-anim-exit-fade 2s ease-out forwards;
+}
+
+@keyframes tk-anim-exit-fade {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* 退出背景 */
+.tk-battle-anim__exit-bg {
+  position: absolute;
+  inset: 0;
+  animation: tk-anim-exit-bg-in 0.5s ease-out;
+}
+
+@keyframes tk-anim-exit-bg-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── 胜利背景 ── */
+.tk-battle-anim__exit-bg--victory {
+  background: linear-gradient(
+    180deg,
+    rgba(40, 35, 15, 0.92) 0%,
+    rgba(50, 42, 12, 0.88) 40%,
+    rgba(35, 30, 10, 0.92) 100%
+  );
+}
+
+/* ── 失败背景 ── */
+.tk-battle-anim__exit-bg--defeat {
+  background: linear-gradient(
+    180deg,
+    rgba(15, 10, 10, 0.95) 0%,
+    rgba(25, 12, 12, 0.92) 40%,
+    rgba(10, 8, 8, 0.95) 100%
+  );
+}
+
+/* ── 平局背景 ── */
+.tk-battle-anim__exit-bg--draw {
+  background: linear-gradient(
+    180deg,
+    rgba(18, 20, 25, 0.93) 0%,
+    rgba(22, 25, 32, 0.9) 40%,
+    rgba(15, 18, 22, 0.93) 100%
+  );
+}
+
+/* 退出文字 */
+.tk-battle-anim__exit-text {
+  font-size: 36px;
+  font-weight: 700;
+  font-family: var(--tk-font-title, serif);
+  letter-spacing: 8px;
+  z-index: 2;
+  position: relative;
+  opacity: 0;
+  animation: tk-anim-exit-text-in 0.6s ease-out 0.3s forwards;
+}
+
+@keyframes tk-anim-exit-text-in {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ── 胜利文字 ── */
+.tk-battle-anim__exit-text--victory {
+  color: var(--tk-gold, #c8a84c);
+  text-shadow: 0 2px 12px rgba(200, 168, 76, 0.35);
+}
+
+/* ── 失败文字 ── */
+.tk-battle-anim__exit-text--defeat {
+  color: #b04040;
+  text-shadow: 0 2px 8px rgba(160, 50, 50, 0.3);
+}
+
+/* ── 平局文字 ── */
+.tk-battle-anim__exit-text--draw {
+  color: var(--tk-text-secondary, #a09880);
+  text-shadow: 0 2px 8px rgba(100, 90, 70, 0.2);
+}
+
+/* ═══════════════════════════════════════════
+   胜利装饰线
+   ═══════════════════════════════════════════ */
+
+.tk-battle-anim__victory-decor {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.tk-battle-anim__victory-line {
+  position: absolute;
+  top: 50%;
+  width: 120px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, var(--tk-gold, #c8a84c) 50%, transparent 100%);
+  opacity: 0;
+  animation: tk-anim-victory-line 1.2s ease-out 0.5s forwards;
+}
+
+.tk-battle-anim__victory-line--left {
+  right: 50%;
+  margin-right: 80px;
+  transform-origin: right center;
+}
+
+.tk-battle-anim__victory-line--right {
+  left: 50%;
+  margin-left: 80px;
+  transform-origin: left center;
+}
+
+@keyframes tk-anim-victory-line {
+  from {
+    opacity: 0;
+    width: 0;
+  }
+  40% {
+    opacity: 0.6;
+    width: 120px;
+  }
+  100% {
+    opacity: 0;
+    width: 160px;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   移动端适配
+   ═══════════════════════════════════════════ */
+
+@media (max-width: 767px) {
+  .tk-battle-anim__hero {
+    font-size: 13px;
+    padding: 4px 10px;
+  }
+
+  .tk-battle-anim__vs {
+    font-size: 22px;
+    margin: 12px 0;
+  }
+
+  .tk-battle-anim__turn-text {
+    font-size: 15px;
+  }
+
+  .tk-battle-anim__exit-text {
+    font-size: 28px;
+    letter-spacing: 6px;
+  }
+
+  .tk-battle-anim__victory-line {
+    width: 80px;
+  }
+
+  @keyframes tk-anim-victory-line {
+    from {
+      opacity: 0;
+      width: 0;
+    }
+    40% {
+      opacity: 0.6;
+      width: 80px;
+    }
+    100% {
+      opacity: 0;
+      width: 100px;
+    }
+  }
+}
