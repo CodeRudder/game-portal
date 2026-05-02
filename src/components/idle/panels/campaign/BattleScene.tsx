@@ -29,6 +29,8 @@ import { STAGE_TYPE_LABELS } from '@/games/three-kingdoms/engine';
 import { useBattleAnimation } from './BattleAnimation';
 import type { LogEntry, LogPart } from './BattleAnimation';
 import { getHpLevel, formatHp } from './battle-scene-utils';
+import { isBattleEngineV4 } from '@/components/idle/shared/engine-type-guards';
+import { createDefaultBattleResult, filterDamageFloats as filterDamageFloatsUtil } from './utils';
 import BattleSpeedControl from './BattleSpeedControl';
 import type { BattleSpeedLevel } from './BattleSpeedControl';
 import BattleModeSelector from './BattleModeSelector';
@@ -50,27 +52,6 @@ interface BattleSceneProps {
   stage: Stage;
   /** 战斗结束回调 */
   onBattleEnd: (result: BattleResult) => void;
-}
-
-/**
- * 创建一个安全的"放弃/异常"战斗结果（用于空编队、主动退出等场景）
- *
- * 表示玩家未正常完成战斗，星级为 NONE。
- */
-function createDefaultBattleResult(): BattleResult {
-  return {
-    outcome: BattleOutcome.DEFEAT,
-    stars: StarRating.NONE,
-    totalTurns: 0,
-    allySurvivors: 0,
-    enemySurvivors: 0,
-    allyTotalDamage: 0,
-    enemyTotalDamage: 0,
-    maxSingleDamage: 0,
-    maxCombo: 0,
-    summary: '战斗未完成',
-    fragmentRewards: {},
-  };
 }
 
 // ─────────────────────────────────────────────
@@ -204,7 +185,7 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
     (mode: BattleMode) => {
       setBattleMode(mode);
       // 通知引擎切换模式
-      if (battleEngine && typeof battleEngine.setBattleMode === 'function') {
+      if (battleEngine && isBattleEngineV4(battleEngine)) {
         battleEngine.setBattleMode(mode);
       }
     },
@@ -244,7 +225,7 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
       setUltimateVisible(false);
       setUltimateReadyItems([]);
       // 通知引擎确认释放大招
-      if (battleEngine && typeof battleEngine.confirmUltimate === 'function') {
+      if (battleEngine && isBattleEngineV4(battleEngine)) {
         battleEngine.confirmUltimate(unitId, skillId);
       }
     },
@@ -256,7 +237,7 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
     setUltimateVisible(false);
     setUltimateReadyItems([]);
     // 通知引擎取消大招
-    if (battleEngine && typeof battleEngine.cancelUltimate === 'function') {
+    if (battleEngine && isBattleEngineV4(battleEngine)) {
       battleEngine.cancelUltimate();
     }
   }, [battleEngine]);
@@ -295,21 +276,7 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
     }
   }, [isFinished, battleResult, animPhase]);
 
-  // ── v3.0 P1：高倍速信息简化 — 伤害飘字过滤 ──
-  // 2x：隐藏普攻，只显示暴击
-  // 3x：只显示暴击和KO提示（武将击败，通过 dyingUnitIds 检测）
-  // 极速(8)：仅显示KO提示
-  const filterDamageFloats = useCallback(
-    (floats: typeof damageFloats, unitId: string) => {
-      const unitFloats = floats.filter((f) => f.unitId === unitId);
-      if (speed <= 1) return unitFloats; // 1x：显示全部
-      if (speed === 2) return unitFloats.filter((f) => f.isCritical || f.isHeal); // 2x：暴击+治疗
-      // 3x/极速：只显示暴击（KO由死亡动画处理）
-      if (speed >= 3) return unitFloats.filter((f) => f.isCritical);
-      return unitFloats;
-    },
-    [speed],
-  );
+  // ── v3.0 P1：高倍速信息简化 — 伤害飘字过滤（抽取至 utils.ts） ──
 
   // ── 渲染武将行 ──
   const renderUnitRow = (units: BattleUnit[], side: 'ally' | 'enemy', position: 'front' | 'back') => {
@@ -317,7 +284,7 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
     while (padded.length < 3) padded.push(null);
     return padded.map((unit, idx) => {
       if (!unit) return <div key={`empty-${side}-${position}-${idx}`} className="tk-bs-unit-empty" />;
-      const floats = filterDamageFloats(damageFloats, unit.id);
+      const floats = filterDamageFloatsUtil(damageFloats, unit.id, speed);
       return (
         <div key={unit.id} className="tk-bs-unit-wrapper">
           <UnitCard

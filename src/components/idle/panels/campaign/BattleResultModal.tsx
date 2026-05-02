@@ -15,6 +15,8 @@ import { BattleOutcome, StarRating } from '@/games/three-kingdoms/engine';
 import type { BattleResult } from '@/games/three-kingdoms/engine';
 import type { Stage } from '@/games/three-kingdoms/engine';
 import { STAGE_TYPE_LABELS, MAX_STARS } from '@/games/three-kingdoms/engine';
+import { buildFragmentDrops } from './utils';
+import type { FragmentDropItem } from './utils';
 import SharedPanel from '../../components/SharedPanel';
 import './BattleResultModal.css';
 
@@ -47,46 +49,12 @@ const RESOURCE_LABELS: Record<string, string> = {
 };
 
 // ─────────────────────────────────────────────
-// 碎片掉落信息
+// 碎片掉落信息（FragmentDropItem / buildFragmentDrops 已抽取至 utils.ts）
 // ─────────────────────────────────────────────
 
-/** 碎片掉落条目 */
-export interface FragmentDropItem {
-  /** 武将ID */
-  generalId: string;
-  /** 武将名称 */
-  generalName: string;
-  /** 碎片数量 */
-  count: number;
-  /** 是否首通必掉 */
-  isFirstClearGuaranteed: boolean;
-  /** 掉落概率描述 */
-  dropRateLabel: string;
-}
-
-/**
- * 构建碎片掉落展示数据
- *
- * @param fragmentRewards - 碎片奖励映射（generalId → count）
- * @param isFirstClear - 是否首通
- * @param generalNames - 武将名称查找表
- * @returns 碎片掉落展示条目列表
- */
-export function buildFragmentDrops(
-  fragmentRewards: Record<string, number>,
-  isFirstClear: boolean,
-  generalNames: Record<string, string> = {},
-): FragmentDropItem[] {
-  if (!fragmentRewards || Object.keys(fragmentRewards).length === 0) return [];
-
-  return Object.entries(fragmentRewards).map(([generalId, count]) => ({
-    generalId,
-    generalName: generalNames[generalId] || generalId,
-    count,
-    isFirstClearGuaranteed: isFirstClear,
-    dropRateLabel: isFirstClear ? '100%必掉' : '10%概率',
-  }));
-}
+// Re-export for backward compatibility
+export type { FragmentDropItem } from './utils';
+export { buildFragmentDrops } from './utils';
 
 // ─────────────────────────────────────────────
 // 失败推荐提升方向

@@ -9,6 +9,10 @@
  *
  * 设计风格：水墨江山·铜纹霸业（无neon/glow/脉冲动画）
  *
+ * P1改进：
+ * - 焦点陷阱：打开时焦点移入大招列表，关闭时恢复到触发按钮
+ * - Tab 键循环保持在面板内
+ *
  * @module components/idle/panels/campaign/UltimateTimeStopOverlay
  */
 
@@ -61,6 +65,10 @@ const UltimateTimeStopOverlay: React.FC<UltimateTimeStopOverlayProps> = ({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── P1：焦点管理 refs ──
+  const panelRef = useRef<HTMLDivElement>(null);
+  const firstSkillBtnRef = useRef<HTMLButtonElement>(null);
+
   // ── 倒计时逻辑 ──
   useEffect(() => {
     if (!visible || readyItems.length === 0) {
@@ -101,6 +109,45 @@ const UltimateTimeStopOverlay: React.FC<UltimateTimeStopOverlayProps> = ({
     };
   }, [visible, readyItems, timeoutMs, onConfirm]);
 
+  // ── P1：打开时焦点移入大招列表 ──
+  useEffect(() => {
+    if (visible && readyItems.length > 0) {
+      // 延迟一帧确保 DOM 已渲染
+      requestAnimationFrame(() => {
+        firstSkillBtnRef.current?.focus();
+      });
+    }
+  }, [visible, readyItems]);
+
+  // ── P1：焦点陷阱 — Tab 键循环保持在面板内 ──
+  const handlePanelKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key !== 'Tab' || !panelRef.current) return;
+
+      const focusableSelector = 'button:not([disabled])';
+      const focusableElements = Array.from(
+        panelRef.current.querySelectorAll<HTMLElement>(focusableSelector),
+      );
+      if (focusableElements.length === 0) return;
+
+      const firstEl = focusableElements[0];
+      const lastEl = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstEl) {
+          e.preventDefault();
+          lastEl.focus();
+        }
+      } else {
+        if (document.activeElement === lastEl) {
+          e.preventDefault();
+          firstEl.focus();
+        }
+      }
+    },
+    [],
+  );
+
   // ── 处理确认释放 ──
   const handleConfirm = useCallback(
     (unitId: string, skillId: string) => {
@@ -124,13 +171,24 @@ const UltimateTimeStopOverlay: React.FC<UltimateTimeStopOverlayProps> = ({
 
   if (!visible || readyItems.length === 0) return null;
 
+  // 找到第一个技能按钮的 key，用于 ref 绑定
+  let isFirstBtn = true;
+
   return (
     <div className="tk-ultimate-overlay" data-testid="ultimate-time-stop-overlay">
       {/* 半透明遮罩 */}
       <div className="tk-ultimate-overlay__backdrop" />
 
       {/* 面板内容 */}
-      <div className="tk-ultimate-overlay__panel" data-testid="ultimate-panel">
+      <div
+        ref={panelRef}
+        className="tk-ultimate-overlay__panel"
+        data-testid="ultimate-panel"
+        role="dialog"
+        aria-label="大招就绪"
+        aria-modal="true"
+        onKeyDown={handlePanelKeyDown}
+      >
         {/* 标题栏 */}
         <div className="tk-ultimate-overlay__header">
           <span className="tk-ultimate-overlay__title">⚡ 大招就绪</span>
@@ -142,25 +200,31 @@ const UltimateTimeStopOverlay: React.FC<UltimateTimeStopOverlayProps> = ({
         {/* 就绪大招列表 */}
         <div className="tk-ultimate-overlay__list" data-testid="ultimate-ready-list">
           {readyItems.map((item) =>
-            item.skills.map((skill) => (
-              <button
-                key={`${item.unit.id}-${skill.id}`}
-                className="tk-ultimate-overlay__skill-btn"
-                data-testid={`ultimate-skill-btn-${item.unit.id}-${skill.id}`}
-                onClick={() => handleConfirm(item.unit.id, skill.id)}
-              >
-                <span className="tk-ultimate-overlay__skill-avatar">
-                  {item.unit.name.charAt(0)}
-                </span>
-                <div className="tk-ultimate-overlay__skill-info">
-                  <span className="tk-ultimate-overlay__skill-name">{item.unit.name}</span>
-                  <span className="tk-ultimate-overlay__skill-detail">{skill.name}</span>
-                </div>
-                <span className="tk-ultimate-overlay__skill-cost">
-                  {skill.rageCost}怒
-                </span>
-              </button>
-            )),
+            item.skills.map((skill) => {
+              const btnKey = `${item.unit.id}-${skill.id}`;
+              const isFirst = isFirstBtn;
+              if (isFirst) isFirstBtn = false;
+              return (
+                <button
+                  key={btnKey}
+                  ref={isFirst ? firstSkillBtnRef : undefined}
+                  className="tk-ultimate-overlay__skill-btn"
+                  data-testid={`ultimate-skill-btn-${btnKey}`}
+                  onClick={() => handleConfirm(item.unit.id, skill.id)}
+                >
+                  <span className="tk-ultimate-overlay__skill-avatar">
+                    {item.unit.name.charAt(0)}
+                  </span>
+                  <div className="tk-ultimate-overlay__skill-info">
+                    <span className="tk-ultimate-overlay__skill-name">{item.unit.name}</span>
+                    <span className="tk-ultimate-overlay__skill-detail">{skill.name}</span>
+                  </div>
+                  <span className="tk-ultimate-overlay__skill-cost">
+                    {skill.rageCost}怒
+                  </span>
+                </button>
+              );
+            }),
           )}
         </div>
 

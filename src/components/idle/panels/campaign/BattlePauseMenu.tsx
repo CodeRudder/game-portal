@@ -8,10 +8,14 @@
  * - 键盘 ESC 触发暂停/恢复
  * - 三国古风视觉风格（无neon/glow）
  *
+ * P1改进：
+ * - 焦点陷阱：打开时焦点移入菜单，关闭时恢复到触发按钮
+ * - Tab 键循环保持在菜单内
+ *
  * @module components/idle/panels/campaign/BattlePauseMenu
  */
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import './BattlePauseMenu.css';
 
 // ─────────────────────────────────────────────
@@ -42,6 +46,11 @@ const BattlePauseMenu: React.FC<BattlePauseMenuProps> = ({
   onQuit,
   disabled = false,
 }) => {
+  // ── P1：焦点管理 refs ──
+  const pauseBtnRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const firstFocusableRef = useRef<HTMLButtonElement>(null);
+
   // ── ESC 键监听 ──
   useEffect(() => {
     if (disabled) return;
@@ -56,6 +65,50 @@ const BattlePauseMenu: React.FC<BattlePauseMenuProps> = ({
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [onTogglePause, disabled]);
+
+  // ── P1：打开时焦点移入菜单，关闭时恢复到触发按钮 ──
+  useEffect(() => {
+    if (paused) {
+      // 延迟一帧确保 DOM 已渲染
+      requestAnimationFrame(() => {
+        firstFocusableRef.current?.focus();
+      });
+    } else {
+      // 恢复焦点到暂停按钮
+      pauseBtnRef.current?.focus();
+    }
+  }, [paused]);
+
+  // ── P1：焦点陷阱 — Tab 键循环保持在菜单内 ──
+  const handlePanelKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key !== 'Tab' || !panelRef.current) return;
+
+      const focusableSelector = 'button:not([disabled])';
+      const focusableElements = Array.from(
+        panelRef.current.querySelectorAll<HTMLElement>(focusableSelector),
+      );
+      if (focusableElements.length === 0) return;
+
+      const firstEl = focusableElements[0];
+      const lastEl = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey) {
+        // Shift+Tab：从第一个元素跳到最后一个
+        if (document.activeElement === firstEl) {
+          e.preventDefault();
+          lastEl.focus();
+        }
+      } else {
+        // Tab：从最后一个元素跳到第一个
+        if (document.activeElement === lastEl) {
+          e.preventDefault();
+          firstEl.focus();
+        }
+      }
+    },
+    [],
+  );
 
   // ── 查看日志：关闭暂停菜单并展开日志 ──
   const handleViewLog = useCallback(() => {
@@ -72,6 +125,7 @@ const BattlePauseMenu: React.FC<BattlePauseMenuProps> = ({
       {/* 右上角暂停按钮 */}
       {!disabled && (
         <button
+          ref={pauseBtnRef}
           className="tk-pause-btn"
           onClick={onTogglePause}
           aria-label={paused ? '恢复战斗' : '暂停战斗'}
@@ -84,11 +138,19 @@ const BattlePauseMenu: React.FC<BattlePauseMenuProps> = ({
       {/* 暂停菜单遮罩 + 面板 */}
       {paused && (
         <div className="tk-pause-overlay" data-testid="battle-pause-overlay">
-          <div className="tk-pause-panel" role="dialog" aria-label="暂停菜单">
+          <div
+            ref={panelRef}
+            className="tk-pause-panel"
+            role="dialog"
+            aria-label="暂停菜单"
+            aria-modal="true"
+            onKeyDown={handlePanelKeyDown}
+          >
             <div className="tk-pause-title">暂 停</div>
 
             <div className="tk-pause-options">
               <button
+                ref={firstFocusableRef}
                 className="tk-pause-option"
                 onClick={onTogglePause}
                 data-testid="battle-pause-resume"
