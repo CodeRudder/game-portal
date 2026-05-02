@@ -27,6 +27,8 @@ import { BattleOutcome } from '@/games/three-kingdoms/engine';
 import BattleFormationModal from './BattleFormationModal';
 import BattleResultModal from './BattleResultModal';
 import SweepModal from './SweepModal';
+import ChallengeStagePanel from './ChallengeStagePanel';
+import OfflinePushPanel from './OfflinePushPanel';
 import './CampaignTab.css';
 
 // ─────────────────────────────────────────────
@@ -74,6 +76,12 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
   // ── 扫荡结算弹窗 ──
   const [sweepResult, setSweepResult] = useState<BattleResult | null>(null);
   const [sweepStage, setSweepStage] = useState<Stage | null>(null);
+
+  // ── 挑战关卡面板 ──
+  const [showChallengePanel, setShowChallengePanel] = useState(false);
+
+  // ── 离线推图面板 ──
+  const [showOfflinePushPanel, setShowOfflinePushPanel] = useState(false);
 
   // ── 地图滚动容器 ──
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -396,6 +404,24 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
       {/* 底部进度 */}
       {renderProgressBar()}
 
+      {/* 底部功能入口 */}
+      <div className="tk-campaign-bottom-actions">
+        <button
+          className="tk-campaign-action-btn tk-campaign-action-btn--challenge"
+          onClick={() => setShowChallengePanel(true)}
+          data-testid="btn-open-challenge-panel"
+        >
+          🔥 烽火台
+        </button>
+        <button
+          className="tk-campaign-action-btn tk-campaign-action-btn--offline"
+          onClick={() => setShowOfflinePushPanel(true)}
+          data-testid="btn-open-offline-push"
+        >
+          ⏳ 离线推图
+        </button>
+      </div>
+
       {/* 战前布阵弹窗 */}
       {battleSetupStage && (
         <BattleFormationModal
@@ -431,6 +457,24 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
           canSweep={getStageStars(sweepTarget.id) >= 3}
           onClose={handleCloseSweepModal}
           onSweep={handleSweepExecute}
+        />
+      )}
+
+      {/* 挑战关卡面板 */}
+      {showChallengePanel && (
+        <ChallengeStagePanel
+          engine={engine}
+          snapshotVersion={snapshotVersion}
+          onClose={() => setShowChallengePanel(false)}
+        />
+      )}
+
+      {/* 离线推图面板 */}
+      {showOfflinePushPanel && (
+        <OfflinePushPanel
+          engine={engine}
+          snapshotVersion={snapshotVersion}
+          onClose={() => setShowOfflinePushPanel(false)}
         />
       )}
     </div>
