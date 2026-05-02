@@ -13,11 +13,10 @@
   background: linear-gradient(180deg, rgba(26,35,50,0.95) 0%, rgba(20,25,35,0.98) 100%);
 }
 
-/* 章节选择器 */
+/* 章节标题栏（显示当前章节名称） */
 .tk-chapter-selector {
   display: flex; align-items: center; justify-content: center;
-  gap: 16px; padding: 8px 0 12px; flex-shrink: 0;
-  border-bottom: 1px solid rgba(200,168,76,0.12);
+  gap: 16px; padding: 4px 0 0; flex-shrink: 0;
 }
 .tk-chapter-arrow {
   width: 32px; height: 32px;

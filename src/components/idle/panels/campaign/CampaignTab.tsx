@@ -29,6 +29,7 @@ import BattleResultModal from './BattleResultModal';
 import SweepModal from './SweepModal';
 import ChallengeStagePanel from './ChallengeStagePanel';
 import OfflinePushPanel from './OfflinePushPanel';
+import ChapterSelectPanel from './ChapterSelectPanel';
 import './CampaignTab.css';
 
 // ─────────────────────────────────────────────
@@ -312,36 +313,15 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
     );
   };
 
-  // ── 渲染章节选择器 ──
+  // ── 渲染章节选择面板 ──
   const renderChapterSelector = () => (
-    <div className="tk-chapter-selector" data-testid="chapter-selector">
-      <button
-        className="tk-chapter-arrow tk-chapter-arrow--left"
-        onClick={() => handleChapterChange(selectedChapterIdx - 1)}
-        disabled={selectedChapterIdx <= 0}
-        aria-label="上一章"
-      >
-        ◀
-      </button>
-
-      <div className="tk-chapter-info">
-        <span className="tk-chapter-title">
-          第{currentChapter?.order || ''}章: {currentChapter?.name || ''}
-        </span>
-        {currentChapter?.subtitle && (
-          <span className="tk-chapter-subtitle">{currentChapter.subtitle}</span>
-        )}
-      </div>
-
-      <button
-        className="tk-chapter-arrow tk-chapter-arrow--right"
-        onClick={() => handleChapterChange(selectedChapterIdx + 1)}
-        disabled={selectedChapterIdx >= chapters.length - 1}
-        aria-label="下一章"
-      >
-        ▶
-      </button>
-    </div>
+    <ChapterSelectPanel
+      chapters={chapters}
+      selectedIdx={selectedChapterIdx}
+      onSelect={handleChapterChange}
+      getStageStatus={getStageStatus}
+      getStageStars={getStageStars}
+    />
   );
 
   // ── 渲染进度条 ──
