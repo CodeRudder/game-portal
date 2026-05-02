@@ -9,6 +9,8 @@
 
 import { BattleOutcome, StarRating } from '@/games/three-kingdoms/engine';
 import type { BattleResult } from '@/games/three-kingdoms/engine';
+import type { Resources } from '@/games/three-kingdoms/shared/types';
+import type { ProductionRate } from '@/games/three-kingdoms/shared/types';
 
 // ─────────────────────────────────────────────
 // 1. createDefaultBattleResult
@@ -111,6 +113,30 @@ export function buildFragmentDrops(
     isFirstClearGuaranteed: isFirstClear,
     dropRateLabel: isFirstClear ? '100%必掉' : '10%概率',
   }));
+}
+
+// ─────────────────────────────────────────────
+// 5. 类型适配
+// ─────────────────────────────────────────────
+
+/**
+ * 将 ProductionRate 安全转换为 Resources
+ *
+ * ProductionRate 和 Resources 结构完全相同但名义类型不同，
+ * 此函数提供显式字段映射，消除 `as unknown as` 不安全转换。
+ */
+export function productionRateToResources(rate: Readonly<ProductionRate>): Resources {
+  return {
+    grain: rate.grain,
+    gold: rate.gold,
+    ore: rate.ore,
+    wood: rate.wood,
+    troops: rate.troops,
+    mandate: rate.mandate,
+    techPoint: rate.techPoint,
+    recruitToken: rate.recruitToken,
+    skillBook: rate.skillBook,
+  };
 }
 
 // ─────────────────────────────────────────────

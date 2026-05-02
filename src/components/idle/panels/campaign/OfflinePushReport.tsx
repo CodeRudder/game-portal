@@ -46,7 +46,7 @@ const OfflinePushReport: React.FC<OfflinePushReportProps> = ({
 }) => {
   return (
     <div className="tk-offline-push-section">
-      <div className="tk-offline-push-section-title">📜 推图战报</div>
+      <div className="tk-offline-push-section-title" aria-expanded={battleLogs.length > 0}>📜 推图战报</div>
 
       {battleLogs.length === 0 ? (
         <div className="tk-offline-push-empty" data-testid="offline-push-empty">

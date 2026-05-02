@@ -20,7 +20,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine';
 import type { AutoPushProgress } from '@/games/three-kingdoms/engine/campaign/sweep.types';
 import type { Resources } from '@/games/three-kingdoms/shared/types';
-import { formatDuration, formatNum, getResourceLabel } from './utils';
+import { formatDuration, formatNum, getResourceLabel, productionRateToResources } from './utils';
 import OfflinePushSettings from './OfflinePushSettings';
 import OfflinePushReport from './OfflinePushReport';
 import type { BattleLogEntry } from './OfflinePushReport';
@@ -68,7 +68,7 @@ const OfflinePushPanel: React.FC<OfflinePushPanelProps> = ({
   // ── P1：从引擎获取生产率，消除硬编码 ──
   const productionRates: Readonly<Resources> = useMemo(() => {
     try {
-      return engine.resource.getProductionRates() as unknown as Resources;
+      return productionRateToResources(engine.resource.getProductionRates());
     } catch {
       // 降级：返回零值
       return {
