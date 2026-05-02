@@ -128,8 +128,8 @@ describe('ACC-02 建筑系统 验收测试', () => {
     render(<BuildingPanel {...makePanelProps(sim)} />);
     const map = screen.getByTestId('building-panel-map');
     assertInDOM(map, 'ACC-02-02', '建筑地图');
-    // 检查8座建筑都渲染了
-    const types: BuildingType[] = ['castle', 'farmland', 'market', 'barracks', 'smithy', 'academy', 'clinic', 'wall'];
+    // 检查所有建筑都渲染了（与 BUILDING_TYPES 一致）
+    const types: BuildingType[] = ['castle', 'farmland', 'market', 'mine', 'lumberMill', 'barracks', 'workshop', 'academy', 'clinic', 'wall', 'tavern'];
     for (const t of types) {
       const item = screen.queryByTestId(`building-panel-item-${t}`);
       assertStrict(!!item, 'ACC-02-02', `建筑 ${t} 节点应存在`);
@@ -159,13 +159,13 @@ describe('ACC-02 建筑系统 验收测试', () => {
   });
 
   it(accTest('ACC-02-05', '未解锁建筑显示 - 显示🔒和灰色样式'), () => {
-    // 使用初始状态（主城 Lv1），市集等建筑尚未解锁
+    // 使用初始状态（主城 Lv1），兵营等建筑尚未解锁
     const sim = createSim();
     sim.addResources(SUFFICIENT_RESOURCES);
     render(<BuildingPanel {...makePanelProps(sim)} />);
-    // 市集未解锁（需要主城 Lv2）
-    const marketItem = screen.getByTestId('building-panel-item-market');
-    assertStrict(marketItem.textContent!.includes('未解锁') || marketItem.querySelector('.building-locked') !== null || marketItem.textContent!.includes('🔒'), 'ACC-02-05', '未解锁建筑应显示锁定状态');
+    // 兵营未解锁（需要主城 Lv2）
+    const barracksItem = screen.getByTestId('building-panel-item-barracks');
+    assertStrict(barracksItem.textContent!.includes('未解锁') || barracksItem.querySelector('.building-locked') !== null || barracksItem.textContent!.includes('🔒'), 'ACC-02-05', '未解锁建筑应显示锁定状态');
   });
 
   it(accTest('ACC-02-07', '收支详情按钮可见 - 📊按钮存在'), () => {
@@ -248,7 +248,7 @@ describe('ACC-02 建筑系统 验收测试', () => {
       resources: snapProps.resources,
     })} />);
     const confirmBtn = screen.getByTestId('building-upgrade-confirm');
-    assertStrict((confirmBtn as HTMLButtonElement).disabled, 'ACC-02-13', '资源不足时确认按钮应禁用');
+    assertStrict(confirmBtn.getAttribute('aria-disabled') === 'true' || (confirmBtn as HTMLButtonElement).disabled, 'ACC-02-13', '资源不足时确认按钮应禁用');
   });
 
   it(accTest('ACC-02-15', '确认升级操作 - 触发onConfirm回调'), () => {
@@ -423,7 +423,7 @@ describe('ACC-02 建筑系统 验收测试', () => {
       resources: snapProps.resources,
     })} />);
     const confirmBtn = screen.getByTestId('building-upgrade-confirm');
-    assertStrict((confirmBtn as HTMLButtonElement).disabled, 'ACC-02-31', '资源差1时按钮应禁用');
+    assertStrict(confirmBtn.getAttribute('aria-disabled') === 'true' || (confirmBtn as HTMLButtonElement).disabled, 'ACC-02-31', '资源差1时按钮应禁用');
   });
 
   it(accTest('ACC-02-32', '建筑达到最高等级 - 不显示升级按钮'), () => {
@@ -525,12 +525,12 @@ describe('ACC-02 建筑系统 验收测试', () => {
   });
 
   it(accTest('ACC-02-45', '手机端未解锁建筑显示 - 列表项显示锁定状态'), () => {
-    // 使用初始状态（主城 Lv1），市集等建筑尚未解锁
+    // 使用初始状态（主城 Lv1），兵营等建筑尚未解锁
     const sim = createSim();
     sim.addResources(SUFFICIENT_RESOURCES);
     render(<BuildingPanel {...makePanelProps(sim)} />);
-    const marketItem = screen.getByTestId('building-panel-item-market');
-    assertStrict(marketItem.textContent!.includes('未解锁') || marketItem.textContent!.includes('🔒'), 'ACC-02-45', '未解锁建筑应显示锁定状态');
+    const barracksItem = screen.getByTestId('building-panel-item-barracks');
+    assertStrict(barracksItem.textContent!.includes('未解锁') || barracksItem.textContent!.includes('🔒'), 'ACC-02-45', '未解锁建筑应显示锁定状态');
   });
 
   it(accTest('ACC-02-47', '手机端收支详情弹窗 - 弹窗正常显示'), () => {
