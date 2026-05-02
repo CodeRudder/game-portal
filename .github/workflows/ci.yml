@@ -1,0 +1,172 @@
+# =============================================================================
+# 主CI工作流 — game-portal
+# 触发条件：push到main / PR到main
+# Jobs: typecheck → lint / test-tk / test-full / build
+# =============================================================================
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────
+  # 1. TypeScript 编译检查
+  # ─────────────────────────────────────────────────────────────────────────
+  typecheck:
+    name: 🔍 TypeScript 类型检查
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Typecheck (root)
+        run: npx tsc --noEmit
+
+      - name: 🔍 Typecheck (three-kingdoms)
+        run: npx tsc --noEmit -p tsconfig.three-kingdoms.json
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 2. ESLint 代码检查（允许失败）
+  # ─────────────────────────────────────────────────────────────────────────
+  lint:
+    name: 🧹 代码检查 (Lint)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🧹 Lint
+        run: npm run lint
+        continue-on-error: true
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 3. 三国霸业专属测试 (timeout 30min)
+  # ─────────────────────────────────────────────────────────────────────────
+  test-tk:
+    name: ⚔️ 三国霸业测试
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: typecheck
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: ⚔️ Run Three Kingdoms Tests
+        run: npm run test:tk
+        env:
+          CI: true
+
+      - name: 📊 Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tk-test-results
+          path: |
+            test-results/
+            coverage/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 4. 全量测试 (timeout 60min)
+  # ─────────────────────────────────────────────────────────────────────────
+  test-full:
+    name: 🧪 全量测试
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: typecheck
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🧪 Run All Tests
+        run: npm test
+        env:
+          CI: true
+
+      - name: 📊 Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-test-results
+          path: |
+            test-results/
+            coverage/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 5. 构建验证
+  # ─────────────────────────────────────────────────────────────────────────
+  build:
+    name: 🏗️ 构建验证
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [typecheck, test-tk]
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🏗️ Build
+        run: npm run build
+
+      - name: 📊 Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: dist/
+          retention-days: 3

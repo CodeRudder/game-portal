@@ -1,0 +1,36 @@
+# =============================================================================
+# CODEOWNERS — game-portal 代码审查规则
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+# =============================================================================
+
+# 三国霸业引擎核心代码 — 需要核心开发者审查
+/src/games/three-kingdoms/engine/ @CodeRudder/core-engine
+
+# 三国霸业测试代码 — 需要QA审查
+/src/games/three-kingdoms/tests/ @CodeRudder/core-engine @CodeRudder/qa
+
+# 三国霸业UI组件
+/src/games/three-kingdoms/ui/ @CodeRudder/core-engine @CodeRudder/frontend
+
+# 公共引擎框架
+/src/engine/ @CodeRudder/core-engine
+
+# CI/CD 配置变更
+/.github/ @CodeRudder/devops
+
+# Docker & 部署配置
+/Dockerfile* @CodeRudder/devops
+/docker-compose.yml @CodeRudder/devops
+/deploy*.sh @CodeRudder/devops
+
+# 构建配置
+/vite.config*.ts @CodeRudder/core-engine
+/tsconfig*.json @CodeRudder/core-engine
+/vitest.config*.ts @CodeRudder/core-engine
+
+# 依赖变更
+/package.json @CodeRudder/core-engine
+/package-lock.json @CodeRudder/core-engine
+
+# 默认：所有其他文件
+* @CodeRudder/core-engine
