@@ -1,0 +1,253 @@
+/**
+ * UltimateTimeStopOverlay — 大招时停面板样式
+ *
+ * 战场中央弹出面板，半透明遮罩 + 就绪大招列表
+ * 设计风格：水墨江山·铜纹霸业（无neon/glow/脉冲动画）
+ */
+
+/* ═══════════════════════════════════════════
+   全屏遮罩
+   ═══════════════════════════════════════════ */
+.tk-ultimate-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: tk-ultimate-fade-in 0.2s ease-out;
+}
+
+@keyframes tk-ultimate-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 半透明背景遮罩 */
+.tk-ultimate-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+/* ═══════════════════════════════════════════
+   面板容器
+   ═══════════════════════════════════════════ */
+.tk-ultimate-overlay__panel {
+  position: relative;
+  z-index: 1;
+  min-width: 280px;
+  max-width: 400px;
+  background: linear-gradient(180deg, #1a2332 0%, #151d2a 100%);
+  border: 1px solid rgba(200, 168, 76, 0.35);
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════
+   标题栏
+   ═══════════════════════════════════════════ */
+.tk-ultimate-overlay__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(200, 168, 76, 0.08);
+  border-bottom: 1px solid rgba(200, 168, 76, 0.15);
+}
+
+.tk-ultimate-overlay__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tk-gold, #d4a853);
+  font-family: var(--tk-font-title, inherit);
+  letter-spacing: 1px;
+}
+
+.tk-ultimate-overlay__countdown {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--tk-accent-red, #e74c3c);
+  font-family: var(--tk-font-num, inherit);
+}
+
+/* ═══════════════════════════════════════════
+   就绪大招列表
+   ═══════════════════════════════════════════ */
+.tk-ultimate-overlay__list {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.tk-ultimate-overlay__list::-webkit-scrollbar {
+  width: 3px;
+}
+
+.tk-ultimate-overlay__list::-webkit-scrollbar-thumb {
+  background: rgba(200, 168, 76, 0.2);
+  border-radius: 1.5px;
+}
+
+/* ═══════════════════════════════════════════
+   技能按钮
+   ═══════════════════════════════════════════ */
+.tk-ultimate-overlay__skill-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(200, 168, 76, 0.06);
+  border: 1px solid rgba(200, 168, 76, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  text-align: left;
+}
+
+.tk-ultimate-overlay__skill-btn:hover {
+  background: rgba(200, 168, 76, 0.15);
+  border-color: rgba(200, 168, 76, 0.5);
+}
+
+.tk-ultimate-overlay__skill-btn:active {
+  transform: scale(0.98);
+  transition: transform 0.1s;
+}
+
+/* 头像 */
+.tk-ultimate-overlay__skill-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tk-text-primary, #f0e6d3);
+  background: rgba(126, 200, 80, 0.12);
+  border: 1.5px solid rgba(200, 168, 76, 0.4);
+  flex-shrink: 0;
+}
+
+/* 技能信息 */
+.tk-ultimate-overlay__skill-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tk-ultimate-overlay__skill-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tk-text-primary, #f0e6d3);
+  font-family: var(--tk-font-title, inherit);
+}
+
+.tk-ultimate-overlay__skill-detail {
+  font-size: 11px;
+  color: var(--tk-gold, #d4a853);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 怒气消耗 */
+.tk-ultimate-overlay__skill-cost {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--tk-text-secondary, #c4a882);
+  font-family: var(--tk-font-num, inherit);
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════
+   底部操作区
+   ═══════════════════════════════════════════ */
+.tk-ultimate-overlay__footer {
+  padding: 8px 14px;
+  border-top: 1px solid rgba(200, 168, 76, 0.1);
+  display: flex;
+  justify-content: center;
+}
+
+.tk-ultimate-overlay__cancel-btn {
+  padding: 5px 16px;
+  border: 1px solid rgba(200, 168, 76, 0.2);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--tk-text-secondary, #c4a882);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  font-family: inherit;
+}
+
+.tk-ultimate-overlay__cancel-btn:hover {
+  background: rgba(200, 168, 76, 0.08);
+  border-color: rgba(200, 168, 76, 0.4);
+  color: var(--tk-text-primary, #f0e6d3);
+}
+
+.tk-ultimate-overlay__cancel-btn:active {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}
+
+/* ═══════════════════════════════════════════
+   移动端适配（≤480px）
+   ═══════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .tk-ultimate-overlay__panel {
+    min-width: 240px;
+    max-width: 320px;
+  }
+
+  .tk-ultimate-overlay__header {
+    padding: 8px 10px;
+  }
+
+  .tk-ultimate-overlay__title {
+    font-size: 12px;
+  }
+
+  .tk-ultimate-overlay__countdown {
+    font-size: 11px;
+  }
+
+  .tk-ultimate-overlay__skill-btn {
+    padding: 6px 10px;
+    gap: 8px;
+  }
+
+  .tk-ultimate-overlay__skill-avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
+  }
+
+  .tk-ultimate-overlay__skill-name {
+    font-size: 12px;
+  }
+
+  .tk-ultimate-overlay__skill-detail {
+    font-size: 10px;
+  }
+
+  .tk-ultimate-overlay__skill-cost {
+    font-size: 10px;
+  }
+
+  .tk-ultimate-overlay__cancel-btn {
+    font-size: 11px;
+    padding: 4px 12px;
+  }
+}

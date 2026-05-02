@@ -68,6 +68,15 @@
   align-items: center;
   gap: 8px;
 }
+/* v3.0：模式选择器与速度控件之间的分隔线 */
+.tk-bs-controls-divider {
+  display: inline-block;
+  width: 1px;
+  height: 16px;
+  background: rgba(200, 168, 76, 0.2);
+  margin: 0 2px;
+  flex-shrink: 0;
+}
 .tk-bs-speed-btn {
   padding: 3px 10px;
   border: 1px solid rgba(200, 168, 76, 0.3);

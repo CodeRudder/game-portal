@@ -1,0 +1,119 @@
+/**
+ * BattleModeSelector — 战斗模式选择器样式
+ *
+ * 三按钮横排，三国古风主题
+ * 设计风格：水墨江山·铜纹霸业（无neon/glow/脉冲动画）
+ */
+
+/* ═══════════════════════════════════════════
+   容器
+   ═══════════════════════════════════════════ */
+.tk-mode-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ═══════════════════════════════════════════
+   模式按钮
+   ═══════════════════════════════════════════ */
+.tk-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 36px;
+  height: 24px;
+  padding: 2px 8px;
+  border: 1px solid rgba(200, 168, 76, 0.25);
+  border-radius: 4px;
+  background: rgba(26, 35, 50, 0.6);
+  color: var(--tk-text-secondary, #c4a882);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.tk-mode-btn:hover:not(:disabled) {
+  background: rgba(200, 168, 76, 0.1);
+  border-color: rgba(200, 168, 76, 0.5);
+  color: var(--tk-text-primary, #f0e6d3);
+}
+
+.tk-mode-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tk-mode-btn:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}
+
+/* ═══════════════════════════════════════════
+   激活状态
+   ═══════════════════════════════════════════ */
+.tk-mode-btn--active {
+  background: rgba(200, 168, 76, 0.18);
+  border-color: var(--tk-accent-gold, #d4a853);
+  color: var(--tk-accent-gold, #d4a853);
+}
+
+/* ═══════════════════════════════════════════
+   按钮内部元素
+   ═══════════════════════════════════════════ */
+.tk-mode-btn__icon {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.tk-mode-btn__label {
+  font-size: 11px;
+  line-height: 1;
+  font-family: var(--tk-font-title, inherit);
+  letter-spacing: 0.5px;
+}
+
+/* ═══════════════════════════════════════════
+   嵌入顶部栏时的紧凑样式
+   ═══════════════════════════════════════════ */
+.tk-bs-controls .tk-mode-selector {
+  gap: 3px;
+}
+
+.tk-bs-controls .tk-mode-btn {
+  min-width: 32px;
+  height: 24px;
+  padding: 2px 6px;
+  font-size: 10px;
+}
+
+.tk-bs-controls .tk-mode-btn__icon {
+  font-size: 10px;
+}
+
+.tk-bs-controls .tk-mode-btn__label {
+  font-size: 10px;
+}
+
+/* ═══════════════════════════════════════════
+   移动端适配（≤480px）
+   ═══════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .tk-mode-btn {
+    min-width: 30px;
+    height: 22px;
+    padding: 2px 5px;
+    font-size: 10px;
+  }
+
+  .tk-mode-btn__icon {
+    font-size: 10px;
+  }
+
+  .tk-mode-btn__label {
+    font-size: 9px;
+  }
+}
