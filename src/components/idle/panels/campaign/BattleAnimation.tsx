@@ -32,8 +32,8 @@ export interface BattleAnimationState {
   damageFloats: DamageFloat[];
   logs: LogEntry[];
   logAreaRef: React.RefObject<HTMLDivElement>;
-  speed: 1 | 2 | 4;
-  setSpeed: (speed: 1 | 2 | 4) => void;
+  speed: 1 | 2 | 3 | 8;
+  setSpeed: (speed: 1 | 2 | 3 | 8) => void;
   toggleSpeed: () => void;
   skip: () => void;
 }
@@ -42,6 +42,9 @@ export interface BattleAnimationState {
 const BASE_TURN_DELAY = 800;
 const ACTION_DELAY = 300;
 const END_DELAY = 1200;
+
+/** 速度档位列表 */
+const SPEED_TIERS: (1 | 2 | 3 | 8)[] = [1, 2, 3, 8];
 
 // ── 辅助函数 ──
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -73,7 +76,7 @@ export function useBattleAnimation(
   enemyTeam: { units: BattleUnit[] },
   onBattleEnd: (result: BattleResult) => void,
 ): BattleAnimationState {
-  const [speed, setSpeed] = useState<1 | 2 | 4>(1);
+  const [speed, setSpeed] = useState<1 | 2 | 3 | 8>(1);
   const [battleState, setBattleState] = useState<BattleState | null>(null);
   const [battleResult, setBattleResult] = useState<BattleResult | null>(null);
   const [isFinished, setIsFinished] = useState(false);
@@ -222,7 +225,10 @@ export function useBattleAnimation(
   return {
     battleState, battleResult, isFinished, actingUnitId, actingUnitSide,
     hitUnitIds, dyingUnitIds, skillActiveUnitId, critShake, damageFloats,
-    logs, logAreaRef, speed, setSpeed: setSpeed as (s: 1 | 2 | 4) => void, toggleSpeed: useCallback(() => setSpeed((p) => (p === 1 ? 2 : p === 2 ? 4 : 1)), []),
+    logs, logAreaRef, speed, setSpeed: setSpeed as (s: 1 | 2 | 3 | 8) => void, toggleSpeed: useCallback(() => setSpeed((p) => {
+      const idx = SPEED_TIERS.indexOf(p);
+      return SPEED_TIERS[(idx + 1) % SPEED_TIERS.length];
+    }), []),
     skip: useCallback(() => { skipRef.current = true; }, []),
   };
 }

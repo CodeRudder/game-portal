@@ -79,6 +79,50 @@
 }
 
 /* ═══════════════════════════════════════════
+   VIP 锁图标样式
+   ═══════════════════════════════════════════ */
+.tk-speed-btn--locked {
+  border-color: var(--tk-border-default, #555);
+  color: var(--tk-text-muted, #666);
+  background: rgba(80, 80, 80, 0.15);
+  cursor: not-allowed;
+  position: relative;
+  opacity: 0.65;
+}
+
+.tk-speed-btn--locked:hover:not(:disabled) {
+  background: rgba(80, 80, 80, 0.25);
+  border-color: var(--tk-border-default, #555);
+  color: var(--tk-text-muted, #888);
+}
+
+/* 锁图标 */
+.tk-speed-vip-lock {
+  font-size: 11px;
+  margin-right: 2px;
+  filter: grayscale(0.5);
+}
+
+/* VIP等级提示文字 */
+.tk-speed-vip-hint {
+  font-size: 9px;
+  color: var(--tk-text-muted, #999);
+  margin-left: 2px;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+}
+
+/* 锁定按钮hover时显示VIP等级提示 */
+.tk-speed-btn--locked:hover .tk-speed-vip-hint {
+  color: var(--tk-accent-gold, #d4a853);
+}
+
+/* 按钮文字 */
+.tk-speed-btn-text {
+  line-height: 1;
+}
+
+/* ═══════════════════════════════════════════
    速度指示器
    ═══════════════════════════════════════════ */
 .tk-speed-indicator {

@@ -274,13 +274,29 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
     }
   }, [isFinished, battleResult, animPhase]);
 
+  // ── v3.0 P1：高倍速信息简化 — 伤害飘字过滤 ──
+  // 2x：隐藏普攻，只显示暴击
+  // 3x：只显示暴击和KO提示（武将击败，通过 dyingUnitIds 检测）
+  // 极速(8)：仅显示KO提示
+  const filterDamageFloats = useCallback(
+    (floats: typeof damageFloats, unitId: string) => {
+      const unitFloats = floats.filter((f) => f.unitId === unitId);
+      if (speed <= 1) return unitFloats; // 1x：显示全部
+      if (speed === 2) return unitFloats.filter((f) => f.isCritical || f.isHeal); // 2x：暴击+治疗
+      // 3x/极速：只显示暴击（KO由死亡动画处理）
+      if (speed >= 3) return unitFloats.filter((f) => f.isCritical);
+      return unitFloats;
+    },
+    [speed],
+  );
+
   // ── 渲染武将行 ──
   const renderUnitRow = (units: BattleUnit[], side: 'ally' | 'enemy', position: 'front' | 'back') => {
     const padded = [...units];
     while (padded.length < 3) padded.push(null as unknown as BattleUnit);
     return padded.map((unit, idx) => {
       if (!unit) return <div key={`empty-${side}-${position}-${idx}`} className="tk-bs-unit-empty" />;
-      const floats = damageFloats.filter((f) => f.unitId === unit.id);
+      const floats = filterDamageFloats(damageFloats, unit.id);
       return (
         <div key={unit.id} className="tk-bs-unit-wrapper">
           <UnitCard
@@ -356,6 +372,7 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
             currentSpeed={speed as BattleSpeedLevel}
             onSpeedChange={(newSpeed) => setSpeed(newSpeed)}
             disabled={isFinished}
+            vipLevel={engine.getVIPSystem().getEffectiveLevel()}
           />
           {!isFinished && <button className="tk-bs-skip-btn" onClick={skip} data-testid="battle-skip-btn">跳过</button>}
         </div>

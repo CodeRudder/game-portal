@@ -110,6 +110,9 @@ function makeMockEngine() {
     getBattleEngine: vi.fn(() => ({})),
     getFormationSystem: vi.fn(() => ({})),
     getHeroSystem: vi.fn(() => ({})),
+    getVIPSystem: vi.fn(() => ({
+      getEffectiveLevel: vi.fn(() => 0),
+    })),
     buildTeamsForStage: vi.fn(() => ({
       allyTeam: {
         id: 'ally',
