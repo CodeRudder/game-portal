@@ -150,8 +150,8 @@ describe('RecruitPanel', () => {
 
   // ── 11. 招贤令不足时单抽按钮禁用 ──
   it('招贤令不足时单抽按钮禁用', () => {
-    render(<RecruitPanel {...makeProps({ recruitToken: 3 })} />);
-    // 普通模式单抽需要 5，3 < 5
+    render(<RecruitPanel {...makeProps({ recruitToken: 0 })} />);
+    // 普通模式单抽需要 1 招贤令，0 < 1
     const btn = screen.getByTestId('btn-single-recruit') as HTMLButtonElement;
     expect(btn.disabled).toBe(true);
   });
