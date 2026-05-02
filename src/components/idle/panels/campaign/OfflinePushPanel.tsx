@@ -124,7 +124,8 @@ const OfflinePushPanel: React.FC<OfflinePushPanelProps> = ({
       // 通过离线收益系统计算快照
       if (offlineSystem) {
         const rates: import('@/games/three-kingdoms/shared/types').ProductionRate = {
-          grain: 100, gold: 50, troops: 20, mandate: 5,
+          grain: 100, gold: 50, ore: 30, wood: 30,
+          troops: 20, mandate: 5,
           techPoint: 0, recruitToken: 0, skillBook: 0,
         };
         const snapshot = offlineSystem.calculateSnapshot(accumulatedSeconds, rates);
@@ -171,11 +172,13 @@ const OfflinePushPanel: React.FC<OfflinePushPanelProps> = ({
       // 调用引擎领取离线收益
       if (offlineSystem) {
         const rates: import('@/games/three-kingdoms/shared/types').ProductionRate = {
-          grain: 100, gold: 50, troops: 20, mandate: 5,
+          grain: 100, gold: 50, ore: 30, wood: 30,
+          troops: 20, mandate: 5,
           techPoint: 0, recruitToken: 0, skillBook: 0,
         };
         const emptyResources: import('@/games/three-kingdoms/shared/types').Resources = {
-          grain: 0, gold: 0, troops: 0, mandate: 0,
+          grain: 0, gold: 0, ore: 0, wood: 0,
+          troops: 0, mandate: 0,
           techPoint: 0, recruitToken: 0, skillBook: 0,
         };
         const result = offlineSystem.calculateOfflineReward(

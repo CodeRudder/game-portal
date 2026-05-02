@@ -308,6 +308,7 @@ describe('F-Lifecycle: 序列化/反序列化', () => {
 
   it('资源/速率/上限数据完整保留', () => {
     const sys = createResource();
+    sys.setCap('grain', null); sys.setCap('gold', null);
     sys.setResource('grain', 1234);
     sys.setResource('gold', 5678);
     sys.setProductionRate('grain', 5.5);
@@ -333,6 +334,7 @@ describe('F-Lifecycle: 序列化/反序列化', () => {
 
   it('版本不匹配仍兼容加载', () => {
     const sys = createResource();
+    sys.setCap('gold', null);
     sys.setResource('gold', 5000);
     const data = sys.serialize();
     data.version = 999;
@@ -376,7 +378,11 @@ describe('F-Lifecycle: 系统重置', () => {
     sys.reset();
     expect(sys.getResources()).toEqual(cloneResources(INITIAL_RESOURCES));
     expect(sys.getProductionRates()).toEqual({ ...INITIAL_PRODUCTION_RATES });
-    expect(sys.getCaps()).toEqual({ grain: INITIAL_CAPS.grain, gold: 2000, troops: INITIAL_CAPS.troops, mandate: null, techPoint: null, recruitToken: null, skillBook: null });
+    expect(sys.getCaps()).toEqual({
+      grain: INITIAL_CAPS.grain, gold: INITIAL_CAPS.gold,
+      ore: INITIAL_CAPS.ore, wood: INITIAL_CAPS.wood,
+      troops: INITIAL_CAPS.troops, mandate: null, techPoint: null, recruitToken: null, skillBook: null,
+    });
   });
 });
 
@@ -442,6 +448,7 @@ describe('F-Boundary: 超大数处理', () => {
   });
 
   it('consumeResource/canAfford 大数值精确', () => {
+    sys.setCap('gold', null);
     sys.setResource('gold', 100000);
     sys.consumeResource('gold', 50000);
     expect(sys.getAmount('gold')).toBe(50000);
@@ -730,6 +737,7 @@ describe('F-Integration: ThreeKingdomsEngine 资源集成', () => {
 
   it('引擎序列化包含资源数据', () => {
     const engine = new ThreeKingdomsEngine();
+    engine.resource.setCap('gold', null);
     engine.resource.setResource('gold', 7777);
     const json = engine.serialize();
     expect(json).toContain('gold');
@@ -751,6 +759,7 @@ describe('F-Integration: ThreeKingdomsEngine 资源集成', () => {
 
   it('引擎 deserialize 恢复资源状态', () => {
     const engine = new ThreeKingdomsEngine();
+    engine.resource.setCap('gold', null);
     engine.resource.setResource('gold', 5555);
     const json = engine.serialize();
     const engine2 = new ThreeKingdomsEngine();
@@ -779,7 +788,7 @@ describe('F-Boundary: 辅助函数边界', () => {
 
   it('calculateCapWarnings 无上限时返回空，calculateCapWarning 无上限返回 null', () => {
     const r = zeroResources();
-    const caps = { grain: null, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null, skillBook: null };
+    const caps = { grain: null, gold: null, ore: null, wood: null, troops: null, mandate: null, techPoint: null, recruitToken: null, skillBook: null };
     expect(calculateCapWarnings(r, caps)).toEqual([]);
     for (const type of RESOURCE_TYPES) expect(calculateCapWarning(type, r, caps)).toBeNull();
   });

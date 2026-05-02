@@ -73,7 +73,7 @@ describe('F-Error: 建筑升级异常路径', () => {
   let sys: BuildingSystem; let res: Resources;
   beforeEach(() => { sys = createBuilding(); res = richRes(); });
 
-  it('锁定建筑不能升级', () => expect(sys.checkUpgrade('market', res).canUpgrade).toBe(false));
+  it('锁定建筑不能升级', () => expect(sys.checkUpgrade('barracks', res).canUpgrade).toBe(false));
   it('升级中建筑不能再次升级', () => { sys.startUpgrade('farmland', res); expect(sys.checkUpgrade('farmland', res).reasons).toContain('建筑正在升级中'); });
   it('资源不足不能升级', () => {
     const p: Resources = { grain: 1, gold: 1, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
@@ -95,7 +95,7 @@ describe('F-Error: 建筑升级异常路径', () => {
     const d = sys.serialize(); d.buildings.farmland.level = BUILDING_MAX_LEVELS.farmland;
     const s2 = createBuilding(); s2.deserialize(d); expect(s2.getUpgradeCost('farmland')).toBeNull();
   });
-  it('getUpgradeCost等级0返回null', () => expect(sys.getUpgradeCost('market')).toBeNull());
+  it('getUpgradeCost等级0返回null', () => expect(sys.getUpgradeCost('barracks')).toBeNull());
   it('非升级状态取消返回null', () => expect(sys.cancelUpgrade('farmland')).toBeNull());
   it('队列满时不能升级', () => { sys.startUpgrade('farmland', res); expect(sys.checkUpgrade('castle', res).reasons).toContain('升级队列已满'); });
 });
@@ -305,7 +305,7 @@ describe('F-Lifecycle: 科技点序列化/反序列化', () => {
 describe('F-Lifecycle: 系统重置', () => {
   it('BuildingSystem.reset', () => {
     const s = createBuilding(); upgradeTo(s, 'castle', 3); s.reset();
-    expect(s.getLevel('farmland')).toBe(1); expect(s.getLevel('market')).toBe(0);
+    expect(s.getLevel('farmland')).toBe(1); expect(s.getLevel('market')).toBe(1);
   });
   it('TechTreeSystem.reset', () => {
     const t = new TechTreeSystem(); t.init(createMockDeps() as any);
