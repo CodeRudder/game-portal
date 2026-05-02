@@ -237,7 +237,9 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     heroDispatch: ctx.heroDispatch?.serialize(),
     awakening: ctx.awakening?.serialize(),
     recruitTokenEconomy: ctx.recruitTokenEconomy?.serialize(),
-    // ── 远征系统 v12.0 (FIX-601: R1 保存/加载覆盖) ──
+    // ── Phase 5: 地图与远征层（依赖武将子系统层） ──
+
+  // ── 远征系统 v12.0 (FIX-601: R1 保存/加载覆盖) ──
     expedition: ctx.expedition?.serialize(),
     // ── NPC系统 v19.0 (FIX-008: R2 存档接入) ──
     npc: ctx.npc?.exportSaveData(),
@@ -248,7 +250,9 @@ export function buildSaveData(ctx: SaveContext): GameSaveData {
     garrison: ctx.garrison?.serialize(),
     siegeEnhancer: ctx.siegeEnhancer?.serialize(),
     mapEvent: ctx.mapEvent?.serialize(),
-    // ── 离线收益系统 v9.0 (FIX-816: R1 存档接入) ──
+    // ── Phase 6: 经济与社交层 ──
+
+  // ── 离线收益系统 v9.0 (FIX-816: R1 存档接入) ──
     offlineReward: ctx.offlineReward?.serialize(),
     offlineSnapshot: ctx.offlineSnapshot?.getSaveData(),
     // ── 铜钱/材料经济系统 (FIX-720/721: Resource R1 存档接入) ──
@@ -529,13 +533,51 @@ export function applyDeserialize(ctx: SaveContext, json: string): void {
 // 内部辅助
 // ─────────────────────────────────────────────
 
-/** 将 GameSaveData 恢复到各子系统 */
+/**
+ * 将 GameSaveData 恢复到各子系统
+ *
+ * DEF-033: 反序列化顺序约束文档
+ * ─────────────────────────────────────────────────────
+ * 各子系统之间存在数据依赖关系，必须按以下顺序恢复：
+ *
+ * Phase 1 — 基础资源层（无依赖）:
+ *   building → resource → calendar
+ *
+ * Phase 2 — 核心实体层（依赖资源层）:
+ *   hero → recruit → formation → campaign → tech
+ *
+ * Phase 3 — 扩展功能层（依赖核心实体层）:
+ *   equipment → trade → shop → prestige → heritage → achievement
+ *   pvp → event → season → sweep → vip → challenge
+ *
+ * Phase 4 — 武将子系统层（依赖 hero 核心）:
+ *   heroStar → skillUpgrade → heroDispatch → awakening → recruitTokenEconomy
+ *   ⚠️ heroStar 必须在 hero 之后恢复，因为 StarSystem 依赖 heroSystem.getFragments()
+ *   ⚠️ awakening 必须在 heroStar 之后恢复，因为觉醒条件检查依赖星级和突破阶段
+ *
+ * Phase 5 — 地图与远征层（依赖武将子系统层）:
+ *   expedition → worldMap → territory → siege → garrison → siegeEnhancer → mapEvent
+ *
+ * Phase 6 — 经济与社交层（依赖资源层）:
+ *   offlineReward → copperEconomy → materialEconomy → alliance → social → bond
+ *
+ * Phase 7 — 最终同步:
+ *   syncBuildingToResource（确保建筑产出与资源系统一致）
+ *
+ * 注意：如果未来需要添加新的跨系统依赖，请在此注释中更新顺序约束。
+ * 长期方案：实现两阶段恢复（Phase A: 纯数据恢复 → Phase B: 引用/回调绑定），
+ * 以彻底消除顺序依赖问题。
+ * ─────────────────────────────────────────────────────
+ */
 function applySaveData(ctx: SaveContext, data: GameSaveData): void {
+  // ── Phase 1: 基础资源层 ──
   ctx.building.deserialize(data.building);
   ctx.resource.deserialize(data.resource);
   if (data.calendar) {
     ctx.calendar.deserialize(data.calendar);
   }
+
+  // ── Phase 2: 核心实体层 ──
 
   // ── 武将系统 v1.0 → v2.0 迁移 ──
   // v1.0 存档无 hero/recruit 字段，HeroSystem/HeroRecruitSystem 保持构造函数创建的空状态，
@@ -589,6 +631,8 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
   } else {
     gameLog.info('[Save] v3.0 存档迁移：无科技数据，自动初始化空科技系统');
   }
+
+  // ── Phase 3: 扩展功能层 ──
 
   // ── 装备系统 v5.0 ──
   if (data.equipment && ctx.equipment) {
@@ -717,6 +761,8 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
   if (data.challenge && ctx.challenge) {
     ctx.challenge.deserialize(data.challenge);
   }
+
+  // ── Phase 4: 武将子系统层（依赖 hero 核心数据，必须在 Phase 2 之后） ──
 
   // ── 武将子系统 v17.0 (FIX-301: R3 保存/加载覆盖) ──
   if (data.heroStar && ctx.heroStar) {
@@ -892,6 +938,7 @@ function applySaveData(ctx: SaveContext, data: GameSaveData): void {
     gameLog.info('[Save] 羁绊系统存档迁移：无羁绊数据，自动初始化默认状态');
   }
 
+  // ── Phase 7: 最终同步 ──
   syncBuildingToResource({
     resource: ctx.resource,
     building: ctx.building,

@@ -110,8 +110,11 @@ export class BattleTurnExecutor implements ISubsystem {
     state: BattleState,
     actor: BattleUnit,
   ): BattleAction | null {
-    // DEF-024: actor null/undefined 防护（直接调用路径安全）
-    if (!actor || typeof actor !== 'object' || !actor.isAlive) {
+    // DEF-024: actor null/undefined 防护 — 直接调用路径必须显式报错
+    if (!actor) {
+      throw new Error('executeUnitAction: actor cannot be null');
+    }
+    if (typeof actor !== 'object' || !actor.isAlive) {
       return null;
     }
 

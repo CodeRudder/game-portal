@@ -505,8 +505,21 @@ export class HeroLevelSystem implements ISubsystem {
 
   // ── 7. 序列化 ──
 
+  /**
+   * DEF-036: [已验证-设计正确] serialize/deserialize 为空实现是设计意图。
+   *
+   * HeroLevelSystem 是无状态聚合根 — 所有业务数据存储在 HeroSystem 中，
+   * 所有外部依赖（资源消耗、等级上限查询）通过 setLevelDeps() 注入回调。
+   *
+   * 反序列化流程：
+   * 1. applySaveData() → HeroSystem.deserialize() 恢复武将等级/经验数据
+   * 2. finalizeLoad() → initHeroSystems() → setLevelDeps() 重新注入回调
+   * 3. HeroLevelSystem 通过回调动态查询 HeroSystem 状态，无需自身持久化
+   *
+   * 因此 serialize() 只需返回版本号，deserialize() 为空实现即可。
+   */
   serialize(): LevelSaveData { return { version: LEVEL_SAVE_VERSION }; }
-  deserialize(_data: LevelSaveData): void { /* 预留 */ }
+  deserialize(_data: LevelSaveData): void { /* 无状态系统，无需恢复 */ }
 
   // ── 8. 内部方法 ──
 
