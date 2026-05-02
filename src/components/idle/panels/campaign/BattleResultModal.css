@@ -120,7 +120,7 @@
 
 .tk-brm-result-title--defeat {
   color: #e88;
-  text-shadow: 0 0 20px rgba(200, 50, 50, 0.3);
+  text-shadow: none;
 }
 
 .tk-brm-result-stage {
@@ -153,7 +153,7 @@
 
 .tk-brm-star--filled {
   color: var(--tk-gold);
-  text-shadow: 0 0 12px rgba(200, 168, 76, 0.6);
+  text-shadow: none;
   animation: tk-brm-star-pop 0.4s ease-out backwards;
 }
 
@@ -579,7 +579,7 @@
 
 .tk-brm-confirm-btn--retry:hover {
   background: linear-gradient(135deg, #f09030, #f5b030) !important;
-  box-shadow: 0 0 12px rgba(243, 156, 18, 0.4);
+  box-shadow: none;
 }
 
 .tk-brm-actions {
