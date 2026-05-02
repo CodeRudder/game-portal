@@ -209,8 +209,9 @@ describe('ACC-07 战斗系统验收集成测试', () => {
   it(accTest('ACC-07-01', '出征Tab关卡地图显示 — 章节选择器'), () => {
     const { engine } = makeEngine();
     render(<CampaignTab engine={engine} snapshotVersion={0} />);
-    const chapterText = screen.queryByText(/第.*章/);
-    assertStrict(!!chapterText, 'ACC-07-01', '章节选择器应显示');
+    // ChapterSelectPanel 使用 aria-label="第X章 章节名"，多章节卡片均匹配
+    const chapterCards = screen.queryAllByLabelText(/第.*章/);
+    assertStrict(chapterCards.length > 0, 'ACC-07-01', '章节选择器应显示');
   });
 
   it(accTest('ACC-07-02', '关卡节点状态区分 — 关卡节点显示'), () => {
@@ -420,10 +421,9 @@ describe('ACC-07 战斗系统验收集成测试', () => {
 
   it(accTest('ACC-07-34', '未三星关卡不可扫荡 — 非三星关卡不显示扫荡按钮'), () => {
     const { engine, sim } = makeEngine();
-    // 通关第一个关卡但只给 1 星
+    // 通关第一个关卡但只给 1 星（直接调用 completeBattle 避免空编队检查）
     const stages = engine.getStageList();
     if (stages.length > 0) {
-      engine.startBattle(stages[0].id);
       engine.completeBattle(stages[0].id, 1);
     }
     render(<CampaignTab engine={engine} snapshotVersion={0} />);

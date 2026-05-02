@@ -154,8 +154,9 @@ describe('ACC-09 地图关卡验收集成测试', () => {
   it(accTest('ACC-09-01', '出征Tab整体布局 — 章节选择器和关卡地图'), () => {
     const engine = createCampaignSim().engine;
     render(<CampaignTab engine={engine} snapshotVersion={0} />);
-    const chapterText = screen.queryByText(/第.*章/);
-    assertStrict(!!chapterText, 'ACC-09-01', '章节选择器应显示');
+    // ChapterSelectPanel 使用 aria-label="第X章 章节名"，多章节卡片均匹配
+    const chapterCards = screen.queryAllByLabelText(/第.*章/);
+    assertStrict(chapterCards.length > 0, 'ACC-09-01', '章节选择器应显示');
   });
 
   it(accTest('ACC-09-02', '章节选择器显示 — 章节名和箭头'), () => {

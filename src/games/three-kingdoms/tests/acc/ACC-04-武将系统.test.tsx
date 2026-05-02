@@ -153,6 +153,10 @@ function makeEngineForEnhance(heroId = 'guanyu'): { engine: ThreeKingdomsEngine;
   const sim = createSim();
   const engine = sim.engine;
 
+  // 提高资源上限（初始 gold 上限 2000，升星需 5000+）
+  engine.resource.setCap('gold', 10_000_000);
+  engine.resource.setCap('grain', 10_000_000);
+
   // 添加大量资源以确保升级成功
   engine.resource.addResource('gold', 999999);
   engine.resource.addResource('grain', 999999);
