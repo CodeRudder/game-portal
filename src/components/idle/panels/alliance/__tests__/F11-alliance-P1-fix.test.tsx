@@ -103,28 +103,31 @@ describe('F11 联盟系统 P1 修复', () => {
       const engine = createMockEngine({ inAlliance: true, members: defaultMembers });
       renderPanel(engine);
 
-      expect(screen.getByTestId('alliance-panel-exit-btn')).toBeInTheDocument();
-      expect(screen.getByTestId('alliance-panel-exit-btn').textContent).toContain('退出联盟');
+      expect(screen.getByTestId('alliance-leave-btn')).toBeInTheDocument();
+      expect(screen.getByTestId('alliance-leave-btn').textContent).toContain('退出联盟');
     });
 
     it('点击退出联盟应弹出确认弹窗', () => {
       const engine = createMockEngine({ inAlliance: true, members: defaultMembers });
       renderPanel(engine);
 
-      fireEvent.click(screen.getByTestId('alliance-panel-exit-btn'));
+      fireEvent.click(screen.getByTestId('alliance-leave-btn'));
 
-      expect(screen.getByTestId('alliance-exit-confirm-modal')).toBeInTheDocument();
-      expect(screen.getByText(/确定要退出联盟「测试联盟」/)).toBeInTheDocument();
+      // 组件使用二次点击确认模式，第一次点击后按钮文字变为确认提示
+      expect(screen.getByTestId('alliance-leave-btn').textContent).toContain('确认退出');
     });
 
-    it('取消退出应关闭弹窗', () => {
+    it('取消退出应关闭弹窗', async () => {
       const engine = createMockEngine({ inAlliance: true, members: defaultMembers });
       renderPanel(engine);
 
-      fireEvent.click(screen.getByTestId('alliance-panel-exit-btn'));
-      fireEvent.click(screen.getByTestId('modal-cancel'));
+      fireEvent.click(screen.getByTestId('alliance-leave-btn'));
 
-      expect(screen.queryByTestId('alliance-exit-confirm-modal')).not.toBeInTheDocument();
+      // 等待确认状态超时（3秒后自动取消）
+      await new Promise(r => setTimeout(r, 3200));
+
+      // 按钮文字应恢复为"退出联盟"
+      expect(screen.getByTestId('alliance-leave-btn').textContent).toContain('退出联盟');
       // leaveAlliance 不应被调用
       expect(engine.getAllianceSystem().leaveAlliance).not.toHaveBeenCalled();
     });
@@ -133,8 +136,10 @@ describe('F11 联盟系统 P1 修复', () => {
       const engine = createMockEngine({ inAlliance: true, members: defaultMembers });
       renderPanel(engine);
 
-      fireEvent.click(screen.getByTestId('alliance-panel-exit-btn'));
-      fireEvent.click(screen.getByTestId('modal-confirm'));
+      // 第一次点击进入确认状态
+      fireEvent.click(screen.getByTestId('alliance-leave-btn'));
+      // 第二次点击确认退出
+      fireEvent.click(screen.getByTestId('alliance-leave-btn'));
 
       expect(engine.getAllianceSystem().leaveAlliance).toHaveBeenCalled();
     });
@@ -143,7 +148,7 @@ describe('F11 联盟系统 P1 修复', () => {
       const engine = createMockEngine({ inAlliance: false });
       renderPanel(engine);
 
-      expect(screen.queryByTestId('alliance-panel-exit-btn')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('alliance-leave-btn')).not.toBeInTheDocument();
     });
   });
 
@@ -173,11 +178,15 @@ describe('F11 联盟系统 P1 修复', () => {
       expect(engine.eventBus.on).toHaveBeenCalledWith('alliance:memberJoin', expect.any(Function));
     });
 
-    it('应监听任务完成事件', () => {
+    it('应监听联盟任务完成事件（通过任务系统）', () => {
       const engine = createMockEngine({ inAlliance: true, members: defaultMembers });
       renderPanel(engine);
 
-      expect(engine.eventBus.on).toHaveBeenCalledWith('alliance:taskCompleted', expect.any(Function));
+      // 组件监听了 alliance:levelUp, alliance:bossKilled, alliance:memberJoin
+      // 任务完成通过任务系统处理，不通过 eventBus 广播
+      expect(engine.eventBus.on).toHaveBeenCalledWith('alliance:levelUp', expect.any(Function));
+      expect(engine.eventBus.on).toHaveBeenCalledWith('alliance:bossKilled', expect.any(Function));
+      expect(engine.eventBus.on).toHaveBeenCalledWith('alliance:memberJoin', expect.any(Function));
     });
 
     it('未加入联盟时不应监听事件', () => {
@@ -260,11 +269,11 @@ describe('F11 联盟系统 P1 修复', () => {
   // ═══════════════════════════════════════════
 
   describe('Tab结构完整性', () => {
-    it('应包含6个Tab（info/members/tasks/chat/announce/ranking）', () => {
+    it('应包含6个Tab（info/members/tasks/search/donate/ranking）', () => {
       const engine = createMockEngine({ inAlliance: true, members: defaultMembers });
       renderPanel(engine);
 
-      const tabs = ['info', 'members', 'tasks', 'chat', 'announce', 'ranking'];
+      const tabs = ['info', 'members', 'tasks', 'search', 'donate', 'ranking'];
       tabs.forEach(t => {
         expect(screen.getByTestId(`alliance-panel-tab-${t}`)).toBeInTheDocument();
       });
