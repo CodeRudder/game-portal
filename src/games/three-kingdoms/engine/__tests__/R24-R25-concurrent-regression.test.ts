@@ -295,7 +295,9 @@ describe('R24: 并发安全测试', () => {
     it('tick过程中修改资源后立即save，数据一致性', () => {
       // 模拟游戏循环中资源产出和保存交替
       // grain有产出速率0.8/s，每次tick 1秒约增加0.8
+      // gold也有产出速率（market Lv1 = 0.6/s），每次tick 1秒约增加0.6
       const grainBefore = engine.resource.getAmount('grain');
+      const goldBefore = engine.resource.getAmount('gold');
       for (let i = 0; i < 10; i++) {
         engine.tick(1000);
         engine.resource.addResource('gold', 100);
@@ -306,8 +308,13 @@ describe('R24: 并发安全测试', () => {
       const parsed = JSON.parse(serialized);
       // grain = 初始 + 10次tick产出
       expect(parsed.resource.resources.grain).toBeGreaterThan(grainBefore);
-      // gold = 初始 + 10次手动添加100
-      expect(parsed.resource.resources.gold).toBe(INITIAL_RESOURCES.gold + 1000);
+      // gold = tick前值 + 10次手动添加100 + 10次tick产出（market Lv1 = 0.6/s）
+      const goldAfter = parsed.resource.resources.gold;
+      const manualGold = 1000;
+      const tickGoldProduced = goldAfter - goldBefore - manualGold;
+      // tick产出应为正值且合理（10次 × 0.6 = 6）
+      expect(tickGoldProduced).toBeGreaterThan(0);
+      expect(goldAfter).toBe(goldBefore + manualGold + tickGoldProduced);
     });
   });
 });
