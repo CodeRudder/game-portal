@@ -84,8 +84,8 @@ describe('ResourceSystem 对抗式测试', () => {
     });
 
     it('setResource直接设置数量', () => {
-      rs.setResource('gold', 9999);
-      expect(rs.getAmount('gold')).toBe(9999);
+      rs.setResource('mandate', 9999);
+      expect(rs.getAmount('mandate')).toBe(9999);
     });
   });
 
@@ -112,10 +112,10 @@ describe('ResourceSystem 对抗式测试', () => {
       }));
     });
 
-    it('无上限资源（gold）不截断', () => {
-      const added = rs.addResource('gold', 9999999);
+    it('无上限资源（mandate）不截断', () => {
+      const added = rs.addResource('mandate', 9999999);
       expect(added).toBe(9999999);
-      expect(rs.getAmount('gold')).toBe(INITIAL_RESOURCES.gold + 9999999);
+      expect(rs.getAmount('mandate')).toBe(INITIAL_RESOURCES.mandate + 9999999);
     });
 
     it('上限降低时截断已有资源', () => {
@@ -176,9 +176,9 @@ describe('ResourceSystem 对抗式测试', () => {
       // gold 无上限, addResource(0 + MAX_SAFE_INTEGER) = MAX_SAFE_INTEGER
       // 但初始 gold=300, 所以 300 + MAX_SAFE_INTEGER 可能超出安全整数
       // 测试无上限资源可以存储极大值
-      rs.setResource('gold', 0);
-      rs.addResource('gold', Number.MAX_SAFE_INTEGER);
-      expect(rs.getAmount('gold')).toBe(Number.MAX_SAFE_INTEGER);
+      rs.setResource('mandate', 0);
+      rs.addResource('mandate', Number.MAX_SAFE_INTEGER);
+      expect(rs.getAmount('mandate')).toBe(Number.MAX_SAFE_INTEGER);
     });
 
     it('批量消耗刚好足够', () => {
@@ -351,7 +351,7 @@ describe('ResourceSystem 对抗式测试', () => {
       const types = warnings.map(w => w.resourceType);
       expect(types).toContain('grain');
       expect(types).toContain('troops');
-      expect(types).not.toContain('gold');
+      expect(types).toContain('gold');
       expect(types).not.toContain('mandate');
     });
 

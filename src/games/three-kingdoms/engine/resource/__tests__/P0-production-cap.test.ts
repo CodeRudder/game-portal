@@ -136,23 +136,23 @@ describe('P0: 产出上限验证 (GAP-BUILD-001)', () => {
   });
 
   describe('上限为null的资源不受限制', () => {
-    it('gold(上限null)可以无限增加', () => {
-      rs.setProductionRate('gold', 1000);
+    it('mandate(上限null)可以无限增加', () => {
+      rs.setProductionRate('mandate', 1000);
 
       // 连续tick多次
       for (let i = 0; i < 100; i++) {
         rs.tick(1000);
       }
 
-      // gold应该持续增长
-      expect(rs.getAmount('gold')).toBeGreaterThan(INITIAL_RESOURCES.gold);
-      expect(rs.getCaps().gold).toBeNull();
+      // mandate应该持续增长
+      expect(rs.getAmount('mandate')).toBeGreaterThan(INITIAL_RESOURCES.mandate);
+      expect(rs.getCaps().mandate).toBeNull();
     });
 
-    it('mandate(上限null)可以无限增加', () => {
-      rs.setProductionRate('mandate', 100);
+    it('techPoint(上限null)可以无限增加', () => {
+      rs.setProductionRate('techPoint', 100);
       rs.tick(1000);
-      expect(rs.getAmount('mandate')).toBeGreaterThan(0);
+      expect(rs.getAmount('techPoint')).toBeGreaterThan(0);
       expect(rs.getCaps().mandate).toBeNull();
     });
   });

@@ -44,7 +44,7 @@ describe('BuildingSystem', () => {
   describe('初始化', () => {
     it('11座建筑全部存在', () => {
       const all = sys.getAllBuildings();
-      expect(Object.keys(all)).toHaveLength(8);
+      expect(Object.keys(all)).toHaveLength(11);
       for (const t of BUILDING_TYPES) expect(all[t]).toBeDefined();
     });
 
@@ -112,7 +112,7 @@ describe('BuildingSystem', () => {
     });
 
     it('锁定建筑不能升级', () => {
-      const r = sys.checkUpgrade('market', RICH);
+      const r = sys.checkUpgrade('barracks', RICH);
       expect(r.canUpgrade).toBe(false);
       expect(r.reasons).toContain('建筑尚未解锁');
     });
@@ -204,16 +204,18 @@ describe('BuildingSystem', () => {
   // 5. 解锁系统
   // ═══════════════════════════════════════════
   describe('解锁系统', () => {
-    it('主城Lv2时解锁市集和兵营', () => {
+    it('主城Lv2时解锁兵营', () => {
       const buildings = {} as Record<BuildingType, BuildingState>;
       for (const t of BUILDING_TYPES) buildings[t] = { type: t, level: 0, status: 'locked', upgradeStartTime: null, upgradeEndTime: null };
       buildings.castle = { type: 'castle', level: 2, status: 'idle', upgradeStartTime: null, upgradeEndTime: null };
       buildings.farmland = { type: 'farmland', level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null };
+      buildings.market = { type: 'market', level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null };
+      buildings.mine = { type: 'mine', level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null };
+      buildings.lumberMill = { type: 'lumberMill', level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null };
       sys.deserialize({ version: BUILDING_SAVE_VERSION, buildings });
 
-      expect(sys.getBuilding('market').status).toBe('idle');
-      expect(sys.getBuilding('market').level).toBe(1);
       expect(sys.getBuilding('barracks').status).toBe('idle');
+      expect(sys.getBuilding('barracks').level).toBe(1);
     });
 
     it('主城Lv3时解锁铁匠铺和书院', () => {
@@ -222,6 +224,8 @@ describe('BuildingSystem', () => {
       buildings.castle = { type: 'castle', level: 3, status: 'idle', upgradeStartTime: null, upgradeEndTime: null };
       buildings.farmland = { type: 'farmland', level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null };
       buildings.market = { type: 'market', level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null };
+      buildings.mine = { type: 'mine', level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null };
+      buildings.lumberMill = { type: 'lumberMill', level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null };
       buildings.barracks = { type: 'barracks', level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null };
       sys.deserialize({ version: BUILDING_SAVE_VERSION, buildings });
 
@@ -241,7 +245,7 @@ describe('BuildingSystem', () => {
     });
 
     it('checkUnlock 未解锁建筑返回 false', () => {
-      expect(sys.checkUnlock('market')).toBe(false);
+      expect(sys.checkUnlock('barracks')).toBe(false);
       expect(sys.checkUnlock('wall')).toBe(false);
     });
   });
@@ -275,8 +279,9 @@ describe('BuildingSystem', () => {
       const cost = sys.startUpgrade('castle', RICH);
       mockNow(base, cost.timeSeconds * 1000 + 1);
       sys.tick();
-      expect(sys.getBuilding('market').status).toBe('idle');
-      expect(sys.getBuilding('market').level).toBe(1);
+      // 主城 Lv2 解锁兵营
+      expect(sys.getBuilding('barracks').status).toBe('idle');
+      expect(sys.getBuilding('barracks').level).toBe(1);
     });
   });
 
@@ -326,7 +331,9 @@ describe('BuildingSystem', () => {
     it('calculateTotalProduction 汇总非主城建筑产出', () => {
       const total = sys.calculateTotalProduction();
       expect(total.grain).toBe(0.8);
-      expect(total.gold).toBeUndefined();
+      expect(total.gold).toBeCloseTo(0.6);
+      expect(total.ore).toBeCloseTo(0.8);
+      expect(total.wood).toBeCloseTo(0.8);
     });
   });
 
@@ -415,7 +422,7 @@ describe('BuildingSystem', () => {
       expect(sys.getUpgradeCost('castle')).toBeNull();
     });
 
-    it('未解锁建筑（Lv0）返回 null', () => { expect(sys.getUpgradeCost('market')).toBeNull(); });
+    it('未解锁建筑（Lv0）返回 null', () => { expect(sys.getUpgradeCost('barracks')).toBeNull(); });
   });
 
   // ═══════════════════════════════════════════
@@ -452,7 +459,7 @@ describe('BuildingSystem', () => {
       expect(sys.getCastleLevel()).toBe(1);
       expect(sys.getBuilding('castle').status).toBe('idle');
       expect(sys.getUpgradeQueue()).toHaveLength(0);
-      expect(sys.getBuilding('market').status).toBe('locked');
+      expect(sys.getBuilding('barracks').status).toBe('locked');
     });
   });
 
@@ -499,7 +506,7 @@ describe('BuildingSystem', () => {
     });
 
     it('isUnlocked 未解锁建筑返回 false', () => {
-      expect(sys.isUnlocked('market')).toBe(false);
+      expect(sys.isUnlocked('barracks')).toBe(false);
     });
   });
 });

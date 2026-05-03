@@ -48,7 +48,7 @@ describe('ResourceSystem', () => {
     it('初始上限正确', () => {
       const caps = rs.getCaps();
       expect(caps.grain).toBe(INITIAL_CAPS.grain);
-      expect(caps.gold).toBeNull();
+      expect(caps.gold).toBe(INITIAL_CAPS.gold);
       expect(caps.troops).toBe(INITIAL_CAPS.troops);
       expect(caps.mandate).toBeNull();
     });
@@ -210,11 +210,10 @@ describe('ResourceSystem', () => {
       const types = rs.getCapWarnings().map((w) => w.resourceType);
       expect(types).toContain('grain');
       expect(types).toContain('troops');
-      expect(types).not.toContain('gold');
+      expect(types).toContain('gold');
       expect(types).not.toContain('mandate');
     });
     it('getCapWarning 无上限资源返回 null', () => {
-      expect(rs.getCapWarning('gold')).toBeNull();
       expect(rs.getCapWarning('mandate')).toBeNull();
     });
     it('警告信息包含正确的百分比和数值', () => {
@@ -409,8 +408,8 @@ describe('ResourceSystem', () => {
       expect(rs.getAmount('grain')).toBe(before);
     });
     it('无上限资源不截断', () => {
-      rs.addResource('gold', 99999);
-      expect(rs.getAmount('gold')).toBe(INITIAL_RESOURCES.gold + 99999);
+      rs.addResource('mandate', 99999);
+      expect(rs.getAmount('mandate')).toBe(INITIAL_RESOURCES.mandate + 99999);
     });
     it('consumeResource amount<=0 返回0', () => {
       expect(rs.consumeResource('gold', 0)).toBe(0);

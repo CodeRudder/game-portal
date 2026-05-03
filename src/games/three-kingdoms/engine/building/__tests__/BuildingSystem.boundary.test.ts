@@ -131,8 +131,8 @@ describe('BuildingSystem 边界条件测试', () => {
 
   // ── 6. 锁定建筑升级 ──
   it('锁定建筑的升级检查应返回尚未解锁', () => {
-    // market 需要 castle level 2，初始 castle=1
-    const result = bs.checkUpgrade('market');
+    // barracks 需要 castle level 2，初始 castle=1
+    const result = bs.checkUpgrade('barracks');
     expect(result.canUpgrade).toBe(false);
     expect(result.reasons.some((r) => r.includes('尚未解锁'))).toBe(true);
   });

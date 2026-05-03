@@ -87,11 +87,11 @@ describe('BuildingStateHelpers — createInitialState', () => {
   });
 
   it('需要主城等级解锁的建筑初始状态为locked', () => {
-    // 市集需要主城 Lv2
-    const market = createInitialState('market');
-    expect(market.type).toBe('market');
-    expect(market.level).toBe(0);
-    expect(market.status).toBe('locked');
+    // 兵营需要主城 Lv2
+    const barracks = createInitialState('barracks');
+    expect(barracks.type).toBe('barracks');
+    expect(barracks.level).toBe(0);
+    expect(barracks.status).toBe('locked');
 
     // 铁匠铺需要主城 Lv3
     const workshop = createInitialState('workshop');
@@ -102,8 +102,22 @@ describe('BuildingStateHelpers — createInitialState', () => {
     expect(wall.status).toBe('locked');
   });
 
+  it('初始解锁的建筑（市集、矿场、伐木场）等级为1，状态为idle', () => {
+    const market = createInitialState('market');
+    expect(market.level).toBe(1);
+    expect(market.status).toBe('idle');
+
+    const mine = createInitialState('mine');
+    expect(mine.level).toBe(1);
+    expect(mine.status).toBe('idle');
+
+    const lumberMill = createInitialState('lumberMill');
+    expect(lumberMill.level).toBe(1);
+    expect(lumberMill.status).toBe('idle');
+  });
+
   it('返回的状态包含正确的 type 字段', () => {
-    const types: BuildingType[] = ['castle', 'farmland', 'market', 'barracks', 'workshop', 'academy', 'clinic', 'wall'];
+    const types: BuildingType[] = ['castle', 'farmland', 'market', 'mine', 'lumberMill', 'barracks', 'workshop', 'academy', 'clinic', 'wall', 'tavern'];
     for (const t of types) {
       const state = createInitialState(t);
       expect(state.type).toBe(t);
@@ -125,25 +139,31 @@ describe('BuildingStateHelpers — createAllStates', () => {
     }
   });
 
-  it('主城和农田初始解锁', () => {
+  it('主城、农田、市集、矿场、伐木场初始解锁', () => {
     const states = createAllStates();
 
     expect(states.castle.status).toBe('idle');
     expect(states.castle.level).toBe(1);
     expect(states.farmland.status).toBe('idle');
     expect(states.farmland.level).toBe(1);
+    expect(states.market.status).toBe('idle');
+    expect(states.market.level).toBe(1);
+    expect(states.mine.status).toBe('idle');
+    expect(states.mine.level).toBe(1);
+    expect(states.lumberMill.status).toBe('idle');
+    expect(states.lumberMill.level).toBe(1);
   });
 
   it('需要解锁条件的建筑初始为 locked', () => {
     const states = createAllStates();
 
-    // 市集（主城Lv2）、兵营（主城Lv2）、铁匠铺（主城Lv3）、书院（主城Lv3）、医馆（主城Lv4）、城墙（主城Lv5）
-    expect(states.market.status).toBe('locked');
+    // 兵营（主城Lv2）、铁匠铺（主城Lv3）、书院（主城Lv3）、医馆（主城Lv4）、城墙（主城Lv5）、酒馆（主城Lv5）
     expect(states.barracks.status).toBe('locked');
     expect(states.workshop.status).toBe('locked');
     expect(states.academy.status).toBe('locked');
     expect(states.clinic.status).toBe('locked');
     expect(states.wall.status).toBe('locked');
+    expect(states.tavern.status).toBe('locked');
   });
 
   it('所有建筑状态的 upgradeStartTime 和 upgradeEndTime 为 null', () => {
