@@ -21,6 +21,8 @@ import { WallDefenseSystem } from '../WallDefenseSystem';
 import { TrapSystem } from '../TrapSystem';
 import { BuildingEventSystem } from '../BuildingEventSystem';
 import { ActiveDecisionSystem } from '../ActiveDecisionSystem';
+import { AutoUpgradeSystem } from '../AutoUpgradeSystem';
+import { ResourceChainSystem } from '../ResourceChainSystem';
 import { BUILDING_TYPES } from '../building.types';
 import { BUILDING_DEFS, BUILDING_MAX_LEVELS, BUILDING_SAVE_VERSION, STORAGE_OVERFLOW_SLOWDOWN } from '../building-config';
 
@@ -1449,26 +1451,463 @@ describe('装备系统集成', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// 缺失功能检测 (it.todo)
+// F11: 升级加速 — 铜钱/天命/元宝三种加速方式
+// ═══════════════════════════════════════════════════════════════
+
+describe('BLD-F11: 升级加速', () => {
+  let bs: BuildingSystem;
+  let base: number;
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    base = 1_000_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(base);
+    bs = new BuildingSystem();
+  });
+
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  it('BLD-F11-01: 铜钱加速 — 减少30%剩余时间', () => {
+    // 使用充足资源开始升级
+    const cost = bs.startUpgrade('farmland', { ...RICH });
+
+    // 推进时间到升级中间阶段
+    vi.spyOn(Date, 'now').mockReturnValue(base + 1000); // 1秒后
+
+    // 铜钱加速：消耗铜钱减少30%剩余时间
+    const result = bs.speedUpWithCopper('farmland', 1_000_000);
+
+    expect(result.success).toBe(true);
+    expect(result.timeReduced).toBeGreaterThan(0);
+    expect(result.cost).toBe(1000); // 基础消耗 ×1
+    expect(result.remainingSpeedUps).toBe(2); // 剩余2次
+
+    // 验证建筑状态中endTime已更新
+    const state = bs.getBuilding('farmland');
+    expect(state.upgradeEndTime).toBeLessThan(base + cost.timeSeconds * 1000);
+  });
+
+  it('BLD-F11-01b: 铜钱加速 — 次数上限(3次)后拒绝', () => {
+    bs.startUpgrade('farmland', { ...RICH });
+    vi.spyOn(Date, 'now').mockReturnValue(base + 1000);
+
+    // 连续加速3次
+    const r1 = bs.speedUpWithCopper('farmland', 1_000_000);
+    expect(r1.success).toBe(true);
+    expect(r1.remainingSpeedUps).toBe(2);
+
+    const r2 = bs.speedUpWithCopper('farmland', 1_000_000);
+    expect(r2.success).toBe(true);
+    expect(r2.remainingSpeedUps).toBe(1);
+
+    const r3 = bs.speedUpWithCopper('farmland', 1_000_000);
+    expect(r3.success).toBe(true);
+    expect(r3.remainingSpeedUps).toBe(0);
+
+    // 第4次应失败
+    const r4 = bs.speedUpWithCopper('farmland', 1_000_000);
+    expect(r4.success).toBe(false);
+    expect(r4.reason).toContain('上限');
+  });
+
+  it('BLD-F11-01c: 铜钱加速 — 铜钱不足时拒绝', () => {
+    bs.startUpgrade('farmland', { ...RICH });
+    vi.spyOn(Date, 'now').mockReturnValue(base + 1000);
+
+    const result = bs.speedUpWithCopper('farmland', 10); // 只有10铜钱
+    expect(result.success).toBe(false);
+    expect(result.reason).toContain('铜钱不足');
+  });
+
+  it('BLD-F11-02: 天命加速 — 消耗天命减少固定时间', () => {
+    // 使用 castle Lv5→6 升级（480秒），确保剩余时间 > 300秒
+    forceLevel(bs, 'farmland', 4);
+    forceLevel(bs, 'castle', 5);
+    bs.startUpgrade('castle', { ...RICH });
+    // 不推进时间，剩余时间 = 完整升级时长（480秒）
+
+    // 消耗5点天命，每点减少60秒 → 共减少300秒
+    const result = bs.speedUpWithMandate('castle', 5, 100);
+
+    expect(result.success).toBe(true);
+    expect(result.timeReduced).toBe(300); // 5 × 60 = 300秒
+    expect(result.cost).toBe(5);
+  });
+
+  it('BLD-F11-02b: 天命加速 — 天命不足时拒绝', () => {
+    bs.startUpgrade('farmland', { ...RICH });
+    vi.spyOn(Date, 'now').mockReturnValue(base + 1000);
+
+    const result = bs.speedUpWithMandate('farmland', 50, 10); // 需要50，只有10
+    expect(result.success).toBe(false);
+    expect(result.reason).toContain('天命不足');
+  });
+
+  it('BLD-F11-02c: 天命加速 — 天命加速可完成升级', () => {
+    bs.startUpgrade('farmland', { ...RICH });
+    vi.spyOn(Date, 'now').mockReturnValue(base + 1000);
+
+    // 使用大量天命使升级立即完成
+    const result = bs.speedUpWithMandate('farmland', 99999, 99999);
+
+    expect(result.success).toBe(true);
+    // 升级完成后建筑状态恢复idle且等级+1
+    const state = bs.getBuilding('farmland');
+    expect(state.status).toBe('idle');
+    expect(state.level).toBe(2);
+    expect(state.upgradeEndTime).toBeNull();
+  });
+
+  it('BLD-F11-03: 元宝秒完成 — 立即完成升级', () => {
+    bs.startUpgrade('farmland', { ...RICH });
+    vi.spyOn(Date, 'now').mockReturnValue(base + 1000);
+
+    // 使用充足元宝秒完成
+    const result = bs.instantCompleteWithIngot('farmland', 99999);
+
+    expect(result.success).toBe(true);
+    expect(result.ingotCost).toBeGreaterThan(0);
+
+    // 验证建筑已完成升级
+    const state = bs.getBuilding('farmland');
+    expect(state.status).toBe('idle');
+    expect(state.level).toBe(2);
+    expect(state.upgradeStartTime).toBeNull();
+    expect(state.upgradeEndTime).toBeNull();
+  });
+
+  it('BLD-F11-03b: 元宝秒完成 — 元宝不足时拒绝', () => {
+    bs.startUpgrade('farmland', { ...RICH });
+    vi.spyOn(Date, 'now').mockReturnValue(base + 1000);
+
+    const result = bs.instantCompleteWithIngot('farmland', 0); // 0元宝
+    expect(result.success).toBe(false);
+    expect(result.reason).toContain('元宝不足');
+  });
+
+  it('BLD-F11-03c: 元宝秒完成 — 未在升级队列中时拒绝', () => {
+    const result = bs.instantCompleteWithIngot('farmland', 99999);
+    expect(result.success).toBe(false);
+    expect(result.reason).toContain('未在升级队列中');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// F12: 自动升级 — 优先级算法 & 资源保护
+// ═══════════════════════════════════════════════════════════════
+
+describe('BLD-F12: 自动升级', () => {
+  let bs: BuildingSystem;
+  let autoSys: AutoUpgradeSystem;
+  let base: number;
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    base = 1_000_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(base);
+    bs = new BuildingSystem();
+    autoSys = new AutoUpgradeSystem();
+    autoSys.setBuildingSystem(bs);
+    autoSys.setResourceProvider(() => ({
+      grain: 1e9, gold: 1e9, troops: 1e9,
+      ore: 1e9, wood: 1e9, mandate: 0,
+    }));
+    autoSys.setResourceDeductor(() => {});
+  });
+
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  it('BLD-F12-01: 优先级算法 — balanced策略选择最低等级建筑', () => {
+    autoSys.setConfig({ strategy: 'balanced', enabled: true });
+
+    // 所有建筑初始 Lv1，balanced 应选择等级最低的建筑
+    const target = autoSys.getNextUpgradeTarget();
+    expect(target).not.toBeNull();
+    // balanced 策略：等级最低优先，同等级按 BUILDING_TYPES 顺序
+    expect(BUILDING_TYPES).toContain(target);
+  });
+
+  it('BLD-F12-01b: 优先级算法 — economy策略按经济优先级排序', () => {
+    autoSys.setConfig({ strategy: 'economy', enabled: true });
+
+    const target = autoSys.getNextUpgradeTarget();
+    expect(target).not.toBeNull();
+    // economy 优先级：farmland > market > mine > ...
+    // 所有建筑同等级时，farmland 应被首选
+    expect(target).toBe('farmland');
+  });
+
+  it('BLD-F12-01c: 优先级算法 — military策略按军事优先级排序', () => {
+    // barracks 初始锁定（需主城Lv2），先解锁
+    forceLevel(bs, 'castle', 2);
+    forceLevel(bs, 'barracks', 1);
+    autoSys.setBuildingSystem(bs); // 重新注入以获取最新状态
+    autoSys.setConfig({ strategy: 'military', enabled: true });
+
+    const target = autoSys.getNextUpgradeTarget();
+    expect(target).not.toBeNull();
+    // military 优先级：barracks > wall > workshop > ...
+    expect(target).toBe('barracks');
+  });
+
+  it('BLD-F12-01d: 优先级算法 — 队列满时返回null', () => {
+    autoSys.setConfig({ strategy: 'balanced', enabled: true });
+
+    // 填满升级队列
+    const maxSlots = bs.getMaxQueueSlots();
+    for (let i = 0; i < maxSlots; i++) {
+      const types = BUILDING_TYPES.filter(t => t !== 'castle');
+      if (i < types.length) {
+        bs.startUpgrade(types[i], { ...RICH });
+      }
+    }
+
+    const target = autoSys.getNextUpgradeTarget();
+    expect(target).toBeNull();
+  });
+
+  it('BLD-F12-01e: 优先级算法 — 排除指定建筑', () => {
+    autoSys.setConfig({ strategy: 'economy', enabled: true, excludedBuildings: ['farmland'] });
+
+    const target = autoSys.getNextUpgradeTarget();
+    expect(target).not.toBeNull();
+    expect(target).not.toBe('farmland');
+  });
+
+  it('BLD-F12-02: 资源保护 — 不消耗低于阈值的资源', () => {
+    // 默认保护30%资源
+    autoSys.setConfig({ resourceProtectionPercent: 30 });
+
+    // 设置较少资源，使升级费用超过可用资源（扣除保护后）
+    const cheapCost = bs.getUpgradeCost('farmland');
+    expect(cheapCost).not.toBeNull();
+
+    // 资源刚好等于升级费用（保护30%后不够）
+    const tightResources = {
+      grain: cheapCost!.grain,  // 刚好等于费用
+      gold: cheapCost!.gold,
+      troops: 0, ore: 0, wood: 0,
+    };
+    autoSys.setResourceProvider(() => tightResources);
+
+    const canAfford = autoSys.canAffordWithProtection('farmland');
+    expect(canAfford).toBe(false); // 保护30%后可用资源不足
+  });
+
+  it('BLD-F12-02b: 资源保护 — 充足资源时允许升级', () => {
+    autoSys.setConfig({ resourceProtectionPercent: 30 });
+
+    // 充足资源：远超升级费用
+    autoSys.setResourceProvider(() => ({
+      grain: 1e9, gold: 1e9, troops: 1e9,
+      ore: 1e9, wood: 1e9,
+    }));
+
+    const canAfford = autoSys.canAffordWithProtection('farmland');
+    expect(canAfford).toBe(true);
+  });
+
+  it('BLD-F12-02c: 资源保护 — 0%保护阈值等于不保护', () => {
+    autoSys.setConfig({ resourceProtectionPercent: 0 });
+
+    // 资源刚好等于费用，0%保护应该可以负担
+    const cheapCost = bs.getUpgradeCost('farmland');
+    expect(cheapCost).not.toBeNull();
+
+    autoSys.setResourceProvider(() => ({
+      grain: cheapCost!.grain,
+      gold: cheapCost!.gold,
+      troops: 0, ore: 0, wood: 0,
+    }));
+
+    const canAfford = autoSys.canAffordWithProtection('farmland');
+    expect(canAfford).toBe(true);
+  });
+
+  it('BLD-F12-03: tickAutoUpgrade — 完整流程执行', () => {
+    autoSys.enable();
+
+    autoSys.setResourceProvider(() => ({
+      grain: 1e9, gold: 1e9, troops: 1e9,
+      ore: 1e9, wood: 1e9, mandate: 0,
+    }));
+
+    let deducted: Record<string, number> = {};
+    autoSys.setResourceDeductor((cost) => { deducted = { ...cost }; });
+
+    const result = autoSys.tickAutoUpgrade();
+
+    expect(result.upgraded).not.toBeNull();
+    expect(result.cost).toBeDefined();
+    expect(Object.keys(result.cost).length).toBeGreaterThan(0);
+  });
+
+  it('BLD-F12-03b: tickAutoUpgrade — 未启用时返回原因', () => {
+    autoSys.disable();
+    const result = autoSys.tickAutoUpgrade();
+    expect(result.upgraded).toBeNull();
+    expect(result.reason).toContain('未启用');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// F28: 资源链循环 — 6条链路验证
+// ═══════════════════════════════════════════════════════════════
+
+describe('BLD-F28: 资源链循环', () => {
+  let bs: BuildingSystem;
+  let chainSys: ResourceChainSystem;
+  let base: number;
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    base = 1_000_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(base);
+    bs = new BuildingSystem();
+
+    // 解锁所有链路涉及的建筑：升级主城到Lv8以解锁全部建筑
+    forceLevel(bs, 'castle', 8);
+    // 解锁后设置所有链路建筑到Lv1（idle）
+    const chainBuildings: BuildingType[] = [
+      'farmland', 'barracks', 'mine', 'lumberMill', 'workshop',
+      'market', 'port', 'academy', 'tavern', 'wall',
+    ];
+    for (const t of chainBuildings) {
+      forceLevel(bs, t, 1);
+    }
+
+    chainSys = new ResourceChainSystem();
+    chainSys.setBuildingSystem(bs);
+  });
+
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  it('BLD-F28-01: 粮草→兵力→战斗链', () => {
+    // 初始状态：所有建筑 Lv1（idle），链路应畅通
+    const result = chainSys.validateChain('F28-01');
+    expect(result.valid).toBe(true);
+    expect(result.bottlenecks).toHaveLength(0);
+    expect(result.throughput).toBeGreaterThan(0);
+
+    // 验证链路包含 farmland 和 barracks
+    const chain = chainSys.getChain('F28-01');
+    expect(chain).toBeDefined();
+    expect(chain!.nodes.some(n => n.buildingType === 'farmland')).toBe(true);
+    expect(chain!.nodes.some(n => n.buildingType === 'barracks')).toBe(true);
+  });
+
+  it('BLD-F28-02: 矿石+木材→装备→英雄链', () => {
+    const result = chainSys.validateChain('F28-02');
+    expect(result.valid).toBe(true);
+    expect(result.bottlenecks).toHaveLength(0);
+    expect(result.throughput).toBeGreaterThan(0);
+
+    const chain = chainSys.getChain('F28-02');
+    expect(chain).toBeDefined();
+    expect(chain!.nodes.some(n => n.buildingType === 'mine')).toBe(true);
+    expect(chain!.nodes.some(n => n.buildingType === 'lumberMill')).toBe(true);
+    expect(chain!.nodes.some(n => n.buildingType === 'workshop')).toBe(true);
+  });
+
+  it('BLD-F28-03: 铜钱→贸易→折扣链', () => {
+    const result = chainSys.validateChain('F28-03');
+    expect(result.valid).toBe(true);
+    expect(result.bottlenecks).toHaveLength(0);
+    expect(result.throughput).toBeGreaterThan(0);
+
+    const chain = chainSys.getChain('F28-03');
+    expect(chain).toBeDefined();
+    expect(chain!.nodes.some(n => n.buildingType === 'market')).toBe(true);
+    expect(chain!.nodes.some(n => n.buildingType === 'port')).toBe(true);
+  });
+
+  it('BLD-F28-04: 科技点→科技→加成链', () => {
+    const result = chainSys.validateChain('F28-04');
+    expect(result.valid).toBe(true);
+    expect(result.bottlenecks).toHaveLength(0);
+    expect(result.throughput).toBeGreaterThan(0);
+
+    const chain = chainSys.getChain('F28-04');
+    expect(chain).toBeDefined();
+    expect(chain!.nodes.some(n => n.buildingType === 'academy')).toBe(true);
+  });
+
+  it('BLD-F28-05: 铜钱+粮草→招募→英雄链', () => {
+    const result = chainSys.validateChain('F28-05');
+    expect(result.valid).toBe(true);
+    expect(result.bottlenecks).toHaveLength(0);
+    expect(result.throughput).toBeGreaterThan(0);
+
+    const chain = chainSys.getChain('F28-05');
+    expect(chain).toBeDefined();
+    expect(chain!.nodes.some(n => n.buildingType === 'farmland')).toBe(true);
+    expect(chain!.nodes.some(n => n.buildingType === 'market')).toBe(true);
+    expect(chain!.nodes.some(n => n.buildingType === 'tavern')).toBe(true);
+  });
+
+  it('BLD-F28-06: 矿石+木材→城防链', () => {
+    const result = chainSys.validateChain('F28-06');
+    expect(result.valid).toBe(true);
+    expect(result.bottlenecks).toHaveLength(0);
+    expect(result.throughput).toBeGreaterThan(0);
+
+    const chain = chainSys.getChain('F28-06');
+    expect(chain).toBeDefined();
+    expect(chain!.nodes.some(n => n.buildingType === 'mine')).toBe(true);
+    expect(chain!.nodes.some(n => n.buildingType === 'lumberMill')).toBe(true);
+    expect(chain!.nodes.some(n => n.buildingType === 'wall')).toBe(true);
+  });
+
+  it('BLD-F28-all: validateAllChains — 所有6条链路同时验证', () => {
+    const results = chainSys.validateAllChains();
+
+    expect(Object.keys(results)).toHaveLength(6);
+    for (const chainId of ['F28-01', 'F28-02', 'F28-03', 'F28-04', 'F28-05', 'F28-06']) {
+      expect(results[chainId]).toBeDefined();
+      expect(results[chainId].valid).toBe(true);
+      expect(results[chainId].bottlenecks).toHaveLength(0);
+    }
+  });
+
+  it('BLD-F28-bottleneck: 瓶颈检测 — 建筑未建造时报告瓶颈', () => {
+    // 将农田降为 Lv0（未建造），触发瓶颈
+    const save = bs.serialize();
+    save.buildings.farmland.level = 0;
+    save.buildings.farmland.status = 'idle'; // 先设idle，deserialize会自动修正level<=0为locked
+    bs.deserialize(save);
+
+    // 确认农田确实为 Lv0（getNodeLevel返回0）
+    expect(bs.getLevel('farmland')).toBe(0);
+
+    // F28-01 链路应出现瓶颈（farmland未建造）
+    const result = chainSys.validateChain('F28-01');
+    expect(result.valid).toBe(false);
+    expect(result.bottlenecks.length).toBeGreaterThan(0);
+  });
+
+  it('BLD-F28-throughput: 链路效率 — 升级建筑提高吞吐', () => {
+    const before = chainSys.validateChain('F28-01').throughput;
+
+    // 升级农田到 Lv5
+    forceLevel(bs, 'farmland', 5);
+    const after = chainSys.validateChain('F28-01').throughput;
+
+    expect(after).toBeGreaterThanOrEqual(before);
+  });
+
+  it('BLD-F28-invalid: 不存在的链路返回错误', () => {
+    const result = chainSys.validateChain('F28-99');
+    expect(result.valid).toBe(false);
+    expect(result.bottlenecks[0]).toContain('不存在');
+    expect(result.throughput).toBe(0);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 其他缺失功能 (it.todo)
 // ═══════════════════════════════════════════════════════════════
 
 describe('缺失功能检测', () => {
-  // F11: 升级加速 — 检查speedUpUpgrade是否存在
-  it.todo('BLD-F11: 升级加速 — speedUpUpgrade功能待实现');
-  it.todo('BLD-F11b: 升级加速 — 铜钱加速升级');
-  it.todo('BLD-F11c: 升级加速 — 元宝秒完成升级');
-
-  // F12: 自动升级
-  it.todo('BLD-F12: 自动升级 — autoUpgrade功能待实现');
-  it.todo('BLD-F12b: 自动升级 — 自动升级条件配置');
-  it.todo('BLD-F12c: 自动升级 — 自动升级资源预留');
-
-  // F28: 资源链循环
-  it.todo('BLD-F28: 资源链循环 — 显式链路系统待实现');
-  it.todo('BLD-F28b: 资源链循环 — 产出→消耗自动流转');
-  it.todo('BLD-F28c: 资源链循环 — 链路效率计算');
-
-  // 其他缺失功能
   it.todo('BLD-F27-03: 编队出征 — 兵力检查→战斗系统');
   it.todo('BLD-F25-02: 商队返回 — 商队返回时间计算');
   it.todo('BLD-F08-01: 建筑锁定 — 建筑手动锁定功能');
