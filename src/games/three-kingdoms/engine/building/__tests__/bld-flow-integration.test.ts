@@ -1870,16 +1870,19 @@ describe('BLD-F28: 资源链循环', () => {
   });
 
   it('BLD-F28-bottleneck: 瓶颈检测 — 建筑未建造时报告瓶颈', () => {
-    // 将农田降为 Lv0（未建造），触发瓶颈
+    // 降低主城等级到Lv1，使 barracks 锁定（需主城Lv2才解锁）
+    forceLevel(bs, 'castle', 1);
+    // barracks 需要主城Lv2才解锁，重新锁定
     const save = bs.serialize();
-    save.buildings.farmland.level = 0;
-    save.buildings.farmland.status = 'idle'; // 先设idle，deserialize会自动修正level<=0为locked
+    save.buildings.barracks.level = 0;
+    save.buildings.barracks.status = 'locked';
     bs.deserialize(save);
 
-    // 确认农田确实为 Lv0（getNodeLevel返回0）
-    expect(bs.getLevel('farmland')).toBe(0);
+    // 确认 barracks 确实为 locked
+    expect(bs.getBuilding('barracks').status).toBe('locked');
+    expect(bs.getLevel('barracks')).toBe(0);
 
-    // F28-01 链路应出现瓶颈（farmland未建造）
+    // F28-01 链路应出现瓶颈（barracks未建造）
     const result = chainSys.validateChain('F28-01');
     expect(result.valid).toBe(false);
     expect(result.bottlenecks.length).toBeGreaterThan(0);
