@@ -69,3 +69,15 @@ export type {
   AutoUpgradeResult,
   AutoUpgradeSaveData,
 } from './AutoUpgradeSystem';
+
+// BLD-F28: 资源链循环系统
+export {
+  ResourceChainSystem,
+} from './ResourceChainSystem';
+export type {
+  ChainNode,
+  ResourceChain,
+  ChainValidationResult,
+  AllChainsValidation,
+  BottleneckReport,
+} from './ResourceChainSystem';
