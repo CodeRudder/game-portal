@@ -373,6 +373,12 @@ export class WorkshopForgeSystem implements ISubsystem {
     return this.buildingSystem.getWorkshopForgeEfficiency();
   }
 
+  /** 获取工坊锻造等级（代理 BuildingSystem） */
+  getForgeLevel(): number {
+    if (!this.buildingSystem) return 0;
+    return this.buildingSystem.getWorkshopLevel();
+  }
+
   /** 获取强化折扣乘数 */
   getEnhanceDiscountMultiplier(): number {
     if (!this.buildingSystem) return 1.0;

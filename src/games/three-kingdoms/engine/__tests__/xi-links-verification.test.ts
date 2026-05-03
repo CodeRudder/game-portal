@@ -128,6 +128,8 @@ describe('XI-001: BLD→RES 建筑产出→资源入库', () => {
     const mockResource = {
       ...resource,
       tick: (_ms: number, bonuses: any) => { capturedBonuses = bonuses; },
+      getResources: () => resource.getResources(),
+      getProductionRates: () => resource.getProductionRates(),
     } as any;
 
     const ctx: TickContext = {
@@ -482,7 +484,7 @@ describe('XI-009: BLD→EQP 工坊→装备锻造', () => {
 
   it('EquipmentForgeSystem 存在 forge 方法', () => {
     expect(typeof EquipmentForgeSystem).toBe('function');
-    expect(typeof EquipmentForgeSystem.prototype.forge).toBe('function');
+    expect(typeof EquipmentForgeSystem.prototype.basicForge).toBe('function');
   });
 
   it('验证依据: BuildingSystem.getWorkshopForgeEfficiency() + WorkshopForgeSystem.setBuildingSystem()', () => {
