@@ -14,6 +14,7 @@ export { EquipmentSetSystem } from './EquipmentSetSystem';
 export { EquipmentRecommendSystem } from './EquipmentRecommendSystem';
 export { EquipmentBagManager } from './EquipmentBagManager';
 export { ForgePityManager } from './ForgePityManager';
+export { WorkshopForgeSystem } from './WorkshopForgeSystem';
 export {
   generateUid,
   resetUidCounter,

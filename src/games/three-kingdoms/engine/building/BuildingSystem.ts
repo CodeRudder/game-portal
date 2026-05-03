@@ -403,6 +403,42 @@ export class BuildingSystem implements ISubsystem {
     return this.getProduction('clinic');
   }
 
+  // ── Sprint 2: 工坊装备系统（BLD-F24/XI-009） ──
+
+  /** 工坊锻造效率百分比（production字段，如5表示+5%） */
+  getWorkshopForgeEfficiency(): number {
+    return this.getProduction('workshop');
+  }
+
+  /** 工坊强化折扣百分比（specialValue字段，如3表示-3%） */
+  getWorkshopEnhanceDiscount(): number {
+    const lv = this.buildings.workshop.level;
+    if (lv <= 0) return 0;
+    return BUILDING_DEFS.workshop.levelTable[lv - 1]?.specialValue ?? 0;
+  }
+
+  /** 工坊锻造效率乘数（5% → 1.05） */
+  getWorkshopForgeMultiplier(): number {
+    const pct = this.getWorkshopForgeEfficiency();
+    return 1 + pct / 100;
+  }
+
+  /** 工坊强化折扣乘数（3% → 0.97） */
+  getWorkshopEnhanceDiscountMultiplier(): number {
+    const pct = this.getWorkshopEnhanceDiscount();
+    return Math.max(0.5, 1 - pct / 100); // 最低50%折扣
+  }
+
+  /** 工坊等级是否解锁批量锻造（Lv10解锁） */
+  isBatchForgeUnlocked(): boolean {
+    return this.buildings.workshop.level >= 10;
+  }
+
+  /** 获取工坊等级 */
+  getWorkshopLevel(): number {
+    return this.buildings.workshop.level;
+  }
+
   // ── 10. 序列化 ──
 
   serialize(): BuildingSaveData {
