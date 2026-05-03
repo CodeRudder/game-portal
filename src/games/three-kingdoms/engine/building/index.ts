@@ -58,3 +58,14 @@ export {
 export type {
   PortBridgeSaveData,
 } from './port-bridge';
+
+// BLD-F12: 自动升级系统
+export {
+  AutoUpgradeSystem,
+} from './AutoUpgradeSystem';
+export type {
+  AutoUpgradeStrategy,
+  AutoUpgradeConfig,
+  AutoUpgradeResult,
+  AutoUpgradeSaveData,
+} from './AutoUpgradeSystem';
