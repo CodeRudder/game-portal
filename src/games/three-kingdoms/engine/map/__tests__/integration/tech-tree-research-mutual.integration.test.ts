@@ -215,6 +215,8 @@ describe('§5.2 科技研究流程', () => {
       () => 1, // academyLevel = 1
       () => 100, // mandate = 100
       () => true, // spendMandate
+      () => 999999, // getGold
+      () => true, // spendGold
     );
     research.init(deps);
   });
@@ -686,6 +688,8 @@ describe('§5.6 离线科技研究', () => {
       () => 1,
       () => 100,
       () => true,
+      () => 999999, // getGold
+      () => true, // spendGold
     );
     research.init(deps);
   });
@@ -798,6 +802,8 @@ describe('§5.6 离线科技研究', () => {
         () => 1,
         () => 100,
         () => true,
+        () => 999999, // getGold
+        () => true, // spendGold
       );
       newResearch.init(deps);
       newResearch.deserialize(data);

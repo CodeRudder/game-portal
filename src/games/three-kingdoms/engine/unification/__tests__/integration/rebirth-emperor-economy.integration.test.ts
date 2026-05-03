@@ -87,14 +87,17 @@ describe('§5+§8~§10 转生深度+4货币+帝王模式 集成测试', () => {
   // ─── §5 转生深度 — 5条件验证 ──────────────────
 
   describe('§5 转生深度 — 5条件+冷却', () => {
-    it('转生条件包含4个维度：声望/城堡/武将/战力', () => {
+    it('转生条件包含7个维度：声望/城堡/武将/战力/通关/成就链/冷却', () => {
       const check = rebirth.checkRebirthConditions();
       const keys = Object.keys(check.conditions);
       expect(keys).toContain('prestigeLevel');
       expect(keys).toContain('castleLevel');
       expect(keys).toContain('heroCount');
       expect(keys).toContain('totalPower');
-      expect(keys).toHaveLength(4);
+      expect(keys).toContain('campaignProgress');
+      expect(keys).toContain('achievementChain');
+      expect(keys).toContain('cooldown');
+      expect(keys).toHaveLength(7);
     });
 
     it('声望等级不足时转生被拒绝', () => {

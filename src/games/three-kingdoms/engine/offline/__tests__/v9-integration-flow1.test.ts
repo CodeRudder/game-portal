@@ -34,7 +34,7 @@ import type { Resources, ProductionRate, ResourceCap } from '../../../../shared/
 const HOUR_S = 3600;
 
 function zeroRes(): Resources {
-  return { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
+  return { grain: 0, gold: 0, ore: 0, wood: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
 }
 
 function makeRates(overrides: Partial<ProductionRate> = {}): ProductionRate {
@@ -42,7 +42,7 @@ function makeRates(overrides: Partial<ProductionRate> = {}): ProductionRate {
 }
 
 function makeCaps(overrides: Partial<ResourceCap> = {}): ResourceCap {
-  return { grain: 5000, gold: 2000, troops: 1000, mandate: null, techPoint: null, recruitToken: null, skillBook: null, ...overrides };
+  return { grain: 5000, gold: null, ore: 5000, wood: 5000, troops: 1000, mandate: null, techPoint: null, recruitToken: null, skillBook: null, ...overrides };
 }
 
 // ─────────────────────────────────────────────

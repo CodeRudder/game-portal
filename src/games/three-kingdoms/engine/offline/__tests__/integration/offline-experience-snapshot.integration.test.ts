@@ -47,7 +47,7 @@ function makeRates(overrides: Partial<ProductionRate> = {}): ProductionRate {
 }
 
 function makeCaps(overrides: Partial<ResourceCap> = {}): ResourceCap {
-  return { grain: 5000, gold: 2000, troops: 1000, mandate: null, techPoint: null, ...overrides };
+  return { grain: 5000, gold: null, ore: 5000, wood: 5000, troops: 1000, mandate: null, techPoint: null, recruitToken: null, skillBook: null, ...overrides };
 }
 
 function makeCurrentRes(overrides: Partial<Resources> = {}): Resources {
@@ -188,7 +188,7 @@ describe('§2.2 溢出处理', () => {
   it('§2.2.3 无上限资源（gold:null）永不截断', () => {
     const earned: Resources = { grain: 0, gold: 999999, troops: 0, mandate: 0, techPoint: 0 };
     const current: Resources = { grain: 0, gold: 999999, troops: 0, mandate: 0, techPoint: 0 };
-    const caps: ResourceCap = { grain: 5000, gold: 2000, troops: 500, mandate: null, techPoint: null };
+    const caps: ResourceCap = { grain: 5000, gold: null, troops: 500, mandate: null, techPoint: null };
     const { cappedEarned, overflowResources } = applyOverflowRules(earned, current, caps);
     expect(cappedEarned.gold).toBe(999999);
     expect(overflowResources.gold).toBe(0);
