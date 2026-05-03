@@ -119,12 +119,14 @@ const MAX_BONUS = 1.0; // +100%
  * 公式：1 + min(科技 + VIP + 声望, MAX_BONUS)
  */
 export function calculateBonusCoefficient(sources: BonusSources): number {
-  // [FIX-802] NaN 防护：每个来源独立检查
-  const tech = Number.isFinite(sources.tech) ? (sources.tech ?? 0) : 0;
-  const vip = Number.isFinite(sources.vip) ? (sources.vip ?? 0) : 0;
-  const reputation = Number.isFinite(sources.reputation) ? (sources.reputation ?? 0) : 0;
+  // [FIX-v9] NaN 透传：任一来源为 NaN 时结果为 NaN（引擎行为）
+  // undefined 视为 0（未激活加成）
+  const tech = sources.tech ?? 0;
+  const vip = sources.vip ?? 0;
+  const reputation = sources.reputation ?? 0;
   const total = tech + vip + reputation;
-  return 1 + Math.min(Math.max(total, 0), MAX_BONUS);
+  // NaN + number = NaN，自动透传
+  return 1 + Math.min(total, MAX_BONUS);
 }
 
 // ─────────────────────────────────────────────
@@ -213,8 +215,19 @@ export function applyDouble(
 // ─────────────────────────────────────────────
 
 /**
+ * 固有无限容量资源（ResourceCap 中类型为 null 的字段）
+ * 这些资源无论 caps 传入何值，均不触发溢出截断
+ */
+const INHERENTLY_UNCAPPED_KEYS: ReadonlySet<string> = new Set([
+  'gold', 'mandate', 'techPoint', 'recruitToken', 'skillBook',
+]);
+
+/**
  * 应用资源溢出规则
  * 有上限资源截断 + 提示升级，无上限资源全额发放
+ *
+ * [FIX-v9] 固有无限容量资源（gold/mandate/techPoint/recruitToken/skillBook）
+ * 无论 caps 中传入何值，均视为无上限，全额发放不截断。
  */
 export function applyOverflowRules(
   earned: Readonly<Resources>,
@@ -230,7 +243,8 @@ export function applyOverflowRules(
     const current = currentResources[key];
     const earn = earned[key];
 
-    if (cap === null) {
+    // [FIX-v9] 固有无限容量资源或 cap===null 时全额发放
+    if (cap === null || INHERENTLY_UNCAPPED_KEYS.has(key)) {
       cappedEarned[key] = earn;
     } else {
       const available = Math.max(0, cap - current);
