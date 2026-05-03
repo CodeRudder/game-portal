@@ -38,8 +38,11 @@ describe('对抗式测试: 状态转换', () => {
   afterEach(() => vi.restoreAllMocks());
 
   function grantPoints(amount: number) {
+    // Sprint 3: startResearch now costs costPoints × RESEARCH_START_TECH_POINT_MULTIPLIER (10)
+    // amount is the nominal costPoints, so we need amount × 10 actual tech points
+    const actualNeeded = amount * 10;
     pointSys.syncAcademyLevel(20);
-    pointSys.update(Math.ceil(amount / 1.76) + 10);
+    pointSys.update(Math.ceil(actualNeeded / 1.76) + 10);
   }
 
   function advanceTime(ms: number) {

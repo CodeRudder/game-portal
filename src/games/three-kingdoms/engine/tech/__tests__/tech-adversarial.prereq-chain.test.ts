@@ -29,6 +29,7 @@ describe('对抗式测试: 前置条件链', () => {
     pointSys = new TechPointSystem();
     researchSys = new TechResearchSystem(
       treeSys, pointSys, () => 20, () => 100, () => true,
+      () => 100000, () => true,
     );
     fusionSys = new FusionTechSystem();
     fusionSys.setTechTree(treeSys);
@@ -43,8 +44,9 @@ describe('对抗式测试: 前置条件链', () => {
   afterEach(() => vi.restoreAllMocks());
 
   function grantPoints(amount: number) {
+    const actualNeeded = amount * 10;
     pointSys.syncAcademyLevel(20);
-    pointSys.update(Math.ceil(amount / 1.76) + 10);
+    pointSys.update(Math.ceil(actualNeeded / 1.76) + 10);
   }
 
   function advanceTime(ms: number) {

@@ -25,8 +25,11 @@ describe('对抗式测试: 科技点边界与消耗', () => {
 
     pointSys = new TechPointSystem();
     treeSys = new TechTreeSystem();
+    let goldAmount = 1000000;
     researchSys = new TechResearchSystem(
       treeSys, pointSys, () => 20, () => 100, () => true,
+      () => goldAmount,
+      (amt: number) => { goldAmount -= amt; return true; },
     );
     const deps = createRealDeps();
     pointSys.init(deps);
@@ -45,10 +48,10 @@ describe('对抗式测试: 科技点边界与消耗', () => {
   // 科技点刚好够/差1
   // ═══════════════════════════════════════════
   describe('科技点刚好/差1', () => {
-    it('科技点刚好50 → 可以研究 mil_t1_attack（cost=50）', () => {
-      // 直接通过 exchange 充入精确点数
-      pointSys.exchangeGoldForTechPoints(5000, 10); // 5000/100 = 50
-      expect(pointSys.getCurrentPoints()).toBeCloseTo(50, 0);
+    it('科技点刚好50 → 可以研究 mil_t1_attack（cost=50×10=500）', () => {
+      // 直接通过 exchange 充入精确点数（实际消耗 = 50 × 10 = 500）
+      pointSys.exchangeGoldForTechPoints(50000, 10); // 50000/100 = 500
+      expect(pointSys.getCurrentPoints()).toBeCloseTo(500, 0);
       const result = researchSys.startResearch('mil_t1_attack');
       expect(result.success).toBe(true);
     });
@@ -68,8 +71,8 @@ describe('对抗式测试: 科技点边界与消耗', () => {
       expect(result.success).toBe(false);
     });
 
-    it('科技点刚好够Tier4（cost=800）', () => {
-      pointSys.exchangeGoldForTechPoints(80000, 10); // 80000/100 = 800
+    it('科技点刚好够Tier4（cost=800×10=8000）', () => {
+      pointSys.exchangeGoldForTechPoints(800000, 10); // 800000/100 = 8000
       // 需要先完成前置链
       // 直接设置节点完成状态
       treeSys.completeNode('mil_t1_attack');
@@ -119,17 +122,17 @@ describe('对抗式测试: 科技点边界与消耗', () => {
       expect(result.success).toBe(true);
     });
 
-    it('trySpend(负数) 应成功（current >= 负数永远成立）', () => {
+    it('trySpend(负数) 应失败（FIX-501: 负数被拒绝）', () => {
       const result = pointSys.trySpend(-10);
-      expect(result.success).toBe(true);
+      expect(result.success).toBe(false);
     });
 
     it('canAfford(0) 返回 true', () => {
       expect(pointSys.canAfford(0)).toBe(true);
     });
 
-    it('canAfford(负数) 返回 true', () => {
-      expect(pointSys.canAfford(-10)).toBe(true);
+    it('canAfford(负数) 返回 false（FIX-501: 负数被拒绝）', () => {
+      expect(pointSys.canAfford(-10)).toBe(false);
     });
   });
 
@@ -261,19 +264,20 @@ describe('对抗式测试: 科技点边界与消耗', () => {
       expect(pointSys.getResearchSpeedMultiplier()).toBeCloseTo(2.0, 5);
     });
 
-    it('负数加成时 multiplier < 1.0', () => {
+    it('负数加成时 multiplier 被钳位到 1.0（FIX-501: 负值防护）', () => {
       pointSys.syncResearchSpeedBonus(-50);
-      expect(pointSys.getResearchSpeedMultiplier()).toBeCloseTo(0.5, 5);
+      expect(pointSys.getResearchSpeedMultiplier()).toBeCloseTo(1.0, 5);
     });
 
     it('研究速度加成影响实际研究时间', () => {
-      pointSys.exchangeGoldForTechPoints(10000, 10);
+      pointSys.exchangeGoldForTechPoints(100000, 10); // 1000 points, enough for 50*10=500
       pointSys.syncResearchSpeedBonus(100); // 2x速度
+      // academyLevel=20 → academySpeed = 1 + 20*0.1 = 3.0
+      // totalSpeed = 2.0 * 3.0 = 6.0, duration = 120 / 6 = 20秒
       researchSys.startResearch('mil_t1_attack');
-      // 原始120秒 / 2 = 60秒
       const slot = researchSys.getQueue()[0];
       const duration = (slot.endTime - slot.startTime) / 1000;
-      expect(duration).toBeCloseTo(60, -1);
+      expect(duration).toBeCloseTo(20, -1);
     });
   });
 
@@ -282,10 +286,10 @@ describe('对抗式测试: 科技点边界与消耗', () => {
   // ═══════════════════════════════════════════
   describe('取消研究返还科技点', () => {
     it('取消后科技点恢复到研究前', () => {
-      pointSys.exchangeGoldForTechPoints(10000, 10);
+      pointSys.exchangeGoldForTechPoints(100000, 10); // 1000 points
       const before = pointSys.getCurrentPoints();
       researchSys.startResearch('mil_t1_attack');
-      expect(pointSys.getCurrentPoints()).toBeCloseTo(before - 50, 1);
+      expect(pointSys.getCurrentPoints()).toBeCloseTo(before - 50 * 10, 1);
 
       researchSys.cancelResearch('mil_t1_attack');
       expect(pointSys.getCurrentPoints()).toBeCloseTo(before, 1);

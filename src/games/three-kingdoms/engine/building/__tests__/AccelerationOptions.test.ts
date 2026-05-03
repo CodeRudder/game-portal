@@ -200,9 +200,11 @@ describe('P1: 加速选项（铜钱/天命/元宝）', () => {
     let researchSys: TechResearchSystem;
     let pointSys: TechPointSystem;
     let mandateAmount: number;
+    let goldAmount: number;
 
     beforeEach(() => {
       mandateAmount = 100;
+      goldAmount = 1000000;
       const deps = createDeps();
       const treeSystem = new TechTreeSystem();
       treeSystem.init(deps);
@@ -221,14 +223,24 @@ describe('P1: 加速选项（铜钱/天命/元宝）', () => {
           }
           return false;
         },
+        () => goldAmount,
+        (amt: number) => {
+          if (goldAmount >= amt) {
+            goldAmount -= amt;
+            return true;
+          }
+          return false;
+        },
       );
       researchSys.init(deps);
     });
 
     /** 给科技点系统充入足够的点数 */
     function grantPoints(amount: number): void {
+      // Sprint 3: 研究消耗 = costPoints × RESEARCH_START_TECH_POINT_MULTIPLIER
+      const needed = amount * 10;
       pointSys.syncAcademyLevel(20);
-      const seconds = Math.ceil(amount / 1.76) + 10;
+      const seconds = Math.ceil(needed / 1.76) + 10;
       pointSys.update(seconds);
     }
 

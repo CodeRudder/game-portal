@@ -98,6 +98,8 @@ function setupRebirthReady(sys: ReturnType<typeof getSys>) {
     heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
     totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
     prestigeLevel: () => REBIRTH_CONDITIONS.minPrestigeLevel,
+    campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+    achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
     onReset: () => {},
   });
   sys.rebirth.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
@@ -493,6 +495,8 @@ describe('§8.2 转生时攻城处理', () => {
       heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
       totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
       prestigeLevel: () => REBIRTH_CONDITIONS.minPrestigeLevel,
+      campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+      achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
       onReset: (rules) => { resetRules.push(rules); },
     });
     sys.rebirth.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
@@ -504,10 +508,26 @@ describe('§8.2 转生时攻城处理', () => {
   });
 
   it('多次转生倍率递增', () => {
+    let currentTime = Date.now();
     setupRebirthReady(sys);
+    sys.rebirth.setCallbacks({
+      castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
+      heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
+      totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
+      prestigeLevel: () => REBIRTH_CONDITIONS.minPrestigeLevel,
+      campaignStage: () => REBIRTH_CONDITIONS.minCampaignStage,
+      achievementChainCount: () => REBIRTH_CONDITIONS.requiredAchievementChainCount,
+      onReset: () => {},
+      nowProvider: () => currentTime,
+    });
+    sys.rebirth.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
+
     const first = sys.rebirth.executeRebirth();
     expect(first.success).toBe(true);
     expect(first.newCount).toBe(1);
+
+    // 推进时间超过冷却期（72小时）
+    currentTime += 73 * 60 * 60 * 1000;
 
     // 再次满足条件转生
     sys.rebirth.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
