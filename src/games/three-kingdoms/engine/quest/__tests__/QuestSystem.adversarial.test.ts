@@ -5,7 +5,7 @@
  * 重点发现：负数注入、溢出、并发安全、序列化安全
  */
 
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+import { vi } from 'vitest';
 import { QuestSystem } from '../QuestSystem';
 import { QuestTrackerSystem } from '../QuestTrackerSystem';
 import { ActivitySystem } from '../ActivitySystem';
@@ -38,14 +38,14 @@ import { DAILY_QUEST_TEMPLATES, DEFAULT_ACTIVITY_MILESTONES } from '../../../cor
 function mockDeps(): ISystemDeps {
   return {
     eventBus: {
-      on: jest.fn().mockReturnValue(jest.fn()),
-      once: jest.fn().mockReturnValue(jest.fn()),
-      emit: jest.fn(),
-      off: jest.fn(),
-      removeAllListeners: jest.fn(),
+      on: vi.fn().mockReturnValue(vi.fn()),
+      once: vi.fn().mockReturnValue(vi.fn()),
+      emit: vi.fn(),
+      off: vi.fn(),
+      removeAllListeners: vi.fn(),
     },
-    config: { get: jest.fn(), set: jest.fn() },
-    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
+    config: { get: vi.fn(), set: vi.fn() },
+    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
   } as unknown as ISystemDeps;
 }
 
@@ -488,7 +488,7 @@ describe('QuestSystem 对抗式测试', () => {
       tracker.startTracking();
 
       // 模拟触发事件
-      const onCalls = (deps.eventBus.on as ReturnType<typeof jest.fn>).mock.calls;
+      const onCalls = (deps.eventBus.on as ReturnType<typeof vi.fn>).mock.calls;
       for (const call of onCalls) {
         const callback = call[1];
         // 调用所有注册的回调
@@ -709,9 +709,9 @@ describe('QuestSystem 对抗式测试', () => {
         rewardClaimed: false,
       });
 
-      const emit = jest.fn();
-      const completeQuest = jest.fn();
-      const checkQuestCompletion = jest.fn().mockReturnValue(false);
+      const emit = vi.fn();
+      const completeQuest = vi.fn();
+      const checkQuestCompletion = vi.fn().mockReturnValue(false);
 
       updateProgressByTypeLogic('battle_clear', 1, quests, {
         emit,
@@ -729,8 +729,8 @@ describe('QuestSystem 对抗式测试', () => {
       const result = claimRewardLogic('nonexistent', {
         questDefs: new Map(),
         activeQuests: new Map(),
-        addActivityPoints: jest.fn(),
-        emit: jest.fn(),
+        addActivityPoints: vi.fn(),
+        emit: vi.fn(),
       });
       expect(result).toBeNull();
     });
@@ -750,8 +750,8 @@ describe('QuestSystem 对抗式测试', () => {
       const result = claimRewardLogic('inst-1', {
         questDefs: new Map(),
         activeQuests: quests,
-        addActivityPoints: jest.fn(),
-        emit: jest.fn(),
+        addActivityPoints: vi.fn(),
+        emit: vi.fn(),
       });
       expect(result).toBeNull();
     });
@@ -759,7 +759,7 @@ describe('QuestSystem 对抗式测试', () => {
 
   describe('helper: claimAllRewardsLogic', () => {
     it('空活跃任务返回空数组', () => {
-      const rewards = claimAllRewardsLogic(new Map(), jest.fn());
+      const rewards = claimAllRewardsLogic(new Map(), vi.fn());
       expect(rewards).toEqual([]);
     });
   });
@@ -812,7 +812,7 @@ describe('QuestSystem 对抗式测试', () => {
 
     it('rewardCallback 正确调用', () => {
       const sys = createQuestSystem();
-      const cb = jest.fn();
+      const cb = vi.fn();
       sys.setRewardCallback(cb);
       const def = createTestQuestDef('cb-test2');
       sys.registerQuest(def);
@@ -825,7 +825,7 @@ describe('QuestSystem 对抗式测试', () => {
 
     it('activityAddCallback 正确调用', () => {
       const sys = createQuestSystem();
-      const cb = jest.fn();
+      const cb = vi.fn();
       sys.setActivityAddCallback(cb);
       // 日常任务领奖时会触发
       const def: QuestDef = {
@@ -886,7 +886,7 @@ describe('QuestSystem 对抗式测试', () => {
       questSys.acceptQuest('tracker-integ');
 
       // 模拟游戏事件
-      const onCalls = (deps.eventBus.on as ReturnType<typeof jest.fn>).mock.calls;
+      const onCalls = (deps.eventBus.on as ReturnType<typeof vi.fn>).mock.calls;
       const battleClearCb = onCalls.find(
         (call: any[]) => call[0] === 'battle:clear',
       )?.[1] as Function | undefined;

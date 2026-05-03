@@ -7,7 +7,7 @@
  * @module engine/quest/__tests__/QuestSystem.r1-fix.test
  */
 
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+import { vi } from 'vitest';
 import { QuestSystem } from '../QuestSystem';
 import { QuestTrackerSystem } from '../QuestTrackerSystem';
 import { ActivitySystem } from '../ActivitySystem';
@@ -29,6 +29,7 @@ import {
   MAX_TRACKED_QUESTS,
   MAX_ACTIVITY_POINTS,
   refreshDailyQuestsLogic,
+  refreshWeeklyQuestsLogic,
 } from '../QuestSystem.helpers';
 import type { ISystemDeps } from '../../../core/types';
 import type { QuestDef, QuestInstance, QuestReward, QuestSystemSaveData } from '../../../core/quest';
@@ -41,14 +42,14 @@ import { DAILY_QUEST_TEMPLATES, DEFAULT_ACTIVITY_MILESTONES } from '../../../cor
 function mockDeps(): ISystemDeps {
   return {
     eventBus: {
-      on: jest.fn().mockReturnValue(jest.fn()),
-      once: jest.fn().mockReturnValue(jest.fn()),
-      emit: jest.fn(),
-      off: jest.fn(),
-      removeAllListeners: jest.fn(),
+      on: vi.fn().mockReturnValue(vi.fn()),
+      once: vi.fn().mockReturnValue(vi.fn()),
+      emit: vi.fn(),
+      off: vi.fn(),
+      removeAllListeners: vi.fn(),
     },
-    config: { get: jest.fn(), set: jest.fn() },
-    registry: { register: jest.fn(), get: jest.fn(), getAll: jest.fn(), has: jest.fn(), unregister: jest.fn() },
+    config: { get: vi.fn(), set: vi.fn() },
+    registry: { register: vi.fn(), get: vi.fn(), getAll: vi.fn(), has: vi.fn(), unregister: vi.fn() },
   } as unknown as ISystemDeps;
 }
 
@@ -242,9 +243,9 @@ describe('Fix-3: QuestDailyManager.isRefreshedToday 考虑 refreshHour', () => {
   it('isRefreshedToday 应与 refreshDailyQuestsLogic 使用相同日期逻辑', () => {
     const manager = new QuestDailyManager();
     const deps = {
-      registerAndAccept: jest.fn().mockReturnValue(null),
-      expireQuest: jest.fn(),
-      emitEvent: jest.fn(),
+      registerAndAccept: vi.fn().mockReturnValue(null),
+      expireQuest: vi.fn(),
+      emitEvent: vi.fn(),
     };
     manager.setDeps(deps);
     manager.restoreState('2026-05-16', []);
@@ -310,7 +311,7 @@ describe('T-1: 多目标逐个完成触发 completeQuest', () => {
 describe('T-2: claimAllRewards 遍历安全性', () => {
   it('多个已完成任务一键领取不遗漏', () => {
     const sys = createQuestSystem();
-    const rewardCallback = jest.fn();
+    const rewardCallback = vi.fn();
     sys.setRewardCallback(rewardCallback);
 
     // 注册并完成3个任务
@@ -353,8 +354,8 @@ describe('T-2: claimAllRewards 遍历安全性', () => {
       return claimRewardLogic(id, {
         questDefs,
         activeQuests,
-        addActivityPoints: jest.fn(),
-        emit: jest.fn(),
+        addActivityPoints: vi.fn(),
+        emit: vi.fn(),
       });
     });
 
@@ -399,7 +400,7 @@ describe('T-3: updateProgressByType params 匹配逻辑', () => {
 
     const completed: string[] = [];
     updateProgressByTypeLogic('build_upgrade', 1, activeQuests, {
-      emit: jest.fn(),
+      emit: vi.fn(),
       completeQuest: (id) => completed.push(id),
       checkQuestCompletion: (inst) => inst.objectives.every(o => o.currentCount >= o.targetCount),
     }, { buildingType: 'barracks' }); // 传入 params
@@ -428,8 +429,8 @@ describe('T-3: updateProgressByType params 匹配逻辑', () => {
     });
 
     updateProgressByTypeLogic('collect_resource', 1, activeQuests, {
-      emit: jest.fn(),
-      completeQuest: jest.fn(),
+      emit: vi.fn(),
+      completeQuest: vi.fn(),
       checkQuestCompletion: () => false,
     }, { resource: 'gold' });
 
@@ -456,8 +457,8 @@ describe('T-3: updateProgressByType params 匹配逻辑', () => {
     });
 
     updateProgressByTypeLogic('collect_resource', 1, activeQuests, {
-      emit: jest.fn(),
-      completeQuest: jest.fn(),
+      emit: vi.fn(),
+      completeQuest: vi.fn(),
       checkQuestCompletion: () => false,
     }, { resource: 'wood' }); // 不匹配
 
@@ -497,13 +498,13 @@ describe('T-4: reset → init → initializeDefaults 完整重初始化', () => 
 describe('T-5: refreshHour 时间边界', () => {
   it('refreshDailyQuestsLogic 在 refreshHour 前应使用前一天日期', () => {
     // 直接测试逻辑：当 dailyRefreshDate 与计算出的 today 一致时，应跳过刷新
-    const emit = jest.fn();
+    const emit = vi.fn();
     const deps = {
       activeQuests: new Map<string, QuestInstance>(),
       dailyQuestInstanceIds: ['existing-inst'],
       dailyRefreshDate: '', // 空日期，强制刷新
-      registerQuest: jest.fn(),
-      acceptQuest: jest.fn().mockImplementation((id: string) => ({
+      registerQuest: vi.fn(),
+      acceptQuest: vi.fn().mockImplementation((id: string) => ({
         instanceId: `inst-${id}`,
         questDefId: id,
         status: 'active',
@@ -548,9 +549,9 @@ describe('T-5: refreshHour 时间边界', () => {
       activeQuests,
       dailyQuestInstanceIds: ['existing-1'],
       dailyRefreshDate: today, // 今天已刷新
-      registerQuest: jest.fn(),
-      acceptQuest: jest.fn(),
-      emit: jest.fn(),
+      registerQuest: vi.fn(),
+      acceptQuest: vi.fn(),
+      emit: vi.fn(),
     };
 
     const result = refreshDailyQuestsLogic(deps);
@@ -627,8 +628,8 @@ describe('T-7: 已完成目标不被重复更新', () => {
     });
 
     updateProgressByTypeLogic('build_upgrade', 5, activeQuests, {
-      emit: jest.fn(),
-      completeQuest: jest.fn(),
+      emit: vi.fn(),
+      completeQuest: vi.fn(),
       checkQuestCompletion: () => false,
     });
 
@@ -644,8 +645,8 @@ describe('T-7: 已完成目标不被重复更新', () => {
 describe('T-8: 日常任务完整端到端流程', () => {
   it('日常任务: 刷新 → 进度 → 完成 → 领取 → 活跃度增加', () => {
     const sys = createQuestSystem();
-    const rewardCallback = jest.fn();
-    const activityCallback = jest.fn();
+    const rewardCallback = vi.fn();
+    const activityCallback = vi.fn();
     sys.setRewardCallback(rewardCallback);
     sys.setActivityAddCallback(activityCallback);
 
@@ -863,8 +864,8 @@ describe('补充: 关键风险验证', () => {
     const reward1 = claimRewardLogic('inst-1', {
       questDefs,
       activeQuests,
-      addActivityPoints: jest.fn(),
-      emit: jest.fn(),
+      addActivityPoints: vi.fn(),
+      emit: vi.fn(),
     });
     expect(reward1).not.toBeNull();
 
@@ -872,8 +873,8 @@ describe('补充: 关键风险验证', () => {
     const reward2 = claimRewardLogic('inst-1', {
       questDefs,
       activeQuests,
-      addActivityPoints: jest.fn(),
-      emit: jest.fn(),
+      addActivityPoints: vi.fn(),
+      emit: vi.fn(),
     });
     expect(reward2).toBeNull();
   });
@@ -915,7 +916,7 @@ describe('补充: 关键风险验证', () => {
     const deps = mockDeps();
     tracker.init(deps);
 
-    const mockQS = { updateProgressByType: jest.fn() };
+    const mockQS = { updateProgressByType: vi.fn() };
     tracker.bindQuestSystem(mockQS);
 
     // 启动追踪
@@ -1006,8 +1007,8 @@ describe('补充: 关键风险验证', () => {
       activeQuests,
       dailyQuestInstanceIds: ['daily-old-1'],
       dailyRefreshDate: '', // 强制刷新
-      registerQuest: jest.fn(),
-      acceptQuest: jest.fn().mockImplementation((id: string) => ({
+      registerQuest: vi.fn(),
+      acceptQuest: vi.fn().mockImplementation((id: string) => ({
         instanceId: `new-${id}`,
         questDefId: id,
         status: 'active',
@@ -1065,7 +1066,7 @@ describe('Quest R1 Adversarial — FIX-Q01~Q07', () => {
   describe('FIX-Q01: QuestSystem.deserialize(null) 安全回退', () => {
     it('deserialize(null) 不崩溃，执行reset', () => {
       const qs = new QuestSystem();
-      qs.init({ eventBus: { emit: jest.fn(), on: jest.fn() } } as any);
+      qs.init({ eventBus: { emit: vi.fn(), on: vi.fn() } } as any);
       qs.acceptQuest('quest-main-001'); // 创建一些状态
       expect(qs.getActiveQuests().length).toBeGreaterThan(0);
 
@@ -1076,7 +1077,7 @@ describe('Quest R1 Adversarial — FIX-Q01~Q07', () => {
 
     it('deserialize(undefined) 不崩溃', () => {
       const qs = new QuestSystem();
-      qs.init({ eventBus: { emit: jest.fn(), on: jest.fn() } } as any);
+      qs.init({ eventBus: { emit: vi.fn(), on: vi.fn() } } as any);
       qs.deserialize(undefined as any);
       expect(qs.getActiveQuests()).toHaveLength(0);
     });
@@ -1087,7 +1088,7 @@ describe('Quest R1 Adversarial — FIX-Q01~Q07', () => {
   describe('FIX-Q02: ActivitySystem.deserialize(null) 安全回退', () => {
     it('deserialize(null) 不崩溃，恢复初始状态', () => {
       const as = new ActivitySystem();
-      as.init({ eventBus: { emit: jest.fn(), on: jest.fn() } } as any);
+      as.init({ eventBus: { emit: vi.fn(), on: vi.fn() } } as any);
       as.addPoints(50);
       expect(as.getCurrentPoints()).toBe(50);
 
@@ -1098,7 +1099,7 @@ describe('Quest R1 Adversarial — FIX-Q01~Q07', () => {
 
     it('deserialize({ activityState: null }) 不崩溃', () => {
       const as = new ActivitySystem();
-      as.init({ eventBus: { emit: jest.fn(), on: jest.fn() } } as any);
+      as.init({ eventBus: { emit: vi.fn(), on: vi.fn() } } as any);
       as.addPoints(50);
 
       as.deserialize({ activityState: null } as any);
@@ -1147,13 +1148,12 @@ describe('Quest R1 Adversarial — FIX-Q01~Q07', () => {
       };
       activeQuests.set('weekly-old-1', fakeInstance);
 
-      const { refreshWeeklyQuestsLogic } = require('../QuestSystem.helpers');
       const result = refreshWeeklyQuestsLogic({
         activeQuests,
         weeklyQuestInstanceIds: ['weekly-old-1'],
         weeklyRefreshDate: '2020-01-01', // 旧日期，触发刷新
-        registerQuest: jest.fn(),
-        acceptQuest: jest.fn(() => null),
+        registerQuest: vi.fn(),
+        acceptQuest: vi.fn(() => null),
         emit: (event: string, data: unknown) => emitted.push({ event, data }),
       });
 
@@ -1185,14 +1185,13 @@ describe('Quest R1 Adversarial — FIX-Q01~Q07', () => {
       };
       activeQuests.set('weekly-old-2', fakeInstance);
 
-      const { refreshWeeklyQuestsLogic } = require('../QuestSystem.helpers');
       refreshWeeklyQuestsLogic({
         activeQuests,
         weeklyQuestInstanceIds: ['weekly-old-2'],
         weeklyQuestInstanceIds: ['weekly-old-2'],
         weeklyRefreshDate: '2020-01-01',
-        registerQuest: jest.fn(),
-        acceptQuest: jest.fn(() => null),
+        registerQuest: vi.fn(),
+        acceptQuest: vi.fn(() => null),
         emit: (event: string, data: unknown) => emitted.push({ event, data }),
       });
 
@@ -1272,7 +1271,7 @@ describe('Quest R1 Adversarial — FIX-Q01~Q07', () => {
   describe('FIX-Q06/Q07: ActivitySystem.deserialize NaN防护', () => {
     it('currentPoints=NaN → 重置为0', () => {
       const as = new ActivitySystem();
-      as.init({ eventBus: { emit: jest.fn(), on: jest.fn() } } as any);
+      as.init({ eventBus: { emit: vi.fn(), on: vi.fn() } } as any);
       as.deserialize({
         version: 1,
         activityState: {
@@ -1287,7 +1286,7 @@ describe('Quest R1 Adversarial — FIX-Q01~Q07', () => {
 
     it('currentPoints=Infinity → 重置为0', () => {
       const as = new ActivitySystem();
-      as.init({ eventBus: { emit: jest.fn(), on: jest.fn() } } as any);
+      as.init({ eventBus: { emit: vi.fn(), on: vi.fn() } } as any);
       as.deserialize({
         version: 1,
         activityState: {
@@ -1302,7 +1301,7 @@ describe('Quest R1 Adversarial — FIX-Q01~Q07', () => {
 
     it('maxPoints=NaN → 重置为100', () => {
       const as = new ActivitySystem();
-      as.init({ eventBus: { emit: jest.fn(), on: jest.fn() } } as any);
+      as.init({ eventBus: { emit: vi.fn(), on: vi.fn() } } as any);
       as.deserialize({
         version: 1,
         activityState: {
