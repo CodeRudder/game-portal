@@ -70,6 +70,8 @@ export class HeroRecruitSystem implements ISubsystem {
   private history: RecruitHistoryEntry[];
   /** UP 武将管理子系统（依赖注入） */
   private readonly upManager: HeroRecruitUpManager;
+  /** 酒馆概率加成回调（可选，由 tavern-bridge 注入） */
+  private tavernBonusCallback: (() => number) | null = null;
 
   constructor(rng: () => number = Math.random) {
     this.pity = createEmptyPity();
@@ -103,6 +105,9 @@ export class HeroRecruitSystem implements ISubsystem {
 
   /** 注入随机数生成器（测试用） */
   setRng(rng: () => number): void { this.rng = rng; }
+
+  /** 注入酒馆概率加成回调（由 tavern-bridge 层设置） */
+  setTavernBonus(cb: (() => number) | null): void { this.tavernBonusCallback = cb; }
 
   /** 获取 UP 武将管理子系统 */
   getUpManager(): HeroRecruitUpManager { return this.upManager; }
@@ -345,11 +350,18 @@ export class HeroRecruitSystem implements ISubsystem {
     const rates = RECRUIT_RATES[type];
     const config = RECRUIT_PITY[type];
 
+    // 酒馆加成注入：将概率加成叠加到最高品质（EPIC / LEGENDARY）
+    let adjustedRates = rates;
+    if (this.tavernBonusCallback) {
+      const bonus = this.tavernBonusCallback();
+      adjustedRates = rates.map((r, i) => i === 0 ? { ...r, rate: r.rate + bonus } : r);
+    }
+
     const isNormal = type === 'normal';
     const pityCount = isNormal ? this.pity.normalPity : this.pity.advancedPity;
     const hardPityCount = isNormal ? this.pity.normalHardPity : this.pity.advancedHardPity;
 
-    const finalQuality = applyPity(rollQuality(rates, this.rng), pityCount, hardPityCount, config);
+    const finalQuality = applyPity(rollQuality(adjustedRates, this.rng), pityCount, hardPityCount, config);
 
     // UP 武将机制：高级招募出 LEGENDARY 时，有概率直接获得 UP 武将
     const upState = this.upManager.getUpHeroState();
