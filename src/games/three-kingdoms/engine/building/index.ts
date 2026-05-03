@@ -28,3 +28,33 @@ export type {
   BatchUpgradeContext,
   BatchUpgradeResult,
 } from './BuildingBatchOps';
+
+// Sprint 5: 酒馆↔招募桥接
+export {
+  getRecruitBonus,
+  calculateActualRate,
+  getTavernUnlockLevel,
+  isTavernFeatureUnlocked,
+  serializeTavernBridge,
+  deserializeTavernBridge,
+  TAVERN_BRIDGE_SAVE_VERSION,
+} from './tavern-bridge';
+export type {
+  TavernBridgeSaveData,
+} from './tavern-bridge';
+
+// Sprint 5: 市舶司↔贸易桥接
+export {
+  getTradeDiscount,
+  getProsperityBonus,
+  getMaxCaravans,
+  calculateProsperityLevel,
+  calculateMarketGoldBonus,
+  applyTradeDiscount,
+  serializePortBridge,
+  deserializePortBridge,
+  PORT_BRIDGE_SAVE_VERSION,
+} from './port-bridge';
+export type {
+  PortBridgeSaveData,
+} from './port-bridge';

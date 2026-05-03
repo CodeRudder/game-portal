@@ -30,8 +30,8 @@ const ALL_BUILDING_TYPES: BuildingType[] = ['castle', 'farmland', 'market', 'min
 // ─────────────────────────────────────────────
 
 describe('BUILDING_MAX_LEVELS', () => {
-  it('应包含 11 种建筑', () => {
-    expect(Object.keys(BUILDING_MAX_LEVELS)).toHaveLength(11);
+  it('应包含 12 种建筑', () => {
+    expect(Object.keys(BUILDING_MAX_LEVELS)).toHaveLength(12);
   });
 
   it('所有建筑等级上限 > 0', () => {
@@ -66,8 +66,8 @@ describe('BUILDING_MAX_LEVELS', () => {
 // ─────────────────────────────────────────────
 
 describe('BUILDING_UNLOCK_LEVELS', () => {
-  it('应包含 11 种建筑', () => {
-    expect(Object.keys(BUILDING_UNLOCK_LEVELS)).toHaveLength(11);
+  it('应包含 12 种建筑', () => {
+    expect(Object.keys(BUILDING_UNLOCK_LEVELS)).toHaveLength(12);
   });
 
   it('主城、农田、市集、矿场、伐木场初始解锁（0级）', () => {
@@ -108,8 +108,8 @@ describe('BUILDING_UNLOCK_LEVELS', () => {
 // ─────────────────────────────────────────────
 
 describe('BUILDING_DEFS', () => {
-  it('应包含 11 种建筑定义', () => {
-    expect(Object.keys(BUILDING_DEFS)).toHaveLength(11);
+  it('应包含 12 种建筑定义', () => {
+    expect(Object.keys(BUILDING_DEFS)).toHaveLength(12);
   });
 
   it('每个建筑定义的 maxLevel 与 BUILDING_MAX_LEVELS 一致', () => {

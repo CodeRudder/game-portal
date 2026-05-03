@@ -40,6 +40,7 @@ export const BUILDING_TYPES: readonly BuildingType[] = [
   'clinic',
   'wall',
   'tavern',
+  'port',
 ] as const;
 
 /** 建筑中文名映射 */
@@ -55,6 +56,7 @@ export const BUILDING_LABELS: Record<BuildingType, string> = {
   clinic: '医馆',
   wall: '城墙',
   tavern: '酒馆',
+  port: '市舶司',
 };
 
 /** 建筑图标映射 */
@@ -70,6 +72,7 @@ export const BUILDING_ICONS: Record<BuildingType, string> = {
   clinic: '🏥',
   wall: '🏯',
   tavern: '🍺',
+  port: '🚢',
 };
 
 /** 建筑分区 */
@@ -88,6 +91,7 @@ export const BUILDING_ZONES: Record<BuildingType, BuildingZone> = {
   clinic: 'cultural',
   wall: 'defense',
   tavern: 'core',
+  port: 'resource',
 };
 
 // ─────────────────────────────────────────────

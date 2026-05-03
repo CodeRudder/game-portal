@@ -135,7 +135,7 @@ export interface ResourceSaveData {
 // 0. 建筑域基础类型（唯一真相源，engine/building/building.types.ts re-export）
 // ─────────────────────────────────────────────
 
-/** 11 种建筑类型标识 */
+/** 12 种建筑类型标识 */
 export type BuildingType =
   | 'castle'
   | 'farmland'
@@ -147,7 +147,8 @@ export type BuildingType =
   | 'academy'
   | 'clinic'
   | 'wall'
-  | 'tavern';
+  | 'tavern'
+  | 'port';
 
 /** 建筑升级状态 */
 export type BuildingStatus = 'locked' | 'idle' | 'upgrading';

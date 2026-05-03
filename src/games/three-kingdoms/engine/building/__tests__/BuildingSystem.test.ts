@@ -42,9 +42,9 @@ describe('BuildingSystem', () => {
   // 1. 初始化
   // ═══════════════════════════════════════════
   describe('初始化', () => {
-    it('11座建筑全部存在', () => {
+    it('12座建筑全部存在', () => {
       const all = sys.getAllBuildings();
-      expect(Object.keys(all)).toHaveLength(11);
+      expect(Object.keys(all)).toHaveLength(12);
       for (const t of BUILDING_TYPES) expect(all[t]).toBeDefined();
     });
 

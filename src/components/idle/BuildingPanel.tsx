@@ -29,6 +29,7 @@ const BUILDING_EFFECTS: Record<BuildingType, string> = {
   clinic: '伤兵恢复',
   wall: '城防值',
   tavern: '武将招募',
+  port: '贸易折扣',
 };
 
 function formatTime(seconds: number): string {

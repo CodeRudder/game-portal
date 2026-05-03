@@ -40,7 +40,7 @@ function makeState(type: BuildingType, overrides: Partial<BuildingState> = {}): 
 }
 
 function makeAllBuildings(overrides: Partial<Record<BuildingType, Partial<BuildingState>>> = {}): BuildingSnapshot {
-  const allTypes: BuildingType[] = ['castle', 'farmland', 'market', 'mine', 'lumberMill', 'barracks', 'workshop', 'academy', 'clinic', 'wall', 'tavern'];
+  const allTypes: BuildingType[] = ['castle', 'farmland', 'market', 'mine', 'lumberMill', 'barracks', 'workshop', 'academy', 'clinic', 'wall', 'tavern', 'port'];
   const result = {} as BuildingSnapshot;
   for (const t of allTypes) {
     result[t] = makeState(t, overrides[t]);
@@ -109,7 +109,7 @@ function makeSave(
       };
     } else {
       const isUnlocked = defaultUnlocked.includes(t) || (overrides.castle?.level ?? 1) >=
-        (t === 'barracks' ? 2 : t === 'workshop' || t === 'academy' ? 3 : t === 'clinic' ? 4 : t === 'wall' || t === 'tavern' ? 5 : 0);
+        (t === 'barracks' ? 2 : t === 'workshop' || t === 'academy' ? 3 : t === 'clinic' ? 4 : t === 'wall' || t === 'tavern' ? 5 : t === 'port' ? 8 : 0);
       buildings[t] = {
         type: t,
         level: isUnlocked ? 1 : 0,
