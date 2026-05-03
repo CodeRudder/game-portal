@@ -8,6 +8,8 @@ build/
 vitest_out.txt
 test*.txt
 
+coverage-*
+
 # Environment
 .env
 .env.local
