@@ -64,14 +64,16 @@ export function batchUpgrade(
   const totalCost: UpgradeCost = { grain: 0, gold: 0, ore: 0, wood: 0, troops: 0, timeSeconds: 0 };
   let remainingGrain = resources.grain;
   let remainingGold = resources.gold;
+  let remainingOre = resources.ore;
+  let remainingWood = resources.wood;
   let remainingTroops = resources.troops;
 
   for (const t of types) {
     const currentResources: Resources = {
       grain: remainingGrain,
       gold: remainingGold,
-      ore: resources.ore,
-      wood: resources.wood,
+      ore: remainingOre,
+      wood: remainingWood,
       troops: remainingTroops,
       mandate: resources.mandate,
       techPoint: resources.techPoint,
@@ -89,10 +91,14 @@ export function batchUpgrade(
       succeeded.push({ type: t, cost });
       totalCost.grain += cost.grain;
       totalCost.gold += cost.gold;
+      totalCost.ore += cost.ore;
+      totalCost.wood += cost.wood;
       totalCost.troops += cost.troops;
       totalCost.timeSeconds += cost.timeSeconds;
       remainingGrain -= cost.grain;
       remainingGold -= cost.gold;
+      remainingOre -= cost.ore;
+      remainingWood -= cost.wood;
       remainingTroops -= cost.troops;
     } catch (e) {
       failed.push({ type: t, reason: e instanceof Error ? e.message : '未知错误' });

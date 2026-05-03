@@ -257,7 +257,7 @@ describe('BuildingBatchOps — batchUpgrade', () => {
 
       expect(result.succeeded).toHaveLength(0);
       expect(result.failed).toHaveLength(0);
-      expect(result.totalCost).toEqual({ grain: 0, gold: 0, troops: 0, timeSeconds: 0 });
+      expect(result.totalCost).toEqual({ grain: 0, gold: 0, ore: 0, wood: 0, troops: 0, timeSeconds: 0 });
     });
 
     it('多个失败原因合并显示', () => {

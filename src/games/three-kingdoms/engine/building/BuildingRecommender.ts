@@ -143,7 +143,12 @@ export function getUpgradeRouteRecommendation(
 
     if (resources) {
       const cost = getUpgradeCost(t);
-      if (cost && (resources.grain < cost.grain || resources.gold < cost.gold)) {
+      if (cost && (
+        resources.grain < cost.grain ||
+        resources.gold < cost.gold ||
+        (cost.ore > 0 && (resources.ore ?? 0) < cost.ore) ||
+        (cost.wood > 0 && (resources.wood ?? 0) < cost.wood)
+      )) {
         priority -= 20;
       }
     }
