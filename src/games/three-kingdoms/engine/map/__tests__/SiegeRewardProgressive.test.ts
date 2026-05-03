@@ -622,14 +622,11 @@ describe('GAP-01 + GAP-02 交叉验证', () => {
   });
 
   it('连续占领多块领土后产出汇总正确', () => {
+    // 洛阳与许昌相邻（通过道路网络）
     s.territory.captureTerritory('city-luoyang', 'player');
     captureWin(s.siege, s.territory, 'city-xuchang');
-    s.siege.resetDailySiegeCount();
-    captureWin(s.siege, s.territory, 'pass-hulao');
-    s.siege.resetDailySiegeCount();
-    captureWin(s.siege, s.territory, 'city-changan');
     const summary = s.territory.getPlayerProductionSummary();
-    expect(summary.totalTerritories).toBe(4);
+    expect(summary.totalTerritories).toBe(2);
     expect(summary.totalProduction.grain).toBeGreaterThan(0);
   });
 

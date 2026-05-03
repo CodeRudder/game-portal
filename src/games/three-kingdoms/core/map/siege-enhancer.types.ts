@@ -128,6 +128,89 @@ export const SIEGE_REWARD_CONFIG = {
   capitalBonusMultiplier: 2.0,
 } as const;
 
+// ─────────────────────────────────────────────
+// 5. 攻城策略（MAP-F06-02 R2/R5）
+// ─────────────────────────────────────────────
+
+/** 攻城策略类型 */
+export type SiegeStrategyType = 'forceAttack' | 'siege' | 'nightRaid' | 'insider';
+
+/** 攻城策略四维配置 */
+export interface SiegeStrategyConfig {
+  /** 策略类型 */
+  type: SiegeStrategyType;
+  /** 策略名称 */
+  name: string;
+  /** 策略描述 */
+  description: string;
+  /** 时间倍率 */
+  timeMultiplier: number;
+  /** 兵力损耗倍率 */
+  troopCostMultiplier: number;
+  /** 奖励倍率 */
+  rewardMultiplier: number;
+  /** 成功率修正(加法) */
+  winRateBonus: number;
+  /** 特殊效果描述 */
+  specialEffect: string;
+  /** 前置道具ID(null=无前置) */
+  requiredItem: string | null;
+  /** 策略定位 */
+  positioning: string;
+}
+
+/** 攻城策略配置表 */
+export const SIEGE_STRATEGY_CONFIGS: Record<SiegeStrategyType, SiegeStrategyConfig> = {
+  forceAttack: {
+    type: 'forceAttack',
+    name: '强攻',
+    description: '不惜代价强攻城门，速度最快但损耗最高',
+    timeMultiplier: 0.5,
+    troopCostMultiplier: 1.5,
+    rewardMultiplier: 0.9,
+    winRateBonus: -0.10,
+    specialEffect: '城防损坏(占领后城防-50%)',
+    requiredItem: null,
+    positioning: '速攻手',
+  },
+  siege: {
+    type: 'siege',
+    name: '围困',
+    description: '围而不攻，断其粮道，损耗最低但耗时最长',
+    timeMultiplier: 2.0,
+    troopCostMultiplier: 0.8,
+    rewardMultiplier: 1.0,
+    winRateBonus: 0.10,
+    specialEffect: '民心下降(占领后产出-20%持续24h)',
+    requiredItem: null,
+    positioning: '稳扎稳打',
+  },
+  nightRaid: {
+    type: 'nightRaid',
+    name: '夜袭',
+    description: '趁夜色突袭，需要夜袭令，高风险高回报',
+    timeMultiplier: 0.8,
+    troopCostMultiplier: 1.2,
+    rewardMultiplier: 1.2,
+    winRateBonus: 0.05,
+    specialEffect: '夜间额外+10%成功率',
+    requiredItem: 'item-night-raid-token',
+    positioning: '奇袭者',
+  },
+  insider: {
+    type: 'insider',
+    name: '内应',
+    description: '联络城中内应，需要内应信，成功率最高奖励最丰',
+    timeMultiplier: 1.0,
+    troopCostMultiplier: 1.0,
+    rewardMultiplier: 1.5,
+    winRateBonus: 0.20,
+    specialEffect: '+20%成功率，城防完整保留',
+    requiredItem: 'item-insider-letter',
+    positioning: '智取型',
+  },
+} as const;
+
 /** 攻城增强存档版本 */
 export const SIEGE_ENHANCER_SAVE_VERSION = 1;
 

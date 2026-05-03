@@ -73,7 +73,7 @@ const ZERO_RATES: ProductionRate = {
 /** 标准资源上限 */
 const STANDARD_CAPS: ResourceCap = {
   grain: 100000,
-  gold: null,
+  gold: 2000,
   troops: 50000,
   mandate: null,
   techPoint: null,
@@ -470,7 +470,7 @@ describe('§12.2 离线挂机收益', () => {
     it('applyCapAndOverflow 应限制收益不超过仓库容量', () => {
       const earned: Resources = { grain: 100000, gold: 500, troops: 200, mandate: 50, techPoint: 10 };
       const current: Resources = { grain: 90000, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
-      const caps: Record<string, number | null> = { grain: 100000, gold: null, troops: 50000, mandate: null, techPoint: null };
+      const caps: Record<string, number | null> = { grain: 100000, gold: 2000, troops: 50000, mandate: null, techPoint: null };
 
       const result = rewardSystem.applyCapAndOverflow(earned, current, caps);
       // 仓库剩余空间 = 100000 - 90000 = 10000
@@ -479,12 +479,14 @@ describe('§12.2 离线挂机收益', () => {
     });
 
     it('null 上限的资源不受限制', () => {
-      const earned: Resources = { grain: 0, gold: 100000, troops: 0, mandate: 0, techPoint: 0 };
+      const earned: Resources = { grain: 100000, gold: 0, troops: 50000, mandate: 0, techPoint: 0 };
       const current: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0, techPoint: 0 };
-      const caps: Record<string, number | null> = { grain: null, gold: null, troops: null, mandate: null, techPoint: null };
+      const caps: Record<string, number | null> = { grain: null, gold: 2000, troops: null, mandate: null, techPoint: null };
 
       const result = rewardSystem.applyCapAndOverflow(earned, current, caps);
-      expect(result.cappedEarned.gold).toBe(100000);
+      // grain 和 troops 上限为 null，不应被截断
+      expect(result.cappedEarned.grain).toBe(100000);
+      expect(result.cappedEarned.troops).toBe(50000);
     });
 
     it('getResourceProtection 应返回保护量', () => {
@@ -903,7 +905,7 @@ describe('§12.3 离线领土变化', () => {
       };
       const caps: Record<string, number | null> = {
         grain: 100000,
-        gold: null,
+        gold: 2000,
         troops: null,
         mandate: null,
         techPoint: null,

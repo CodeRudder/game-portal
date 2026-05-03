@@ -16,6 +16,8 @@
 import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type { OwnershipStatus } from '../../core/map';
 import type { TerritoryData } from '../../core/map';
+import type { SiegeStrategyType, SiegeStrategyConfig } from '../../core/map/siege-enhancer.types';
+import { SIEGE_STRATEGY_CONFIGS } from '../../core/map/siege-enhancer.types';
 
 // ─────────────────────────────────────────────
 // 类型定义
@@ -25,7 +27,8 @@ import type { TerritoryData } from '../../core/map';
 export type SiegeErrorCode =
   | 'TARGET_NOT_FOUND' | 'TARGET_ALREADY_OWNED' | 'NOT_ADJACENT'
   | 'INSUFFICIENT_TROOPS' | 'INSUFFICIENT_GRAIN' | 'NO_TROOPS_AVAILABLE'
-  | 'DAILY_LIMIT_REACHED' | 'CAPTURE_COOLDOWN';
+  | 'DAILY_LIMIT_REACHED' | 'CAPTURE_COOLDOWN'
+  | 'STRATEGY_ITEM_MISSING' | 'INSIDER_EXPOSED';
 
 /** 攻城条件校验结果 */
 export interface SiegeConditionResult {
@@ -53,6 +56,12 @@ export interface SiegeResult {
   failureReason?: string;
   /** 攻城失败时损失的兵力（MAP PRD v1.1: 30%出征兵力） */
   defeatTroopLoss?: number;
+  /** 使用的攻城策略(MAP-F06-02) */
+  strategy?: SiegeStrategyType;
+  /** 策略奖励倍率 */
+  rewardMultiplier?: number;
+  /** 策略特殊效果是否触发 */
+  specialEffectTriggered?: boolean;
 }
 
 /** 攻城系统状态 */
@@ -74,6 +83,8 @@ export interface SiegeSaveData {
   lastSiegeDate: string;
   /** FIX-704: 占领冷却时间戳（领土ID -> 时间戳ms） */
   captureTimestamps?: Record<string, number>;
+  /** 内应暴露冷却时间戳（领土ID -> 时间戳ms） */
+  insiderExposures?: Record<string, number>;
   version: number;
 }
 
@@ -163,6 +174,51 @@ export class SiegeSystem implements ISubsystem {
     this.victories = 0;
     this.defeats = 0;
     this.captureTimestamps.clear();
+    this.insiderExposures.clear();
+  }
+
+  // ─── 攻城策略（MAP-F06-02）────────────────────
+
+  /** 获取策略配置 */
+  getStrategyConfig(strategy: SiegeStrategyType): SiegeStrategyConfig {
+    return SIEGE_STRATEGY_CONFIGS[strategy];
+  }
+
+  /** 获取所有可用策略配置 */
+  getAllStrategies(): SiegeStrategyConfig[] {
+    return Object.values(SIEGE_STRATEGY_CONFIGS);
+  }
+
+  /**
+   * 计算策略修正后的攻城消耗
+   * 策略影响兵力消耗倍率
+   */
+  calculateStrategySiegeCost(territory: TerritoryData, strategy: SiegeStrategyType): SiegeCost {
+    const baseCost = this.calculateSiegeCost(territory);
+    const config = SIEGE_STRATEGY_CONFIGS[strategy];
+    return {
+      troops: Math.ceil(baseCost.troops * config.troopCostMultiplier),
+      grain: baseCost.grain,
+    };
+  }
+
+  /**
+   * 计算策略修正后的胜率
+   * 策略影响胜率加成
+   */
+  computeStrategyWinRate(attackerPower: number, defenderPower: number, strategy: SiegeStrategyType): number {
+    const baseRate = this.computeWinRate(attackerPower, defenderPower);
+    const config = SIEGE_STRATEGY_CONFIGS[strategy];
+    const WIN_RATE_MIN = 0.05;
+    const WIN_RATE_MAX = 0.95;
+    return Math.min(WIN_RATE_MAX, Math.max(WIN_RATE_MIN, baseRate + config.winRateBonus));
+  }
+
+  /**
+   * 获取策略奖励倍率
+   */
+  getStrategyRewardMultiplier(strategy: SiegeStrategyType): number {
+    return SIEGE_STRATEGY_CONFIGS[strategy].rewardMultiplier;
   }
 
   // ─── 攻城条件校验（#19）──────────────────────
@@ -177,6 +233,7 @@ export class SiegeSystem implements ISubsystem {
     attackerOwner: OwnershipStatus,
     availableTroops: number,
     availableGrain: number,
+    strategy?: SiegeStrategyType,
   ): SiegeConditionResult {
     // FIX-701: NaN防护 — 兵力/粮草为NaN时拒绝攻城
     if (!Number.isFinite(availableTroops) || !Number.isFinite(availableGrain)) {
@@ -195,12 +252,26 @@ export class SiegeSystem implements ISubsystem {
       return { canSiege: false, errorCode: 'NOT_ADJACENT', errorMessage: `${territory.name} 不与己方领土相邻` };
     }
 
-    const cost = this.calculateSiegeCost(territory);
+    // 策略修正消耗
+    const cost = strategy ? this.calculateStrategySiegeCost(territory, strategy) : this.calculateSiegeCost(territory);
     if (availableTroops < cost.troops) {
       return { canSiege: false, errorCode: 'INSUFFICIENT_TROOPS', errorMessage: `兵力不足，需要 ${cost.troops}，当前 ${availableTroops}` };
     }
     if (availableGrain < cost.grain) {
       return { canSiege: false, errorCode: 'INSUFFICIENT_GRAIN', errorMessage: `粮草不足，需要 ${cost.grain}，当前 ${availableGrain}` };
+    }
+    // 策略道具校验
+    if (strategy) {
+      const config = SIEGE_STRATEGY_CONFIGS[strategy];
+      if (config.requiredItem && !this.hasItem(config.requiredItem)) {
+        return { canSiege: false, errorCode: 'STRATEGY_ITEM_MISSING', errorMessage: `需要道具: ${config.name}令` };
+      }
+      // 内应策略: 检查暴露冷却
+      if (strategy === 'insider' && this.isInsiderExposed(targetId)) {
+        const remaining = this.getInsiderCooldownRemaining(targetId);
+        const hours = Math.ceil(remaining / (60 * 60 * 1000));
+        return { canSiege: false, errorCode: 'INSIDER_EXPOSED', errorMessage: `内应已暴露，${hours}小时后方可再次使用` };
+      }
     }
     if (this.dailySiegeCount >= DAILY_SIEGE_LIMIT) {
       return { canSiege: false, errorCode: 'DAILY_LIMIT_REACHED', errorMessage: `今日攻城次数已用完(${DAILY_SIEGE_LIMIT}次)` };
@@ -222,15 +293,26 @@ export class SiegeSystem implements ISubsystem {
 
   // ─── 攻城消耗计算 ──────────────────────────
 
-  /** 计算攻城消耗：兵力 = 基础 × 防御/100，粮草 = 固定500（⚠️PRD MAP-4统一声明） */
+  /**
+   * 计算攻城消耗：兵力 = 基础 × 防御/100 × 类型系数，粮草 = 固定500（⚠️PRD MAP-4统一声明）
+   *
+   * 类型系数（新手友好，最低80%）：
+   *   - 资源点(res-*): 80% → 1级约800兵力
+   *   - 关隘(pass-*): 100% → 1级约1000兵力
+   *   - 城市(city-*): 80% → 1级约800兵力
+   */
   calculateSiegeCost(territory: TerritoryData): SiegeCost {
     // FIX-702: 防御值NaN/负值/零值防护
     const defense = territory.defenseValue;
     if (!Number.isFinite(defense) || defense <= 0) {
       return { troops: MIN_SIEGE_TROOPS, grain: GRAIN_FIXED_COST };
     }
+    // 按领土类型调整攻城兵力要求（资源点80%、关隘100%、城市80%）
+    const typeFactor = territory.id.startsWith('res-') ? 0.8
+      : territory.id.startsWith('pass-') ? 1.0
+      : 0.8;
     return {
-      troops: Math.ceil(MIN_SIEGE_TROOPS * (defense / 100) * TROOP_COST_FACTOR),
+      troops: Math.ceil(MIN_SIEGE_TROOPS * (defense / 100) * TROOP_COST_FACTOR * typeFactor),
       grain: GRAIN_FIXED_COST,
     };
   }
@@ -249,8 +331,9 @@ export class SiegeSystem implements ISubsystem {
     attackerOwner: OwnershipStatus,
     availableTroops: number,
     availableGrain: number,
+    strategy?: SiegeStrategyType,
   ): SiegeResult {
-    const condition = this.checkSiegeConditions(targetId, attackerOwner, availableTroops, availableGrain);
+    const condition = this.checkSiegeConditions(targetId, attackerOwner, availableTroops, availableGrain, strategy);
     const territory = this.territorySys?.getTerritoryById(targetId);
 
     if (!condition.canSiege || !territory) {
@@ -259,12 +342,15 @@ export class SiegeSystem implements ISubsystem {
         targetName: territory?.name ?? targetId,
         cost: { troops: 0, grain: 0 },
         failureReason: condition.errorMessage ?? '条件不满足',
+        strategy,
       };
     }
 
-    const cost = this.calculateSiegeCost(territory);
-    const victory = this.simulateBattle(availableTroops, territory);
-    return this.resolveSiege(targetId, territory, attackerOwner, cost, victory);
+    const cost = strategy ? this.calculateStrategySiegeCost(territory, strategy) : this.calculateSiegeCost(territory);
+    const victory = strategy
+      ? this.simulateBattleWithStrategy(availableTroops, territory, strategy)
+      : this.simulateBattle(availableTroops, territory);
+    return this.resolveSiege(targetId, territory, attackerOwner, cost, victory, strategy);
   }
 
   /** 使用外部战斗结果执行攻城 */
@@ -274,8 +360,9 @@ export class SiegeSystem implements ISubsystem {
     availableTroops: number,
     availableGrain: number,
     battleVictory: boolean,
+    strategy?: SiegeStrategyType,
   ): SiegeResult {
-    const condition = this.checkSiegeConditions(targetId, attackerOwner, availableTroops, availableGrain);
+    const condition = this.checkSiegeConditions(targetId, attackerOwner, availableTroops, availableGrain, strategy);
     const territory = this.territorySys?.getTerritoryById(targetId);
 
     if (!condition.canSiege || !territory) {
@@ -284,11 +371,12 @@ export class SiegeSystem implements ISubsystem {
         targetName: territory?.name ?? targetId,
         cost: { troops: 0, grain: 0 },
         failureReason: condition.errorMessage ?? '条件不满足',
+        strategy,
       };
     }
 
-    const cost = this.calculateSiegeCost(territory);
-    return this.resolveSiege(targetId, territory, attackerOwner, cost, battleVictory);
+    const cost = strategy ? this.calculateStrategySiegeCost(territory, strategy) : this.calculateSiegeCost(territory);
+    return this.resolveSiege(targetId, territory, attackerOwner, cost, battleVictory, strategy);
   }
 
   // ─── 战斗模拟 ──────────────────────────────
@@ -312,13 +400,26 @@ export class SiegeSystem implements ISubsystem {
   }
 
   /**
+   * 策略修正战斗模拟（MAP-F06-02）
+   * 策略影响兵力消耗和胜率
+   */
+  simulateBattleWithStrategy(attackerTroops: number, target: TerritoryData, strategy: SiegeStrategyType): boolean {
+    const defenderPower = target.defenseValue;
+    const cost = this.calculateStrategySiegeCost(target, strategy);
+    const effectiveTroops = attackerTroops - cost.troops;
+    if (effectiveTroops <= 0) return false;
+    const winRate = this.computeStrategyWinRate(effectiveTroops, defenderPower, strategy);
+    return Math.random() < winRate;
+  }
+
+  /**
    * 核心胜率计算公式（PRD §7.6 线性比率公式）
    *
    * 公式: min(95%, max(5%, (attackerPower / defenderPower) × 50%))
    * - 线性比率，直观易懂
    * - 攻防相等时胜率 = 50%
    */
-  private computeWinRate(attackerPower: number, defenderPower: number): number {
+  computeWinRate(attackerPower: number, defenderPower: number): number {
     const WIN_RATE_MIN = 0.05;
     const WIN_RATE_MAX = 0.95;
     const WIN_RATE_BASE = 0.5;
@@ -392,6 +493,11 @@ export class SiegeSystem implements ISubsystem {
     for (const [id, ts] of this.captureTimestamps) {
       captureTimestamps[id] = ts;
     }
+    // 保存内应暴露冷却
+    const insiderExposures: Record<string, number> = {};
+    for (const [id, ts] of this.insiderExposures) {
+      insiderExposures[id] = ts;
+    }
     return {
       totalSieges: this.totalSieges,
       victories: this.victories,
@@ -399,6 +505,7 @@ export class SiegeSystem implements ISubsystem {
       dailySiegeCount: this.dailySiegeCount,
       lastSiegeDate: this.lastSiegeDate,
       captureTimestamps,
+      insiderExposures,
       version: SIEGE_SAVE_VERSION,
     };
   }
@@ -421,6 +528,15 @@ export class SiegeSystem implements ISubsystem {
         }
       }
     }
+    // 恢复内应暴露冷却
+    this.insiderExposures.clear();
+    if (data.insiderExposures) {
+      for (const [id, ts] of Object.entries(data.insiderExposures)) {
+        if (Number.isFinite(ts)) {
+          this.insiderExposures.set(id, ts);
+        }
+      }
+    }
   }
 
   // ─── 内部方法 ──────────────────────────────
@@ -432,10 +548,14 @@ export class SiegeSystem implements ISubsystem {
     attackerOwner: OwnershipStatus,
     cost: SiegeCost,
     victory: boolean,
+    strategy?: SiegeStrategyType,
   ): SiegeResult {
     const previousOwner = territory.ownership;
+    const strategyConfig = strategy ? SIEGE_STRATEGY_CONFIGS[strategy] : null;
     const result: SiegeResult = {
       launched: true, victory, targetId, targetName: territory.name, cost,
+      strategy,
+      rewardMultiplier: strategyConfig?.rewardMultiplier ?? 1.0,
     };
 
     this.totalSieges++;
@@ -451,12 +571,33 @@ export class SiegeSystem implements ISubsystem {
       this.autoGarrison(targetId, attackerOwner, cost.troops);
       result.capture = { territoryId: targetId, newOwner: attackerOwner, previousOwner };
 
+      // 策略特殊效果: 胜利时
+      if (strategy === 'forceAttack') {
+        // 强攻: 城防损坏(占领后城防-50%)
+        this.applyDefenseReduction(targetId, 0.5);
+        result.specialEffectTriggered = true;
+      } else if (strategy === 'siege') {
+        // 围困: 民心下降(占领后产出-20%持续24h)
+        this.applyProductionDebuff(targetId, 0.2, 24 * 60 * 60 * 1000);
+        result.specialEffectTriggered = true;
+      } else if (strategy === 'insider') {
+        // 内应: 城防完整保留 + 清除暴露状态
+        this.clearInsiderExposure(targetId);
+        result.specialEffectTriggered = true;
+      }
+
+      // 消耗策略道具
+      if (strategyConfig?.requiredItem) {
+        this.consumeItem(strategyConfig.requiredItem);
+      }
+
       // P0-3修复：直接扣减攻城资源（不再依赖事件通知）
       this.deductSiegeResources(cost);
 
       this.deps?.eventBus.emit('siege:victory', {
         territoryId: targetId, territoryName: territory.name,
-        newOwner: attackerOwner, previousOwner, cost,
+        newOwner: attackerOwner, previousOwner, cost, strategy,
+        rewardMultiplier: result.rewardMultiplier,
       });
     } else {
       this.defeats++;
@@ -465,12 +606,23 @@ export class SiegeSystem implements ISubsystem {
       result.failureReason = '攻城失败，兵力不足以攻破防线';
       result.defeatTroopLoss = defeatTroopLoss;
 
+      // 内应策略失败: 暴露标记(24h冷却)
+      if (strategy === 'insider') {
+        this.setInsiderExposure(targetId);
+        result.specialEffectTriggered = true;
+      }
+
+      // 消耗策略道具(失败也消耗)
+      if (strategyConfig?.requiredItem) {
+        this.consumeItem(strategyConfig.requiredItem);
+      }
+
       // P0-3修复：失败时也直接扣减资源（30%兵力+全部粮草）
       this.deductSiegeResources({ troops: defeatTroopLoss, grain: cost.grain });
 
       this.deps?.eventBus.emit('siege:defeat', {
         territoryId: targetId, territoryName: territory.name, cost,
-        defeatTroopLoss,
+        defeatTroopLoss, strategy,
       });
     }
 
@@ -491,11 +643,194 @@ export class SiegeSystem implements ISubsystem {
     }
   }
 
+  // ─── 策略效果辅助方法 ────────────────────────
+
+  /** 检查玩家是否拥有指定道具 */
+  private hasItem(itemId: string): boolean {
+    try {
+      const resourceSys = this.deps?.registry?.get<any>('resource');
+      if (resourceSys?.getItemCount) {
+        return resourceSys.getItemCount(itemId) > 0;
+      }
+      return true; // 资源系统不可用时默认有道具(测试环境)
+    } catch { return true; }
+  }
+
+  /** 消耗指定道具 */
+  private consumeItem(itemId: string): void {
+    try {
+      const resourceSys = this.deps?.registry?.get<any>('resource');
+      if (resourceSys?.consumeItem) {
+        resourceSys.consumeItem(itemId, 1);
+      }
+    } catch { /* 资源系统不可用时静默处理 */ }
+  }
+
+  /** 内应暴露状态存储 */
+  private insiderExposures: Map<string, number> = new Map();
+  private static readonly INSIDER_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+
+  /** 检查城池内应是否已暴露 */
+  isInsiderExposed(territoryId: string): boolean {
+    const timestamp = this.insiderExposures.get(territoryId);
+    if (!timestamp) return false;
+    return Date.now() - timestamp < SiegeSystem.INSIDER_COOLDOWN_MS;
+  }
+
+  /** 获取内应冷却剩余时间(ms) */
+  getInsiderCooldownRemaining(territoryId: string): number {
+    const timestamp = this.insiderExposures.get(territoryId);
+    if (!timestamp) return 0;
+    return Math.max(0, SiegeSystem.INSIDER_COOLDOWN_MS - (Date.now() - timestamp));
+  }
+
+  /** 设置内应暴露标记 */
+  private setInsiderExposure(territoryId: string): void {
+    this.insiderExposures.set(territoryId, Date.now());
+    this.deps?.eventBus.emit('siege:insiderExposed', { territoryId, cooldownMs: SiegeSystem.INSIDER_COOLDOWN_MS });
+  }
+
+  /** 清除内应暴露标记(攻城成功时) */
+  private clearInsiderExposure(territoryId: string): void {
+    this.insiderExposures.delete(territoryId);
+  }
+
+  /** 应用城防降低效果(强攻策略) */
+  private applyDefenseReduction(territoryId: string, reductionRate: number): void {
+    this.deps?.eventBus.emit('siege:defenseReduced', { territoryId, reductionRate });
+  }
+
+  /** 应用产出降低效果(围困策略) */
+  private applyProductionDebuff(territoryId: string, debuffRate: number, durationMs: number): void {
+    this.deps?.eventBus.emit('siege:productionDebuff', { territoryId, debuffRate, durationMs });
+  }
+
   /** 获取 TerritorySystem 子系统 */
   private get territorySys(): import('./TerritorySystem').TerritorySystem | null {
     try {
       return this.deps?.registry?.get<import('./TerritorySystem').TerritorySystem>('territory') ?? null;
     } catch { return null; }
+  }
+
+  /** 获取 ExpeditionSystem 子系统 */
+  private get expeditionSys(): import('./ExpeditionSystem').ExpeditionSystem | null {
+    try {
+      return this.deps?.registry?.get<import('./ExpeditionSystem').ExpeditionSystem>('expedition') ?? null;
+    } catch { return null; }
+  }
+
+  // ─── 编队攻城（G5+H4）──────────────────────────
+
+  /**
+   * 使用出征编队执行攻城（新流程）
+   *
+   * 流程: 校验编队 → 计算消耗 → 战斗模拟 → 伤亡计算 → 领土变更
+   *
+   * @param forceId 出征编队ID
+   * @param targetId 目标领土ID
+   * @param attackerOwner 攻城方
+   * @param availableGrain 可用粮草
+   * @param strategy 攻城策略（可选）
+   * @returns 攻城结果（含伤亡详情）
+   */
+  executeSiegeWithExpedition(
+    forceId: string,
+    targetId: string,
+    attackerOwner: OwnershipStatus,
+    availableGrain: number,
+    strategy?: SiegeStrategyType,
+  ): import('./SiegeSystem').SiegeResult & { casualties?: import('./expedition-types').CasualtyResult } {
+    const expeditionSys = this.expeditionSys;
+
+    // 如果没有ExpeditionSystem，回退到旧流程
+    if (!expeditionSys) {
+      return {
+        launched: false, victory: false, targetId, targetName: targetId,
+        cost: { troops: 0, grain: 0 },
+        failureReason: '出征系统未初始化',
+        strategy,
+      };
+    }
+
+    // 校验编队
+    const forceValidation = expeditionSys.validateForceForExpedition(forceId);
+    if (!forceValidation.valid) {
+      const force = expeditionSys.getForce(forceId);
+      return {
+        launched: false, victory: false, targetId,
+        targetName: this.territorySys?.getTerritoryById(targetId)?.name ?? targetId,
+        cost: { troops: 0, grain: 0 },
+        failureReason: forceValidation.errorMessage ?? '编队校验失败',
+        strategy,
+      };
+    }
+
+    const force = expeditionSys.getForce(forceId)!;
+
+    // 校验攻城条件（使用编队的兵力）
+    const condition = this.checkSiegeConditions(targetId, attackerOwner, force.troops, availableGrain, strategy);
+    if (!condition.canSiege) {
+      return {
+        launched: false, victory: false, targetId,
+        targetName: this.territorySys?.getTerritoryById(targetId)?.name ?? targetId,
+        cost: { troops: 0, grain: 0 },
+        failureReason: condition.errorMessage ?? '条件不满足',
+        strategy,
+      };
+    }
+
+    const territory = this.territorySys?.getTerritoryById(targetId)!;
+
+    // 计算消耗
+    const cost = strategy ? this.calculateStrategySiegeCost(territory, strategy) : this.calculateSiegeCost(territory);
+
+    // 应用将领战力加成（考虑受伤）
+    const heroPowerMultiplier = expeditionSys.getHeroPowerMultiplier(force.heroId);
+    const effectiveTroops = Math.floor(force.troops * heroPowerMultiplier);
+
+    // 战斗模拟
+    const victory = strategy
+      ? this.simulateBattleWithStrategy(effectiveTroops, territory, strategy)
+      : this.simulateBattle(effectiveTroops, territory);
+
+    // 计算战斗结果类型（用于伤亡计算）
+    const battleResultType = this.determineBattleResult(effectiveTroops, territory, victory);
+
+    // 计算伤亡
+    const casualties = expeditionSys.calculateCasualties(forceId, battleResultType);
+
+    // 执行攻城结果
+    const result = this.resolveSiege(targetId, territory, attackerOwner, cost, victory, strategy);
+
+    return {
+      ...result,
+      casualties: casualties ?? undefined,
+    };
+  }
+
+  /**
+   * 判断战斗结果类型（用于伤亡计算）
+   *
+   * 胜利时根据胜率判断是普通胜利还是大胜
+   * 失败时根据兵力差距判断是普通失败还是惨败
+   */
+  private determineBattleResult(
+    attackerTroops: number,
+    target: TerritoryData,
+    victory: boolean,
+  ): 'victory' | 'defeat' | 'rout' {
+    if (victory) {
+      return 'victory';
+    }
+
+    // 失败时，根据兵力差距判断
+    const defenderPower = target.defenseValue;
+    const ratio = attackerTroops / defenderPower;
+
+    if (ratio < 0.3) {
+      return 'rout'; // 兵力差距悬殊，惨败
+    }
+    return 'defeat'; // 普通失败
   }
 
   /**

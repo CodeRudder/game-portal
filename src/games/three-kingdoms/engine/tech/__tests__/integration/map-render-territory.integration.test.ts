@@ -77,14 +77,14 @@ describe('§2.1 地图渲染与浏览', () => {
 
   // ── 格子系统 ──
 
-  it('地图尺寸应为60×40格子', () => {
+  it('地图尺寸应为100×60格子', () => {
     const size = sys.map.getSize();
-    expect(size.cols).toBe(60);
-    expect(size.rows).toBe(40);
+    expect(size.cols).toBe(100);
+    expect(size.rows).toBe(60);
   });
 
-  it('总格子数=60×40=2400', () => {
-    expect(sys.map.getTotalTiles()).toBe(2400);
+  it('总格子数=100×60=6000', () => {
+    expect(sys.map.getTotalTiles()).toBe(6000);
   });
 
   it('每个格子包含pos/region/terrain属性', () => {
@@ -95,16 +95,16 @@ describe('§2.1 地图渲染与浏览', () => {
     expect(tile).toHaveProperty('terrain');
   });
 
-  it('getAllTiles返回2400条数据', () => {
+  it('getAllTiles返回6000条数据', () => {
     const tiles = sys.map.getAllTiles();
-    expect(tiles.length).toBe(2400);
+    expect(tiles.length).toBe(6000);
   });
 
   it('坐标越界返回null', () => {
     expect(sys.map.getTileAt({ x: -1, y: 0 })).toBeNull();
     expect(sys.map.getTileAt({ x: 0, y: -1 })).toBeNull();
-    expect(sys.map.getTileAt({ x: 60, y: 0 })).toBeNull();
-    expect(sys.map.getTileAt({ x: 0, y: 40 })).toBeNull();
+    expect(sys.map.getTileAt({ x: 100, y: 0 })).toBeNull();
+    expect(sys.map.getTileAt({ x: 0, y: 60 })).toBeNull();
   });
 
   it('isValidPosition边界值校验', () => {

@@ -135,6 +135,8 @@ describe('集成测试: 交叉验证 (Play §13.1-13.4)', () => {
     });
 
     it('连续攻城扩张领土链', () => {
+      // 洛阳为玩家起始领土，周围还有4个随机资源点(res-spawn-*)
+      const baseCount = sys.territory.getPlayerTerritoryCount();
       sys.territory.captureTerritory('city-ye', 'player');
 
       // 邺城→许昌→濮阳 扩张链
@@ -142,11 +144,11 @@ describe('集成测试: 交叉验证 (Play §13.1-13.4)', () => {
       sys.siege.resetDailySiegeCount();
       sys.siege.executeSiegeWithResult('city-puyang', 'player', 10000, 10000, true);
 
-      expect(sys.territory.getPlayerTerritoryCount()).toBe(3);
+      expect(sys.territory.getPlayerTerritoryCount()).toBe(baseCount + 3); // base + ye + xuchang + puyang
 
       // 所有领土产出汇总
       const summary = sys.territory.getPlayerProductionSummary();
-      expect(summary.details).toHaveLength(3);
+      expect(summary.details).toHaveLength(baseCount + 3);
     });
 
     it('扫荡→碎片→升星→战力提升循环（SweepSystem + HeroStarSystem 集成）', () => {
@@ -346,13 +348,14 @@ describe('集成测试: 交叉验证 (Play §13.1-13.4)', () => {
 
   describe('§13.2.2 离线综合收益汇总', () => {
     it('领土产出可汇总', () => {
+      const baseCount = sys.territory.getPlayerTerritoryCount();
       sys.territory.captureTerritory('city-ye', 'player');
       sys.territory.captureTerritory('city-xuchang', 'player');
 
       const summary = sys.territory.getPlayerProductionSummary();
       expect(summary.totalProduction.grain).toBeGreaterThan(0);
       expect(summary.totalProduction.gold).toBeGreaterThan(0);
-      expect(summary.totalTerritories).toBe(2);
+      expect(summary.totalTerritories).toBe(baseCount + 2); // base + ye + xuchang
     });
 
     it('离线综合收益面板（OfflineRewardSystem 集成）', () => {
@@ -375,12 +378,18 @@ describe('集成测试: 交叉验证 (Play §13.1-13.4)', () => {
   // ── §13.3 数值一致性验证 ──────────────────────
 
   describe('§13.3 数值一致性验证', () => {
-    it('城防公式统一: 基础(1000)×城市等级', () => {
+    it('城防公式统一: 基础(1000)×类型系数×等级', () => {
       const territories = sys.territory.getAllTerritories();
       for (const t of territories) {
-        if (t.id.startsWith('city-') || t.id.startsWith('pass-') || t.id.startsWith('res-')) {
-          // defenseValue 应为 1000 × level
+        if (t.id.startsWith('city-')) {
+          // city typeFactor=0.5: defenseValue = 500 × level
+          expect(t.defenseValue).toBe(500 * t.level);
+        } else if (t.id.startsWith('pass-')) {
+          // pass typeFactor=1.0: defenseValue = 1000 × level
           expect(t.defenseValue).toBe(1000 * t.level);
+        } else if (t.id.startsWith('res-')) {
+          // resource typeFactor=0.3: defenseValue = 300 × level
+          expect(t.defenseValue).toBe(300 * t.level);
         }
       }
     });
@@ -447,16 +456,16 @@ describe('集成测试: 交叉验证 (Play §13.1-13.4)', () => {
   // ── §13.4 PRD矛盾统一声明 ──────────────────────
 
   describe('§13.4 PRD矛盾统一声明', () => {
-    it('城防公式: 基础(1000)×城市等级（非500~5000范围）', () => {
-      // 许昌 lv4 → 4000（不是500~5000随机值）
+    it('城防公式: 基础(1000)×类型系数×等级', () => {
+      // 许昌 lv4, city typeFactor=0.5 → 500×4=2000
       const xu = sys.territory.getTerritoryById('city-xuchang')!;
-      expect(xu.defenseValue).toBe(4000);
-      expect(xu.defenseValue).toBe(1000 * xu.level);
+      expect(xu.defenseValue).toBe(2000);
+      expect(xu.defenseValue).toBe(500 * xu.level);
 
-      // 洛阳 lv5 → 5000
+      // 洛阳 lv5, city typeFactor=0.5 → 500×5=2500
       const ly = sys.territory.getTerritoryById('city-luoyang')!;
-      expect(ly.defenseValue).toBe(5000);
-      expect(ly.defenseValue).toBe(1000 * ly.level);
+      expect(ly.defenseValue).toBe(2500);
+      expect(ly.defenseValue).toBe(500 * ly.level);
     });
 
     it('攻城消耗: 兵力×100+粮草×500（非距离×50+等级×100）', () => {

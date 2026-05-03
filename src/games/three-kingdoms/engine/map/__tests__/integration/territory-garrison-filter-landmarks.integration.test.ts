@@ -142,23 +142,25 @@ describe('集成测试: 领土管理 + 驻防 + 筛选 + 地标 (Play §9, §10.
     });
 
     it('玩家总产出汇总正确', () => {
-      // 初始无玩家领土
+      // 初始有玩家领土(洛阳 + 周围随机资源点)
+      const baseCount = sys.territory.getPlayerTerritoryCount();
       const summary0 = sys.territory.getPlayerProductionSummary();
-      expect(summary0.totalTerritories).toBe(0);
+      expect(summary0.totalTerritories).toBe(baseCount);
 
       // 占领一城
       sys.territory.captureTerritory('city-xuchang', 'player');
       const summary1 = sys.territory.getPlayerProductionSummary();
-      expect(summary1.totalTerritories).toBe(1);
+      expect(summary1.totalTerritories).toBe(baseCount + 1);
       expect(summary1.totalProduction.grain).toBeGreaterThan(0);
     });
 
     it('多领土产出汇总累加', () => {
+      const baseCount = sys.territory.getPlayerTerritoryCount();
       sys.territory.captureTerritory('city-xuchang', 'player');
       sys.territory.captureTerritory('city-ye', 'player');
       const summary = sys.territory.getPlayerProductionSummary();
-      expect(summary.totalTerritories).toBe(2);
-      expect(summary.details).toHaveLength(2);
+      expect(summary.totalTerritories).toBe(baseCount + 2); // base + 许昌 + 邺城
+      expect(summary.details).toHaveLength(baseCount + 2);
       // 总产出 = 各领土产出之和
       const sumGrain = summary.details.reduce((s, d) => s + d.production.grain, 0);
       expect(summary.totalProduction.grain).toBeCloseTo(sumGrain, 1);
@@ -427,18 +429,18 @@ describe('集成测试: 领土管理 + 驻防 + 筛选 + 地标 (Play §9, §10.
       expect(jianye!.level).toBe(5);
     });
 
-    it('三大地标均为中立初始', () => {
-      expect(sys.territory.getTerritoryById('city-luoyang')!.ownership).toBe('neutral');
+    it('三大地标初始归属', () => {
+      expect(sys.territory.getTerritoryById('city-luoyang')!.ownership).toBe('player'); // 玩家起始
       expect(sys.territory.getTerritoryById('city-changan')!.ownership).toBe('neutral');
       expect(sys.territory.getTerritoryById('city-jianye')!.ownership).toBe('neutral');
     });
 
-    it('占领洛阳后产出归玩家', () => {
-      sys.territory.captureTerritory('city-luoyang', 'player');
+    it('洛阳为玩家起始领土，产出归玩家', () => {
+      // 洛阳已经是玩家领土（周围还有随机资源点也是玩家领土）
       const luoyang = sys.territory.getTerritoryById('city-luoyang');
       expect(luoyang!.ownership).toBe('player');
       const summary = sys.territory.getPlayerProductionSummary();
-      expect(summary.totalTerritories).toBe(1);
+      expect(summary.totalTerritories).toBeGreaterThanOrEqual(1);
       expect(summary.totalProduction.grain).toBeGreaterThan(0);
     });
 
@@ -473,7 +475,8 @@ describe('集成测试: 领土管理 + 驻防 + 筛选 + 地标 (Play §9, §10.
   describe('§9.8 地图统计面板', () => {
     it('领土概览: 总领土数正确', () => {
       const all = sys.territory.getAllTerritories();
-      expect(all.length).toBe(DEFAULT_LANDMARKS.length);
+      // DEFAULT_LANDMARKS + 周围随机生成的资源点
+      expect(all.length).toBeGreaterThanOrEqual(DEFAULT_LANDMARKS.length);
     });
 
     it('领土概览: 按区域统计', () => {
@@ -486,18 +489,22 @@ describe('集成测试: 领土管理 + 驻防 + 筛选 + 地标 (Play §9, §10.
     });
 
     it('领土概览: 按归属统计', () => {
+      const total = sys.territory.getAllTerritories().length;
       const neutral = sys.territory.getTerritoriesByOwnership('neutral');
-      expect(neutral.length).toBe(DEFAULT_LANDMARKS.length);
       const player = sys.territory.getTerritoriesByOwnership('player');
-      expect(player.length).toBe(0);
+      // 洛阳+随机资源点为玩家领土，其余为中立
+      expect(player.length).toBeGreaterThanOrEqual(1);
+      expect(neutral.length + player.length).toBe(total);
     });
 
     it('占领后统计实时更新', () => {
+      const playerBefore = sys.territory.getTerritoriesByOwnership('player').length;
       sys.territory.captureTerritory('city-xuchang', 'player');
-      const player = sys.territory.getTerritoriesByOwnership('player');
-      expect(player.length).toBe(1);
+      const playerAfter = sys.territory.getTerritoriesByOwnership('player').length;
+      expect(playerAfter).toBe(playerBefore + 1);
+      const total = sys.territory.getAllTerritories().length;
       const neutral = sys.territory.getTerritoriesByOwnership('neutral');
-      expect(neutral.length).toBe(DEFAULT_LANDMARKS.length - 1);
+      expect(neutral.length + playerAfter).toBe(total);
     });
 
     it('攻城统计: SiegeSystem 提供胜率/次数', () => {

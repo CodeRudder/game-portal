@@ -471,10 +471,14 @@ describe('GAP-08：战斗统计数据聚合测试（MAP-6 §6.3）', () => {
       const { siege, territory } = createSiegeSystems();
       territory.captureTerritory('city-luoyang', 'player');
 
+      // 洛阳与许昌相邻（通过道路网络）
       siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
       expect(siege.getTotalSieges()).toBe(1);
 
-      siege.executeSiegeWithResult('city-ye', 'player', 5000, 500, true);
+      // 恢复许昌为neutral以便再次攻城
+      territory.captureTerritory('city-xuchang', 'neutral');
+      siege.setCaptureTimestamp('city-xuchang', 0);
+      siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
       expect(siege.getTotalSieges()).toBe(2);
     });
 
@@ -483,7 +487,10 @@ describe('GAP-08：战斗统计数据聚合测试（MAP-6 §6.3）', () => {
       territory.captureTerritory('city-luoyang', 'player');
 
       siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
-      siege.executeSiegeWithResult('city-ye', 'player', 5000, 500, false);
+      // 恢复许昌以便再次攻城
+      territory.captureTerritory('city-xuchang', 'neutral');
+      siege.setCaptureTimestamp('city-xuchang', 0);
+      siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, false);
 
       expect(siege.getVictories()).toBe(1);
       expect(siege.getDefeats()).toBe(1);
@@ -496,13 +503,12 @@ describe('GAP-08：战斗统计数据聚合测试（MAP-6 §6.3）', () => {
 
       territory.captureTerritory('city-luoyang', 'player');
 
-      siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
-      expect(siege.getRemainingDailySieges()).toBe(2);
-
-      siege.executeSiegeWithResult('city-ye', 'player', 5000, 500, true);
-      expect(siege.getRemainingDailySieges()).toBe(1);
-
-      siege.executeSiegeWithResult('pass-hulao', 'player', 5000, 500, true);
+      // 3次攻城（洛阳与许昌相邻）
+      for (let i = 0; i < 3; i++) {
+        siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
+        territory.captureTerritory('city-xuchang', 'neutral');
+        siege.setCaptureTimestamp('city-xuchang', 0);
+      }
       expect(siege.getRemainingDailySieges()).toBe(0);
     });
 
@@ -511,12 +517,14 @@ describe('GAP-08：战斗统计数据聚合测试（MAP-6 §6.3）', () => {
       territory.captureTerritory('city-luoyang', 'player');
 
       // 消耗3次
-      siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
-      siege.executeSiegeWithResult('city-ye', 'player', 5000, 500, true);
-      siege.executeSiegeWithResult('pass-hulao', 'player', 5000, 500, true);
+      for (let i = 0; i < 3; i++) {
+        siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
+        territory.captureTerritory('city-xuchang', 'neutral');
+        siege.setCaptureTimestamp('city-xuchang', 0);
+      }
 
       // 第4次应失败
-      const result = siege.checkSiegeConditions('city-changan', 'player', 5000, 500);
+      const result = siege.checkSiegeConditions('city-xuchang', 'player', 5000, 500);
       expect(result.canSiege).toBe(false);
       expect(result.errorCode).toBe('DAILY_LIMIT_REACHED');
     });
@@ -526,9 +534,11 @@ describe('GAP-08：战斗统计数据聚合测试（MAP-6 §6.3）', () => {
       territory.captureTerritory('city-luoyang', 'player');
 
       // 消耗3次
-      siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
-      siege.executeSiegeWithResult('city-ye', 'player', 5000, 500, true);
-      siege.executeSiegeWithResult('pass-hulao', 'player', 5000, 500, true);
+      for (let i = 0; i < 3; i++) {
+        siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
+        territory.captureTerritory('city-xuchang', 'neutral');
+        siege.setCaptureTimestamp('city-xuchang', 0);
+      }
 
       // 重置
       siege.resetDailySiegeCount();
@@ -547,7 +557,9 @@ describe('GAP-08：战斗统计数据聚合测试（MAP-6 §6.3）', () => {
       territory.captureTerritory('city-luoyang', 'player');
 
       siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
-      siege.executeSiegeWithResult('city-ye', 'player', 5000, 500, true);
+      territory.captureTerritory('city-xuchang', 'neutral');
+      siege.setCaptureTimestamp('city-xuchang', 0);
+      siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
 
       expect(siege.getWinRate()).toBe(1.0);
     });
@@ -557,7 +569,9 @@ describe('GAP-08：战斗统计数据聚合测试（MAP-6 §6.3）', () => {
       territory.captureTerritory('city-luoyang', 'player');
 
       siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, false);
-      siege.executeSiegeWithResult('city-ye', 'player', 5000, 500, false);
+      territory.captureTerritory('city-xuchang', 'neutral');
+      siege.setCaptureTimestamp('city-xuchang', 0);
+      siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, false);
 
       expect(siege.getWinRate()).toBe(0);
     });
@@ -567,7 +581,9 @@ describe('GAP-08：战斗统计数据聚合测试（MAP-6 §6.3）', () => {
       territory.captureTerritory('city-luoyang', 'player');
 
       siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
-      siege.executeSiegeWithResult('city-ye', 'player', 5000, 500, false);
+      territory.captureTerritory('city-xuchang', 'neutral');
+      siege.setCaptureTimestamp('city-xuchang', 0);
+      siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, false);
 
       expect(siege.getWinRate()).toBe(0.5);
     });
@@ -577,8 +593,12 @@ describe('GAP-08：战斗统计数据聚合测试（MAP-6 §6.3）', () => {
       territory.captureTerritory('city-luoyang', 'player');
 
       siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
-      siege.executeSiegeWithResult('city-ye', 'player', 5000, 500, false);
-      siege.executeSiegeWithResult('pass-hulao', 'player', 5000, 500, false);
+      territory.captureTerritory('city-xuchang', 'neutral');
+      siege.setCaptureTimestamp('city-xuchang', 0);
+      siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, false);
+      territory.captureTerritory('city-xuchang', 'neutral');
+      siege.setCaptureTimestamp('city-xuchang', 0);
+      siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, false);
 
       // 1/3 ≈ 0.33
       expect(siege.getWinRate()).toBeCloseTo(0.33, 1);
@@ -590,8 +610,12 @@ describe('GAP-08：战斗统计数据聚合测试（MAP-6 §6.3）', () => {
 
       // 2胜1败
       siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
-      siege.executeSiegeWithResult('city-ye', 'player', 5000, 500, true);
-      siege.executeSiegeWithResult('pass-hulao', 'player', 5000, 500, false);
+      territory.captureTerritory('city-xuchang', 'neutral');
+      siege.setCaptureTimestamp('city-xuchang', 0);
+      siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
+      territory.captureTerritory('city-xuchang', 'neutral');
+      siege.setCaptureTimestamp('city-xuchang', 0);
+      siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, false);
 
       const expectedRate = Math.round((2 / 3) * 100) / 100;
       expect(siege.getWinRate()).toBe(expectedRate);
@@ -688,12 +712,16 @@ describe('GAP-08：战斗统计数据聚合测试（MAP-6 §6.3）', () => {
       expect(siege.getWinRate()).toBe(1.0);
 
       // 第2次：败
-      siege.executeSiegeWithResult('city-ye', 'player', 5000, 500, false);
+      territory.captureTerritory('city-xuchang', 'neutral');
+      siege.setCaptureTimestamp('city-xuchang', 0);
+      siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, false);
       expect(siege.getTotalSieges()).toBe(2);
       expect(siege.getWinRate()).toBe(0.5);
 
       // 第3次：胜
-      siege.executeSiegeWithResult('pass-hulao', 'player', 5000, 500, true);
+      territory.captureTerritory('city-xuchang', 'neutral');
+      siege.setCaptureTimestamp('city-xuchang', 0);
+      siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
       expect(siege.getTotalSieges()).toBe(3);
       expect(siege.getWinRate()).toBeCloseTo(0.67, 1);
     });
@@ -703,13 +731,15 @@ describe('GAP-08：战斗统计数据聚合测试（MAP-6 §6.3）', () => {
       territory.captureTerritory('city-luoyang', 'player');
 
       siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
-      siege.executeSiegeWithResult('city-ye', 'player', 5000, 500, false);
+      territory.captureTerritory('city-xuchang', 'neutral');
+      siege.setCaptureTimestamp('city-xuchang', 0);
+      siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, false);
 
       const history = siege.getHistory();
       expect(history).toHaveLength(2);
       expect(history[0].targetId).toBe('city-xuchang');
       expect(history[0].victory).toBe(true);
-      expect(history[1].targetId).toBe('city-ye');
+      expect(history[1].targetId).toBe('city-xuchang');
       expect(history[1].victory).toBe(false);
     });
 
@@ -732,7 +762,9 @@ describe('GAP-08：战斗统计数据聚合测试（MAP-6 §6.3）', () => {
       territory.captureTerritory('city-luoyang', 'player');
 
       siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
-      siege.executeSiegeWithResult('city-ye', 'player', 5000, 500, false);
+      territory.captureTerritory('city-xuchang', 'neutral');
+      siege.setCaptureTimestamp('city-xuchang', 0);
+      siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, false);
 
       const data = siege.serialize();
       expect(data.totalSieges).toBe(2);
@@ -747,7 +779,9 @@ describe('GAP-08：战斗统计数据聚合测试（MAP-6 §6.3）', () => {
       territory.captureTerritory('city-luoyang', 'player');
 
       siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
-      siege.executeSiegeWithResult('city-ye', 'player', 5000, 500, false);
+      territory.captureTerritory('city-xuchang', 'neutral');
+      siege.setCaptureTimestamp('city-xuchang', 0);
+      siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, false);
 
       const data = siege.serialize();
 
@@ -774,11 +808,11 @@ describe('GAP-08：战斗统计数据聚合测试（MAP-6 §6.3）', () => {
       newSiege.init(deps);
       newSiege.deserialize(data);
 
-      // 模拟已消耗1次（通过反序列化恢复dailySiegeCount）
-      // 需要再次设置领土归属
-      territory.captureTerritory('city-xuchang', 'player');
+      // 恢复许昌为neutral以便再次攻城
+      territory.captureTerritory('city-xuchang', 'neutral');
+      newSiege.setCaptureTimestamp('city-xuchang', 0);
 
-      newSiege.executeSiegeWithResult('city-ye', 'player', 5000, 500, false);
+      newSiege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, false);
 
       expect(newSiege.getTotalSieges()).toBe(2);
       expect(newSiege.getVictories()).toBe(1);
@@ -790,7 +824,9 @@ describe('GAP-08：战斗统计数据聚合测试（MAP-6 §6.3）', () => {
       territory.captureTerritory('city-luoyang', 'player');
 
       siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
-      siege.executeSiegeWithResult('city-ye', 'player', 5000, 500, true);
+      territory.captureTerritory('city-xuchang', 'neutral');
+      siege.setCaptureTimestamp('city-xuchang', 0);
+      siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
 
       const data = siege.serialize();
       expect(data.dailySiegeCount).toBe(2);

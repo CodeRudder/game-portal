@@ -22,8 +22,6 @@ import ExpeditionTab from '@/components/idle/panels/expedition/ExpeditionTab';
 import PrestigePanel from '@/components/idle/panels/prestige/PrestigePanel';
 import NPCTab from '@/components/idle/panels/npc/NPCTab';
 import NPCInfoModal from '@/components/idle/panels/npc/NPCInfoModal';
-import SiegeResultModal from '@/components/idle/panels/map/SiegeResultModal';
-import type { SiegeResultData } from '@/components/idle/panels/map/SiegeResultModal';
 import type { NPCData } from '@/games/three-kingdoms/core/npc';
 import type { TabId, FeaturePanelId } from './TabBar';
 
@@ -86,10 +84,6 @@ const SceneRouter: React.FC<SceneRouterProps> = ({
 
   // ── NPC 弹窗状态 ──
   const [selectedNPC, setSelectedNPC] = React.useState<NPCData | null>(null);
-
-  // ── 攻城结果弹窗状态（P0-3） ──
-  const [siegeResult, setSiegeResult] = React.useState<SiegeResultData | null>(null);
-  const [siegeResultVisible, setSiegeResultVisible] = React.useState(false);
 
   const handleSelectNPC = React.useCallback((npcId: string) => {
     const npc = npcData.find((n) => n.id === npcId);
@@ -159,24 +153,6 @@ const SceneRouter: React.FC<SceneRouterProps> = ({
                 engine={engine}
                 onSelectTerritory={(id) => {
                   Toast.info(`选中领土: ${id}`);
-                }}
-                onSiegeTerritory={(territoryId: string) => {
-                  try {
-                    const siegeSys = engine.getSiegeSystem();
-                    const availableTroops = engine.getResourceAmount?.('troops') ?? 0;
-                    const availableGrain = engine.getResourceAmount?.('grain') ?? 0;
-                    const result = siegeSys.executeSiege(
-                      territoryId,
-                      'player',
-                      availableTroops,
-                      availableGrain,
-                    );
-                    // P0-3: 显示攻城结果弹窗
-                    setSiegeResult(result);
-                    setSiegeResultVisible(true);
-                  } catch (e) {
-                    Toast.danger(`攻城异常：${e instanceof Error ? e.message : String(e)}`);
-                  }
                 }}
                 onUpgradeTerritory={(territoryId: string) => {
                   try {
@@ -264,15 +240,6 @@ const SceneRouter: React.FC<SceneRouterProps> = ({
         }
       })()}
 
-      {/* P0-3: 攻城结果弹窗 — 全局显示，不绑定特定Tab */}
-      <SiegeResultModal
-        visible={siegeResultVisible}
-        result={siegeResult}
-        onClose={() => {
-          setSiegeResultVisible(false);
-          setSiegeResult(null);
-        }}
-      />
     </div>
   );
 };

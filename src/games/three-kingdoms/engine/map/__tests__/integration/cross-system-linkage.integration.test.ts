@@ -451,12 +451,14 @@ describe('集成测试: 跨子系统串联流程 (Play §10.1-10.9)', () => {
     });
 
     it('占领特殊地标 → 产出显著提升', () => {
-      // 占领洛阳（全资源+50%地标）
-      sys.territory.captureTerritory('city-ye', 'player');
+      // 洛阳已经是玩家起始领土
       const beforeSummary = sys.territory.getPlayerProductionSummary();
+      const luoyangBefore = beforeSummary.details.find(d => d.id === 'city-luoyang');
+      expect(luoyangBefore).toBeDefined();
+      expect(luoyangBefore!.production.grain).toBeGreaterThan(0);
 
-      // 直接占领洛阳
-      sys.territory.captureTerritory('city-luoyang', 'player');
+      // 占领邺城(普通城池)
+      sys.territory.captureTerritory('city-ye', 'player');
 
       const afterSummary = sys.territory.getPlayerProductionSummary();
       expect(afterSummary.totalTerritories).toBe(beforeSummary.totalTerritories + 1);

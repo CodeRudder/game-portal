@@ -10,6 +10,9 @@ test*.txt
 
 coverage-*
 
+.playwright*
+.history
+
 # Environment
 .env
 .env.local

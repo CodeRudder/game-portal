@@ -87,25 +87,25 @@ describe('WorldMapSystem 基础与区域地形', () => {
   describe('地图基础参数', () => {
     it('getSize 返回正确尺寸', () => {
       const size = mapSys.getSize();
-      expect(size.cols).toBe(60);
-      expect(size.rows).toBe(40);
+      expect(size.cols).toBe(100);
+      expect(size.rows).toBe(60);
     });
 
     it('getTotalTiles 返回 2400', () => {
-      expect(mapSys.getTotalTiles()).toBe(2400);
+      expect(mapSys.getTotalTiles()).toBe(6000);
     });
 
     it('isValidPosition 合法坐标', () => {
       expect(mapSys.isValidPosition({ x: 0, y: 0 })).toBe(true);
-      expect(mapSys.isValidPosition({ x: 59, y: 39 })).toBe(true);
-      expect(mapSys.isValidPosition({ x: 30, y: 20 })).toBe(true);
+      expect(mapSys.isValidPosition({ x: 99, y: 59 })).toBe(true);
+      expect(mapSys.isValidPosition({ x: 50, y: 30 })).toBe(true);
     });
 
     it('isValidPosition 非法坐标', () => {
       expect(mapSys.isValidPosition({ x: -1, y: 0 })).toBe(false);
       expect(mapSys.isValidPosition({ x: 0, y: -1 })).toBe(false);
-      expect(mapSys.isValidPosition({ x: 60, y: 0 })).toBe(false);
-      expect(mapSys.isValidPosition({ x: 0, y: 40 })).toBe(false);
+      expect(mapSys.isValidPosition({ x: 100, y: 0 })).toBe(false);
+      expect(mapSys.isValidPosition({ x: 0, y: 60 })).toBe(false);
       expect(mapSys.isValidPosition({ x: 100, y: 100 })).toBe(false);
     });
 
@@ -118,11 +118,11 @@ describe('WorldMapSystem 基础与区域地形', () => {
 
     it('getTileAt 非法坐标返回 null', () => {
       expect(mapSys.getTileAt({ x: -1, y: 0 })).toBeNull();
-      expect(mapSys.getTileAt({ x: 60, y: 0 })).toBeNull();
+      expect(mapSys.getTileAt({ x: 100, y: 0 })).toBeNull();
     });
 
     it('getTileAt 洛阳坐标有城池地标', () => {
-      const tile = mapSys.getTileAt({ x: 30, y: 8 });
+      const tile = mapSys.getTileAt({ x: 50, y: 23 });
       expect(tile).not.toBeNull();
       expect(tile!.terrain).toBe('city');
       expect(tile!.landmark).toBeDefined();
@@ -131,7 +131,7 @@ describe('WorldMapSystem 基础与区域地形', () => {
 
     it('getAllTiles 返回完整副本', () => {
       const tiles = mapSys.getAllTiles();
-      expect(tiles.length).toBe(2400);
+      expect(tiles.length).toBe(6000);
       tiles[0].terrain = 'water';
       const original = mapSys.getTileAt({ x: 0, y: 0 });
       expect(original!.terrain).not.toBe('water');
@@ -152,19 +152,19 @@ describe('WorldMapSystem 基础与区域地形', () => {
     });
 
     it('getRegionAt 中原坐标', () => {
-      const region = mapSys.getRegionAt({ x: 30, y: 10 });
+      const region = mapSys.getRegionAt({ x: 50, y: 10 });
       expect(region).not.toBeNull();
       expect(region!.id).toBe('wei');
     });
 
     it('getRegionAt 江南坐标', () => {
-      const region = mapSys.getRegionAt({ x: 45, y: 30 });
+      const region = mapSys.getRegionAt({ x: 80, y: 40 });
       expect(region).not.toBeNull();
       expect(region!.id).toBe('wu');
     });
 
     it('getRegionAt 西蜀坐标', () => {
-      const region = mapSys.getRegionAt({ x: 10, y: 25 });
+      const region = mapSys.getRegionAt({ x: 20, y: 45 });
       expect(region).not.toBeNull();
       expect(region!.id).toBe('shu');
     });
@@ -208,7 +208,7 @@ describe('WorldMapSystem 基础与区域地形', () => {
     });
 
     it('getTerrainAt 返回正确地形', () => {
-      const terrain = mapSys.getTerrainAt({ x: 30, y: 8 });
+      const terrain = mapSys.getTerrainAt({ x: 50, y: 23 });
       expect(terrain).not.toBeNull();
       expect(terrain!.type).toBe('city');
     });

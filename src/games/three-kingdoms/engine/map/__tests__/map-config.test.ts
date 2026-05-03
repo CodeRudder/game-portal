@@ -30,9 +30,9 @@ import {
 // ═══════════════════════════════════════════════
 describe('地图基础参数 (#9)', () => {
   describe('MAP_SIZE', () => {
-    it('尺寸为 60×40', () => {
-      expect(MAP_SIZE.cols).toBe(60);
-      expect(MAP_SIZE.rows).toBe(40);
+    it('尺寸为 100×60', () => {
+      expect(MAP_SIZE.cols).toBe(100);
+      expect(MAP_SIZE.rows).toBe(60);
     });
   });
 
@@ -58,8 +58,8 @@ describe('地图基础参数 (#9)', () => {
 
   describe('MAP_PIXEL_SIZE', () => {
     it('总像素尺寸 = 格子数 × 格子尺寸', () => {
-      expect(MAP_PIXEL_SIZE.width).toBe(60 * 32);
-      expect(MAP_PIXEL_SIZE.height).toBe(40 * 32);
+      expect(MAP_PIXEL_SIZE.width).toBe(100 * 32);
+      expect(MAP_PIXEL_SIZE.height).toBe(60 * 32);
     });
   });
 
@@ -101,10 +101,10 @@ describe('三大区域划分 (#10)', () => {
       }
     });
 
-    it('中原位于中央', () => {
+    it('中原位于北部', () => {
       const cp = REGION_DEFS.wei.bounds;
       expect(cp.startX).toBeGreaterThanOrEqual(10);
-      expect(cp.endX).toBeLessThanOrEqual(50);
+      expect(cp.endX).toBeLessThanOrEqual(99);
     });
 
     it('江南位于东南', () => {
@@ -113,9 +113,9 @@ describe('三大区域划分 (#10)', () => {
       expect(jn.startX).toBeGreaterThan(25);
     });
 
-    it('西蜀位于西部', () => {
+    it('西蜀位于西南', () => {
       const ws = REGION_DEFS.shu.bounds;
-      expect(ws.startX).toBeLessThanOrEqual(5);
+      expect(ws.startX).toBeLessThanOrEqual(10);
       expect(ws.startY).toBeGreaterThan(15);
     });
   });
@@ -138,15 +138,15 @@ describe('三大区域划分 (#10)', () => {
 
   describe('getRegionAtPosition', () => {
     it('中原区域的坐标返回 wei', () => {
-      expect(getRegionAtPosition(30, 10)).toBe('wei');
+      expect(getRegionAtPosition(50, 10)).toBe('wei');
     });
 
     it('江南区域的坐标返回 wu', () => {
-      expect(getRegionAtPosition(45, 30)).toBe('wu');
+      expect(getRegionAtPosition(80, 40)).toBe('wu');
     });
 
     it('西蜀区域的坐标返回 shu', () => {
-      expect(getRegionAtPosition(10, 25)).toBe('shu');
+      expect(getRegionAtPosition(20, 45)).toBe('shu');
     });
 
     it('边界坐标也能正确识别', () => {
@@ -229,13 +229,13 @@ describe('地形类型 (#11)', () => {
 
   describe('getTerrainAtPosition', () => {
     it('返回有效地形类型', () => {
-      const terrain = getTerrainAtPosition(30, 10);
+      const terrain = getTerrainAtPosition(50, 10);
       expect(TERRAIN_TYPES).toContain(terrain);
     });
 
     it('城池位置返回 city', () => {
-      // 洛阳位于 (30, 8)
-      expect(getTerrainAtPosition(30, 8)).toBe('city');
+      // 洛阳位于 (50, 23)
+      expect(getTerrainAtPosition(50, 23)).toBe('city');
     });
 
     it('不同区域地形分布不同', () => {
@@ -244,8 +244,8 @@ describe('地形类型 (#11)', () => {
       const wuTerrains = new Set<string>();
       const westernShuTerrains = new Set<string>();
 
-      for (let y = 0; y < 40; y++) {
-        for (let x = 0; x < 60; x++) {
+      for (let y = 0; y < 60; y++) {
+        for (let x = 0; x < 100; x++) {
           const region = getRegionAtPosition(x, y);
           const terrain = getTerrainAtPosition(x, y);
           if (region === 'wei') centralTerrains.add(terrain);
@@ -303,9 +303,13 @@ describe('特殊地标 (#12)', () => {
       }
     });
 
-    it('初始所有地标为中立', () => {
+    it('初始地标归属正确（洛阳为玩家起始领土，其余为中立）', () => {
       for (const lm of DEFAULT_LANDMARKS) {
-        expect(lm.ownership).toBe('neutral');
+        if (lm.id === 'city-luoyang') {
+          expect(lm.ownership).toBe('player'); // 玩家起始领土
+        } else {
+          expect(lm.ownership).toBe('neutral');
+        }
       }
     });
   });
@@ -333,7 +337,7 @@ describe('特殊地标 (#12)', () => {
   describe('generateAllTiles', () => {
     it('生成正确数量的格子', () => {
       const tiles = generateAllTiles();
-      expect(tiles.length).toBe(60 * 40);
+      expect(tiles.length).toBe(100 * 60);
     });
 
     it('每个格子有完整数据', () => {

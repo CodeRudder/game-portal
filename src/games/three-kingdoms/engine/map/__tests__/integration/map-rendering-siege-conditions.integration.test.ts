@@ -107,31 +107,31 @@ describe('集成测试: 地图基础渲染 + 攻城条件 (Play §6, §7.1)', ()
   // ── §6.1 六边形网格渲染 ──────────────────────
 
   describe('§6.1 20×15六边形网格渲染', () => {
-    it('地图尺寸为 60×40 = 2400 格子', () => {
-      expect(MAP_SIZE.cols).toBe(60);
-      expect(MAP_SIZE.rows).toBe(40);
-      expect(MAP_SIZE.cols * MAP_SIZE.rows).toBe(2400);
+    it('地图尺寸为 100×60 = 6000 格子', () => {
+      expect(MAP_SIZE.cols).toBe(100);
+      expect(MAP_SIZE.rows).toBe(60);
+      expect(MAP_SIZE.cols * MAP_SIZE.rows).toBe(6000);
     });
 
-    it('generateAllTiles 生成 2400 个格子', () => {
+    it('generateAllTiles 生成 6000 个格子', () => {
       const tiles = generateAllTiles();
-      expect(tiles).toHaveLength(2400);
+      expect(tiles).toHaveLength(6000);
     });
 
-    it('格子坐标范围合法 (x: 0~59, y: 0~39)', () => {
+    it('格子坐标范围合法 (x: 0~99, y: 0~59)', () => {
       const tiles = generateAllTiles();
       for (const tile of tiles) {
         expect(tile.pos.x).toBeGreaterThanOrEqual(0);
-        expect(tile.pos.x).toBeLessThan(60);
+        expect(tile.pos.x).toBeLessThan(100);
         expect(tile.pos.y).toBeGreaterThanOrEqual(0);
-        expect(tile.pos.y).toBeLessThan(40);
+        expect(tile.pos.y).toBeLessThan(60);
       }
     });
 
     it('格子无重复坐标', () => {
       const tiles = generateAllTiles();
       const keys = new Set(tiles.map(t => `${t.pos.x},${t.pos.y}`));
-      expect(keys.size).toBe(2400);
+      expect(keys.size).toBe(6000);
     });
 
     it('WorldMapSystem 初始化后可查询格子', () => {
@@ -155,14 +155,17 @@ describe('集成测试: 地图基础渲染 + 攻城条件 (Play §6, §7.1)', ()
     });
 
     it('getRegionAtPosition 正确划分三大区域', () => {
-      // 魏国（中原 y<20）
-      expect(getRegionAtPosition(10, 5)).toBe('wei');
+      // 中立（左侧 x<15）
+      expect(getRegionAtPosition(10, 5)).toBe('neutral');
+      expect(getRegionAtPosition(10, 25)).toBe('neutral');
+      // 魏国（北方 x>=15, y<25）
+      expect(getRegionAtPosition(50, 10)).toBe('wei');
       expect(getRegionAtPosition(25, 10)).toBe('wei');
-      // 蜀国（左下 x<30, y>=20）
-      expect(getRegionAtPosition(10, 25)).toBe('shu');
-      expect(getRegionAtPosition(20, 30)).toBe('shu');
-      // 吴国（右下 x>=30, y>=20）
-      expect(getRegionAtPosition(35, 25)).toBe('wu');
+      // 蜀国（西南 y>=25, x<40）
+      expect(getRegionAtPosition(20, 45)).toBe('shu');
+      expect(getRegionAtPosition(30, 40)).toBe('shu');
+      // 吴国（东南 y>=25, x>=40）
+      expect(getRegionAtPosition(80, 40)).toBe('wu');
       expect(getRegionAtPosition(45, 30)).toBe('wu');
     });
 
@@ -170,9 +173,9 @@ describe('集成测试: 地图基础渲染 + 攻城条件 (Play §6, §7.1)', ()
       // 邺城 → 魏
       const ye = LANDMARK_POSITIONS['city-ye'];
       expect(getRegionAtPosition(ye.x, ye.y)).toBe('wei');
-      // 成都 → 蜀
-      const chengdu = LANDMARK_POSITIONS['city-chengdu'];
-      expect(getRegionAtPosition(chengdu.x, chengdu.y)).toBe('shu');
+      // 汉中 → 蜀
+      const hanzhong = LANDMARK_POSITIONS['city-hanzhong'];
+      expect(getRegionAtPosition(hanzhong.x, hanzhong.y)).toBe('shu');
       // 建业 → 吴
       const jianye = LANDMARK_POSITIONS['city-jianye'];
       expect(getRegionAtPosition(jianye.x, jianye.y)).toBe('wu');
@@ -342,12 +345,12 @@ describe('集成测试: 地图基础渲染 + 攻城条件 (Play §6, §7.1)', ()
       expect(cost!.troops).toBeGreaterThan(0);
     });
 
-    it('相邻关系验证: 邺城与许昌相邻', () => {
-      expect(areAdjacent('city-ye', 'city-xuchang')).toBe(true);
+    it('相邻关系验证: 洛阳与许昌相邻', () => {
+      expect(areAdjacent('city-luoyang', 'city-xuchang')).toBe(true);
     });
 
-    it('相邻关系验证: 邺城与成都不相邻', () => {
-      expect(areAdjacent('city-ye', 'city-chengdu')).toBe(false);
+    it('相邻关系验证: 洛阳与成都不相邻', () => {
+      expect(areAdjacent('city-luoyang', 'city-chengdu')).toBe(false);
     });
   });
 });

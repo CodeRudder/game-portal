@@ -94,7 +94,7 @@ describe('WorldMapSystem 地标与视口', () => {
     });
 
     it('getLandmarkAt 返回坐标处的地标', () => {
-      const lm = mapSys.getLandmarkAt({ x: 30, y: 8 });
+      const lm = mapSys.getLandmarkAt({ x: 50, y: 23 });
       expect(lm).not.toBeNull();
       expect(lm!.name).toBe('洛阳');
     });
@@ -116,7 +116,7 @@ describe('WorldMapSystem 地标与视口', () => {
 
     it('setLandmarkOwnership 同步到 tiles', () => {
       mapSys.setLandmarkOwnership('city-luoyang', 'player');
-      const tile = mapSys.getTileAt({ x: 30, y: 8 });
+      const tile = mapSys.getTileAt({ x: 50, y: 23 });
       expect(tile!.landmark!.ownership).toBe('player');
     });
 
@@ -294,7 +294,7 @@ describe('WorldMapSystem 地标与视口', () => {
 
       const newSys = createMapSystem();
       newSys.deserialize(data);
-      const tile = newSys.getTileAt({ x: 30, y: 8 });
+      const tile = newSys.getTileAt({ x: 50, y: 23 });
       expect(tile!.landmark!.ownership).toBe('player');
     });
 

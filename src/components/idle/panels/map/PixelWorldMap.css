@@ -1,0 +1,40 @@
+/* PixelWorldMap — 像素世界地图样式 */
+
+.pixel-worldmap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #0a0a1a;
+  border-radius: 4px;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.pixel-worldmap-canvas {
+  display: block;
+  image-rendering: pixelated;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.pixel-worldmap-canvas:active {
+  cursor: none;
+}
+
+.pixel-worldmap-minimap {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  border: 1px solid #e94560;
+  border-radius: 3px;
+  cursor: pointer;
+  opacity: 0.85;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  image-rendering: pixelated;
+  touch-action: none;
+}
+
+.pixel-worldmap-minimap:hover {
+  opacity: 1;
+  border-color: #ffffff;
+}

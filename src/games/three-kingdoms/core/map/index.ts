@@ -68,8 +68,14 @@ export {
   calculateUpgradeCost,
   getAdjacentIds,
   areAdjacent,
+  initializeAdjacency,
   generateTerritoryData,
+  deriveAdjacency,
   TERRITORY_SAVE_VERSION,
+} from './territory-config';
+
+export type {
+  WalkabilityGrid,
 } from './territory-config';
 
 // 驻防系统类型与配置

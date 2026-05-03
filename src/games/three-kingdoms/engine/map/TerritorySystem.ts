@@ -36,8 +36,12 @@ import {
   calculateProduction,
   calculateUpgradeCost,
   getAdjacentIds,
+  initializeAdjacency,
   TERRITORY_SAVE_VERSION,
 } from '../../core/map';
+import { buildWalkabilityGrid } from './PathfindingSystem';
+import { ASCIIMapParser } from '../../core/map/ASCIIMapParser';
+import worldMapText from '../../core/map/maps/world-map.txt?raw';
 
 // ─────────────────────────────────────────────
 // 领土管理系统
@@ -70,11 +74,29 @@ export class TerritorySystem implements ISubsystem {
   private deps!: ISystemDeps;
   private territories: Map<string, TerritoryData> = new Map();
 
+  /** 标记相邻关系是否已初始化（模块级，所有实例共享） */
+  private static adjacencyInitialized = false;
+
+  /**
+   * 确保相邻关系已从地图推导并缓存
+   *
+   * 仅首次调用时解析地图并推导，后续调用直接跳过。
+   */
+  private static ensureAdjacencyInitialized(): void {
+    if (TerritorySystem.adjacencyInitialized) return;
+    const parser = new ASCIIMapParser();
+    const parsedMap = parser.parse(worldMapText);
+    const grid = buildWalkabilityGrid(parsedMap);
+    initializeAdjacency(parsedMap, grid);
+    TerritorySystem.adjacencyInitialized = true;
+  }
+
   // ─── ISubsystem 接口 ───────────────────────
 
   /** 初始化领土系统 */
   init(deps: ISystemDeps): void {
     this.deps = deps;
+    TerritorySystem.ensureAdjacencyInitialized();
     this.territories.clear();
     const data = generateTerritoryData();
     for (const t of data) {
@@ -98,6 +120,7 @@ export class TerritorySystem implements ISubsystem {
 
   /** 重置到初始状态 */
   reset(): void {
+    TerritorySystem.ensureAdjacencyInitialized();
     this.territories.clear();
     const data = generateTerritoryData();
     for (const t of data) {

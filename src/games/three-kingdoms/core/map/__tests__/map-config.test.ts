@@ -33,9 +33,9 @@ describe('map-config', () => {
   // 1. 地图基础参数（#9）
   // ═══════════════════════════════════════════
   describe('地图基础参数', () => {
-    it('MAP_SIZE 为 60×40', () => {
-      expect(MAP_SIZE.cols).toBe(60);
-      expect(MAP_SIZE.rows).toBe(40);
+    it('MAP_SIZE 为 100×60', () => {
+      expect(MAP_SIZE.cols).toBe(100);
+      expect(MAP_SIZE.rows).toBe(60);
     });
 
     it('GRID_CONFIG 格子尺寸为 32×32', () => {
@@ -55,8 +55,8 @@ describe('map-config', () => {
     });
 
     it('MAP_PIXEL_SIZE 正确计算', () => {
-      expect(MAP_PIXEL_SIZE.width).toBe(60 * 32);
-      expect(MAP_PIXEL_SIZE.height).toBe(40 * 32);
+      expect(MAP_PIXEL_SIZE.width).toBe(100 * 32);
+      expect(MAP_PIXEL_SIZE.height).toBe(60 * 32);
     });
 
     it('MAP_SAVE_VERSION 为正整数', () => {
@@ -266,9 +266,13 @@ describe('map-config', () => {
       expect(keys.size).toBe(positions.length);
     });
 
-    it('初始地标归属正确（⚠️ PRD MAP-1: 所有地标初始为neutral）', () => {
+    it('初始地标归属正确（⚠️ PRD MAP-1: 洛阳为玩家起始领土，其余为neutral）', () => {
       for (const lm of DEFAULT_LANDMARKS) {
-        expect(lm.ownership).toBe('neutral');
+        if (lm.id === 'city-luoyang') {
+          expect(lm.ownership).toBe('player'); // 玩家起始领土
+        } else {
+          expect(lm.ownership).toBe('neutral');
+        }
       }
     });
 
@@ -293,19 +297,19 @@ describe('map-config', () => {
   // ═══════════════════════════════════════════
   describe('getRegionAtPosition', () => {
     it('魏国区域坐标（中原）', () => {
-      expect(getRegionAtPosition(15, 10)).toBe('wei');
+      expect(getRegionAtPosition(50, 10)).toBe('wei');
     });
 
-    it('吴国区域坐标（右下）', () => {
-      expect(getRegionAtPosition(45, 30)).toBe('wu');
+    it('吴国区域坐标（东南）', () => {
+      expect(getRegionAtPosition(80, 40)).toBe('wu');
     });
 
-    it('蜀国区域坐标（左下）', () => {
-      expect(getRegionAtPosition(15, 25)).toBe('shu');
+    it('蜀国区域坐标（西南）', () => {
+      expect(getRegionAtPosition(20, 45)).toBe('shu');
     });
 
     it('魏国区域坐标（中原右）', () => {
-      expect(getRegionAtPosition(40, 10)).toBe('wei');
+      expect(getRegionAtPosition(60, 10)).toBe('wei');
     });
 
     it('中立区域左上角', () => {
@@ -313,7 +317,7 @@ describe('map-config', () => {
     });
 
     it('中立区域坐标（左侧）', () => {
-      expect(getRegionAtPosition(5, 20)).toBe('neutral');
+      expect(getRegionAtPosition(10, 30)).toBe('neutral');
     });
 
     it('边界外坐标默认为中立', () => {
@@ -336,13 +340,13 @@ describe('map-config', () => {
   // ═══════════════════════════════════════════
   describe('getTerrainAtPosition', () => {
     it('城池地标位置返回 city 地形', () => {
-      // 洛阳（30,8）
-      expect(getTerrainAtPosition(30, 8)).toBe('city');
+      // 洛阳（50,23）
+      expect(getTerrainAtPosition(50, 23)).toBe('city');
     });
 
     it('关卡地标位置返回 city 地形', () => {
-      // 虎牢关
-      expect(getTerrainAtPosition(33, 6)).toBe('city');
+      // 虎牢关（43,24）
+      expect(getTerrainAtPosition(43, 24)).toBe('city');
     });
 
     it('非地标位置返回有效地形', () => {
@@ -362,7 +366,7 @@ describe('map-config', () => {
 
     it('资源点位置不返回 city 地形', () => {
       // 许田是资源点，不是城池/关卡
-      const terrain = getTerrainAtPosition(36, 14);
+      const terrain = getTerrainAtPosition(41, 21);
       expect(TERRAIN_TYPES).toContain(terrain);
     });
   });
@@ -402,7 +406,7 @@ describe('map-config', () => {
 
     it('地标格子包含 landmark 数据', () => {
       const tiles = generateAllTiles();
-      const luoyang = tiles.find(t => t.pos.x === 30 && t.pos.y === 8);
+      const luoyang = tiles.find(t => t.pos.x === 50 && t.pos.y === 23);
       expect(luoyang).toBeDefined();
       expect(luoyang!.landmark).toBeDefined();
       expect(luoyang!.landmark!.name).toBe('洛阳');

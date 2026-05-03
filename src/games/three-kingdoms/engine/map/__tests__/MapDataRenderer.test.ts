@@ -180,7 +180,7 @@ describe('MapDataRenderer', () => {
     });
 
     it('有地标的格子包含 landmarkIcon', () => {
-      const luoyangTile = allTiles.find(t => t.pos.x === 30 && t.pos.y === 8);
+      const luoyangTile = allTiles.find(t => t.pos.x === 50 && t.pos.y === 23);
       expect(luoyangTile).toBeDefined();
       const rd = renderer.generateTileRenderData(luoyangTile!);
       expect(rd.landmarkIcon).toBe('🏰');
@@ -220,12 +220,12 @@ describe('MapDataRenderer', () => {
       }
     });
 
-    it('默认视口包含洛阳', () => {
+    it('默认视口包含邺城', () => {
       const vp = createDefaultViewport();
       const result = renderer.computeViewportRenderData(allTiles, vp);
-      const luoyang = result.visibleLandmarks.find(l => l.name === '洛阳');
-      // 洛阳在 (30, 8)，默认视口应该能看到
-      expect(luoyang).toBeDefined();
+      const yecheng = result.visibleLandmarks.find(l => l.name === '邺城');
+      // 邺城在 (32, 9)，默认视口应该能看到
+      expect(yecheng).toBeDefined();
     });
 
     it('偏移视口可能排除某些地标', () => {
@@ -349,13 +349,13 @@ describe('MapDataRenderer', () => {
     });
 
     it('居中洛阳坐标', () => {
-      const vp = renderer.centerOnPosition({ x: 30, y: 8 });
+      const vp = renderer.centerOnPosition({ x: 50, y: 23 });
       // 验证洛阳在视口中心附近
       const range = renderer.computeVisibleRange(vp);
-      expect(range.startX).toBeLessThanOrEqual(30);
-      expect(range.endX).toBeGreaterThanOrEqual(30);
-      expect(range.startY).toBeLessThanOrEqual(8);
-      expect(range.endY).toBeGreaterThanOrEqual(8);
+      expect(range.startX).toBeLessThanOrEqual(50);
+      expect(range.endX).toBeGreaterThanOrEqual(50);
+      expect(range.startY).toBeLessThanOrEqual(23);
+      expect(range.endY).toBeGreaterThanOrEqual(23);
     });
   });
 });

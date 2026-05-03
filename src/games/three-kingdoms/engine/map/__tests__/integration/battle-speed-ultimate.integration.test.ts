@@ -179,9 +179,10 @@ describe('§1.1 战斗速度控制', () => {
     expect(result).toBe(false);
   });
 
-  it('cycleSpeed 循环切换：1x → 2x → 3x → 1x', () => {
+  it('cycleSpeed 循环切换：1x → 2x → 3x → 4x → 1x', () => {
     expect(controller.cycleSpeed()).toBe(BattleSpeed.X2);
     expect(controller.cycleSpeed()).toBe(BattleSpeed.X3);
+    expect(controller.cycleSpeed()).toBe(BattleSpeed.X4);
     expect(controller.cycleSpeed()).toBe(BattleSpeed.X1);
   });
 
@@ -342,10 +343,11 @@ describe('§1.3 跳过战斗', () => {
     expect(result.totalTurns).toBeGreaterThan(0);
   });
 
-  it('skipBattle 后 isSkipMode 为 true', () => {
+  it('skipBattle 后速度恢复为 X1（isSkipMode 为 false）', () => {
     const state = engine.initBattle(createAllyTeam(), createEnemyTeam());
     engine.skipBattle(state);
-    expect(engine.isSkipMode()).toBe(true);
+    // skipBattle 内部会设置 SKIP 速度执行完后恢复为 X1
+    expect(engine.isSkipMode()).toBe(false);
   });
 
   it('已结束的战斗再次 skipBattle 返回已有结果', () => {

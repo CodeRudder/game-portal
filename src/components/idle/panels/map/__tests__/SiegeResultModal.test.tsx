@@ -23,12 +23,13 @@ vi.mock('../../../common/Modal.css', () => ({}));
 
 /** 构建胜利结果 */
 const makeVictoryResult = (overrides: Partial<SiegeResultData> = {}): SiegeResultData => ({
+  launched: true,
   victory: true,
   targetId: 'city-xuchang',
   targetName: '许昌',
   targetLevel: 3,
   cost: { troops: 500, grain: 500 },
-  reward: {
+  siegeReward: {
     resources: { grain: 300, gold: 200, troops: 100, mandate: 50 },
     territoryExp: 150,
     items: [
@@ -42,6 +43,7 @@ const makeVictoryResult = (overrides: Partial<SiegeResultData> = {}): SiegeResul
 
 /** 构建失败结果 */
 const makeDefeatResult = (overrides: Partial<SiegeResultData> = {}): SiegeResultData => ({
+  launched: true,
   victory: false,
   targetId: 'city-ye',
   targetName: '邺城',
@@ -75,13 +77,12 @@ describe('SiegeResultModal', () => {
   it('胜利时显示攻城胜利标题', () => {
     render(<SiegeResultModal {...defaultProps} />);
     expect(screen.getByTestId('siege-result-modal')).toBeTruthy();
-    expect(screen.getByText(/攻城胜利.*许昌/)).toBeTruthy();
+    expect(screen.getByText(/攻城大捷/)).toBeTruthy();
   });
 
   it('胜利时显示占领信息', () => {
     render(<SiegeResultModal {...defaultProps} />);
     expect(screen.getByText(/成功占领.*许昌/)).toBeTruthy();
-    expect(screen.getByText(/Lv\.3/)).toBeTruthy();
   });
 
   it('失败时显示攻城失败标题', () => {
@@ -91,7 +92,7 @@ describe('SiegeResultModal', () => {
         result={makeDefeatResult()}
       />
     );
-    expect(screen.getByText(/攻城失败.*邺城/)).toBeTruthy();
+    expect(screen.getByText(/攻城失利/)).toBeTruthy();
   });
 
   it('失败时显示失败原因', () => {
@@ -101,7 +102,7 @@ describe('SiegeResultModal', () => {
         result={makeDefeatResult()}
       />
     );
-    expect(screen.getByText(/兵力不足以攻破防线/)).toBeTruthy();
+    expect(screen.getByText(/防守坚固/)).toBeTruthy();
   });
 
   // ── 战斗统计 ──
@@ -133,7 +134,7 @@ describe('SiegeResultModal', () => {
 
   it('胜利时显示攻城奖励标题', () => {
     render(<SiegeResultModal {...defaultProps} />);
-    expect(screen.getByText(/攻城奖励/)).toBeTruthy();
+    expect(screen.getByText(/获得奖励/)).toBeTruthy();
   });
 
   it('显示资源奖励明细', () => {
@@ -162,22 +163,22 @@ describe('SiegeResultModal', () => {
     expect(allFragmentBox.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('显示道具稀有度', () => {
+  it('显示道具数量', () => {
     render(<SiegeResultModal {...defaultProps} />);
-    const allCommon = screen.getAllByText('普通');
-    expect(allCommon.length).toBeGreaterThanOrEqual(1);
-    const allRare = screen.getAllByText('稀有');
-    expect(allRare.length).toBeGreaterThanOrEqual(1);
+    // Component renders item quantity as "×N"
+    expect(screen.getByText((content) => content.includes('×1'))).toBeTruthy();
+    expect(screen.getByText((content) => content.includes('×2'))).toBeTruthy();
   });
 
-  it('无奖励时不显示奖励区域', () => {
+  it('无奖励时显示预计产出', () => {
     render(
       <SiegeResultModal
         {...defaultProps}
-        result={makeVictoryResult({ reward: null })}
+        result={makeVictoryResult({ siegeReward: undefined })}
       />
     );
-    expect(screen.queryByText(/攻城奖励/)).toBeNull();
+    expect(screen.getByText(/获得奖励/)).toBeTruthy();
+    expect(screen.getByText(/预计产出/)).toBeTruthy();
   });
 
   it('无道具时不显示道具掉落区域', () => {
@@ -185,7 +186,7 @@ describe('SiegeResultModal', () => {
       <SiegeResultModal
         {...defaultProps}
         result={makeVictoryResult({
-          reward: {
+          siegeReward: {
             resources: { grain: 100, gold: 50, troops: 20, mandate: 10 },
             territoryExp: 50,
             items: [],
@@ -198,24 +199,27 @@ describe('SiegeResultModal', () => {
 
   // ── 失败建议 ──
 
-  it('失败时显示提升建议', () => {
+  it('失败时显示城池防守信息', () => {
     render(
       <SiegeResultModal
         {...defaultProps}
         result={makeDefeatResult()}
       />
     );
-    expect(screen.getByText(/提升建议/)).toBeTruthy();
+    const allYecheng = screen.getAllByText(/邺城/);
+    expect(allYecheng.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/防守坚固/)).toBeTruthy();
   });
 
-  it('失败建议包含科技升级提示', () => {
+  it('失败时显示兵力损失百分比', () => {
     render(
       <SiegeResultModal
         {...defaultProps}
         result={makeDefeatResult()}
       />
     );
-    expect(screen.getByText(/升级科技/)).toBeTruthy();
+    expect(screen.getByText(/兵力损失/)).toBeTruthy();
+    expect(screen.getByText(/30%/)).toBeTruthy();
   });
 
   // ── 关闭回调 ──

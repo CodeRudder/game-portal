@@ -765,13 +765,13 @@ describe('FLOW-02 建筑Tab集成测试', () => {
     assertStrict(buildingSys.getBuilding('barracks').status === 'idle', 'FLOW-02-41', '主城Lv2后兵营应解锁');
   });
 
-  it(accTest('FLOW-02-42', '主城Lv3解锁铁匠铺和书院'), () => {
+  it(accTest('FLOW-02-42', '主城Lv3解锁工坊和书院'), () => {
     const sim = createBuildingSim();
     refillResources(sim);
     sim.upgradeBuildingTo('castle', 3);
 
     const buildingSys = sim.engine.building;
-    assertStrict(buildingSys.getBuilding('smithy').status === 'idle', 'FLOW-02-42', '主城Lv3后铁匠铺应解锁');
+    assertStrict(buildingSys.getBuilding('workshop').status === 'idle', 'FLOW-02-42', '主城Lv3后工坊应解锁');
     assertStrict(buildingSys.getBuilding('academy').status === 'idle', 'FLOW-02-42', '主城Lv3后书院应解锁');
   });
 
@@ -806,7 +806,7 @@ describe('FLOW-02 建筑Tab集成测试', () => {
     const snap = sim.engine.getSnapshot();
 
     assertStrict(!!snap.buildings, 'FLOW-02-45', '快照应包含buildings');
-    assertStrict(Object.keys(snap.buildings).length === 8, 'FLOW-02-45', '应有8座建筑');
+    assertStrict(Object.keys(snap.buildings).length === 11, 'FLOW-02-45', '应有11座建筑');
     assertStrict(typeof snap.productionRates === 'object', 'FLOW-02-45', '应包含productionRates');
   });
 

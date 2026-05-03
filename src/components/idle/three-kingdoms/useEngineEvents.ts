@@ -53,6 +53,15 @@ export function useEngineEvents({
     engine.on('building:upgrade-start', handleBuildingUpgradeStart);
     engine.on('resource:overflow', handleResourceOverflow);
 
+    // ── 领土/攻城事件 → 刷新地图数据 ──
+    const handleTerritoryCaptured = () => { onRefresh(); };
+    const handleSiegeVictory = () => { onRefresh(); };
+    const handleSiegeDefeat = () => { onRefresh(); };
+
+    engine.on('territory:captured' as any, handleTerritoryCaptured);
+    engine.on('siege:victory' as any, handleSiegeVictory);
+    engine.on('siege:defeat' as any, handleSiegeDefeat);
+
     // ── 急报横幅 + 随机遭遇弹窗 ──
     const handleBannerCreated = (data: any) => {
       onBannerCreated({
@@ -101,6 +110,9 @@ export function useEngineEvents({
       engine.off('building:upgraded', handleBuildingUpgraded);
       engine.off('building:upgrade-start', handleBuildingUpgradeStart);
       engine.off('resource:overflow', handleResourceOverflow);
+      engine.off('territory:captured' as any, handleTerritoryCaptured);
+      engine.off('siege:victory' as any, handleSiegeVictory);
+      engine.off('siege:defeat' as any, handleSiegeDefeat);
       engine.off('event:banner_created' as any, handleBannerCreated);
       engine.off('event:encounter_triggered' as any, handleEncounterTriggered);
       engine.off('story:triggered' as any, handleStoryTriggered);

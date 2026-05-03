@@ -25,10 +25,10 @@ import type {
 // 1. 地图基础参数（#9）
 // ─────────────────────────────────────────────
 
-/** 地图尺寸：60×40 格子 */
+/** 地图尺寸：100×60 格子（与 world-map.txt 一致） */
 export const MAP_SIZE: MapSize = {
-  cols: 60,
-  rows: 40,
+  cols: 100,
+  rows: 60,
 } as const;
 
 /** 格子系统配置 */
@@ -64,7 +64,7 @@ export const REGION_IDS: readonly RegionId[] = [
   'neutral',
 ] as const;
 
-/** 区域定义表 */
+/** 区域定义表（与 world-map.txt 100×60 坐标系一致） */
 export const REGION_DEFS: Record<RegionId, RegionDef> = {
   wei: {
     id: 'wei',
@@ -72,7 +72,7 @@ export const REGION_DEFS: Record<RegionId, RegionDef> = {
     name: '魏',
     description: '北方中原，曹魏基业，城池密集',
     color: '#2E5090',
-    bounds: { startX: 10, endX: 50, startY: 0, endY: 19 },
+    bounds: { startX: 15, endX: 99, startY: 0, endY: 24 },
   },
   shu: {
     id: 'shu',
@@ -80,7 +80,7 @@ export const REGION_DEFS: Record<RegionId, RegionDef> = {
     name: '蜀',
     description: '西南山地，蜀汉险要，易守难攻',
     color: '#8B2500',
-    bounds: { startX: 0, endX: 29, startY: 20, endY: 39 },
+    bounds: { startX: 0, endX: 39, startY: 25, endY: 59 },
   },
   wu: {
     id: 'wu',
@@ -88,7 +88,7 @@ export const REGION_DEFS: Record<RegionId, RegionDef> = {
     name: '吴',
     description: '东南水乡，东吴水路，资源丰富',
     color: '#2E6B3E',
-    bounds: { startX: 30, endX: 59, startY: 20, endY: 39 },
+    bounds: { startX: 40, endX: 99, startY: 25, endY: 59 },
   },
   neutral: {
     id: 'neutral',
@@ -96,7 +96,7 @@ export const REGION_DEFS: Record<RegionId, RegionDef> = {
     name: '中立',
     description: '中立区域，各方势力交界',
     color: '#808080',
-    bounds: { startX: 0, endX: 9, startY: 0, endY: 39 },
+    bounds: { startX: 0, endX: 14, startY: 0, endY: 59 },
   },
 } as const;
 
@@ -246,38 +246,35 @@ export const DEFAULT_LANDMARKS: readonly LandmarkData[] = [
   { id: 'res-mandate1', type: 'resource', name: '天命台', level: 2, ownership: 'neutral', icon: '🌟', resourceType: 'mandate', productionMultiplier: 1.5, defenseValue: 20 },
 ] as const;
 
-/** 地标坐标映射（⚠️ PRD MAP-1: 魏/蜀/吴+中立） */
+/** 地标坐标映射（与 world-map.txt 实际字符坐标一致） */
 export const LANDMARK_POSITIONS: Record<string, { x: number; y: number }> = {
-  // 魏国（左上 x<30, y<20）
-  'city-ye': { x: 20, y: 5 },
-  'city-xuchang': { x: 25, y: 10 },
-  'city-puyang': { x: 15, y: 8 },
-  'city-beihai': { x: 10, y: 15 },
-  // 蜀国（左下 x<30, y≥20）
-  'city-chengdu': { x: 12, y: 28 },
-  'city-hanzhong': { x: 10, y: 22 },
-  'city-yongan': { x: 18, y: 32 },
-  'city-nanzhong': { x: 8, y: 36 },
-  // 吴国（右下 x≥30, y≥20）
-  'city-jianye': { x: 45, y: 28 },
-  'city-kuaiji': { x: 50, y: 32 },
-  'city-chaisang': { x: 38, y: 25 },
-  'city-lujiang': { x: 42, y: 22 },
-  // 中立（右上 x≥30, y<20）→ 现在属于魏国中原区域
-  'city-luoyang': { x: 30, y: 8 },
-  'city-changan': { x: 32, y: 12 },
-  'city-xiangyang': { x: 40, y: 15 },
-  // 关卡
-  'pass-hulao': { x: 33, y: 6 },
-  'pass-tong': { x: 31, y: 10 },
-  'pass-jian': { x: 16, y: 24 },
-  'pass-yangping': { x: 5, y: 25 },
-  // 资源点
-  'res-grain1': { x: 36, y: 14 },
-  'res-gold1': { x: 38, y: 16 },
-  'res-grain2': { x: 48, y: 30 },
-  'res-troops1': { x: 42, y: 36 },
-  'res-mandate1': { x: 15, y: 35 },
+  // ── 城池 ──
+  'city-ye': { x: 32, y: 9 },
+  'city-xuchang': { x: 37, y: 26 },
+  'city-puyang': { x: 17, y: 16 },
+  'city-beihai': { x: 52, y: 6 },
+  'city-luoyang': { x: 50, y: 23 },
+  'city-changan': { x: 27, y: 36 },
+  'city-chengdu': { x: 12, y: 49 },
+  'city-hanzhong': { x: 30, y: 43 },
+  'city-yongan': { x: 42, y: 53 },
+  'city-nanzhong': { x: 7, y: 57 },
+  'city-jianye': { x: 80, y: 39 },
+  'city-kuaiji': { x: 92, y: 46 },
+  'city-chaisang': { x: 67, y: 33 },
+  'city-lujiang': { x: 60, y: 19 },
+  'city-xiangyang': { x: 54, y: 39 },
+  // ── 关卡（位于道路网络的战略要地） ──
+  'pass-hulao': { x: 43, y: 24 },
+  'pass-tong': { x: 31, y: 32 },
+  'pass-jian': { x: 21, y: 45 },
+  'pass-yangping': { x: 32, y: 42 },
+  // ── 资源点 ──
+  'res-grain1': { x: 41, y: 21 },
+  'res-gold1': { x: 43, y: 31 },
+  'res-grain2': { x: 86, y: 43 },
+  'res-troops1': { x: 56, y: 29 },
+  'res-mandate1': { x: 4, y: 53 },
 } as const;
 
 // ─────────────────────────────────────────────
@@ -292,13 +289,13 @@ export const LANDMARK_POSITIONS: Record<string, { x: number; y: number }> = {
  * @returns 区域ID
  */
 export function getRegionAtPosition(x: number, y: number): RegionId {
-  // 中立（左侧 x<10）
-  if (x < 10) return 'neutral';
-  // 魏国（中原：x>=10, y<20）
-  if (y < 20) return 'wei';
-  // 蜀国（左下：x<30, y>=20）
-  if (x < 30) return 'shu';
-  // 吴国（右下：x>=30, y>=20）
+  // 中立（左侧 x<15）
+  if (x < 15) return 'neutral';
+  // 魏国（北方：x>=15, y<25）
+  if (y < 25) return 'wei';
+  // 蜀国（西南：y>=25, x<40）
+  if (x < 40) return 'shu';
+  // 吴国（东南：y>=25, x>=40）
   return 'wu';
 }
 
