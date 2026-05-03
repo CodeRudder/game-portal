@@ -606,3 +606,160 @@ describe('ResourceChainSystem - 集成场景', () => {
     }
   });
 });
+
+// ═══════════════════════════════════════════
+// F28 边界场景（Sprint B iteration 3）
+// ═══════════════════════════════════════════
+
+describe('ResourceChainSystem - F28 边界场景', () => {
+  let system: ResourceChainSystem;
+
+  beforeEach(() => {
+    system = new ResourceChainSystem();
+  });
+
+  // B1: 所有建筑等级为0
+  it('F28-edge-01: 所有建筑Lv0→所有链路不通', () => {
+    const mock = createMockBuildingSystem({}, {});
+    system.setBuildingSystem(mock);
+
+    const result = system.validateAllChains();
+    for (const [chainId, chainResult] of Object.entries(result)) {
+      expect(chainResult.valid).toBe(false);
+      expect(chainResult.bottlenecks.length).toBeGreaterThan(0);
+    }
+    // 确认6条链路全部检查
+    expect(Object.keys(result)).toHaveLength(6);
+
+    // 吞吐量也全部为0
+    for (const chainId of ['F28-01', 'F28-02', 'F28-03', 'F28-04', 'F28-05', 'F28-06']) {
+      expect(system.calculateThroughput(chainId)).toBe(0);
+    }
+  });
+
+  // B2: 仅一条链路通畅
+  it('F28-edge-02: 仅farmland+barracks存在→仅F28-01通', () => {
+    // 只有 farmland 和 barracks 有等级，其他全为0
+    const mock = createMockBuildingSystem(
+      { farmland: 3, barracks: 3 },
+      { farmland: 30, barracks: 30 },
+    );
+    system.setBuildingSystem(mock);
+
+    // F28-01 (farmland→barracks) 应该通畅
+    const f28_01 = system.validateChain('F28-01');
+    expect(f28_01.valid).toBe(true);
+    expect(f28_01.throughput).toBeGreaterThan(0);
+
+    // F28-02 (mine+lumberMill→workshop) 应不通
+    const f28_02 = system.validateChain('F28-02');
+    expect(f28_02.valid).toBe(false);
+
+    // F28-03 (market→port) 应不通
+    const f28_03 = system.validateChain('F28-03');
+    expect(f28_03.valid).toBe(false);
+
+    // F28-05 (farmland+market→tavern) 应不通（缺market）
+    const f28_05 = system.validateChain('F28-05');
+    expect(f28_05.valid).toBe(false);
+  });
+
+  // B3: 建筑升级后吞吐量变化
+  it('F28-edge-03: 建筑升级→吞吐量提升', () => {
+    // 低等级
+    const mockLow = createMockBuildingSystem(
+      { farmland: 1, barracks: 1 },
+      { farmland: 10, barracks: 10 },
+    );
+    system.setBuildingSystem(mockLow);
+    const throughputLow = system.calculateThroughput('F28-01');
+
+    // 中等级
+    const mockMid = createMockBuildingSystem(
+      { farmland: 5, barracks: 5 },
+      { farmland: 50, barracks: 50 },
+    );
+    system.setBuildingSystem(mockMid);
+    const throughputMid = system.calculateThroughput('F28-01');
+
+    // 高等级
+    const mockHigh = createMockBuildingSystem(
+      { farmland: 10, barracks: 10 },
+      { farmland: 100, barracks: 100 },
+    );
+    system.setBuildingSystem(mockHigh);
+    const throughputHigh = system.calculateThroughput('F28-01');
+
+    // 吞吐量应单调递增
+    expect(throughputMid).toBeGreaterThan(throughputLow);
+    expect(throughputHigh).toBeGreaterThan(throughputMid);
+  });
+
+  // B4: 无效链路ID
+  it('F28-edge-04: 无效链路ID→validateChain返回false', () => {
+    const mock = createAllLevelMock(3, 10);
+    system.setBuildingSystem(mock);
+
+    // 各种无效ID
+    const invalidIds = ['F28-00', 'F28-99', '', 'invalid', 'F28-AB', 'f28-01'];
+    for (const id of invalidIds) {
+      const result = system.validateChain(id);
+      expect(result.valid).toBe(false);
+      expect(result.throughput).toBe(0);
+      expect(result.bottlenecks.length).toBeGreaterThan(0);
+    }
+  });
+
+  // B5: 多次序列化反序列化一致性
+  it('F28-edge-05: 多次序列化→反序列化→数据一致', () => {
+    const mock = createAllLevelMock(3, 10);
+    system.setBuildingSystem(mock);
+    system.validateAllChains();
+    system.detectBottlenecks();
+
+    // 第一次序列化
+    const serialized1 = system.serialize();
+
+    // 反序列化到新系统
+    const system2 = new ResourceChainSystem();
+    system2.deserialize(serialized1);
+    const serialized2 = system2.serialize();
+
+    // 再次反序列化到第三个系统
+    const system3 = new ResourceChainSystem();
+    system3.deserialize(serialized2);
+    const serialized3 = system3.serialize();
+
+    // 三次序列化结果应完全一致
+    expect(serialized2).toEqual(serialized1);
+    expect(serialized3).toEqual(serialized1);
+
+    // 链路定义也应一致
+    const chains1 = system.getChainDefinitions();
+    const chains3 = system3.getChainDefinitions();
+    expect(chains1.map(c => c.id)).toEqual(chains3.map(c => c.id));
+    expect(chains1.map(c => c.name)).toEqual(chains3.map(c => c.name));
+  });
+
+  // B6: 未设置BuildingSystem时操作
+  it('F28-edge-06: 未设置BS→validateAllChains返回全部无效', () => {
+    // 不设置 BuildingSystem
+    const result = system.validateAllChains();
+    // 所有链路应无效
+    for (const chainResult of Object.values(result)) {
+      expect(chainResult.valid).toBe(false);
+    }
+
+    // detectBottlenecks 应返回每条链路都有未启动报告
+    const reports = system.detectBottlenecks();
+    expect(reports.length).toBeGreaterThan(0);
+    for (const report of reports) {
+      expect(report.bottleneck).toContain('未启动');
+    }
+
+    // calculateThroughput 对所有链路返回0
+    for (const id of ['F28-01', 'F28-02', 'F28-03', 'F28-04', 'F28-05', 'F28-06']) {
+      expect(system.calculateThroughput(id)).toBe(0);
+    }
+  });
+});

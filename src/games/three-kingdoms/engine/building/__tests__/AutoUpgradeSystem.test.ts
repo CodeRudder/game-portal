@@ -499,4 +499,115 @@ describe('AutoUpgradeSystem', () => {
       expect(result.reason).toContain('建筑系统');
     });
   });
+
+  // ═══════════════════════════════════════════
+  // F12 边界场景（Sprint B iteration 3）
+  // ═══════════════════════════════════════════
+
+  describe('F12 边界场景', () => {
+    // B1: 所有建筑满级时自动升级
+    it('F12-edge-01: 所有建筑满级→getNextUpgradeTarget返回null', () => {
+      const { autoSys, bs } = createSetup();
+      // 升级主城到满级（Lv30）
+      safeUpgradeCastleTo(bs, 30);
+
+      // 将所有已解锁建筑升到各自满级
+      for (const t of BUILDING_TYPES) {
+        const def = bs.getBuildingDef(t);
+        if (!def) continue;
+        while (bs.getLevel(t) < def.maxLevel) {
+          if (bs.isUnlocked(t) && bs.getUpgradeCost(t)) {
+            bs.startUpgrade(t, RICH);
+            bs.forceCompleteUpgrades();
+          } else {
+            break;
+          }
+        }
+      }
+
+      autoSys.setConfig({ strategy: 'economy', enabled: true });
+      const target = autoSys.getNextUpgradeTarget();
+      // 所有建筑满级后应无升级目标
+      expect(target).toBeNull();
+    });
+
+    // B2: 资源为0时资源保护
+    it('F12-edge-02: 资源为0时canAffordWithProtection返回false', () => {
+      const { autoSys, setResources } = createSetup();
+      autoSys.setConfig({ strategy: 'economy', enabled: true, resourceProtectionPercent: 30 });
+
+      // 设置所有资源为0
+      const zeroResources: Resources = {
+        grain: 0, gold: 0, ore: 0, wood: 0, troops: 0,
+        mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0,
+      };
+      setResources(zeroResources);
+
+      expect(autoSys.canAffordWithProtection('farmland')).toBe(false);
+    });
+
+    // B3: 策略切换后优先级变化
+    it('F12-edge-03: 策略从economy→military→目标变化', () => {
+      const { autoSys, bs } = createSetup();
+      // 先升级主城以解锁 barracks
+      bs.startUpgrade('castle', RICH);
+      bs.forceCompleteUpgrades();
+
+      // economy 策略应优先 farmland
+      autoSys.setConfig({ strategy: 'economy', enabled: true });
+      const economyTarget = autoSys.getNextUpgradeTarget();
+      expect(economyTarget).toBe('farmland');
+
+      // 切换到 military 策略应优先 barracks
+      autoSys.setConfig({ strategy: 'military', enabled: true });
+      const militaryTarget = autoSys.getNextUpgradeTarget();
+      expect(militaryTarget).toBe('barracks');
+      expect(militaryTarget).not.toBe(economyTarget);
+    });
+
+    // B4: 保护比例为0%时
+    it('F12-edge-04: protectionPercent=0→不保护任何资源', () => {
+      const { autoSys, bs, setResources } = createSetup();
+      autoSys.setConfig({ strategy: 'economy', enabled: true, resourceProtectionPercent: 0 });
+
+      const cost = bs.getUpgradeCost('farmland')!;
+      // 设置资源刚好等于费用
+      const exactResources: Resources = {
+        ...POOR,
+        grain: cost.grain,
+        gold: cost.gold,
+      };
+      setResources(exactResources);
+
+      // 0%保护时，资源刚好够就通过
+      expect(autoSys.canAffordWithProtection('farmland')).toBe(true);
+    });
+
+    // B5: 保护比例为100%时
+    it('F12-edge-05: protectionPercent=100→所有资源被保护', () => {
+      const { autoSys } = createSetup();
+      autoSys.setConfig({ strategy: 'economy', enabled: true, resourceProtectionPercent: 100 });
+
+      // 即使资源充足，100%保护下也无法通过
+      expect(autoSys.canAffordWithProtection('farmland')).toBe(false);
+      expect(autoSys.canAffordWithProtection('castle')).toBe(false);
+    });
+
+    // B6: 排除所有建筑时
+    it('F12-edge-06: excludedBuildings包含所有建筑→无升级目标', () => {
+      const { autoSys } = createSetup();
+      // 排除所有建筑类型（使用 BUILDING_TYPES）
+      autoSys.setConfig({
+        strategy: 'economy',
+        enabled: true,
+        excludedBuildings: [...BUILDING_TYPES],
+      });
+
+      const target = autoSys.getNextUpgradeTarget();
+      expect(target).toBeNull();
+
+      const result = autoSys.tickAutoUpgrade();
+      expect(result.upgraded).toBeNull();
+    });
+  });
 });
