@@ -30,6 +30,55 @@ export const MANDATE_SPEEDUP_SECONDS_PER_POINT = 60;
 export const INGOT_SPEEDUP_SECONDS_PER_UNIT = 600;
 
 // ─────────────────────────────────────────────
+// Sprint 3: 书院研究系统配置
+// ─────────────────────────────────────────────
+
+/** 铜钱加速：每次消耗铜钱数 */
+export const COPPER_SPEEDUP_COST = 1000;
+
+/** 铜钱加速：每次进度增量（百分比，如 10 表示 +10%） */
+export const COPPER_SPEEDUP_PROGRESS_PERCENT = 10;
+
+/** 铜钱加速：每日最大加速次数 */
+export const COPPER_SPEEDUP_MAX_DAILY = 10;
+
+/** 研究启动消耗铜钱数 */
+export const RESEARCH_START_COPPER_COST = 5000;
+
+/** 研究启动消耗科技点倍率（techPoint × 此值） */
+export const RESEARCH_START_TECH_POINT_MULTIPLIER = 10;
+
+/**
+ * 可研究科技上限 = 书院等级 × 此系数
+ * XI-005: 书院等级 → 可研究科技上限
+ */
+export const ACADEMY_TECH_CAP_MULTIPLIER = 2;
+
+/**
+ * 书院研究速度加成 = 1 + 书院等级 × 此系数
+ * XI-005: 书院等级 → 研究速度加成
+ */
+export const ACADEMY_RESEARCH_SPEED_PER_LEVEL = 0.1;
+
+/**
+ * 科技完成 → 建筑产出加成（%/级）
+ * XI-016: TECH → BLD 产出加成
+ */
+export const TECH_BUILDING_PRODUCTION_BONUS_PER_LEVEL = 5;
+
+/**
+ * 科技完成 → 资源产出加成（%/级）
+ * XI-016: TECH → 资源产出加成
+ */
+export const TECH_RESOURCE_PRODUCTION_BONUS_PER_LEVEL = 3;
+
+/**
+ * 科技完成 → 战斗属性加成（%/级）
+ * XI-016: TECH → 战斗属性加成
+ */
+export const TECH_BATTLE_STAT_BONUS_PER_LEVEL = 2;
+
+// ─────────────────────────────────────────────
 // 2. 互斥组 ID 辅助
 // ─────────────────────────────────────────────
 const M = (path: string, tier: number) => `${path}_t${tier}`;
@@ -161,4 +210,26 @@ export function getTechPointProduction(academyLevel: number): number {
     if (Number(lvl) <= academyLevel) production = prod;
   }
   return production;
+}
+
+// ─────────────────────────────────────────────
+// Sprint 3: 书院研究辅助函数
+// ─────────────────────────────────────────────
+
+/**
+ * 获取可研究科技上限（书院等级 × 2）
+ * XI-005: 书院等级 → 可研究科技上限
+ */
+export function getMaxResearchableTechCount(academyLevel: number): number {
+  if (!Number.isFinite(academyLevel) || academyLevel <= 0) return 0;
+  return Math.floor(academyLevel * ACADEMY_TECH_CAP_MULTIPLIER);
+}
+
+/**
+ * 获取书院研究速度加成倍率（1 + 书院等级 × 0.1）
+ * XI-005: 书院等级 → 研究速度加成
+ */
+export function getAcademyResearchSpeedMultiplier(academyLevel: number): number {
+  if (!Number.isFinite(academyLevel) || academyLevel <= 0) return 1;
+  return 1 + academyLevel * ACADEMY_RESEARCH_SPEED_PER_LEVEL;
 }

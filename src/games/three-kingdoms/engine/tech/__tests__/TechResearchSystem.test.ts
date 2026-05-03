@@ -11,6 +11,7 @@ import { TechPointSystem } from '../TechPointSystem';
 import { TechResearchSystem } from '../TechResearchSystem';
 import { createRealDeps } from '../../../test-utils/test-helpers';
 import type { ISystemDeps } from '../../../core/types';
+import { RESEARCH_START_TECH_POINT_MULTIPLIER } from '../tech-config';
 
 describe('TechResearchSystem', () => {
   let treeSys: TechTreeSystem;
@@ -18,12 +19,14 @@ describe('TechResearchSystem', () => {
   let researchSys: TechResearchSystem;
   let baseTime: number;
   let mandateAmount: number;
+  let goldAmount: number;
 
   beforeEach(() => {
     vi.restoreAllMocks();
     baseTime = 1_000_000_000_000;
     vi.spyOn(Date, 'now').mockReturnValue(baseTime);
     mandateAmount = 100;
+    goldAmount = 100000;
 
     treeSys = new TechTreeSystem();
     pointSys = new TechPointSystem();
@@ -35,6 +38,14 @@ describe('TechResearchSystem', () => {
       (amt: number) => {
         if (mandateAmount >= amt) {
           mandateAmount -= amt;
+          return true;
+        }
+        return false;
+      },
+      () => goldAmount,
+      (amt: number) => {
+        if (goldAmount >= amt) {
+          goldAmount -= amt;
           return true;
         }
         return false;
@@ -53,9 +64,12 @@ describe('TechResearchSystem', () => {
 
   // 辅助：给科技点系统充入足够的点数
   function grantPoints(amount: number): void {
+    // Sprint 3: 研究消耗 = costPoints × RESEARCH_START_TECH_POINT_MULTIPLIER
+    // amount 是"名义点数"（即 costPoints），实际需要 amount × MULTIPLIER
+    const needed = amount * RESEARCH_START_TECH_POINT_MULTIPLIER;
     pointSys.syncAcademyLevel(20);
-    // 1.76/秒，需要 amount/1.76 秒
-    const seconds = Math.ceil(amount / 1.76) + 10;
+    // 1.76/秒，需要 needed/1.76 秒
+    const seconds = Math.ceil(needed / 1.76) + 10;
     pointSys.update(seconds);
   }
 
@@ -84,7 +98,7 @@ describe('TechResearchSystem', () => {
       grantPoints(100);
       const before = pointSys.getCurrentPoints();
       researchSys.startResearch('mil_t1_attack');
-      expect(pointSys.getCurrentPoints()).toBeCloseTo(before - 50);
+      expect(pointSys.getCurrentPoints()).toBeCloseTo(before - 50 * RESEARCH_START_TECH_POINT_MULTIPLIER);
     });
 
     it('不存在的节点无法研究', () => {
@@ -164,7 +178,7 @@ describe('TechResearchSystem', () => {
       researchSys.startResearch('mil_t1_attack');
       const result = researchSys.cancelResearch('mil_t1_attack');
       expect(result.success).toBe(true);
-      expect(result.refundPoints).toBe(50);
+      expect(result.refundPoints).toBe(50 * RESEARCH_START_TECH_POINT_MULTIPLIER);
     });
 
     it('取消后节点恢复为 available', () => {
@@ -215,19 +229,19 @@ describe('TechResearchSystem', () => {
     });
 
     it('书院等级 5 时队列大小为 2', () => {
-      const sys2 = new TechResearchSystem(treeSys, pointSys, () => 5, () => 0, () => false);
+      const sys2 = new TechResearchSystem(treeSys, pointSys, () => 5, () => 0, () => false, () => 100000, () => true);
       sys2.init(createRealDeps());
       expect(sys2.getMaxQueueSize()).toBe(2);
     });
 
     it('书院等级 10 时队列大小为 3', () => {
-      const sys3 = new TechResearchSystem(treeSys, pointSys, () => 10, () => 0, () => false);
+      const sys3 = new TechResearchSystem(treeSys, pointSys, () => 10, () => 0, () => false, () => 100000, () => true);
       sys3.init(createRealDeps());
       expect(sys3.getMaxQueueSize()).toBe(3);
     });
 
     it('书院等级 20 时队列大小为 5', () => {
-      const sys5 = new TechResearchSystem(treeSys, pointSys, () => 20, () => 0, () => false);
+      const sys5 = new TechResearchSystem(treeSys, pointSys, () => 20, () => 0, () => false, () => 100000, () => true);
       sys5.init(createRealDeps());
       expect(sys5.getMaxQueueSize()).toBe(5);
     });
@@ -272,9 +286,12 @@ describe('TechResearchSystem', () => {
     it('getRemainingTime 返回正确秒数', () => {
       grantPoints(100);
       researchSys.startResearch('mil_t1_attack');
-      advanceTime(60 * 1000);
+      advanceTime(30 * 1000);
       const remaining = researchSys.getRemainingTime('mil_t1_attack');
-      expect(remaining).toBeCloseTo(60, -1); // ~60秒
+      // academy level 3 → speed multiplier 1.3 → research time = 120/1.3 ≈ 92.3s
+      // after 30s, remaining ≈ 62.3s
+      expect(remaining).toBeGreaterThan(50);
+      expect(remaining).toBeLessThan(80);
     });
 
     it('isResearching 正确判断', () => {
@@ -332,9 +349,12 @@ describe('TechResearchSystem', () => {
       grantPoints(100);
       researchSys.startResearch('mil_t1_attack');
       advanceTime(10 * 1000);
-      const result = researchSys.speedUp('mil_t1_attack', 'ingot', 0);
+      const result = researchSys.speedUp('mil_t1_attack', 'ingot', 1);
       expect(result.success).toBe(true);
       expect(result.completed).toBe(true);
+      // 验证队列已清空（研究已完成）
+      researchSys.update(0);
+      expect(researchSys.getQueue()).toHaveLength(0);
     });
 
     it('calculateIngotCost 返回正确值', () => {
@@ -370,10 +390,14 @@ describe('TechResearchSystem', () => {
       pointSys.syncResearchSpeedBonus(50); // +50% 速度
       researchSys.startResearch('mil_t1_attack');
 
-      // 原始时间 120 秒，加成后 120/1.5 = 80 秒
+      // 原始时间 120 秒
+      // academy level 3 → speed multiplier 1.3
+      // research speed bonus 50% → multiplier 1.5
+      // total multiplier = 1.3 × 1.5 = 1.95
+      // actual time = 120 / 1.95 ≈ 61.5 秒
       const slot = researchSys.getQueue()[0];
       const duration = (slot.endTime - slot.startTime) / 1000;
-      expect(duration).toBeCloseTo(80, -1);
+      expect(duration).toBeCloseTo(120 / 1.95, 0);
     });
   });
 
@@ -399,7 +423,7 @@ describe('TechResearchSystem', () => {
       researchSys.startResearch('mil_t1_attack');
       const data = researchSys.serialize();
 
-      const newSys = new TechResearchSystem(treeSys, pointSys, () => 3, () => 0, () => false);
+      const newSys = new TechResearchSystem(treeSys, pointSys, () => 3, () => 0, () => false, () => 100000, () => true);
       newSys.init(createRealDeps());
       newSys.deserialize(data);
       expect(newSys.getQueue()).toHaveLength(1);
@@ -428,7 +452,7 @@ describe('TechResearchSystem', () => {
       expect(startResult.success).toBe(true);
 
       // 3. 验证消耗
-      expect(pointSys.getCurrentPoints()).toBeCloseTo(pointsBefore - 50);
+      expect(pointSys.getCurrentPoints()).toBeCloseTo(pointsBefore - 50 * RESEARCH_START_TECH_POINT_MULTIPLIER);
 
       // 4. 验证节点状态
       expect(treeSys.getNodeState('mil_t1_attack')?.status).toBe('researching');
@@ -455,7 +479,7 @@ describe('TechResearchSystem', () => {
 
     it('三条路线可以并行研究不同节点', () => {
       // 使用大队列
-      const bigSys = new TechResearchSystem(treeSys, pointSys, () => 20, () => 0, () => false);
+      const bigSys = new TechResearchSystem(treeSys, pointSys, () => 20, () => 0, () => false, () => 100000, () => true);
       bigSys.init(createRealDeps());
 
       grantPoints(500);
