@@ -22,3 +22,12 @@ export {
   PRODUCTION_BUFF_BONUS,
   PASSIVE_HEAL_RATE_PER_LEVEL,
 } from './clinic.types';
+
+// Sprint 7: 医馆损失报告
+export { ClinicLossReport } from './ClinicLossReport';
+export type {
+  ResourceProduction as ClinicResourceProduction,
+  UpgradeComparison as ClinicUpgradeComparison,
+  DailyReport as ClinicDailyReport,
+  GetProductionFn as ClinicGetProductionFn,
+} from './ClinicLossReport';
