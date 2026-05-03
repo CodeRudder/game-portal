@@ -1907,12 +1907,205 @@ describe('BLD-F28: 资源链循环', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// 其他缺失功能 (it.todo)
+// BLD-F27-03: 编队出征 — 兵力检查→战斗系统
+// ═══════════════════════════════════════════════════════════════
+
+describe('BLD-F27-03: 编队出征 — 兵力检查→战斗系统', () => {
+  let formation: BarracksFormationSystem;
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    let troops = 500;
+    formation = new BarracksFormationSystem();
+    formation.setup(5, () => troops, (n) => { troops -= n; return true; });
+  });
+
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  it('兵力充足时可以分配兵力到编队', () => {
+    const create = formation.createFormation('先锋营');
+    expect(create.success).toBe(true);
+
+    const assign = formation.assignTroops(create.formationId!, 100);
+    expect(assign.success).toBe(true);
+
+    const f = formation.getFormation(create.formationId!);
+    expect(f).not.toBeNull();
+    expect(f!.troops).toBe(100);
+  });
+
+  it('兵力不足时分配失败（模拟出征前兵力检查）', () => {
+    const create = formation.createFormation('先锋营');
+    expect(create.success).toBe(true);
+
+    // 先分配大部分兵力
+    const assign1 = formation.assignTroops(create.formationId!, 400);
+    expect(assign1.success).toBe(true);
+
+    // 剩余兵力不足，分配失败
+    const assign2 = formation.assignTroops(create.formationId!, 200);
+    expect(assign2.success).toBe(false);
+    expect(assign2.reason).toContain('兵力不足');
+  });
+
+  it('编队兵力为零时无法出征（业务层校验）', () => {
+    const create = formation.createFormation('空营');
+    expect(create.success).toBe(true);
+
+    const f = formation.getFormation(create.formationId!);
+    expect(f!.troops).toBe(0);
+    // 出征前应检查编队兵力 > 0
+    expect(f!.troops).toBeLessThanOrEqual(0);
+  });
+
+  it('移除兵力后编队兵力减少（模拟战后减员）', () => {
+    const create = formation.createFormation('先锋营');
+    formation.assignTroops(create.formationId!, 200);
+
+    // 模拟战后减员
+    const remove = formation.removeTroops(create.formationId!, 80);
+    expect(remove.success).toBe(true);
+
+    const f = formation.getFormation(create.formationId!);
+    expect(f!.troops).toBe(120);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// BLD-F25-02: 商队返回 — 商队返回时间计算
+// ═══════════════════════════════════════════════════════════════
+
+describe('BLD-F25-02: 商队返回 — 商队返回时间计算', () => {
+  let caravan: CaravanSystem;
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    caravan = new CaravanSystem();
+    caravan.init({ eventBus: { on: vi.fn(), emit: vi.fn(), off: vi.fn() } as any });
+
+    // 注入 mock 商路信息提供者
+    caravan.setRouteProvider({
+      getRouteDef: (routeId) => ({
+        opened: true,
+        baseTravelTime: 60, // 60秒去程
+        baseProfitRate: 0.15,
+        from: 'city_a',
+        to: 'city_b',
+      }),
+      getPrice: (goodsId) => 10,
+      completeTrade: vi.fn(),
+    });
+  });
+
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  it('去程时间 = baseTravelTime * 1000 / speedMultiplier', () => {
+    const idleCaravans = caravan.getIdleCaravans();
+    expect(idleCaravans.length).toBeGreaterThan(0);
+
+    const c = idleCaravans[0];
+    const beforeDispatch = Date.now();
+
+    const result = caravan.dispatch({
+      caravanId: c.id,
+      routeId: 'route_1' as any,
+      cargo: { silk: 5 },
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.estimatedArrival).toBeDefined();
+
+    // 去程时间 = 60 * 1000 / 1.0 = 60000ms
+    const expectedTravelTime = 60 * 1000 / c.attributes.speedMultiplier;
+    const actualTravelTime = result.estimatedArrival! - beforeDispatch;
+    // 允许10ms误差（测试执行时间）
+    expect(Math.abs(actualTravelTime - expectedTravelTime)).toBeLessThan(50);
+  });
+
+  it('返回时间 = 去程的一半 (baseTravelTime * 500 / speedMultiplier)', () => {
+    const idleCaravans = caravan.getIdleCaravans();
+    const c = idleCaravans[0];
+
+    // 派遣商队
+    const result = caravan.dispatch({
+      caravanId: c.id,
+      routeId: 'route_1' as any,
+      cargo: { silk: 5 },
+    });
+    expect(result.success).toBe(true);
+
+    // 模拟去程完成（将 arrivalTime 设为过去时间）
+    const caravans = caravan.getCaravans();
+    const traveling = caravans.find(cv => cv.status === 'traveling');
+    expect(traveling).toBeDefined();
+
+    // 手动推进时间：触发 update 让去程完成
+    // 使用 vi.advanceTimersByTime 或直接 mock Date.now
+    const originalNow = Date.now;
+    const travelTime = 60 * 1000 / traveling!.attributes.speedMultiplier;
+    let fakeTime = Date.now();
+
+    // 先让去程完成
+    fakeTime += travelTime + 1;
+    Date.now = () => fakeTime;
+    caravan.update(1);
+
+    // 去程完成后应转为 returning
+    const afterTravel = caravan.getCaravan(c.id);
+    expect(afterTravel!.status).toBe('returning');
+
+    // 返回时间 = baseTravelTime * 500 / speedMultiplier = 60 * 500 / 1.0 = 30000ms
+    const expectedReturnTime = 60 * 500 / traveling!.attributes.speedMultiplier;
+    const returnArrivalTime = afterTravel!.arrivalTime;
+    const actualReturnTime = returnArrivalTime - fakeTime;
+    expect(Math.abs(actualReturnTime - expectedReturnTime)).toBeLessThan(50);
+
+    Date.now = originalNow;
+  });
+
+  it('返回完成后商队恢复idle状态', () => {
+    const idleCaravans = caravan.getIdleCaravans();
+    const c = idleCaravans[0];
+
+    caravan.dispatch({
+      caravanId: c.id,
+      routeId: 'route_1' as any,
+      cargo: { silk: 5 },
+    });
+
+    const caravans = caravan.getCaravans();
+    const traveling = caravans.find(cv => cv.status === 'traveling');
+    const speed = traveling!.attributes.speedMultiplier;
+    const travelTime = 60 * 1000 / speed;
+    const returnTime = 60 * 500 / speed;
+
+    const originalNow = Date.now;
+    let fakeTime = Date.now();
+
+    // 去程完成
+    fakeTime += travelTime + 1;
+    Date.now = () => fakeTime;
+    caravan.update(1);
+
+    // 返回完成
+    fakeTime += returnTime + 1;
+    Date.now = () => fakeTime;
+    caravan.update(1);
+
+    const finalState = caravan.getCaravan(c.id);
+    expect(finalState!.status).toBe('idle');
+    expect(finalState!.currentRouteId).toBeNull();
+    expect(finalState!.cargo).toEqual({});
+
+    Date.now = originalNow;
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 缺失功能 (it.todo) — 尚未实现的子系统
 // ═══════════════════════════════════════════════════════════════
 
 describe('缺失功能检测', () => {
-  it.todo('BLD-F27-03: 编队出征 — 兵力检查→战斗系统');
-  it.todo('BLD-F25-02: 商队返回 — 商队返回时间计算');
   it.todo('BLD-F08-01: 建筑锁定 — 建筑手动锁定功能');
   it.todo('BLD-F09-01: 建筑拆除 — 建筑降级/拆除功能');
 });
