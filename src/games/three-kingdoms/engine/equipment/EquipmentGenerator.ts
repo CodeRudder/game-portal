@@ -192,8 +192,11 @@ export function genMainStat(slot: EquipmentSlot, rarity: EquipmentRarity, seed: 
 /** 生成副属性列表 */
 export function genSubStats(slot: EquipmentSlot, rarity: EquipmentRarity, seed: number): SubStat[] {
   const [minC, maxC] = RARITY_SUB_STAT_COUNT[rarity];
-  const count = minC === maxC ? minC : minC + (seed % (maxC - minC + 1));
   const pool = SLOT_SUB_STAT_POOL[slot];
+  // 池大小限制：目标数量不超过池中可用种类数
+  const poolMax = Math.min(maxC, pool.length);
+  const poolMin = Math.min(minC, pool.length);
+  const count = poolMin === poolMax ? poolMin : poolMin + ((seed + 1) % (poolMax - poolMin + 1));
   const result: SubStat[] = [];
   const used = new Set<SubStatType>();
 

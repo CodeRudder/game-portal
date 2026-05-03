@@ -50,6 +50,8 @@ describe('EquipmentEnhanceSystem — 对抗性测试 (Adversarial)', () => {
 
   beforeEach(() => {
     ({ sys, enhance } = createSystem());
+    // 注入资源扣除回调（对抗性测试中始终允许扣除）
+    enhance.setResourceDeductor(() => true);
   });
 
   // ── 1. getCopperCost 精确值验证 ──
