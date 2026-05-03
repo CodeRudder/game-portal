@@ -57,6 +57,9 @@ export class BuildingSystem implements ISubsystem {
   /** 各建筑库存累积量 */
   private storage: Record<BuildingType, number>;
 
+  /** 繁荣度→市集铜钱加成回调（返回百分比，如 15 表示 +15%） */
+  private prosperityBonusCallback: (() => number) | null = null;
+
   constructor() {
     this.buildings = createAllStates();
     this.upgradeQueue = [];
@@ -71,6 +74,14 @@ export class BuildingSystem implements ISubsystem {
   /** 注入依赖（事件总线、配置注册表等） */
   init(deps: ISystemDeps): void {
     this.deps = deps;
+  }
+
+  /**
+   * 注入繁荣度→市集铜钱加成回调
+   * 回调返回铜钱加成百分比（如 15 表示 +15%），由市舶司繁荣度等级决定
+   */
+  setProsperityBonus(cb: () => number): void {
+    this.prosperityBonusCallback = cb;
   }
 
   /** ISubsystem.update — 适配 tick()，建筑系统基于实时时间戳 */
