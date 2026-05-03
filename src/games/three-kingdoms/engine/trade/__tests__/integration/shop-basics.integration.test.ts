@@ -202,7 +202,7 @@ describe('§1.1~1.4 商店浏览 / 五级确认 / 库存限购', () => {
     });
 
     it('超出每日限购时验证失败', () => {
-      currency.addCurrency('ingot', 200);
+      currency.addCurrency('ingot', 500);
       shop.executeBuy({ goodsId: 'spd_daily_pack', quantity: 1, shopType: 'limited_time' });
       shop.executeBuy({ goodsId: 'spd_daily_pack', quantity: 1, shopType: 'limited_time' });
       const v = shop.validateBuy({ goodsId: 'spd_daily_pack', quantity: 1, shopType: 'limited_time' });
