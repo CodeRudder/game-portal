@@ -265,7 +265,7 @@ describe('BuildingSystem 对抗式测试 — 状态机攻击', () => {
   afterEach(() => { vi.restoreAllMocks(); });
 
   it('locked → startUpgrade 抛错', () => {
-    expect(() => bs.startUpgrade('market', RICH)).toThrow(/尚未解锁/);
+    expect(() => bs.startUpgrade('barracks', RICH)).toThrow(/尚未解锁/);
   });
 
   it('upgrading → startUpgrade 重复升级抛错', () => {
@@ -292,16 +292,16 @@ describe('BuildingSystem 对抗式测试 — 状态机攻击', () => {
   });
 
   it('locked → checkAndUnlock → idle 状态转换正确', () => {
-    // market 初始锁定，需要主城 Lv2
-    expect(bs.isUnlocked('market')).toBe(false);
-    expect(bs.getBuilding('market').status).toBe('locked');
+    // barracks 初始锁定，需要主城 Lv2
+    expect(bs.isUnlocked('barracks')).toBe(false);
+    expect(bs.getBuilding('barracks').status).toBe('locked');
 
     // 模拟主城升级到 Lv2
     bs.deserialize(makeSave({ castle: { level: 2 } }));
-    // market 应该在反序列化时被解锁
-    expect(bs.isUnlocked('market')).toBe(true);
-    expect(bs.getBuilding('market').status).toBe('idle');
-    expect(bs.getBuilding('market').level).toBe(1);
+    // barracks 应该在反序列化时被解锁
+    expect(bs.isUnlocked('barracks')).toBe(true);
+    expect(bs.getBuilding('barracks').status).toBe('idle');
+    expect(bs.getBuilding('barracks').level).toBe(1);
   });
 
   it('TR-EXEC-010: cancelUpgrade 状态恢复完整', () => {
@@ -696,8 +696,7 @@ describe('BuildingSystem 对抗式测试 — 跨系统交互', () => {
   afterEach(() => { vi.restoreAllMocks(); });
 
   it('TR-CROSS-001: 主城升级完成触发建筑解锁', () => {
-    // 初始主城 Lv1，market/barracks 锁定
-    expect(bs.isUnlocked('market')).toBe(false);
+    // 初始主城 Lv1，barracks 锁定
     expect(bs.isUnlocked('barracks')).toBe(false);
 
     // 模拟主城升级到 Lv2
@@ -711,7 +710,6 @@ describe('BuildingSystem 对抗式测试 — 跨系统交互', () => {
 
     expect(completed).toContain('castle');
     expect(bs.getCastleLevel()).toBe(2);
-    expect(bs.isUnlocked('market')).toBe(true);
     expect(bs.isUnlocked('barracks')).toBe(true);
   });
 
@@ -810,8 +808,8 @@ describe('BuildingSystem 对抗式测试 — 批量升级', () => {
   });
 
   it('TR-BATCH-003: 全部失败（锁定建筑）', () => {
-    // market/barracks 初始锁定
-    const result = bs.batchUpgrade(['market', 'barracks'], RICH);
+    // barracks/wall 初始锁定
+    const result = bs.batchUpgrade(['barracks', 'wall'], RICH);
     expect(result.succeeded).toHaveLength(0);
     expect(result.failed).toHaveLength(2);
   });
@@ -1019,10 +1017,9 @@ describe('BuildingSystem 对抗式测试 — 推荐系统', () => {
   });
 
   it('TR-REC-005: 锁定建筑被跳过', () => {
-    // 初始状态，market/barracks 等锁定
+    // 初始状态，barracks/wall 等锁定
     const rec = bs.recommendUpgradePath('newbie');
     const types = rec.map((r) => r.type);
-    expect(types).not.toContain('market');
     expect(types).not.toContain('barracks');
     expect(types).not.toContain('wall');
   });

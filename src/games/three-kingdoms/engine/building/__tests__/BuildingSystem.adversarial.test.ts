@@ -47,18 +47,18 @@ describe('BuildingSystem — 对抗性测试 (Adversarial)', () => {
 
   // ── 1. checkUnlock 精确边界：主城等级恰好等于要求等级 ──
   it('主城等级恰好等于解锁要求时，应返回 true', () => {
-    // market 要求主城 Lv2
+    // barracks 要求主城 Lv2
     // 主城 Lv2 时恰好满足
     sys.deserialize(makeSave({ castle: { level: 2 } }));
-    expect(sys.checkUnlock('market')).toBe(true);
+    expect(sys.checkUnlock('barracks')).toBe(true);
   });
 
   // ── 2. checkUnlock 精确边界：主城等级比要求等级少1 ──
   it('主城等级比解锁要求少1时，应返回 false', () => {
-    // market 要求主城 Lv2
+    // barracks 要求主城 Lv2
     // 主城 Lv1 时不应满足
     sys.deserialize(makeSave({ castle: { level: 1 } }));
-    expect(sys.checkUnlock('market')).toBe(false);
+    expect(sys.checkUnlock('barracks')).toBe(false);
   });
 
   // ── 3. checkUpgrade 精确边界：建筑等级恰好等于主城等级 ──

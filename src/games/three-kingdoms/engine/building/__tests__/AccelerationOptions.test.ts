@@ -569,13 +569,12 @@ describe('P1: 加速选项（铜钱/天命/元宝）', () => {
     });
 
     it('加速完成主城后新建筑解锁', () => {
-      // 主城Lv1 → 需要升级到Lv2解锁市集和兵营
-      expect(building.isUnlocked('market')).toBe(false);
+      // 主城Lv1 → 需要升级到Lv2解锁兵营
+      expect(building.isUnlocked('barracks')).toBe(false);
 
       building.startUpgrade('castle', RICH);
       building.forceCompleteUpgrades();
 
-      expect(building.isUnlocked('market')).toBe(true);
       expect(building.isUnlocked('barracks')).toBe(true);
     });
 
