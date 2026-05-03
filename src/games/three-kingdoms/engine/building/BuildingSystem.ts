@@ -226,7 +226,15 @@ export class BuildingSystem implements ISubsystem {
     const lv = level ?? this.buildings[type].level;
     if (lv <= 0) return 0;
     const data = BUILDING_DEFS[type].levelTable[lv - 1];
-    return data?.production ?? 0;
+    const baseProduction = data?.production ?? 0;
+
+    // 繁荣度加成仅作用于市集（gold产出）
+    if (type === 'market' && this.prosperityBonusCallback) {
+      const bonusPercent = this.prosperityBonusCallback();
+      return baseProduction * (1 + bonusPercent / 100);
+    }
+
+    return baseProduction;
   }
 
   /** 主城全资源加成百分比（如 8 表示 +8%） */
