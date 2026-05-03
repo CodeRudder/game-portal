@@ -189,6 +189,8 @@ export interface QueueSlot {
   startTime: number;
   /** 预计完成时间戳（ms） */
   endTime: number;
+  /** 铜钱加速已使用次数（最多3次） */
+  copperSpeedUpCount?: number;
 }
 
 /** 建筑队列配置 */
