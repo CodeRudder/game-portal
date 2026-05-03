@@ -252,6 +252,7 @@ export class ResourceChainSystem {
 
       // 策略 1：源头节点等级远高于消耗节点 → 资源过剩
       const sources = nodeLevels.filter(n => n.isSource && n.level > 0);
+      const allSources = nodeLevels.filter(n => n.isSource);
       const consumers = nodeLevels.filter(n => !n.isSource);
 
       for (const consumer of consumers) {
@@ -269,7 +270,7 @@ export class ResourceChainSystem {
       // 策略 2：消耗节点存在但源头节点过低 → 供给不足
       for (const consumer of consumers) {
         if (consumer.level <= 0) continue;
-        for (const source of sources) {
+        for (const source of allSources) {
           if (source.level <= 0) {
             reports.push({
               chainId,
