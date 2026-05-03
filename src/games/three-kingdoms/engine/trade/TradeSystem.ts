@@ -62,6 +62,9 @@ export class TradeSystem implements ISubsystem {
   private npcMerchants: NpcMerchantInstance[];
   private currencyOps: TradeCurrencyOps | null = null;
 
+  /** 市舶司折扣回调（返回 0~30 的百分比） */
+  private tradeDiscountCallback: (() => number) | null = null;
+
   constructor() {
     this.routeStates = new Map();
     this.goodsPrices = new Map();
@@ -83,6 +86,14 @@ export class TradeSystem implements ISubsystem {
       this.goodsDefs.set(def.id, def);
       this.goodsPrices.set(def.id, createDefaultPrice(def, now));
     }
+  }
+
+  /**
+   * 注入市舶司贸易折扣回调
+   * 回调返回折扣百分比（0~30），在利润计算中降低成本
+   */
+  setTradeDiscount(cb: () => number): void {
+    this.tradeDiscountCallback = cb;
   }
 
   // ── ISubsystem ──
@@ -209,8 +220,16 @@ export class TradeSystem implements ISubsystem {
     const prosperityBonus = tier.outputMultiplier - 1;
     const bargainingBonus = safeBargainingPower - 1;
     const adjustedRevenue = totalRevenue * (1 + prosperityBonus) * (1 + bargainingBonus);
-    const profit = adjustedRevenue - totalCost - safeGuardCost;
-    const profitRate = totalCost > 0 ? profit / totalCost : 0;
+
+    // 市舶司折扣：降低进货成本
+    let discount = 0;
+    if (this.tradeDiscountCallback) {
+      discount = this.tradeDiscountCallback();
+    }
+    const adjustedCost = totalCost * (1 - discount / 100);
+
+    const profit = adjustedRevenue - adjustedCost - safeGuardCost;
+    const profitRate = adjustedCost > 0 ? profit / adjustedCost : 0;
 
     return {
       revenue: Math.floor(adjustedRevenue),
