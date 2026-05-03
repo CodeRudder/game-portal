@@ -203,8 +203,30 @@ describe('资源操作原子性测试', () => {
     const nodeStateBefore = techTree.getNodeState(firstNode.id);
     expect(nodeStateBefore?.status).toBe('available');
 
-    // 给足够科技点
-    techPoint.deserialize({ techPoints: { current: firstNode.costPoints * 2, totalEarned: firstNode.costPoints * 2, totalSpent: 0 } });
+    // 给足够科技点（Sprint 3: 实际消耗 = costPoints × RESEARCH_START_TECH_POINT_MULTIPLIER）
+    techPoint.deserialize({ techPoints: { current: firstNode.costPoints * 20, totalEarned: firstNode.costPoints * 20, totalSpent: 0 } });
+
+    // 升级主城到 Lv3 以解锁书院，再升级书院以确保可研究科技上限 > 0
+    // （Sprint 3: getMaxResearchableTechCount 需要 academyLevel >= 1）
+    engine.resource.addResource('gold', 50000);
+    engine.resource.addResource('grain', 50000);
+    for (let i = 0; i < 2; i++) {
+      const castleCost = engine.getUpgradeCost('castle')!;
+      engine.upgradeBuilding('castle');
+      vi.advanceTimersByTime(castleCost.timeSeconds * 1000 + 100);
+      engine.tick(castleCost.timeSeconds * 1000 + 100);
+    }
+    expect(engine.building.getLevel('castle')).toBeGreaterThanOrEqual(3);
+
+    const academyCost = engine.getUpgradeCost('academy')!;
+    engine.upgradeBuilding('academy');
+    vi.advanceTimersByTime(academyCost.timeSeconds * 1000 + 100);
+    engine.tick(academyCost.timeSeconds * 1000 + 100);
+    expect(engine.building.getLevel('academy')).toBeGreaterThanOrEqual(1);
+
+    // 补充铜钱（建筑升级消耗了部分，确保剩余 ≥ RESEARCH_START_COPPER_COST = 5000）
+    engine.resource.setCap('gold', 100000);
+    engine.resource.addResource('gold', 10000);
 
     // 设置书院等级以确保有队列容量
     techResearch.getMaxQueueSize = () => 2;
