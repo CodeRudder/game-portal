@@ -230,12 +230,8 @@ describe('§5.2 科技研究流程', () => {
     });
 
     it('科技点充足时应允许研究', () => {
-      // 给予足够科技点
-      points.spend(-100); // 直接增加科技点
-      // 使用 trySpend 的反向操作：直接修改
-      const state = points.getState();
-      // 通过 exchangeGoldForTechPoints 增加科技点
-      const exchangeResult = points.exchangeGoldForTechPoints(10000, 5);
+      // 给予足够科技点（costPoints=50 × multiplier=10 = 500 科技点）
+      const exchangeResult = points.exchangeGoldForTechPoints(100000, 5);
       expect(exchangeResult.success).toBe(true);
 
       const result = research.startResearch('mil_t1_attack');
@@ -243,7 +239,7 @@ describe('§5.2 科技研究流程', () => {
     });
 
     it('研究开始后应扣除科技点', () => {
-      points.exchangeGoldForTechPoints(10000, 5);
+      points.exchangeGoldForTechPoints(100000, 5);
       const before = points.getCurrentPoints();
       const def = getDef('mil_t1_attack');
       const result = research.startResearch('mil_t1_attack');
@@ -255,7 +251,7 @@ describe('§5.2 科技研究流程', () => {
 
   describe('研究时间', () => {
     it('研究开始后节点状态应为 researching', () => {
-      points.exchangeGoldForTechPoints(10000, 5);
+      points.exchangeGoldForTechPoints(100000, 5);
       research.startResearch('mil_t1_attack');
       const state = tree.getNodeState('mil_t1_attack');
       expect(state?.status).toBe('researching');
@@ -264,7 +260,7 @@ describe('§5.2 科技研究流程', () => {
     });
 
     it('研究队列应包含已开始的科技', () => {
-      points.exchangeGoldForTechPoints(10000, 5);
+      points.exchangeGoldForTechPoints(100000, 5);
       research.startResearch('mil_t1_attack');
       const queue = research.getQueue();
       expect(queue.some((s) => s.techId === 'mil_t1_attack')).toBe(true);
@@ -291,7 +287,7 @@ describe('§5.2 科技研究流程', () => {
     });
 
     it('取消研究应返还科技点', () => {
-      points.exchangeGoldForTechPoints(10000, 5);
+      points.exchangeGoldForTechPoints(100000, 5);
       const before = points.getCurrentPoints();
       research.startResearch('mil_t1_attack');
       const cancelResult = research.cancelResearch('mil_t1_attack');
@@ -301,7 +297,7 @@ describe('§5.2 科技研究流程', () => {
     });
 
     it('取消后节点状态应恢复', () => {
-      points.exchangeGoldForTechPoints(10000, 5);
+      points.exchangeGoldForTechPoints(100000, 5);
       research.startResearch('mil_t1_attack');
       research.cancelResearch('mil_t1_attack');
       const state = tree.getNodeState('mil_t1_attack');
@@ -311,7 +307,7 @@ describe('§5.2 科技研究流程', () => {
 
   describe('加速机制', () => {
     it('天命加速应减少剩余时间', () => {
-      points.exchangeGoldForTechPoints(10000, 5);
+      points.exchangeGoldForTechPoints(100000, 5);
       research.startResearch('mil_t1_attack');
       const beforeRemaining = research.getRemainingTime('mil_t1_attack');
       const result = research.speedUp('mil_t1_attack', 'mandate', 1);
@@ -696,7 +692,7 @@ describe('§5.6 离线科技研究', () => {
 
   describe('离线期间研究完成检测', () => {
     it('研究到期后 update 应触发完成', () => {
-      points.exchangeGoldForTechPoints(10000, 5);
+      points.exchangeGoldForTechPoints(100000, 5);
       research.startResearch('mil_t1_attack');
 
       // 模拟研究完成：手动修改 endTime 为过去时间
@@ -720,7 +716,7 @@ describe('§5.6 离线科技研究', () => {
     });
 
     it('研究未到期时 update 不应触发完成', () => {
-      points.exchangeGoldForTechPoints(10000, 5);
+      points.exchangeGoldForTechPoints(100000, 5);
       research.startResearch('mil_t1_attack');
       research.update(0);
 
@@ -792,7 +788,7 @@ describe('§5.6 离线科技研究', () => {
 
   describe('研究队列离线恢复', () => {
     it('反序列化研究队列后应恢复节点研究状态', () => {
-      points.exchangeGoldForTechPoints(10000, 5);
+      points.exchangeGoldForTechPoints(100000, 5);
       research.startResearch('mil_t1_attack');
 
       const data = research.serialize();
