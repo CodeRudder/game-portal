@@ -420,12 +420,16 @@ describe('TechAcceleration — 加速叠加公式完整验证', () => {
     });
 
     it('研究速度加成 + 天命加速叠加公式', () => {
-      const techId = getFirstAvailableTechId();
-
-      // academy level 5 → speed 1.5, 50% bonus → 1.5, total = 2.25
+      // 使用 mil_t2_charge (300s) 确保加速后不会完成
+      // 先完成前置科技
       const systems = createSystems(1000, 5);
       systems.pointSystem.syncResearchSpeedBonus(50);
-      fundPoints(systems.pointSystem, 1000);
+      completeTechQuick(systems.researchSystem, systems.pointSystem, 'mil_t1_attack');
+      const techId = 'mil_t2_charge';
+
+      // academy level 5 → speed 1.5, 50% bonus → 1.5, total = 2.25
+      // mil_t2_charge actualTime = 300/2.25 ≈ 133.3s，60s加速不会完成
+      fundPoints(systems.pointSystem, 5000);
       systems.researchSystem.startResearch(techId);
 
       const queue = systems.researchSystem.getQueue();

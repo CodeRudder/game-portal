@@ -149,11 +149,14 @@ describe('TechOfflineSystem Round2 增强', () => {
   describe('效率衰减分段验证', () => {
     it('2小时内100%效率 — 进度等于实际时间', () => {
       grantPoints(env.pointSys, 100);
-      env.researchSys.startResearch('mil_t1_attack'); // 120s
+      env.researchSys.startResearch('mil_t1_attack'); // 120s nominal
+      // academyLevel=3 → academySpeedMultiplier=1.3 → actualTime=120/1.3≈92.3s
+      const queue = env.researchSys.getQueue();
+      const actualDuration = (queue[0]!.endTime - queue[0]!.startTime) / 1000;
       const panel = doOfflineCycle(env, baseTime, 60 * 1000); // 60s
       const progress = panel!.techProgressList[0];
-      // 60s / 120s = 50%
-      expect(progress.progressDelta).toBeCloseTo(0.5, 3);
+      // 60s / actualDuration
+      expect(progress.progressDelta).toBeCloseTo(60 / actualDuration, 3);
     });
 
     it('2~8小时70%效率 — 进度低于实际时间', () => {
@@ -241,15 +244,18 @@ describe('TechOfflineSystem Round2 增强', () => {
   describe('离线研究进度正确性', () => {
     it('progressBefore 基于离线开始时间正确计算', () => {
       grantPoints(env.pointSys, 100);
-      env.researchSys.startResearch('mil_t1_attack'); // 120s
+      env.researchSys.startResearch('mil_t1_attack'); // 120s nominal
+      // academyLevel=3 → academySpeedMultiplier=1.3 → actualTime=120/1.3≈92.3s
+      const queue = env.researchSys.getQueue();
+      const actualDuration = (queue[0]!.endTime - queue[0]!.startTime) / 1000;
       // 研究开始于 baseTime，30s 后离线
       const offlineStart = baseTime + 30 * 1000;
       env.offlineSys.onGoOffline(offlineStart);
       const panel = env.offlineSys.onComeBackOnline(offlineStart + 60 * 1000);
 
       const progress = panel!.techProgressList[0];
-      // 离线前已研究 30s/120s = 25%
-      expect(progress.progressBefore).toBeCloseTo(0.25, 3);
+      // 离线前已研究 30s / actualDuration
+      expect(progress.progressBefore).toBeCloseTo(30 / actualDuration, 3);
     });
 
     it('progressAfter = progressBefore + progressDelta', () => {

@@ -250,8 +250,8 @@ describe('§9.3 科技↔攻城联动：科技影响攻城战力', () => {
     const target = attackable[0];
     const reward = sys.enhancer.calculateSiegeRewardById(target.id);
     if (reward) {
-      expect(reward).toHaveProperty('gold');
-      expect(reward).toHaveProperty('grain');
+      expect(reward.resources).toHaveProperty('gold');
+      expect(reward.resources).toHaveProperty('grain');
     }
   });
 });
