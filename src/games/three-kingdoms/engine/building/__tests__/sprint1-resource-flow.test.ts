@@ -467,7 +467,7 @@ describe('Sprint 1 — BLD-F15: 资源上限适配4资源', () => {
   it('4种资源各自独立上限', () => {
     const caps = rs.getCaps();
     expect(caps.grain).toBeGreaterThan(0);
-    expect(caps.gold).toBeGreaterThan(0);
+    expect(caps.gold).toBeNull(); // gold 无上限
     expect(caps.ore).toBeGreaterThan(0);
     expect(caps.wood).toBeGreaterThan(0);
   });

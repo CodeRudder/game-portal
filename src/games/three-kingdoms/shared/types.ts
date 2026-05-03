@@ -72,7 +72,7 @@ export interface ProductionRate {
 /** 资源上限（null 表示无上限） */
 export interface ResourceCap {
   grain: number;
-  gold: number;
+  gold: null; // gold 无上限
   ore: number;
   wood: number;
   troops: number;

@@ -222,8 +222,9 @@ export class TestDataProvider {
     overrides?: Partial<Record<BuildingType, Partial<BuildingState>>>,
   ): Record<BuildingType, BuildingState> {
     const allTypes: BuildingType[] = [
-      'castle', 'farmland', 'market', 'barracks',
-      'smithy', 'academy', 'clinic', 'wall',
+      'castle', 'farmland', 'market', 'mine',
+      'lumberMill', 'barracks', 'workshop', 'academy',
+      'clinic', 'wall', 'tavern', 'port',
     ];
     const result = {} as Record<BuildingType, BuildingState>;
     for (const t of allTypes) {

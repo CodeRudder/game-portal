@@ -84,10 +84,10 @@ describe('F-Error: 资源初始化异常', () => {
     for (const type of RESOURCE_TYPES) expect(Number.isFinite(rates[type])).toBe(true);
   });
 
-  it('初始上限 grain/gold/ore/wood/troops 为正数，其余为 null', () => {
+  it('初始上限 grain/ore/wood/troops 为正数，gold/其余为 null', () => {
     const caps = createResource().getCaps();
     expect(caps.grain).toBeGreaterThan(0);
-    expect(caps.gold).toBeGreaterThan(0);
+    expect(caps.gold).toBeNull(); // gold 无上限
     expect(caps.ore).toBeGreaterThan(0);
     expect(caps.wood).toBeGreaterThan(0);
     expect(caps.troops).toBeGreaterThan(0);

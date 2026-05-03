@@ -58,7 +58,7 @@ export const INITIAL_PRODUCTION_RATES: Readonly<ProductionRate> = {
 /** 新游戏初始上限（对应建筑 Lv.1） */
 export const INITIAL_CAPS: Readonly<ResourceCap> = {
   grain: 2000,
-  gold: 2000,
+  gold: null,
   ore: 2000,
   wood: 2000,
   troops: 500,

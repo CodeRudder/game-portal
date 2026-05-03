@@ -81,8 +81,8 @@ describe('resource-config', () => {
       expect(INITIAL_CAPS.grain).toBe(2000);
     });
 
-    it('铜钱上限应为 2000', () => {
-      expect(INITIAL_CAPS.gold).toBe(2000);
+    it('铜钱上限应为 null（无上限）', () => {
+      expect(INITIAL_CAPS.gold).toBeNull();
     });
 
     it('兵力上限应为 500', () => {

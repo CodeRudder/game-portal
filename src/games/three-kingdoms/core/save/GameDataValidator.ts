@@ -41,8 +41,9 @@ const MAX_BUILDING_LEVEL = 100;
 const RESOURCE_FIELDS = ['grain', 'gold', 'troops', 'mandate', 'techPoint', 'recruitToken'] as const;
 
 const BUILDING_TYPES = [
-  'castle', 'farmland', 'market', 'barracks',
-  'smithy', 'academy', 'clinic', 'wall',
+  'castle', 'farmland', 'market', 'mine',
+  'lumberMill', 'barracks', 'workshop', 'academy',
+  'clinic', 'wall', 'tavern', 'port',
 ] as const;
 
 /** 可选子系统名称及最低引入版本 */
