@@ -46,6 +46,14 @@ export interface TechSystems {
 // 创建 & 初始化
 // ─────────────────────────────────────────────
 
+/** 科技系统资源依赖接口 */
+export interface TechResourceDeps {
+  /** 获取铜钱数量 */
+  getGold: () => number;
+  /** 消耗铜钱 */
+  spendGold: (amount: number) => boolean;
+}
+
 /**
  * 创建科技子系统实例
  *
@@ -59,8 +67,9 @@ export interface TechSystems {
  * - TechDetailProvider 依赖 TechTreeSystem + FusionTechSystem + TechLinkSystem
  *
  * @param buildingSystem - 建筑系统（获取书院等级）
+ * @param resourceDeps - 资源依赖（获取/消耗铜钱）
  */
-export function createTechSystems(buildingSystem: BuildingSystem): TechSystems {
+export function createTechSystems(buildingSystem: BuildingSystem, resourceDeps?: TechResourceDeps): TechSystems {
   const treeSystem = new TechTreeSystem();
   const pointSystem = new TechPointSystem();
 
@@ -75,6 +84,8 @@ export function createTechSystems(buildingSystem: BuildingSystem): TechSystems {
     () => 0,
     // spendMandate 预留：未来从资源系统消耗
     () => false,
+    resourceDeps?.getGold ?? (() => 0),
+    resourceDeps?.spendGold ?? (() => false),
   );
 
   // v5.0: 创建融合科技系统（依赖 TechTreeSystem）

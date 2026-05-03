@@ -205,7 +205,12 @@ export class ThreeKingdomsEngine {
         for (const g of gs) self.hero.addExp(g.id, per);
       },
     });
-    this.techSystems = createTechSystems(this.building);
+    this.techSystems = createTechSystems(this.building, {
+      getGold: () => this.resource.getAmount('gold'),
+      spendGold: (amount: number) => {
+        try { this.resource.consumeResource('gold', amount); return true; } catch { return false; }
+      },
+    });
     this.mapSystems = createMapSystems();
     this.eventSystems = createEventSystems();
     this.r11 = createR11Systems();
