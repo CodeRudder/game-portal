@@ -13,6 +13,7 @@ import type { RecruitDeps, PityState, RecruitOutput } from '../HeroRecruitSystem
 import { HeroSystem } from '../HeroSystem';
 import { Quality, QUALITY_ORDER } from '../hero.types';
 import {
+  RECRUIT_COSTS,
   RECRUIT_SAVE_VERSION,
   RECRUIT_PITY,
   TEN_PULL_DISCOUNT,
@@ -97,8 +98,8 @@ describe('HeroRecruitSystem — 补充边界测试', () => {
     });
 
     it('十连资源不足时返回 null', () => {
-      // 设计规格：十连普通 = recruitToken×5×10×1.0=50，40 不够
-      const tracked = makeTrackedDeps(heroSystem, 0, 40);
+      // 设计规格：十连普通 = recruitToken×1×10×1.0=10，需要至少10个
+      const tracked = makeTrackedDeps(heroSystem, 0, 5);
       recruit.setRecruitDeps(tracked);
       expect(recruit.recruitTen('normal')).toBeNull();
     });
@@ -171,30 +172,30 @@ describe('HeroRecruitSystem — 补充边界测试', () => {
   // ───────────────────────────────────────────
   describe('招募后资源正确扣除', () => {
     it('普通招募正确扣除招贤榜', () => {
-      // 设计规格：普通招募 recruitToken×5（R3修正）
+      // 设计规格：普通招募 recruitToken×1（v2修正）
       const tracked = makeTrackedDeps(heroSystem, 10000, 100);
       recruit.setRecruitDeps(tracked);
       const result = recruit.recruitSingle('normal')!;
       expect(result).not.toBeNull();
-      expect(tracked.resources.recruitToken).toBe(100 - 5);
+      expect(tracked.resources.recruitToken).toBe(100 - RECRUIT_COSTS.normal.amount);
     });
 
     it('高级招募正确扣除求贤令', () => {
-      // 设计规格：高级招募 recruitToken×100
+      // 设计规格：高级招募 recruitToken×10（v2修正）
       const tracked = makeTrackedDeps(heroSystem, 10000, 1000);
       recruit.setRecruitDeps(tracked);
       const result = recruit.recruitSingle('advanced')!;
       expect(result).not.toBeNull();
-      expect(tracked.resources.recruitToken).toBe(1000 - 100);
+      expect(tracked.resources.recruitToken).toBe(1000 - RECRUIT_COSTS.advanced.amount);
     });
 
     it('十连招募正确扣除折扣后的资源', () => {
-      // 设计规格：普通招募 recruitToken×5（R3修正），TEN_PULL_DISCOUNT=1.0
+      // 设计规格：普通招募 recruitToken×1（v2修正），TEN_PULL_DISCOUNT=1.0
       const tracked = makeTrackedDeps(heroSystem, 10000, 100);
       recruit.setRecruitDeps(tracked);
       const result = recruit.recruitTen('normal')!;
       expect(result).not.toBeNull();
-      const expectedCost = Math.floor(5 * 10 * TEN_PULL_DISCOUNT);
+      const expectedCost = Math.floor(RECRUIT_COSTS.normal.amount * 10 * TEN_PULL_DISCOUNT);
       expect(tracked.resources.recruitToken).toBe(100 - expectedCost);
     });
   });

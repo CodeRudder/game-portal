@@ -139,23 +139,23 @@ describe('HeroRecruitSystem', () => {
     });
 
     it('招募消耗正确记录', () => {
-      // 设计规格：普通招募 recruitToken×5（R3修正：1→5，解决经济通胀）
+      // 设计规格：普通招募 recruitToken×1（v2: 从5降为1，配合初始30招贤令）
       const result = recruit.recruitSingle('normal')!;
       expect(result.cost.resourceType).toBe('recruitToken');
-      expect(result.cost.amount).toBe(5);
+      expect(result.cost.amount).toBe(RECRUIT_COSTS.normal.amount);
     });
 
     it('十连消耗 = 10 × 单价 × 折扣', () => {
-      // 设计规格：普通招募 recruitToken×5，TEN_PULL_DISCOUNT=1.0
+      // 设计规格：普通招募 recruitToken×1，TEN_PULL_DISCOUNT=1.0
       const result = recruit.recruitTen('normal')!;
-      expect(result.cost.amount).toBe(Math.floor(5 * 10 * TEN_PULL_DISCOUNT));
+      expect(result.cost.amount).toBe(Math.floor(RECRUIT_COSTS.normal.amount * 10 * TEN_PULL_DISCOUNT));
     });
 
     it('高级招募消耗求贤令', () => {
-      // 设计规格：高级招募 recruitToken×100
+      // 设计规格：高级招募 recruitToken×10（v2: 从100降为10）
       const result = recruit.recruitSingle('advanced')!;
       expect(result.cost.resourceType).toBe('recruitToken');
-      expect(result.cost.amount).toBe(100);
+      expect(result.cost.amount).toBe(RECRUIT_COSTS.advanced.amount);
     });
 
     it('招募类型正确记录', () => {
@@ -309,23 +309,23 @@ describe('HeroRecruitSystem', () => {
   // ───────────────────────────────────────────
   describe('消耗计算', () => {
     it('getRecruitCost 单抽普通招募', () => {
-      // 设计规格：普通招募 recruitToken×5（R3修正）
+      // 设计规格：普通招募 recruitToken×1（v2修正）
       const cost = recruit.getRecruitCost('normal', 1);
       expect(cost.resourceType).toBe('recruitToken');
-      expect(cost.amount).toBe(5);
+      expect(cost.amount).toBe(RECRUIT_COSTS.normal.amount);
     });
 
     it('getRecruitCost 单抽高级招募', () => {
-      // 设计规格：高级招募 recruitToken×100
+      // 设计规格：高级招募 recruitToken×10（v2修正）
       const cost = recruit.getRecruitCost('advanced', 1);
       expect(cost.resourceType).toBe('recruitToken');
-      expect(cost.amount).toBe(100);
+      expect(cost.amount).toBe(RECRUIT_COSTS.advanced.amount);
     });
 
     it('getRecruitCost 十连普通招募', () => {
-      // 设计规格：普通招募 recruitToken×5，TEN_PULL_DISCOUNT=1.0
+      // 设计规格：普通招募 recruitToken×1，TEN_PULL_DISCOUNT=1.0
       const cost = recruit.getRecruitCost('normal', 10);
-      expect(cost.amount).toBe(Math.floor(5 * 10 * TEN_PULL_DISCOUNT));
+      expect(cost.amount).toBe(Math.floor(RECRUIT_COSTS.normal.amount * 10 * TEN_PULL_DISCOUNT));
     });
   });
 

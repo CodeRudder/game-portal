@@ -14,6 +14,7 @@ import type { RecruitDeps, PityState } from '../HeroRecruitSystem';
 import { HeroSystem } from '../HeroSystem';
 import { Quality, QUALITY_ORDER } from '../hero.types';
 import {
+  RECRUIT_COSTS,
   RECRUIT_SAVE_VERSION,
   TEN_PULL_DISCOUNT,
 } from '../hero-recruit-config';
@@ -213,27 +214,27 @@ describe('HeroRecruitSystem — 边界测试', () => {
   // ───────────────────────────────────────────
   describe('消耗计算边界', () => {
     it('十连折扣正确计算', () => {
-      // 设计规格：普通招募 recruitToken×5（R3修正），TEN_PULL_DISCOUNT=1.0
+      // 设计规格：普通招募 recruitToken×1（v2修正），TEN_PULL_DISCOUNT=1.0
       const cost = recruit.getRecruitCost('normal', 10);
-      expect(cost.amount).toBe(Math.floor(5 * 10 * TEN_PULL_DISCOUNT));
+      expect(cost.amount).toBe(Math.floor(RECRUIT_COSTS.normal.amount * 10 * TEN_PULL_DISCOUNT));
       expect(cost.resourceType).toBe('recruitToken');
     });
 
-    it('高级招募十连消耗 = 10 × 100 × 折扣', () => {
-      // 设计规格：高级招募 recruitToken×100
+    it('高级招募十连消耗 = 10 × 10 × 折扣', () => {
+      // 设计规格：高级招募 recruitToken×10（v2修正）
       const cost = recruit.getRecruitCost('advanced', 10);
-      expect(cost.amount).toBe(Math.floor(100 * 10 * TEN_PULL_DISCOUNT));
+      expect(cost.amount).toBe(Math.floor(RECRUIT_COSTS.advanced.amount * 10 * TEN_PULL_DISCOUNT));
     });
 
     it('单抽消耗无折扣', () => {
-      // 设计规格：普通招募 recruitToken×5（R3修正）
+      // 设计规格：普通招募 recruitToken×1（v2修正）
       const cost = recruit.getRecruitCost('normal', 1);
-      expect(cost.amount).toBe(5);
+      expect(cost.amount).toBe(RECRUIT_COSTS.normal.amount);
     });
 
     it('招募输出记录正确的消耗', () => {
       const result = recruit.recruitTen('normal')!;
-      expect(result.cost.amount).toBe(Math.floor(5 * 10 * TEN_PULL_DISCOUNT));
+      expect(result.cost.amount).toBe(Math.floor(RECRUIT_COSTS.normal.amount * 10 * TEN_PULL_DISCOUNT));
       expect(result.cost.resourceType).toBe('recruitToken');
     });
   });

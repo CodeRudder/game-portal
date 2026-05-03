@@ -158,7 +158,9 @@ describe('HeroRecruitExecutor', () => {
       const upHero = createDefaultUpHero();
       const beforeAdv = pity.advancedPity;
       const beforeAdvHard = pity.advancedHardPity;
-      executor.executeSinglePull(heroSystem, 'advanced', pity, upHero, Math.random);
+      // Use rng that gives COMMON quality (0.1 → COMMON in advanced rates)
+      // so pity counters are NOT reset by tenPull/hardPity thresholds
+      executor.executeSinglePull(heroSystem, 'advanced', pity, upHero, makeConstantRng(0.1));
       expect(pity.advancedPity).toBeGreaterThan(beforeAdv);
       expect(pity.advancedHardPity).toBeGreaterThan(beforeAdvHard);
     });
