@@ -15,6 +15,8 @@ import type {
   QueueSlot,
   BuildingSaveData,
   AppearanceStage,
+  BuildingStorage,
+  CollectResult,
 } from './building.types';
 import { BUILDING_TYPES, BUILDING_LABELS } from './building.types';
 import {
@@ -24,6 +26,9 @@ import {
   BUILDING_SAVE_VERSION,
   QUEUE_CONFIGS,
   CANCEL_REFUND_RATIO,
+  STORAGE_OVERFLOW_SLOWDOWN,
+  DEFAULT_BUFFER_SECONDS,
+  NEWBIE_BUFFER_SECONDS,
 } from './building-config';
 import type { Resources } from '../resource/resource.types';
 import type { ISubsystem, ISystemDeps } from '../../core/types';
@@ -48,9 +53,17 @@ export class BuildingSystem implements ISubsystem {
   private buildings: Record<BuildingType, BuildingState>;
   private upgradeQueue: QueueSlot[];
 
+  // ── Sprint 1: 建筑库存系统（BLD-F26/BLD-F10/BLD-F15） ──
+  /** 各建筑库存累积量 */
+  private storage: Record<BuildingType, number>;
+
   constructor() {
     this.buildings = createAllStates();
     this.upgradeQueue = [];
+    this.storage = {} as Record<BuildingType, number>;
+    for (const t of BUILDING_TYPES) {
+      this.storage[t] = 0;
+    }
   }
 
   // ── ISubsystem 适配层 ──
@@ -165,7 +178,12 @@ export class BuildingSystem implements ISubsystem {
     // 资源检查（FIX-401: NaN绕过防护 — NaN < cost 返回 false 绕过检查）
     if (resources && state.level < maxLv) {
       // 防护 NaN/Infinity 资源值绕过比较
-      if (!Number.isFinite(resources.grain) || !Number.isFinite(resources.gold) || !Number.isFinite(resources.troops)) {
+      // 注意：ore/wood 可能为 undefined（旧存档/测试数据），视为 0
+      const oreAmount = resources.ore ?? 0;
+      const woodAmount = resources.wood ?? 0;
+      if (!Number.isFinite(resources.grain) || !Number.isFinite(resources.gold) ||
+          !Number.isFinite(resources.troops) || !Number.isFinite(oreAmount) ||
+          !Number.isFinite(woodAmount)) {
         reasons.push('资源数据异常（含NaN或Infinity）');
       } else {
         const cost = this.getUpgradeCost(type);
@@ -173,6 +191,9 @@ export class BuildingSystem implements ISubsystem {
           if (resources.grain < cost.grain) reasons.push(`粮草不足：需要 ${cost.grain}`);
           if (resources.gold < cost.gold) reasons.push(`铜钱不足：需要 ${cost.gold}`);
           if (cost.troops > 0 && resources.troops < cost.troops) reasons.push(`兵力不足：需要 ${cost.troops}`);
+          // Sprint 1 BLD-F02: 矿石/木材消耗检查
+          if (cost.ore > 0 && oreAmount < cost.ore) reasons.push(`矿石不足：需要 ${cost.ore}`);
+          if (cost.wood > 0 && woodAmount < cost.wood) reasons.push(`木材不足：需要 ${cost.wood}`);
         }
       }
     }
@@ -385,7 +406,11 @@ export class BuildingSystem implements ISubsystem {
   // ── 10. 序列化 ──
 
   serialize(): BuildingSaveData {
-    return { buildings: this.cloneBuildings(), version: BUILDING_SAVE_VERSION };
+    return {
+      buildings: this.cloneBuildings(),
+      storage: { ...this.storage },
+      version: BUILDING_SAVE_VERSION,
+    };
   }
 
   deserialize(data: BuildingSaveData): void {
@@ -444,6 +469,11 @@ export class BuildingSystem implements ISubsystem {
     }
 
     this.checkAndUnlockBuildings();
+
+    // 恢复库存数据（Sprint 1 BLD-F26）
+    for (const t of BUILDING_TYPES) {
+      this.storage[t] = data.storage?.[t] ?? 0;
+    }
   }
 
   // ── 11. 重置 ──
@@ -451,6 +481,148 @@ export class BuildingSystem implements ISubsystem {
   reset(): void {
     this.buildings = createAllStates();
     this.upgradeQueue = [];
+    // 重置库存
+    for (const t of BUILDING_TYPES) {
+      this.storage[t] = 0;
+    }
+  }
+
+  // ── 15. 建筑库存系统（Sprint 1 BLD-F26/BLD-F10/BLD-F15） ──
+
+  /**
+   * 获取建筑库存容量
+   * 公式：产出速率 × 缓冲时间
+   * 新手(Lv1~5)缓冲时间45分钟，Lv10+为2小时
+   */
+  getStorageCapacity(type: BuildingType): number {
+    const level = this.buildings[type].level;
+    const def = BUILDING_DEFS[type];
+    if (!def.production || level <= 0) return 0;
+
+    const production = this.getProduction(type);
+    // 新手保护：Lv1~5 使用更长缓冲时间
+    const bufferSeconds = level <= 5 ? NEWBIE_BUFFER_SECONDS : DEFAULT_BUFFER_SECONDS;
+    return Math.floor(production * bufferSeconds);
+  }
+
+  /**
+   * 获取建筑库存累积量
+   */
+  getStorageAmount(type: BuildingType): number {
+    return this.storage[type] ?? 0;
+  }
+
+  /**
+   * 获取所有建筑的库存状态
+   */
+  getAllStorage(): BuildingStorage[] {
+    const result: BuildingStorage[] = [];
+    for (const t of BUILDING_TYPES) {
+      const def = BUILDING_DEFS[t];
+      if (!def.production) continue;
+      const amount = this.storage[t];
+      const capacity = this.getStorageCapacity(t);
+      result.push({
+        buildingType: t,
+        amount,
+        capacity,
+        isOverflowing: capacity > 0 && amount >= capacity,
+      });
+    }
+    return result;
+  }
+
+  /**
+   * 建筑库存是否溢出（产出降速中）
+   */
+  isStorageOverflowing(type: BuildingType): boolean {
+    const capacity = this.getStorageCapacity(type);
+    return capacity > 0 && this.storage[type] >= capacity;
+  }
+
+  /**
+   * 每帧累加建筑库存（tick 产出 → 库存）
+   * 溢出后产出降速50%
+   *
+   * @param dtSec 帧间隔（秒）
+   * @returns 库存变化的建筑列表
+   */
+  tickStorage(dtSec: number): BuildingType[] {
+    if (!Number.isFinite(dtSec) || dtSec <= 0) return [];
+
+    const changed: BuildingType[] = [];
+
+    for (const t of BUILDING_TYPES) {
+      const def = BUILDING_DEFS[t];
+      if (!def.production) continue;
+
+      const state = this.buildings[t];
+      if (state.level <= 0 || state.status === 'locked') continue;
+
+      const production = this.getProduction(t);
+      if (production <= 0) continue;
+
+      // 溢出降速
+      const capacity = this.getStorageCapacity(t);
+      const isOverflowing = capacity > 0 && this.storage[t] >= capacity;
+      const rate = isOverflowing ? production * STORAGE_OVERFLOW_SLOWDOWN : production;
+
+      const gain = rate * dtSec;
+      if (gain <= 0) continue;
+
+      const before = this.storage[t];
+      // 库存不超过容量（降速模式下仍然可以缓慢累积到上限）
+      this.storage[t] = capacity > 0
+        ? Math.min(before + gain, capacity)
+        : before + gain;
+
+      if (this.storage[t] !== before) {
+        changed.push(t);
+      }
+    }
+
+    return changed;
+  }
+
+  /**
+   * 一键收取所有建筑库存（Sprint 1 BLD-F10）
+   * 收取时4种资源飞入资源栏
+   *
+   * @returns 收取结果（各资源总量 + 各建筑明细）
+   */
+  collectAll(): CollectResult {
+    const collected: Record<string, number> = {};
+    const buildingDetails: CollectResult['buildingDetails'] = [];
+
+    for (const t of BUILDING_TYPES) {
+      const def = BUILDING_DEFS[t];
+      if (!def.production) continue;
+
+      const amount = this.storage[t];
+      if (amount <= 0) continue;
+
+      const resourceType = def.production.resourceType;
+      collected[resourceType] = (collected[resourceType] ?? 0) + amount;
+      buildingDetails.push({
+        buildingType: t,
+        resourceType,
+        amount,
+      });
+
+      // 清零库存
+      this.storage[t] = 0;
+    }
+
+    return { collected, buildingDetails };
+  }
+
+  /**
+   * 收取单个建筑库存
+   */
+  collectBuilding(type: BuildingType): number {
+    const amount = this.storage[type];
+    this.storage[type] = 0;
+    return amount;
   }
 
   // ── 12. C19 建筑升级路线推荐 ──（委托 BuildingRecommender）

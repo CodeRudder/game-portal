@@ -200,3 +200,31 @@ export interface QueueConfig {
 // ─────────────────────────────────────────────
 // 9. 序列化 — BuildingSaveData 已移至 shared/types.ts
 // ─────────────────────────────────────────────
+
+// ─────────────────────────────────────────────
+// 10. 建筑库存系统（Sprint 1 BLD-F26/BLD-F10）
+// ─────────────────────────────────────────────
+
+/** 建筑库存状态 */
+export interface BuildingStorage {
+  /** 建筑类型 */
+  buildingType: BuildingType;
+  /** 库存中累积的资源量 */
+  amount: number;
+  /** 库存容量上限 */
+  capacity: number;
+  /** 是否溢出（产出降速中） */
+  isOverflowing: boolean;
+}
+
+/** 一键收取结果 */
+export interface CollectResult {
+  /** 各资源收取总量 */
+  collected: Record<string, number>;
+  /** 各建筑收取明细 */
+  buildingDetails: Array<{
+    buildingType: BuildingType;
+    resourceType: string;
+    amount: number;
+  }>;
+}

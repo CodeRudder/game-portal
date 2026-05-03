@@ -579,3 +579,66 @@ export const CANCEL_REFUND_RATIO = 0.8;
 
 /** 建筑存档数据版本号 */
 export const BUILDING_SAVE_VERSION = 1;
+
+// ─────────────────────────────────────────────
+// 15. 升级消耗梯度规则（Sprint 1 BLD-F02）
+// ─────────────────────────────────────────────
+// Lv1~5: 仅粮草+铜钱
+// Lv6+:  引入矿石（= grain × 20%）
+// Lv10+: 引入木材（= grain × 15%）
+// 适用建筑：farmland, market, mine, lumberMill, barracks, academy, clinic, tavern
+
+/** 矿石消耗占粮草消耗的比例（Lv6+生效） */
+export const ORE_COST_RATIO = 0.20;
+
+/** 木材消耗占粮草消耗的比例（Lv10+生效） */
+export const WOOD_COST_RATIO = 0.15;
+
+/**
+ * 为等级数据表中的升级消耗添加矿石/木材
+ * 规则：Lv6+ 添加矿石，Lv10+ 添加木材
+ *
+ * @param table 等级数据表（会被就地修改）
+ * @returns 修改后的等级数据表（同一引用）
+ */
+function enrichUpgradeCosts(table: LevelData[]): LevelData[] {
+  for (let i = 0; i < table.length; i++) {
+    const lv = i + 1; // levelTable 索引 0 = Lv1
+    const cost = table[i].upgradeCost;
+    // Lv6+ 引入矿石
+    if (lv >= 6 && cost.ore === 0) {
+      cost.ore = Math.floor(cost.grain * ORE_COST_RATIO);
+    }
+    // Lv10+ 引入木材
+    if (lv >= 10 && cost.wood === 0) {
+      cost.wood = Math.floor(cost.grain * WOOD_COST_RATIO);
+    }
+  }
+  return table;
+}
+
+// 应用矿石/木材升级消耗梯度
+enrichUpgradeCosts(FARMLAND_LEVEL_TABLE);
+enrichUpgradeCosts(MARKET_LEVEL_TABLE);
+enrichUpgradeCosts(MINE_LEVEL_TABLE);
+enrichUpgradeCosts(LUMBER_MILL_LEVEL_TABLE);
+enrichUpgradeCosts(BARRACKS_LEVEL_TABLE);
+enrichUpgradeCosts(ACADEMY_LEVEL_TABLE);
+enrichUpgradeCosts(CLINIC_LEVEL_TABLE);
+enrichUpgradeCosts(TAVERN_LEVEL_TABLE);
+// 注意：castle（主城）使用 troops 而非 ore/wood，保持不变
+// 注意：workshop（工坊）已有 ore 消耗，保持不变
+// 注意：wall（城墙）由 PRD 单独配置，保持不变
+
+// ─────────────────────────────────────────────
+// 16. 建筑库存配置（Sprint 1 BLD-F26/BLD-F10/BLD-F15）
+// ─────────────────────────────────────────────
+
+/** 建筑库存溢出降速比例（50%） */
+export const STORAGE_OVERFLOW_SLOWDOWN = 0.5;
+
+/** 默认缓冲时间（秒）— 库存容量 = 产出速率 × 缓冲时间 */
+export const DEFAULT_BUFFER_SECONDS = 7200; // 2小时
+
+/** 新手缓冲时间（秒）— Lv1~5 建筑使用更长的缓冲时间 */
+export const NEWBIE_BUFFER_SECONDS = 2700; // 45分钟

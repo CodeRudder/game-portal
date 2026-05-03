@@ -17,7 +17,7 @@ import {
   CANCEL_REFUND_RATIO,
 } from '../building-config';
 
-const RICH: Resources = { grain: 1e9, gold: 1e9, troops: 1e9, mandate: 0 };
+const RICH: Resources = { grain: 1e9, gold: 1e9, ore: 1e9, wood: 1e9, troops: 1e9, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
 const ZERO: Resources = { grain: 0, gold: 0, troops: 0, mandate: 0 };
 
 function mockNow(base: number, offset: number) {

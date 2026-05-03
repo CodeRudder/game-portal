@@ -18,6 +18,8 @@ import {
   CAP_WARNING_THRESHOLDS,
   GRANARY_CAPACITY_TABLE,
   BARRACKS_CAPACITY_TABLE,
+  ORE_CAPACITY_TABLE,
+  WOOD_CAPACITY_TABLE,
 } from './resource-config';
 
 // ─────────────────────────────────────────────
@@ -69,13 +71,22 @@ export function calculateBonusMultiplier(bonuses?: Bonuses): number {
 // 3. 上限查表
 // ─────────────────────────────────────────────
 
+/** 容量表类型 */
+export type CapTableType = 'granary' | 'barracks' | 'ore' | 'wood';
+
 /**
  * 根据建筑等级查表获取上限
  * @param level 建筑等级
- * @param table 查哪张表：'granary' 粮仓 / 'barracks' 兵营
+ * @param table 查哪张表：'granary' 粮仓 / 'barracks' 兵营 / 'ore' 矿石 / 'wood' 木材
  */
-export function lookupCap(level: number, table: 'granary' | 'barracks'): number {
-  const capacityTable = table === 'granary' ? GRANARY_CAPACITY_TABLE : BARRACKS_CAPACITY_TABLE;
+export function lookupCap(level: number, table: CapTableType): number {
+  const capacityTableMap: Record<CapTableType, Record<number, number>> = {
+    granary: GRANARY_CAPACITY_TABLE,
+    barracks: BARRACKS_CAPACITY_TABLE,
+    ore: ORE_CAPACITY_TABLE,
+    wood: WOOD_CAPACITY_TABLE,
+  };
+  const capacityTable = capacityTableMap[table];
 
   // 找到 <= level 的最大 key
   const keys = Object.keys(capacityTable)

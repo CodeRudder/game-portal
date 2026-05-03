@@ -180,6 +180,8 @@ export interface UpgradeCheckResult {
 /** 建筑系统存档数据 */
 export interface BuildingSaveData {
   buildings: Record<BuildingType, BuildingState>;
+  /** 建筑库存累积量（Sprint 1 BLD-F26） */
+  storage?: Partial<Record<BuildingType, number>>;
   version: number;
 }
 

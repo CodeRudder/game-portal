@@ -41,7 +41,7 @@ import { EventBus } from '../../../core/events/EventBus';
 // ─────────────────────────────────────────────
 
 /** 充足资源 */
-const RICH: Resources = { grain: 1e9, gold: 1e9, troops: 1e9, mandate: 0 };
+const RICH: Resources = { grain: 1e9, gold: 1e9, ore: 1e9, wood: 1e9, troops: 1e9, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
 
 /** 创建依赖注入对象 */
 function createDeps() {

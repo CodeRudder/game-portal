@@ -8,6 +8,7 @@ export { BuildingSystem } from './BuildingSystem';
 export type {
   BuildingType, BuildingState, BuildingDef, UpgradeCost,
   UpgradeCheckResult, QueueSlot, BuildingSaveData,
+  BuildingStorage, CollectResult,
 } from './building.types';
 export {
   BUILDING_TYPES, BUILDING_LABELS, BUILDING_ICONS, BUILDING_ZONES,

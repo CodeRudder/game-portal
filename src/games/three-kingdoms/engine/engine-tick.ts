@@ -159,6 +159,8 @@ export function syncBuildingToResource(ctx: TickContext): void {
   ctx.resource.updateCaps(
     levels['farmland'] ?? 0,
     levels['barracks'] ?? 0,
+    levels['mine'] ?? 0,
+    levels['lumberMill'] ?? 0,
   );
 }
 

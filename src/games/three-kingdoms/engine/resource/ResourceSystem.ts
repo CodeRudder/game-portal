@@ -294,9 +294,7 @@ export class ResourceSystem implements ISubsystem {
     for (const [resourceType, rate] of Object.entries(buildingProductions)) {
       // FIX-709: NaN rate 防护
       if (!Number.isFinite(rate)) continue;
-      if (resourceType === 'grain' || resourceType === 'gold' ||
-          resourceType === 'troops' || resourceType === 'mandate' ||
-          resourceType === 'techPoint' || resourceType === 'recruitToken') {
+      if (resourceType in newRates) {
         newRates[resourceType as ResourceType] += rate;
       }
     }
@@ -318,13 +316,22 @@ export class ResourceSystem implements ISubsystem {
   // ── 6. 上限管理 ──
 
   /**
-   * 更新资源上限
-   * @param granaryLevel 粮仓等级
+   * 更新资源上限（Sprint 1: 4种资源独立上限）
+   * @param granaryLevel 粮仓等级（=农田等级）
    * @param barracksLevel 兵营等级
+   * @param mineLevel 矿场等级
+   * @param lumberMillLevel 伐木场等级
    */
-  updateCaps(granaryLevel: number, barracksLevel: number): void {
+  updateCaps(granaryLevel: number, barracksLevel: number, mineLevel?: number, lumberMillLevel?: number): void {
     this.caps.grain = lookupCap(granaryLevel, 'granary');
     this.caps.troops = lookupCap(barracksLevel, 'barracks');
+    // Sprint 1 BLD-F15: 矿石/木材独立上限
+    if (mineLevel !== undefined) {
+      this.caps.ore = lookupCap(mineLevel, 'ore');
+    }
+    if (lumberMillLevel !== undefined) {
+      this.caps.wood = lookupCap(lumberMillLevel, 'wood');
+    }
     // gold 和 mandate 始终为 null（无上限）
 
     // 上限可能降低，截断溢出资源
