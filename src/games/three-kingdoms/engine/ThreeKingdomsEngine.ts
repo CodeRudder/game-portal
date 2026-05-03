@@ -73,6 +73,10 @@ import {
 } from './engine-guide-deps';
 import { TutorialSystem } from './tutorial/tutorial-system';
 import { SeasonSystem } from './season/SeasonSystem';
+import { WallDefenseSystem } from './building/WallDefenseSystem';
+import { BarracksFormationSystem } from './barracks/BarracksFormationSystem';
+import { BarracksTrainingSystem } from './barracks/BarracksTrainingSystem';
+import { calculateMarketGoldBonus } from './building/port-bridge';
 import { applyGetters } from './engine-getters';
 import type { EngineGettersMixin } from './engine-getters-types';
 import { ActivityType, ActivityTaskType, MilestoneStatus } from '../core/activity/activity.types';
@@ -117,6 +121,9 @@ export class ThreeKingdomsEngine {
   private readonly guide: GuideSystems;
   private readonly tutorialGuide: TutorialSystem;
   readonly season: SeasonSystem;
+  readonly wallDefense: WallDefenseSystem;
+  readonly barracksFormation: BarracksFormationSystem;
+  readonly barracksTraining: BarracksTrainingSystem;
   private readonly bus: EventBus;
   private readonly registry: SubsystemRegistry;
   private readonly saveManager: SaveManager;
@@ -218,6 +225,9 @@ export class ThreeKingdomsEngine {
     this.guide = createGuideSystems();
     this.tutorialGuide = new TutorialSystem();
     this.season = new SeasonSystem();
+    this.wallDefense = new WallDefenseSystem();
+    this.barracksFormation = new BarracksFormationSystem();
+    this.barracksTraining = new BarracksTrainingSystem();
     this.bus = new EventBus();
     this.registry = new SubsystemRegistry();
     this.configRegistry = new ConfigRegistry();
@@ -278,6 +288,9 @@ export class ThreeKingdomsEngine {
     registerGuideSystems(r, this.guide);
     r.register('tutorialGuide', this.tutorialGuide);
     r.register('season', this.season);
+    r.register('wallDefense', this.wallDefense);
+    r.register('barracksFormation', this.barracksFormation);
+    r.register('barracksTraining', this.barracksTraining);
   }
 
   // ── 初始化 ──
@@ -313,6 +326,26 @@ export class ThreeKingdomsEngine {
     initGuideSystems(this.guide, deps);
     this.tutorialGuide.init(deps);
     this.season.init(deps);
+    // ── XI-012: 市舶司→市集繁荣度加成 ──
+    this.building.setProsperityBonus(() => {
+      const portLevel = this.building.getLevel('port');
+      if (portLevel <= 0) return 0;
+      return calculateMarketGoldBonus(portLevel);
+    });
+    // ── XI-004: 城防值→攻城防御 ──
+    this.wallDefense.init(this.building.getLevel('wall'));
+    // ── XI-014: 兵营编队→战斗 ──
+    this.barracksFormation.init(deps);
+    this.barracksFormation.setup(
+      this.building.getLevel('barracks'),
+      () => this.resource.getAmount('troops'),
+      (n) => { try { this.resource.consumeResource('troops' as import('../shared/types').ResourceType, n); return true; } catch { return false; } },
+    );
+    this.barracksTraining.init(
+      this.building.getLevel('barracks'),
+      (type) => this.resource.getAmount(type as import('../shared/types').ResourceType),
+      (type, amount) => { try { this.resource.consumeResource(type as import('../shared/types').ResourceType, amount); return true; } catch { return false; } },
+    );
     // ── 默认数据初始化 ──
     this._initDefaultData();
     this.initialized = true; this.lastTickTime = Date.now();
@@ -471,6 +504,26 @@ export class ThreeKingdomsEngine {
     initOfflineSystems(this.offline, deps);
     initGuideSystems(this.guide, deps);
     this.tutorialGuide.init(deps);
+    // ── XI-012: 市舶司→市集繁荣度加成 ──
+    this.building.setProsperityBonus(() => {
+      const portLevel = this.building.getLevel('port');
+      if (portLevel <= 0) return 0;
+      return calculateMarketGoldBonus(portLevel);
+    });
+    // ── XI-004: 城防值→攻城防御 ──
+    this.wallDefense.init(this.building.getLevel('wall'));
+    // ── XI-014: 兵营编队→战斗 ──
+    this.barracksFormation.init(deps);
+    this.barracksFormation.setup(
+      this.building.getLevel('barracks'),
+      () => this.resource.getAmount('troops'),
+      (n) => { try { this.resource.consumeResource('troops' as import('../shared/types').ResourceType, n); return true; } catch { return false; } },
+    );
+    this.barracksTraining.init(
+      this.building.getLevel('barracks'),
+      (type) => this.resource.getAmount(type as import('../shared/types').ResourceType),
+      (type, amount) => { try { this.resource.consumeResource(type as import('../shared/types').ResourceType, amount); return true; } catch { return false; } },
+    );
     this.initialized = true; this.lastTickTime = Date.now();
   }
 
@@ -920,6 +973,26 @@ export class ThreeKingdomsEngine {
     initOfflineSystems(this.offline, deps);
     initGuideSystems(this.guide, deps);
     this.tutorialGuide.init(deps);
+    // ── XI-012: 市舶司→市集繁荣度加成 ──
+    this.building.setProsperityBonus(() => {
+      const portLevel = this.building.getLevel('port');
+      if (portLevel <= 0) return 0;
+      return calculateMarketGoldBonus(portLevel);
+    });
+    // ── XI-004: 城防值→攻城防御 ──
+    this.wallDefense.init(this.building.getLevel('wall'));
+    // ── XI-014: 兵营编队→战斗 ──
+    this.barracksFormation.init(deps);
+    this.barracksFormation.setup(
+      this.building.getLevel('barracks'),
+      () => this.resource.getAmount('troops'),
+      (n) => { try { this.resource.consumeResource('troops' as import('../shared/types').ResourceType, n); return true; } catch { return false; } },
+    );
+    this.barracksTraining.init(
+      this.building.getLevel('barracks'),
+      (type) => this.resource.getAmount(type as import('../shared/types').ResourceType),
+      (type, amount) => { try { this.resource.consumeResource(type as import('../shared/types').ResourceType, amount); return true; } catch { return false; } },
+    );
     this.initialized = true; this.lastTickTime = Date.now(); this.onlineSeconds = 0; this.autoSaveAccumulator = 0;
   }
 }
