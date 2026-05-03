@@ -777,6 +777,12 @@ export class ThreeKingdomsEngine {
       eventLog: this.eventSystems.log,
       offlineEvent: this.eventSystems.offline,
       siege: this.mapSystems.siege,
+      // XI-007: 武将派驻加成回调 — 聚合所有建筑的武将加成总和
+      heroBonusCallback: () => {
+        const allBonuses = this.heroDispatchSystem.getAllDispatchBonuses();
+        const values = Object.values(allBonuses);
+        return values.length > 0 ? values.reduce((sum, v) => sum + v, 0) / values.length / 100 : 0;
+      },
       bus: this.bus, prevResourcesJson: this.prevResourcesJson, prevRatesJson: this.prevRatesJson,
     };
   }
