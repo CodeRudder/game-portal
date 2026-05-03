@@ -30,15 +30,15 @@ import type { BuildingType } from '../../../shared/types';
 // ═══════════════════════════════════════════════
 describe('V1 BLD-FLOW 建筑系统', () => {
   describe('BLD-FLOW-1: 11座建筑展示与总览', () => {
-    it('should return all 8 building types from getAllBuildingLevels', () => {
-      // BLD-FLOW-1 步骤1: init() → 验证 getAllBuildingLevels() 返回11座建筑
+    it('should return all 12 building types from getAllBuildingLevels', () => {
+      // BLD-FLOW-1 步骤1: init() → 验证 getAllBuildingLevels() 返回12座建筑
       const sim = createSim();
 
       const levels = sim.getAllBuildingLevels();
       const keys = Object.keys(levels) as BuildingType[];
 
-      // 验证包含全部 8 种建筑
-      expect(keys.length).toBe(11);
+      // 验证包含全部 12 种建筑
+      expect(keys.length).toBe(12);
       for (const bt of ALL_BUILDING_TYPES) {
         expect(keys).toContain(bt);
       }
@@ -61,8 +61,12 @@ describe('V1 BLD-FLOW 建筑系统', () => {
 
       const levels = sim.getAllBuildingLevels();
 
-      // 市集和兵营需要主城 Lv2 解锁
-      expect(levels.market).toBe(0);
+      // market, mine, lumberMill 初始解锁（unlockLevel=0），等级为 1
+      expect(levels.market).toBe(1);
+      expect(levels.mine).toBe(1);
+      expect(levels.lumberMill).toBe(1);
+
+      // 兵营需要主城 Lv2 解锁
       expect(levels.barracks).toBe(0);
 
       // 铁匠铺和书院需要主城 Lv3 解锁
@@ -72,8 +76,12 @@ describe('V1 BLD-FLOW 建筑系统', () => {
       // 医馆需要主城 Lv4 解锁
       expect(levels.clinic).toBe(0);
 
-      // 城墙需要主城 Lv5 解锁
+      // 城墙和酒馆需要主城 Lv5 解锁
       expect(levels.wall).toBe(0);
+      expect(levels.tavern).toBe(0);
+
+      // 港口需要主城 Lv8 解锁
+      expect(levels.port).toBe(0);
     });
 
     it('should mark locked buildings with status "locked"', () => {
@@ -82,13 +90,16 @@ describe('V1 BLD-FLOW 建筑系统', () => {
 
       const buildings = sim.engine.building.getAllBuildings();
 
-      // castle 和 farmland 应为 idle
+      // castle, farmland, market, mine, lumberMill 应为 idle（初始解锁）
       expect(buildings.castle.status).toBe('idle');
       expect(buildings.farmland.status).toBe('idle');
+      expect(buildings.market.status).toBe('idle');
+      expect(buildings.mine.status).toBe('idle');
+      expect(buildings.lumberMill.status).toBe('idle');
 
       // 其余建筑应为 locked
       const lockedTypes: BuildingType[] = [
-        'market', 'barracks', 'workshop', 'academy', 'clinic', 'wall',
+        'barracks', 'workshop', 'academy', 'clinic', 'wall', 'tavern', 'port',
       ];
       for (const bt of lockedTypes) {
         expect(buildings[bt].status).toBe('locked');
@@ -108,8 +119,8 @@ describe('V1 BLD-FLOW 建筑系统', () => {
       const buildings = sim.engine.building.getAllBuildings();
       const allTypes = Object.keys(buildings) as BuildingType[];
 
-      // 全部筛选应返回11座建筑
-      expect(allTypes.length).toBe(11);
+      // 全部筛选应返回12座建筑
+      expect(allTypes.length).toBe(12);
       for (const bt of ALL_BUILDING_TYPES) {
         expect(allTypes).toContain(bt);
       }
@@ -124,9 +135,9 @@ describe('V1 BLD-FLOW 建筑系统', () => {
         .filter(([, state]) => state.status !== 'locked')
         .map(([type]) => type);
 
-      // 初始状态只有 castle 和 farmland 解锁
-      expect(unlockedTypes).toEqual(expect.arrayContaining(['castle', 'farmland']));
-      expect(unlockedTypes.length).toBe(2);
+      // 初始状态 castle, farmland, market, mine, lumberMill 解锁
+      expect(unlockedTypes).toEqual(expect.arrayContaining(['castle', 'farmland', 'market', 'mine', 'lumberMill']));
+      expect(unlockedTypes.length).toBe(5);
     });
 
     it('should filter "可升级" to return only buildings with sufficient resources and unlocked', () => {
@@ -298,7 +309,7 @@ describe('V1 BLD-FLOW 建筑系统', () => {
       // BLD-FLOW-2: 锁定建筑不能升级
       const sim = createSim();
 
-      const check = sim.engine.checkUpgrade('market');
+      const check = sim.engine.checkUpgrade('barracks');
       expect(check.canUpgrade).toBe(false);
       expect(check.reasons).toContain('建筑尚未解锁');
     });
@@ -308,7 +319,7 @@ describe('V1 BLD-FLOW 建筑系统', () => {
       const sim = createSim();
 
       expect(() => {
-        sim.engine.upgradeBuilding('market');
+        sim.engine.upgradeBuilding('barracks');
       }).toThrow();
     });
 
@@ -412,16 +423,16 @@ describe('V1 BLD-FLOW 建筑系统', () => {
 
       const snapshotBefore = sim.getSnapshot();
       expect(snapshotBefore.productionRates.grain).toBeGreaterThan(0);
-      expect(snapshotBefore.productionRates.gold).toBe(0); // 市集未解锁
+      // market 初始已解锁（unlockLevel=0），gold 产出 > 0
+      expect(snapshotBefore.productionRates.gold).toBeGreaterThan(0);
 
-      // 解锁并升级市集
+      // 升级市集后 gold 产出应增加
+      const goldBefore = snapshotBefore.productionRates.gold;
       sim.addResources(SUFFICIENT_RESOURCES);
-      sim.upgradeBuildingTo('castle', 2);
-      sim.addResources({ grain: 50000, gold: 50000 });
       sim.upgradeBuilding('market');
 
       const snapshotAfter = sim.getSnapshot();
-      expect(snapshotAfter.productionRates.gold).toBeGreaterThan(0);
+      expect(snapshotAfter.productionRates.gold).toBeGreaterThan(goldBefore);
     });
   });
 
@@ -429,19 +440,22 @@ describe('V1 BLD-FLOW 建筑系统', () => {
   // BLD-FLOW-4: 建筑解锁条件验证
   // ═══════════════════════════════════════════════
   describe('BLD-FLOW-4: 建筑解锁条件验证', () => {
-    it('should only have castle and farmland available at castle Lv1', () => {
-      // BLD-FLOW-4: castle Lv1 时只有 farmland 可用
+    it('should only have castle, farmland, market, mine, lumberMill available at castle Lv1', () => {
+      // BLD-FLOW-4: castle Lv1 时只有初始解锁建筑可用
       const sim = createSim();
 
       const buildings = sim.engine.building.getAllBuildings();
 
-      // castle 和 farmland 已解锁
+      // castle, farmland, market, mine, lumberMill 已解锁
       expect(buildings.castle.status).not.toBe('locked');
       expect(buildings.farmland.status).not.toBe('locked');
+      expect(buildings.market.status).not.toBe('locked');
+      expect(buildings.mine.status).not.toBe('locked');
+      expect(buildings.lumberMill.status).not.toBe('locked');
 
       // 其余建筑锁定
       const shouldLocked: BuildingType[] = [
-        'market', 'barracks', 'workshop', 'academy', 'clinic', 'wall',
+        'barracks', 'workshop', 'academy', 'clinic', 'wall', 'tavern', 'port',
       ];
       for (const bt of shouldLocked) {
         expect(buildings[bt].status).toBe('locked');
@@ -522,11 +536,16 @@ describe('V1 BLD-FLOW 建筑系统', () => {
 
       const buildings = sim.engine.building.getAllBuildings();
 
-      // wall 应已解锁
+      // wall 和 tavern 应已解锁
       expect(buildings.wall.status).not.toBe('locked');
+      expect(buildings.tavern.status).not.toBe('locked');
 
-      // 所有建筑都应已解锁
-      for (const bt of ALL_BUILDING_TYPES) {
+      // port 仍然锁定（需要主城 Lv8）
+      expect(buildings.port.status).toBe('locked');
+
+      // 除 port 外的所有建筑都应已解锁
+      const unlockedAtLv5 = ALL_BUILDING_TYPES.filter(bt => bt !== 'port');
+      for (const bt of unlockedAtLv5) {
         expect(buildings[bt].status).not.toBe('locked');
       }
     });
@@ -577,20 +596,24 @@ describe('V1 BLD-FLOW 建筑系统', () => {
 
       // 使用 setCap 避免资源被截断
       sim.engine.resource.setCap('grain', 50_000_000);
+      sim.engine.resource.setCap('gold', 50_000_000);
       sim.engine.resource.setCap('troops', 10_000_000);
       sim.addResources(MASSIVE_RESOURCES);
 
       // 升级到主城 Lv6（需要先满足前置条件）
       sim.upgradeBuildingTo('castle', 4);
       sim.engine.resource.setCap('grain', 50_000_000);
+      sim.engine.resource.setCap('gold', 50_000_000);
       sim.engine.resource.setCap('troops', 10_000_000);
       sim.addResources({ grain: 5000000, gold: 5000000 });
       sim.upgradeBuildingTo('farmland', 4);
       sim.engine.resource.setCap('grain', 50_000_000);
+      sim.engine.resource.setCap('gold', 50_000_000);
       sim.engine.resource.setCap('troops', 10_000_000);
       sim.addResources(MASSIVE_RESOURCES);
       sim.upgradeBuildingTo('castle', 5);
       sim.engine.resource.setCap('grain', 50_000_000);
+      sim.engine.resource.setCap('gold', 50_000_000);
       sim.engine.resource.setCap('troops', 10_000_000);
       sim.addResources(MASSIVE_RESOURCES);
       sim.upgradeBuildingTo('castle', 6);
@@ -754,13 +777,13 @@ describe('V1 BLD-FLOW 建筑系统', () => {
   // ═══════════════════════════════════════════════
   describe('BLD-FLOW 边界测试', () => {
     it('should enforce building level caps [BLD-FLOW-2 边界]', () => {
-      // 建筑等级上限：主城30、农田/市集/兵营25、铁匠铺/书院/医馆/城墙20
+      // 建筑等级上限：主城30、农田/市集/矿场/伐木场/兵营25、铁匠铺/书院/医馆/城墙/酒馆/港口20
       const sim = createSim();
 
       const buildings = sim.engine.building.getAllBuildings();
       const maxLevels = {
-        castle: 30, farmland: 25, market: 25, barracks: 25,
-        workshop: 20, academy: 20, clinic: 20, wall: 20,
+        castle: 30, farmland: 25, market: 25, mine: 25, lumberMill: 25, barracks: 25,
+        workshop: 20, academy: 20, clinic: 20, wall: 20, tavern: 20, port: 20,
       };
 
       for (const [type, maxLevel] of Object.entries(maxLevels)) {
@@ -775,11 +798,15 @@ describe('V1 BLD-FLOW 建筑系统', () => {
       expect(maxLevels.castle).toBe(30);
       expect(maxLevels.farmland).toBe(25);
       expect(maxLevels.market).toBe(25);
+      expect(maxLevels.mine).toBe(25);
+      expect(maxLevels.lumberMill).toBe(25);
       expect(maxLevels.barracks).toBe(25);
       expect(maxLevels.workshop).toBe(20);
       expect(maxLevels.academy).toBe(20);
       expect(maxLevels.clinic).toBe(20);
       expect(maxLevels.wall).toBe(20);
+      expect(maxLevels.tavern).toBe(20);
+      expect(maxLevels.port).toBe(20);
     });
 
     it('should sort buildings by name [BLD-FLOW-1 步骤12]', () => {
@@ -788,8 +815,9 @@ describe('V1 BLD-FLOW 建筑系统', () => {
 
       const buildings = sim.engine.building.getAllBuildings();
       const BUILDING_LABELS: Record<BuildingType, string> = {
-        castle: '主城', farmland: '农田', market: '市集', barracks: '兵营',
-        workshop: '铁匠铺', academy: '书院', clinic: '医馆', wall: '城墙',
+        castle: '主城', farmland: '农田', market: '市集', mine: '矿场',
+        lumberMill: '伐木场', barracks: '兵营', workshop: '铁匠铺', academy: '书院',
+        clinic: '医馆', wall: '城墙', tavern: '酒馆', port: '港口',
       };
 
       const sortedByName = (Object.keys(buildings) as BuildingType[])
