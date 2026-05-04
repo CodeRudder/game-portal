@@ -13,6 +13,7 @@
 import type { ParsedMap, ASCIITerrain } from '@/games/three-kingdoms/core/map/ASCIIMapParser';
 import type { GridPosition } from '@/games/three-kingdoms/core/map/world-map.types';
 import { LANDMARK_POSITIONS } from '@/games/three-kingdoms/core/map/map-config';
+import type { WalkabilityGrid } from '@/games/three-kingdoms/core/map/territory-config';
 
 // 重新导出核心层类型和函数，保持向后兼容
 export type { WalkabilityGrid } from '@/games/three-kingdoms/core/map/territory-config';

@@ -209,7 +209,7 @@ const ThreeKingdomsGame: React.FC = () => {
       return {
         resources: { grain: 0, gold: 0, ore: 0, wood: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
         productionRates: { grain: 0, gold: 0, ore: 0, wood: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
-        caps: { grain: 0, gold: 0, ore: 0, wood: 0, troops: 0, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
+        caps: { grain: 0, gold: null, ore: 0, wood: 0, troops: 0, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
         buildings: {
           castle: defaultBuildingState('castle'),
           farmland: defaultBuildingState('farmland'),
@@ -254,7 +254,7 @@ const ThreeKingdomsGame: React.FC = () => {
       return {
         resources: { grain: 0, gold: 0, ore: 0, wood: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
         productionRates: { grain: 0, gold: 0, ore: 0, wood: 0, troops: 0, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 },
-        caps: { grain: 0, gold: 0, ore: 0, wood: 0, troops: 0, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
+        caps: { grain: 0, gold: null, ore: 0, wood: 0, troops: 0, mandate: null, techPoint: null, recruitToken: null, skillBook: null },
         buildings: {
           castle: defaultBuildingState('castle'),
           farmland: defaultBuildingState('farmland'),

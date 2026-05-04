@@ -8,7 +8,7 @@
  * 规则：可引用 BuildingSystem 和 building-config，禁止引用其他域的 System
  */
 
-import type { BuildingType, UpgradeCost } from '../../../shared/types';
+import type { BuildingType, UpgradeCost } from '../../shared/types';
 import { BUILDING_TYPES, BUILDING_ZONES } from './building.types';
 import { BUILDING_DEFS, BUILDING_MAX_LEVELS } from './building-config';
 import type { BuildingSystem } from './BuildingSystem';
@@ -86,9 +86,9 @@ const MILITARY_PRIORITY: readonly BuildingType[] = [
 ] as const;
 
 /** 资源保护检查中使用的费用字段 */
-const COST_RESOURCE_FIELDS: readonly (keyof UpgradeCost)[] = [
+const COST_RESOURCE_FIELDS = [
   'grain', 'gold', 'ore', 'wood', 'troops',
-] as const;
+] as const satisfies ReadonlyArray<keyof UpgradeCost>;
 
 // ── 默认配置 ──
 
