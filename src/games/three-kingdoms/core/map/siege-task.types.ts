@@ -23,7 +23,8 @@ export type SiegeTaskStatus =
   | 'sieging'     // 攻城中（城防衰减/战斗过程）
   | 'settling'    // 结算中（计算伤亡/奖励）
   | 'returning'   // 回城中（编队沿原路返回）
-  | 'completed';  // 已完成（结果已展示，编队已回收）
+  | 'completed'   // 已完成（结果已展示，编队已回收）
+  | 'paused';     // 已暂停（攻城中断，等待恢复/取消）
 
 /** 攻占任务状态是否为终态 */
 export function isTerminalStatus(status: SiegeTaskStatus): boolean {
@@ -82,6 +83,20 @@ export interface SiegeTask {
   marchPath: Array<{ x: number; y: number }>;
   /** 攻城结果（攻城完成后填充） */
   result: SiegeTaskResult | null;
+  /** 暂停时间戳（仅在 paused 状态有值） */
+  pausedAt: number | null;
+  /** 暂停快照（保存攻城进度用于恢复/重连） */
+  pauseSnapshot: SiegePauseSnapshot | null;
+  /** 发起攻城的阵营 */
+  faction: 'wei' | 'shu' | 'wu' | 'neutral';
+}
+
+/** 攻城暂停进度快照 */
+export interface SiegePauseSnapshot {
+  /** 暂停时的城防比值 (0~1) */
+  defenseRatio: number;
+  /** 暂停时已过战斗时间 (ms) */
+  elapsedBattleTime: number;
 }
 
 /** 攻占任务结果 */
@@ -120,6 +135,35 @@ export interface SiegeTaskStatusChangedEvent {
   to: SiegeTaskStatus;
   /** 任务数据快照 */
   task: SiegeTask;
+}
+
+// ─────────────────────────────────────────────
+// 任务摘要（用于 UI 展示）
+// ─────────────────────────────────────────────
+
+/** 攻占任务摘要（UI 面板展示用） */
+export interface SiegeTaskSummary {
+  /** 任务ID */
+  taskId: string;
+  /** 目标领土名称 */
+  targetName: string;
+  /** 当前状态 */
+  status: SiegeTaskStatus;
+  /** 攻城策略 */
+  strategy: SiegeStrategyType | null;
+  /** 行军进度百分比（0~100），仅 marching 时有值 */
+  marchProgress: number | null;
+  /** 攻城进度百分比（0~100），仅 sieging 时有值 */
+  siegeProgress: number | null;
+  /** 结果（victory/defeat），仅 completed 时有值 */
+  result: 'victory' | 'defeat' | null;
+  /** 奖励信息（仅 completed 且 victory 时有值） */
+  rewards: {
+    rewardMultiplier: number;
+    territoryCaptured: boolean;
+  } | null;
+  /** 奖励是否已领取 */
+  rewardClaimed: boolean;
 }
 
 // ─────────────────────────────────────────────

@@ -1005,3 +1005,54 @@ describe('getDefenseBarColor 平滑颜色插值', () => {
     }
   });
 });
+
+// ── R19: Defense Recovery in Completed Phase ──
+
+describe('R19: Defense recovery visualization in completed phase', () => {
+  function createCompletedAnim(defenseRatio: number, victory: boolean): SiegeAnimationState {
+    return {
+      taskId: 'recovery-1',
+      targetId: 'city-xuchang',
+      targetX: 37,
+      targetY: 26,
+      sourceX: 50,
+      sourceY: 23,
+      strategy: 'forceAttack',
+      phase: 'completed',
+      victory,
+      defenseRatio,
+      startedAt: Date.now() - 30000,
+      completedAt: Date.now(),
+    };
+  }
+
+  it('renders defense recovery percentage for defeat with defenseRatio > 0', () => {
+    const anim = createCompletedAnim(0.5, false);
+    renderWithSiegeAnims([anim]);
+
+    // fillText should be called with '50%' somewhere (defense recovery percentage)
+    const fillTextCalls = mockCtx.fillText.mock.calls;
+    const pctCall = fillTextCalls.find((call: unknown[]) => typeof call[0] === 'string' && call[0].includes('50%'));
+    expect(pctCall).toBeTruthy();
+  });
+
+  it('does not render recovery for victory', () => {
+    const anim = createCompletedAnim(0.8, true);
+    renderWithSiegeAnims([anim]);
+
+    // Victory phase renders gold flag, not defense recovery
+    const fillTextCalls = mockCtx.fillText.mock.calls;
+    const pctCall = fillTextCalls.find((call: unknown[]) => typeof call[0] === 'string' && call[0].includes('80%'));
+    expect(pctCall).toBeUndefined();
+  });
+
+  it('does not render recovery bar when defenseRatio is 0', () => {
+    const anim = createCompletedAnim(0, false);
+    renderWithSiegeAnims([anim]);
+
+    // defenseRatio === 0 means no recovery bar rendered
+    const fillTextCalls = mockCtx.fillText.mock.calls;
+    const pctCall = fillTextCalls.find((call: unknown[]) => typeof call[0] === 'string' && call[0].includes('0%'));
+    expect(pctCall).toBeUndefined();
+  });
+});

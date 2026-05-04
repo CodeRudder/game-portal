@@ -75,6 +75,7 @@ function createTaskToSieging(
     expedition: defaultExpedition(troops),
     cost: { troops: 500, grain: 200 },
     marchPath: [{ x: 0, y: 0 }, { x: 100, y: 100 }],
+    faction: 'wei' as const,
   });
   taskManager.advanceStatus(task.id, 'marching');
   taskManager.advanceStatus(task.id, 'sieging');

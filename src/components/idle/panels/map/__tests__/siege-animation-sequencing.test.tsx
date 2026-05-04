@@ -394,6 +394,16 @@ vi.mock('@/games/three-kingdoms/engine/map/SiegeTaskManager', () => {
           if (task.status === 'completed') tasks.delete(id);
         }
       }
+      claimReward(taskId: string) {
+        const task = tasks.get(taskId);
+        if (!task || !task.result?.victory || this._claimed.has(taskId)) return false;
+        this._claimed.add(taskId);
+        return true;
+      }
+      getClaimedRewards() {
+        return new Set(this._claimed);
+      }
+      _claimed: Set<string> = new Set();
     },
   };
 });

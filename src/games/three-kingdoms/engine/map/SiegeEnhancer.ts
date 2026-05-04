@@ -30,6 +30,9 @@ import type { TerritoryData, OwnershipStatus } from '../../core/map';
 // 配置常量
 // ─────────────────────────────────────────────
 
+/** 三大都城ID */
+const CAPITAL_CITY_IDS = new Set(['city-luoyang', 'city-changan', 'city-jianye']);
+
 /**
  * 胜率公式常量（PRD §7.6 线性比率公式）
  *
@@ -187,7 +190,7 @@ export class SiegeEnhancer implements ISubsystem {
     let typeMultiplier = 1.0;
     if (territory.id.includes('pass-')) {
       typeMultiplier = SIEGE_REWARD_CONFIG.passBonusMultiplier;
-    } else if (territory.id.includes('capital-')) {
+    } else if (CAPITAL_CITY_IDS.has(territory.id)) {
       typeMultiplier = SIEGE_REWARD_CONFIG.capitalBonusMultiplier;
     }
 

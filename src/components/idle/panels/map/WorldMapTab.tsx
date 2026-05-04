@@ -1162,7 +1162,16 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
           },
       cost: costEstimate,
       marchPath: route.path.map((p) => ({ x: p.x, y: p.y })),
+      faction: 'wei',
     });
+
+    if (!task) {
+      // 攻城锁被占用，无法创建任务
+      setMarchNotification('该城池正在被攻占中');
+      setSiegeVisible(false);
+      setSiegeTarget(null);
+      return;
+    }
 
     // 4. 创建行军单位并开始行军
     const pathWithPixels = route.path.map((p) => ({ x: p.x, y: p.y }));
@@ -1649,6 +1658,24 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
         onFocusMarchRoute={handleFocusMarchRoute}
         defenseRatios={defenseRatiosMap}
         returnETAs={returnETAsMap}
+        onClaimReward={(taskId: string) => {
+          siegeTaskManagerRef.current.claimReward(taskId);
+        }}
+        claimedRewardTaskIds={siegeTaskManagerRef.current.getClaimedRewards()}
+        onPauseSiege={(taskId: string) => {
+          const task = siegeTaskManagerRef.current.getTask(taskId);
+          const snapshot = task?.pauseSnapshot ? undefined : {
+            defenseRatio: defenseRatiosMap[taskId] ?? 1,
+            elapsedBattleTime: task ? Date.now() - task.createdAt : 0,
+          };
+          siegeTaskManagerRef.current.pauseSiege(taskId, snapshot);
+        }}
+        onResumeSiege={(taskId: string) => {
+          siegeTaskManagerRef.current.resumeSiege(taskId);
+        }}
+        onCancelSiege={(taskId: string) => {
+          siegeTaskManagerRef.current.cancelSiege(taskId, marchingSystemRef.current);
+        }}
       />
 
       {/* ── 离线奖励弹窗 ── */}

@@ -28,6 +28,7 @@ describe('SiegeTaskManager', () => {
         },
         cost: { troops: 2000, grain: 500 },
         marchPath: [{ x: 10, y: 20 }, { x: 15, y: 25 }],
+        faction: 'wei' as const,
       });
 
       expect(task.id).toMatch(/^siege-task-\d+$/);
@@ -64,6 +65,7 @@ describe('SiegeTaskManager', () => {
         expedition: { forceId: 'f1', heroId: 'h1', heroName: '张飞', troops: 1000 },
         cost: { troops: 500, grain: 200 },
         marchPath: [],
+        faction: 'wei' as const,
       });
 
       expect(events).toHaveLength(1);
@@ -80,6 +82,7 @@ describe('SiegeTaskManager', () => {
         expedition: { forceId: 'f1', heroId: 'h1', heroName: 'H1', troops: 100 },
         cost: { troops: 50, grain: 10 },
         marchPath: [],
+        faction: 'wei' as const,
       });
 
       const transitions: SiegeTaskStatus[] = ['marching', 'sieging', 'settling', 'returning', 'completed'];
@@ -98,6 +101,7 @@ describe('SiegeTaskManager', () => {
         expedition: { forceId: 'f1', heroId: 'h1', heroName: 'H1', troops: 100 },
         cost: { troops: 50, grain: 10 },
         marchPath: [],
+        faction: 'wei' as const,
       });
 
       // preparing → sieging 是非法的 (必须先经过 marching)
@@ -114,6 +118,7 @@ describe('SiegeTaskManager', () => {
         expedition: { forceId: 'f1', heroId: 'h1', heroName: 'H1', troops: 100 },
         cost: { troops: 50, grain: 10 },
         marchPath: [],
+        faction: 'wei' as const,
       });
 
       manager.advanceStatus(task.id, 'marching');
@@ -135,6 +140,7 @@ describe('SiegeTaskManager', () => {
         expedition: { forceId: 'f1', heroId: 'h1', heroName: 'H1', troops: 100 },
         cost: { troops: 50, grain: 10 },
         marchPath: [],
+        faction: 'wei' as const,
       });
 
       manager.advanceStatus(task.id, 'marching');
@@ -168,6 +174,7 @@ describe('SiegeTaskManager', () => {
         expedition: { forceId: 'f1', heroId: 'h1', heroName: 'H1', troops: 100 },
         cost: { troops: 50, grain: 10 },
         marchPath: [],
+        faction: 'wei' as const,
       });
 
       manager.advanceStatus(task.id, 'marching');
@@ -193,13 +200,15 @@ describe('SiegeTaskManager', () => {
         targetId: 't1', targetName: 'T1', sourceId: 's1', sourceName: 'S1',
         strategy: null,
         expedition: { forceId: 'f1', heroId: 'h1', heroName: 'H1', troops: 100 },
-        cost: { troops: 50, grain: 10 }, marchPath: [],
+        cost: { troops: 50, grain: 10 }, marchPath: [], faction: 'wei' as const,
+        faction: 'wei' as const,
       });
       const t2 = manager.createTask({
         targetId: 't2', targetName: 'T2', sourceId: 's1', sourceName: 'S1',
         strategy: null,
         expedition: { forceId: 'f2', heroId: 'h2', heroName: 'H2', troops: 100 },
-        cost: { troops: 50, grain: 10 }, marchPath: [],
+        cost: { troops: 50, grain: 10 }, marchPath: [], faction: 'wei' as const,
+        faction: 'wei' as const,
       });
 
       // 完成 t2
@@ -219,7 +228,8 @@ describe('SiegeTaskManager', () => {
         targetId: 'city-xuchang', targetName: '许昌', sourceId: 's1', sourceName: 'S1',
         strategy: null,
         expedition: { forceId: 'f1', heroId: 'h1', heroName: 'H1', troops: 100 },
-        cost: { troops: 50, grain: 10 }, marchPath: [],
+        cost: { troops: 50, grain: 10 }, marchPath: [], faction: 'wei' as const,
+        faction: 'wei' as const,
       });
 
       const found = manager.getTaskByTarget('city-xuchang');
@@ -234,7 +244,8 @@ describe('SiegeTaskManager', () => {
         targetId: 'city-a', targetName: 'A', sourceId: 's1', sourceName: 'S1',
         strategy: null,
         expedition: { forceId: 'f1', heroId: 'h1', heroName: 'H1', troops: 100 },
-        cost: { troops: 50, grain: 10 }, marchPath: [],
+        cost: { troops: 50, grain: 10 }, marchPath: [], faction: 'wei' as const,
+        faction: 'wei' as const,
       });
 
       expect(manager.isTargetUnderSiege('city-a')).toBe(true);
@@ -246,13 +257,15 @@ describe('SiegeTaskManager', () => {
         targetId: 't1', targetName: 'T1', sourceId: 's1', sourceName: 'S1',
         strategy: null,
         expedition: { forceId: 'f1', heroId: 'h1', heroName: 'H1', troops: 100 },
-        cost: { troops: 50, grain: 10 }, marchPath: [],
+        cost: { troops: 50, grain: 10 }, marchPath: [], faction: 'wei' as const,
+        faction: 'wei' as const,
       });
       manager.createTask({
         targetId: 't2', targetName: 'T2', sourceId: 's1', sourceName: 'S1',
         strategy: null,
         expedition: { forceId: 'f2', heroId: 'h2', heroName: 'H2', troops: 100 },
-        cost: { troops: 50, grain: 10 }, marchPath: [],
+        cost: { troops: 50, grain: 10 }, marchPath: [], faction: 'wei' as const,
+        faction: 'wei' as const,
       });
 
       manager.advanceStatus(t1.id, 'marching');
@@ -268,7 +281,8 @@ describe('SiegeTaskManager', () => {
         targetId: 't1', targetName: 'T1', sourceId: 's1', sourceName: 'S1',
         strategy: 'forceAttack',
         expedition: { forceId: 'f1', heroId: 'h1', heroName: 'H1', troops: 100 },
-        cost: { troops: 50, grain: 10 }, marchPath: [],
+        cost: { troops: 50, grain: 10 }, marchPath: [], faction: 'wei' as const,
+        faction: 'wei' as const,
       });
 
       manager.setResult(task.id, {
@@ -298,7 +312,7 @@ describe('SiegeTaskManager', () => {
         targetId: 't1', targetName: 'T1', sourceId: 's1', sourceName: 'S1',
         strategy: 'siege',
         expedition: { forceId: 'f1', heroId: 'h1', heroName: 'H1', troops: 100 },
-        cost: { troops: 50, grain: 10 }, marchPath: [{ x: 1, y: 2 }],
+        cost: { troops: 50, grain: 10 }, marchPath: [{ x: 1, y: 2 }], faction: 'wei' as const,
       });
       manager.advanceStatus(task.id, 'marching');
 
@@ -319,7 +333,8 @@ describe('SiegeTaskManager', () => {
         targetId: 't1', targetName: 'T1', sourceId: 's1', sourceName: 'S1',
         strategy: null,
         expedition: { forceId: 'f1', heroId: 'h1', heroName: 'H1', troops: 100 },
-        cost: { troops: 50, grain: 10 }, marchPath: [],
+        cost: { troops: 50, grain: 10 }, marchPath: [], faction: 'wei' as const,
+        faction: 'wei' as const,
       });
 
       const data = manager.serialize();
@@ -331,7 +346,8 @@ describe('SiegeTaskManager', () => {
         targetId: 't2', targetName: 'T2', sourceId: 's1', sourceName: 'S1',
         strategy: null,
         expedition: { forceId: 'f2', heroId: 'h2', heroName: 'H2', troops: 100 },
-        cost: { troops: 50, grain: 10 }, marchPath: [],
+        cost: { troops: 50, grain: 10 }, marchPath: [], faction: 'wei' as const,
+        faction: 'wei' as const,
       });
 
       // 新ID应大于已有ID
@@ -345,7 +361,8 @@ describe('SiegeTaskManager', () => {
         targetId: 't1', targetName: 'T1', sourceId: 's1', sourceName: 'S1',
         strategy: null,
         expedition: { forceId: 'f1', heroId: 'h1', heroName: 'H1', troops: 100 },
-        cost: { troops: 50, grain: 10 }, marchPath: [],
+        cost: { troops: 50, grain: 10 }, marchPath: [], faction: 'wei' as const,
+        faction: 'wei' as const,
       });
 
       // 完成 t1
@@ -360,7 +377,8 @@ describe('SiegeTaskManager', () => {
         targetId: 't2', targetName: 'T2', sourceId: 's1', sourceName: 'S1',
         strategy: null,
         expedition: { forceId: 'f2', heroId: 'h2', heroName: 'H2', troops: 100 },
-        cost: { troops: 50, grain: 10 }, marchPath: [],
+        cost: { troops: 50, grain: 10 }, marchPath: [], faction: 'wei' as const,
+        faction: 'wei' as const,
       });
 
       const removed = manager.removeCompletedTasks();

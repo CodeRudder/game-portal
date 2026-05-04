@@ -260,8 +260,9 @@ describe('SiegeEnhancer', () => {
       const reward = systems.enhancer.calculateSiegeReward(territory);
 
       expect(reward.territoryExp).toBeGreaterThan(0);
+      // 洛阳是都城, 获得2倍加成
       expect(reward.territoryExp).toBe(
-        SIEGE_REWARD_CONFIG.baseTerritoryExp * territory.level,
+        SIEGE_REWARD_CONFIG.baseTerritoryExp * territory.level * SIEGE_REWARD_CONFIG.capitalBonusMultiplier,
       );
     });
 
@@ -284,10 +285,12 @@ describe('SiegeEnhancer', () => {
       const territory = systems.territory.getTerritoryById('city-luoyang')!;
       const reward = systems.enhancer.calculateSiegeReward(territory);
 
-      expect(reward.resources.grain).toBe(SIEGE_REWARD_CONFIG.baseGrain * territory.level);
-      expect(reward.resources.gold).toBe(SIEGE_REWARD_CONFIG.baseGold * territory.level);
-      expect(reward.resources.troops).toBe(SIEGE_REWARD_CONFIG.baseTroops * territory.level);
-      expect(reward.resources.mandate).toBe(SIEGE_REWARD_CONFIG.baseMandate * territory.level);
+      // 洛阳是都城, 获得2倍加成
+      const capitalMultiplier = SIEGE_REWARD_CONFIG.capitalBonusMultiplier;
+      expect(reward.resources.grain).toBe(SIEGE_REWARD_CONFIG.baseGrain * territory.level * capitalMultiplier);
+      expect(reward.resources.gold).toBe(SIEGE_REWARD_CONFIG.baseGold * territory.level * capitalMultiplier);
+      expect(reward.resources.troops).toBe(SIEGE_REWARD_CONFIG.baseTroops * territory.level * capitalMultiplier);
+      expect(reward.resources.mandate).toBe(SIEGE_REWARD_CONFIG.baseMandate * territory.level * capitalMultiplier);
     });
   });
 

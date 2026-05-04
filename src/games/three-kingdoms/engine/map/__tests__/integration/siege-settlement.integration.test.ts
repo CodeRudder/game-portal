@@ -205,6 +205,7 @@ describe('Siege Settlement Integration', () => {
       },
       cost: { troops: 500, grain: 200 },
       marchPath: [{ x: 0, y: 0 }, { x: 100, y: 100 }],
+      faction: 'wei' as const,
     });
 
     // 推进到 sieging 状态
@@ -227,7 +228,7 @@ describe('Siege Settlement Integration', () => {
       targetDefenseLevel: 1,
       targetX: 10,
       targetY: 5,
-      faction: 'wei',
+      faction: 'wei' as const,
     });
 
     // 推进战斗直到完成 (baseDuration=15s - strategyModifier=-5s = 10s for forceAttack)
@@ -309,6 +310,7 @@ describe('Siege Settlement Integration', () => {
         },
         cost: { troops: 300, grain: 100 },
         marchPath: [{ x: 0, y: 0 }],
+        faction: 'wei' as const,
       });
       taskManager.advanceStatus(task.id, 'marching');
       taskManager.advanceStatus(task.id, 'sieging');
@@ -323,7 +325,7 @@ describe('Siege Settlement Integration', () => {
         targetDefenseLevel: i,
         targetX: i * 10,
         targetY: i * 5,
-        faction: 'wei',
+        faction: 'wei' as const,
       });
     }
 

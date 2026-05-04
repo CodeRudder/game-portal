@@ -836,6 +836,32 @@ function renderCompletedPhase(
       const smokeSize = Math.max(2, pixelUnit * (1 + phase));
       ctx.fillRect(Math.round(sx - smokeSize / 2), Math.round(sy - smokeSize / 2), smokeSize, smokeSize);
     }
+
+    // Defense recovery indicator (defeat with recovering defense)
+    if (anim.defenseRatio > 0) {
+      const barW = ts * 2;
+      const barH = Math.max(2, pixelUnit * 0.5);
+      const barX = cx - barW / 2;
+      const barY = cy + ts * 1.5;
+
+      // Background
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = '#333';
+      ctx.fillRect(barX, barY, barW, barH);
+
+      // Recovery fill
+      ctx.globalAlpha = 0.7;
+      const recoveryColor = anim.defenseRatio > 0.6 ? '#4caf50' : anim.defenseRatio > 0.3 ? '#ffc107' : '#f44336';
+      ctx.fillStyle = recoveryColor;
+      ctx.fillRect(barX, barY, barW * anim.defenseRatio, barH);
+
+      // Recovery percentage text
+      ctx.globalAlpha = 0.8;
+      ctx.fillStyle = '#fff';
+      ctx.font = `${Math.max(8, pixelUnit * 1.5)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.fillText(`${Math.round(anim.defenseRatio * 100)}%`, cx, barY + barH + pixelUnit * 1.5);
+    }
   }
 
   ctx.globalAlpha = 1.0;

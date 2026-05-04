@@ -336,8 +336,9 @@ describe('GAP-02: 攻城奖励链路测试', () => {
     it('奖励公式 = base × level × typeMultiplier', () => {
       const t = s.territory.getTerritoryById('city-luoyang')!;
       const r = s.enhancer.calculateSiegeReward(t);
-      expect(r.resources.grain).toBe(SIEGE_REWARD_CONFIG.baseGrain * t.level);
-      expect(r.resources.gold).toBe(SIEGE_REWARD_CONFIG.baseGold * t.level);
+      // 洛阳是都城, 获得2倍加成
+      expect(r.resources.grain).toBe(SIEGE_REWARD_CONFIG.baseGrain * t.level * SIEGE_REWARD_CONFIG.capitalBonusMultiplier);
+      expect(r.resources.gold).toBe(SIEGE_REWARD_CONFIG.baseGold * t.level * SIEGE_REWARD_CONFIG.capitalBonusMultiplier);
     });
 
     it('关卡有passBonusMultiplier=1.5加成', () => {
@@ -447,11 +448,10 @@ describe('GAP-02: 攻城奖励链路测试', () => {
       expect(s.territory.getTerritoryById('city-jianye')).not.toBeNull();
     });
 
-    it('当前: 都城按普通城池计算（无capital加成）', () => {
+    it('都城获得capitalBonusMultiplier=2.0加成', () => {
       const luoyang = s.territory.getTerritoryById('city-luoyang')!;
       const r = s.enhancer.calculateSiegeReward(luoyang);
-      expect(r.resources.grain).toBe(SIEGE_REWARD_CONFIG.baseGrain * luoyang.level);
-      // TODO-03: 实现后应为 baseGrain × level × capitalBonusMultiplier(2.0)
+      expect(r.resources.grain).toBe(SIEGE_REWARD_CONFIG.baseGrain * luoyang.level * SIEGE_REWARD_CONFIG.capitalBonusMultiplier);
     });
 
     it('PRD都城加成参数 capitalBonusMultiplier=2.0', () => {
@@ -503,14 +503,15 @@ describe('GAP-02: 攻城奖励链路测试', () => {
   describe('奖励计算边界条件', () => {
     it('等级1和等级5领土奖励验证', () => {
       const all = s.territory.getAllTerritories();
-      const lv1 = all.find(t => t.level === 1);
+      const lv1 = all.find(t => t.level === 1 && !t.id.startsWith('pass-'));
       if (lv1) {
         const r = s.enhancer.calculateSiegeReward(lv1);
         expect(r.resources.grain).toBe(SIEGE_REWARD_CONFIG.baseGrain);
       }
       const lv5 = s.territory.getTerritoryById('city-luoyang')!;
       const r5 = s.enhancer.calculateSiegeReward(lv5);
-      expect(r5.resources.grain).toBe(SIEGE_REWARD_CONFIG.baseGrain * 5);
+      // 洛阳是都城, 获得2倍加成
+      expect(r5.resources.grain).toBe(SIEGE_REWARD_CONFIG.baseGrain * 5 * SIEGE_REWARD_CONFIG.capitalBonusMultiplier);
     });
 
     it('不存在的领土返回null', () => {
@@ -649,6 +650,7 @@ describe('GAP-01 + GAP-02 交叉验证', () => {
     const production = luoyang.currentProduction;
     const m = calcMultiplier(0);
     expect(production.grain * m).toBeCloseTo(production.grain * 0.5, 2);
-    expect(reward.resources.grain).toBe(SIEGE_REWARD_CONFIG.baseGrain * luoyang.level);
+    // 洛阳是都城, 获得2倍加成
+    expect(reward.resources.grain).toBe(SIEGE_REWARD_CONFIG.baseGrain * luoyang.level * SIEGE_REWARD_CONFIG.capitalBonusMultiplier);
   });
 });

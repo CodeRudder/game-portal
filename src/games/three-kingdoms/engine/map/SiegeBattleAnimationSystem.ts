@@ -62,6 +62,8 @@ export interface SiegeAnimConfig {
   assemblyDurationMs: number;
   /** 完成后延迟移除 (ms) */
   completedLingerMs: number;
+  /** 城防自然恢复速率 (每秒恢复的比例, 默认 0.05 = 5%/s) */
+  defenseRecoveryRate?: number;
 }
 
 /** 攻城动画系统状态快照 */
@@ -115,6 +117,7 @@ export interface SiegeAnimCompletedEvent {
 const DEFAULT_ANIM_CONFIG: SiegeAnimConfig = {
   assemblyDurationMs: 3_000,   // 集结3秒
   completedLingerMs: 2_000,    // 完成后停留2秒
+  defenseRecoveryRate: 0.05,   // 每秒恢复5%
 };
 
 /** 序列化版本号 */
@@ -259,6 +262,12 @@ export class SiegeBattleAnimationSystem implements ISubsystem {
         if (completedElapsed != null && this.totalElapsedMs - completedElapsed >= this.config.completedLingerMs) {
           toRemove.push(taskId);
         }
+      }
+
+      // Defense recovery: completed animations where siege failed slowly recover defense
+      if (anim.phase === 'completed' && anim.victory === false && anim.defenseRatio < 1.0) {
+        const recoveryRate = this.config.defenseRecoveryRate ?? 0.05;
+        anim.defenseRatio = Math.min(1.0, anim.defenseRatio + recoveryRate * dt);
       }
     }
 
@@ -479,6 +488,32 @@ export class SiegeBattleAnimationSystem implements ISubsystem {
       if (anim.phase === phase) count++;
     }
     return count;
+  }
+
+  /**
+   * 手动恢复指定任务的城防比值
+   *
+   * 用于攻城结束后城防的自然恢复。
+   * 仅对已完成且未胜利的动画生效。
+   *
+   * @param taskId - 攻占任务ID
+   * @param amount - 恢复量 (0~1)
+   */
+  recoverDefense(taskId: string, amount: number): void {
+    const anim = this.animations.get(taskId);
+    if (!anim) return;
+    if (anim.phase !== 'completed' || anim.victory !== false) return;
+
+    anim.defenseRatio = Math.min(1.0, anim.defenseRatio + Math.max(0, amount));
+  }
+
+  /**
+   * 获取城防恢复速率配置
+   *
+   * @returns 每秒恢复比例
+   */
+  getDefenseRecoveryRate(): number {
+    return this.config.defenseRecoveryRate ?? 0.05;
   }
 
   // ── 序列化 ──────────────────────────────────

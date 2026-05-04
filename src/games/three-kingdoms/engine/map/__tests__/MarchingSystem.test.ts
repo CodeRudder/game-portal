@@ -541,6 +541,173 @@ describe('MarchingSystem', () => {
     });
   });
 
+  // ── 行军时长钳位约束 ───────────────────────
+
+  describe('March duration clamp constraints', () => {
+    // BASE_SPEED = 30 px/s
+    // rawEstimatedTime = (distance / 30) * 1000  (ms)
+    // clamp to [10_000, 60_000] ms → /1000 → seconds
+
+    /**
+     * Helper: generate a straight-line path of the given pixel length.
+     * All points lie on the x-axis for easy distance control.
+     */
+    function makeStraightPath(totalDistance: number): Array<{ x: number; y: number }> {
+      return [
+        { x: 0, y: 0 },
+        { x: totalDistance, y: 0 },
+      ];
+    }
+
+    // ── Short distance: clamped to MIN (10s) ──
+
+    it('short distance march: calculated duration < 10s → clamped to 10s', () => {
+      // distance = 150px → raw = (150/30)*1000 = 5000ms < 10000ms → clamp to 10s
+      const shortPath = makeStraightPath(150);
+
+      const march = system.createMarch('city-a', 'city-b', 1000, '张飞', 'shu', shortPath);
+
+      expect(march.eta - march.startTime).toBeGreaterThanOrEqual(10_000);
+      // Verify via the march:created event payload
+      const createdCalls = (deps.eventBus.emit as ReturnType<typeof vi.fn>).mock.calls.filter(
+        call => call[0] === 'march:created',
+      );
+      expect(createdCalls.length).toBeGreaterThanOrEqual(1);
+      const payload = createdCalls[createdCalls.length - 1][1];
+      expect(payload.estimatedTime).toBe(10);
+    });
+
+    it('short distance: generatePreview also clamps to 10s', () => {
+      const shortPath = makeStraightPath(50); // (50/30)*1000 ≈ 1667ms → clamp to 10s
+
+      const preview = system.generatePreview(shortPath);
+
+      expect(preview.estimatedTime).toBe(10);
+    });
+
+    // ── Long distance: clamped to MAX (60s) ──
+
+    it('long distance march: calculated duration > 60s → clamped to 60s', () => {
+      // distance = 3000px → raw = (3000/30)*1000 = 100_000ms > 60_000ms → clamp to 60s
+      const longPath = makeStraightPath(3000);
+
+      const march = system.createMarch('city-a', 'city-b', 2000, '关羽', 'shu', longPath);
+
+      // ETA should be at most startTime + 60s
+      expect(march.eta - march.startTime).toBeLessThanOrEqual(60_000);
+      // Verify via the march:created event payload
+      const createdCalls = (deps.eventBus.emit as ReturnType<typeof vi.fn>).mock.calls.filter(
+        call => call[0] === 'march:created',
+      );
+      expect(createdCalls.length).toBeGreaterThanOrEqual(1);
+      const payload = createdCalls[createdCalls.length - 1][1];
+      expect(payload.estimatedTime).toBe(60);
+    });
+
+    it('long distance: generatePreview also clamps to 60s', () => {
+      const longPath = makeStraightPath(5000); // (5000/30)*1000 ≈ 166_667ms → clamp to 60s
+
+      const preview = system.generatePreview(longPath);
+
+      expect(preview.estimatedTime).toBe(60);
+    });
+
+    // ── Normal range: no clamp applied ──
+
+    it('normal range march: 10s <= duration <= 60s → no change', () => {
+      // distance = 600px → raw = (600/30)*1000 = 20_000ms → 20s (within range)
+      const normalPath = makeStraightPath(600);
+
+      const march = system.createMarch('city-a', 'city-b', 1500, '赵云', 'shu', normalPath);
+
+      expect(march.eta - march.startTime).toBeGreaterThanOrEqual(19_999);
+      expect(march.eta - march.startTime).toBeLessThanOrEqual(20_001);
+      // Verify via the march:created event payload
+      const createdCalls = (deps.eventBus.emit as ReturnType<typeof vi.fn>).mock.calls.filter(
+        call => call[0] === 'march:created',
+      );
+      expect(createdCalls.length).toBeGreaterThanOrEqual(1);
+      const payload = createdCalls[createdCalls.length - 1][1];
+      expect(payload.estimatedTime).toBe(20);
+    });
+
+    it('normal range: generatePreview returns unclamped duration', () => {
+      // distance = 900px → (900/30)*1000 = 30_000ms → 30s
+      const normalPath = makeStraightPath(900);
+
+      const preview = system.generatePreview(normalPath);
+
+      expect(preview.estimatedTime).toBe(30);
+    });
+
+    // ── Boundary values: exactly MIN and MAX ──
+
+    it('boundary: exactly 10s → no change', () => {
+      // distance = 300px → raw = (300/30)*1000 = 10_000ms = MIN → stays 10s
+      const boundaryMinPath = makeStraightPath(300);
+
+      const march = system.createMarch('city-a', 'city-b', 800, '马超', 'shu', boundaryMinPath);
+
+      expect(march.eta - march.startTime).toBeGreaterThanOrEqual(10_000);
+      expect(march.eta - march.startTime).toBeLessThanOrEqual(10_001);
+      // Verify via the march:created event payload
+      const createdCalls = (deps.eventBus.emit as ReturnType<typeof vi.fn>).mock.calls.filter(
+        call => call[0] === 'march:created',
+      );
+      expect(createdCalls.length).toBeGreaterThanOrEqual(1);
+      const payload = createdCalls[createdCalls.length - 1][1];
+      expect(payload.estimatedTime).toBe(10);
+    });
+
+    it('boundary: exactly 60s → no change', () => {
+      // distance = 1800px → raw = (1800/30)*1000 = 60_000ms = MAX → stays 60s
+      const boundaryMaxPath = makeStraightPath(1800);
+
+      const march = system.createMarch('city-a', 'city-b', 1200, '黄忠', 'shu', boundaryMaxPath);
+
+      expect(march.eta - march.startTime).toBeGreaterThanOrEqual(60_000);
+      expect(march.eta - march.startTime).toBeLessThanOrEqual(60_001);
+      // Verify via the march:created event payload
+      const createdCalls = (deps.eventBus.emit as ReturnType<typeof vi.fn>).mock.calls.filter(
+        call => call[0] === 'march:created',
+      );
+      expect(createdCalls.length).toBeGreaterThanOrEqual(1);
+      const payload = createdCalls[createdCalls.length - 1][1];
+      expect(payload.estimatedTime).toBe(60);
+    });
+
+    it('boundary: generatePreview at exactly 10s and 60s → no change', () => {
+      const minPath = makeStraightPath(300);
+      const maxPath = makeStraightPath(1800);
+
+      const previewMin = system.generatePreview(minPath);
+      const previewMax = system.generatePreview(maxPath);
+
+      expect(previewMin.estimatedTime).toBe(10);
+      expect(previewMax.estimatedTime).toBe(60);
+    });
+
+    // ── Edge: multi-segment path distance matches ──
+
+    it('multi-segment path with total distance below clamp → clamped to 10s', () => {
+      // 3 segments of 50px each = 150px total → (150/30)*1000 = 5000ms → clamp to 10s
+      const multiPath = [
+        { x: 0, y: 0 },
+        { x: 50, y: 0 },
+        { x: 100, y: 0 },
+        { x: 150, y: 0 },
+      ];
+
+      const march = system.createMarch('city-a', 'city-b', 500, '魏延', 'shu', multiPath);
+
+      const createdCalls = (deps.eventBus.emit as ReturnType<typeof vi.fn>).mock.calls.filter(
+        call => call[0] === 'march:created',
+      );
+      const payload = createdCalls[createdCalls.length - 1][1];
+      expect(payload.estimatedTime).toBe(10);
+    });
+  });
+
   // ── 序列化 ─────────────────────────────────
 
   describe('序列化', () => {

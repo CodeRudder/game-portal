@@ -849,4 +849,371 @@ describe('SiegeTaskPanel', () => {
     fireEvent.click(screen.getByText(/展开已完成任务/));
     expect(screen.getByText('兼容城')).toBeTruthy();
   });
+
+  // ═══════════════════════════════════════════
+  // R17-I10: Siege Task Panel Enhancement Tests
+  // ═══════════════════════════════════════════
+
+  // ── I10 Test 1: Panel renders with active tasks ──
+
+  it('R17-I10: Panel renders with active tasks showing real-time status', () => {
+    const tasks = [
+      createMockTask({ id: 'i10-task-1', status: 'marching', targetName: '行军目标' }),
+      createMockTask({ id: 'i10-task-2', status: 'sieging', targetName: '攻城目标' }),
+    ];
+    const defenseRatios = { 'i10-task-2': 0.4 };
+    render(
+      <SiegeTaskPanel
+        tasks={tasks}
+        defenseRatios={defenseRatios}
+        onFocusMarchRoute={vi.fn()}
+      />,
+    );
+
+    // Both tasks should be visible
+    expect(screen.getByText('行军目标')).toBeTruthy();
+    expect(screen.getByText('攻城目标')).toBeTruthy();
+
+    // Status badges are correct
+    expect(screen.getByText(/行军中/)).toBeTruthy();
+    expect(screen.getByText(/攻城中/)).toBeTruthy();
+
+    // Progress bars should exist for both active tasks
+    const { container } = render(
+      <SiegeTaskPanel
+        tasks={tasks}
+        defenseRatios={defenseRatios}
+      />,
+    );
+    const progressBars = container.querySelectorAll('.siege-task-panel__progress-bar');
+    expect(progressBars.length).toBeGreaterThanOrEqual(2);
+  });
+
+  // ── I10 Test 2: Status badge shows correct state ──
+
+  it('R17-I10: Status badge shows correct state for each phase', () => {
+    const statuses: Array<{ status: SiegeTask['status']; expectedLabel: string }> = [
+      { status: 'marching', expectedLabel: '行军中' },
+      { status: 'sieging', expectedLabel: '攻城中' },
+      { status: 'completed', expectedLabel: '已完成' },
+    ];
+
+    for (const { status, expectedLabel } of statuses) {
+      const { unmount } = render(
+        <SiegeTaskPanel
+          tasks={[
+            createMockTask({
+              id: `badge-${status}`,
+              status,
+              result: status === 'completed'
+                ? { victory: true, casualties: null, actualCost: { troops: 50, grain: 10 }, rewardMultiplier: 1.0, specialEffectTriggered: false }
+                : null,
+            }),
+          ]}
+        />,
+      );
+
+      // For completed tasks, need to expand
+      if (status === 'completed') {
+        const expandBtn = screen.queryByText(/展开已完成任务/);
+        if (expandBtn) fireEvent.click(expandBtn);
+      }
+
+      // Use getAllByText to handle multiple matches (e.g. status label + completed section)
+      const matches = screen.getAllByText(new RegExp(expectedLabel));
+      expect(matches.length).toBeGreaterThanOrEqual(1);
+      unmount();
+    }
+  });
+
+  // ── I10 Test 3: Task status flow updates (marching -> sieging -> completed) ──
+
+  it('R17-I10: Task status flow updates correctly through phases', () => {
+    const { rerender } = render(
+      <SiegeTaskPanel
+        tasks={[createMockTask({ id: 'flow-task', status: 'marching', targetName: '流程城' })]}
+      />,
+    );
+
+    // Phase 1: marching
+    expect(screen.getByText(/行军中/)).toBeTruthy();
+
+    // Phase 2: sieging
+    rerender(
+      <SiegeTaskPanel
+        tasks={[createMockTask({ id: 'flow-task', status: 'sieging', targetName: '流程城' })]}
+        defenseRatios={{ 'flow-task': 0.6 }}
+      />,
+    );
+    expect(screen.getByText(/攻城中/)).toBeTruthy();
+
+    // Phase 3: completed (victory)
+    rerender(
+      <SiegeTaskPanel
+        tasks={[
+          createMockTask({
+            id: 'flow-task',
+            status: 'completed',
+            targetName: '流程城',
+            result: { victory: true, casualties: null, actualCost: { troops: 100, grain: 20 }, rewardMultiplier: 1.5, specialEffectTriggered: false },
+          }),
+        ]}
+      />,
+    );
+
+    // Completed task moves to expandable section
+    expect(screen.getByText(/展开已完成任务/)).toBeTruthy();
+    fireEvent.click(screen.getByText(/展开已完成任务/));
+
+    // Should show victory result
+    expect(screen.getByText('胜利')).toBeTruthy();
+    expect(screen.getByText('流程城')).toBeTruthy();
+  });
+
+  // ── I10 Test 4: Reward claim button triggers callback ──
+
+  it('R17-I10: Reward claim button triggers onClaimReward callback', () => {
+    const onClaimReward = vi.fn();
+    const tasks = [
+      createMockTask({
+        id: 'reward-task-1',
+        status: 'completed',
+        targetName: '奖励城',
+        result: { victory: true, casualties: null, actualCost: { troops: 100, grain: 20 }, rewardMultiplier: 2.0, specialEffectTriggered: false },
+      }),
+    ];
+    render(
+      <SiegeTaskPanel
+        tasks={tasks}
+        onClaimReward={onClaimReward}
+      />,
+    );
+
+    // Expand completed tasks
+    fireEvent.click(screen.getByText(/展开已完成任务/));
+
+    // Find and click the claim button
+    const claimBtn = screen.getByTestId('claim-reward-reward-task-1');
+    expect(claimBtn).toBeTruthy();
+    expect(claimBtn.textContent).toBe('领取奖励');
+    fireEvent.click(claimBtn);
+
+    expect(onClaimReward).toHaveBeenCalledTimes(1);
+    expect(onClaimReward).toHaveBeenCalledWith('reward-task-1');
+  });
+
+  // ── I10 Test 5: No claim button for defeat tasks ──
+
+  it('R17-I10: No claim button for defeated tasks', () => {
+    const onClaimReward = vi.fn();
+    const tasks = [
+      createMockTask({
+        id: 'defeat-task-1',
+        status: 'completed',
+        targetName: '败城',
+        result: { victory: false, casualties: null, actualCost: { troops: 200, grain: 50 }, rewardMultiplier: 0, specialEffectTriggered: false },
+      }),
+    ];
+    render(
+      <SiegeTaskPanel
+        tasks={tasks}
+        onClaimReward={onClaimReward}
+      />,
+    );
+
+    // Expand completed tasks
+    fireEvent.click(screen.getByText(/展开已完成任务/));
+
+    // Should show defeat badge (may appear multiple times: status + result badge) but no claim button
+    const defeatElements = screen.getAllByText('失败');
+    expect(defeatElements.length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByTestId('claim-reward-defeat-task-1')).toBeNull();
+  });
+
+  // ── I10 Test 6: Claimed rewards show "已领取" label ──
+
+  it('R17-I10: Claimed reward tasks show claimed label instead of button', () => {
+    const onClaimReward = vi.fn();
+    const claimedIds = new Set(['claimed-task-1']);
+    const tasks = [
+      createMockTask({
+        id: 'claimed-task-1',
+        status: 'completed',
+        targetName: '已领城',
+        result: { victory: true, casualties: null, actualCost: { troops: 100, grain: 20 }, rewardMultiplier: 1.5, specialEffectTriggered: false },
+      }),
+    ];
+    render(
+      <SiegeTaskPanel
+        tasks={tasks}
+        onClaimReward={onClaimReward}
+        claimedRewardTaskIds={claimedIds}
+      />,
+    );
+
+    // Expand completed tasks
+    fireEvent.click(screen.getByText(/展开已完成任务/));
+
+    // Should show claimed label instead of button
+    expect(screen.getByTestId('reward-claimed-claimed-task-1')).toBeTruthy();
+    expect(screen.getByText('奖励已领取')).toBeTruthy();
+    expect(screen.queryByTestId('claim-reward-claimed-task-1')).toBeNull();
+  });
+
+  // ── I10 Test 7: No claim button when onClaimReward is not provided ──
+
+  it('R17-I10: No claim button when onClaimReward prop is not passed', () => {
+    const tasks = [
+      createMockTask({
+        id: 'no-cb-task',
+        status: 'completed',
+        targetName: '无回调城',
+        result: { victory: true, casualties: null, actualCost: { troops: 100, grain: 20 }, rewardMultiplier: 1.0, specialEffectTriggered: false },
+      }),
+    ];
+    render(<SiegeTaskPanel tasks={tasks} />);
+
+    // Expand completed tasks
+    fireEvent.click(screen.getByText(/展开已完成任务/));
+
+    // No claim button should appear without the callback prop
+    expect(screen.queryByTestId('claim-reward-no-cb-task')).toBeNull();
+  });
+
+  // ── I10 Test 8: Victory/defeat result display ──
+
+  it('R17-I10: Attack result displays victory or defeat correctly', () => {
+    // Victory
+    const { unmount: unmount1 } = render(
+      <SiegeTaskPanel
+        tasks={[
+          createMockTask({
+            id: 'victory-result',
+            status: 'completed',
+            targetName: '胜城',
+            result: { victory: true, casualties: null, actualCost: { troops: 50, grain: 10 }, rewardMultiplier: 2.0, specialEffectTriggered: false },
+          }),
+        ]}
+      />,
+    );
+    fireEvent.click(screen.getByText(/展开已完成任务/));
+    // Use result-badge specific selector
+    const victoryBadge = screen.getAllByText('胜利');
+    expect(victoryBadge.length).toBeGreaterThanOrEqual(1);
+    unmount1();
+
+    // Defeat
+    render(
+      <SiegeTaskPanel
+        tasks={[
+          createMockTask({
+            id: 'defeat-result',
+            status: 'completed',
+            targetName: '败城',
+            result: { victory: false, casualties: null, actualCost: { troops: 200, grain: 50 }, rewardMultiplier: 0, specialEffectTriggered: false, failureReason: '兵力不足' },
+          }),
+        ]}
+      />,
+    );
+    fireEvent.click(screen.getByText(/展开已完成任务/));
+    const defeatBadge = screen.getAllByText('失败');
+    expect(defeatBadge.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+// ── R18: Siege Interrupt UI Buttons ──
+
+describe('SiegeTaskPanel – siege interrupt buttons (R18)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('renders pause button for sieging task when onPauseSiege provided', () => {
+    const onPause = vi.fn();
+    render(
+      <SiegeTaskPanel
+        tasks={[createMockTask({ id: 'task-s', status: 'sieging' })]}
+        onPauseSiege={onPause}
+      />,
+    );
+    const btn = screen.getByTestId('pause-siege-task-s');
+    expect(btn).toBeTruthy();
+    expect(btn.textContent).toBe('暂停');
+    fireEvent.click(btn);
+    expect(onPause).toHaveBeenCalledWith('task-s');
+  });
+
+  it('does not render pause button when onPauseSiege not provided', () => {
+    render(
+      <SiegeTaskPanel
+        tasks={[createMockTask({ id: 'task-s', status: 'sieging' })]}
+      />,
+    );
+    expect(screen.queryByTestId('pause-siege-task-s')).toBeNull();
+  });
+
+  it('does not render pause button for non-sieging task', () => {
+    const onPause = vi.fn();
+    render(
+      <SiegeTaskPanel
+        tasks={[createMockTask({ id: 'task-m', status: 'marching' })]}
+        onPauseSiege={onPause}
+      />,
+    );
+    expect(screen.queryByTestId('pause-siege-task-m')).toBeNull();
+  });
+
+  it('renders resume and cancel buttons for paused task', () => {
+    const onResume = vi.fn();
+    const onCancel = vi.fn();
+    render(
+      <SiegeTaskPanel
+        tasks={[createMockTask({
+          id: 'task-p',
+          status: 'paused',
+          pausedAt: Date.now(),
+          pauseSnapshot: { defenseRatio: 0.5, elapsedBattleTime: 10000 },
+        })]}
+        onResumeSiege={onResume}
+        onCancelSiege={onCancel}
+      />,
+    );
+    const resumeBtn = screen.getByTestId('resume-siege-task-p');
+    const cancelBtn = screen.getByTestId('cancel-siege-task-p');
+    expect(resumeBtn.textContent).toBe('继续');
+    expect(cancelBtn.textContent).toBe('取消攻城');
+    fireEvent.click(resumeBtn);
+    expect(onResume).toHaveBeenCalledWith('task-p');
+    fireEvent.click(cancelBtn);
+    expect(onCancel).toHaveBeenCalledWith('task-p');
+  });
+
+  it('paused task shows correct status label and icon', () => {
+    render(
+      <SiegeTaskPanel
+        tasks={[createMockTask({
+          id: 'task-p2',
+          status: 'paused',
+          pausedAt: Date.now(),
+          pauseSnapshot: { defenseRatio: 0.3, elapsedBattleTime: 20000 },
+        })]}
+      />,
+    );
+    expect(screen.getByText('已暂停')).toBeTruthy();
+  });
+
+  it('paused task with snapshot shows progress bar', () => {
+    render(
+      <SiegeTaskPanel
+        tasks={[createMockTask({
+          id: 'task-p3',
+          status: 'paused',
+          pausedAt: Date.now(),
+          pauseSnapshot: { defenseRatio: 0.4, elapsedBattleTime: 15000 },
+        })]}
+      />,
+    );
+    const progressBar = document.querySelector('.siege-task-panel__progress-bar');
+    expect(progressBar).toBeTruthy();
+  });
 });

@@ -20,6 +20,8 @@ import type {
   SiegeTaskResult,
   SiegeTaskStatusChangedEvent,
   SiegeTaskSaveData,
+  SiegeTaskSummary,
+  SiegePauseSnapshot,
 } from '../../core/map/siege-task.types';
 import { isTerminalStatus, SIEGE_TASK_SAVE_VERSION } from '../../core/map/siege-task.types';
 import type { SiegeStrategyType } from '../../core/map/siege-enhancer.types';
@@ -46,17 +48,33 @@ export const SIEGE_TASK_EVENTS = {
   STATUS_CHANGED: 'siegeTask:statusChanged',
   CREATED: 'siegeTask:created',
   COMPLETED: 'siegeTask:completed',
+  PAUSED: 'siegeTask:paused',
+  RESUMED: 'siegeTask:resumed',
+  CANCELLED: 'siegeTask:cancelled',
 } as const;
 
 // ─────────────────────────────────────────────
 // SiegeTaskManager
 // ─────────────────────────────────────────────
 
+// ─────────────────────────────────────────────
+// 攻占锁常量
+// ─────────────────────────────────────────────
+
+/** Siege lock timeout (ms) - auto-release after 5 minutes */
+const SIEGE_LOCK_TIMEOUT_MS = 5 * 60 * 1000;
+
 let nextTaskId = 1;
 
 export class SiegeTaskManager {
   private tasks: Map<string, SiegeTask> = new Map();
   private deps: SiegeTaskManagerDeps | null = null;
+
+  /** Active siege locks: targetId → { taskId, lockedAt } */
+  private siegeLocks: Map<string, { taskId: string; lockedAt: number }> = new Map();
+
+  /** Set of task IDs whose rewards have been claimed */
+  private claimedRewards: Set<string> = new Set();
 
   /** 设置依赖 */
   setDependencies(deps: SiegeTaskManagerDeps): void {
@@ -67,7 +85,8 @@ export class SiegeTaskManager {
 
   /**
    * 创建攻占任务
-   * @returns 新创建的 SiegeTask
+   * 同一目标同一时刻只允许一个攻占任务（siege lock）
+   * @returns 新创建的 SiegeTask，若目标已被锁定则返回 null
    */
   createTask(params: {
     targetId: string;
@@ -78,9 +97,18 @@ export class SiegeTaskManager {
     expedition: SiegeTaskExpedition;
     cost: SiegeCost;
     marchPath: Array<{ x: number; y: number }>;
-  }): SiegeTask {
+    faction: 'wei' | 'shu' | 'wu' | 'neutral';
+  }): SiegeTask | null {
+    // 先尝试获取锁
+    const taskId = `siege-task-${nextTaskId}`;
+    if (!this.acquireSiegeLock(params.targetId, taskId)) {
+      return null;
+    }
+
+    nextTaskId++;
+
     const task: SiegeTask = {
-      id: `siege-task-${nextTaskId++}`,
+      id: taskId,
       status: 'preparing',
       targetId: params.targetId,
       targetName: params.targetName,
@@ -97,6 +125,9 @@ export class SiegeTaskManager {
       returnCompletedAt: null,
       marchPath: params.marchPath,
       result: null,
+      pausedAt: null,
+      pauseSnapshot: null,
+      faction: params.faction,
     };
 
     this.tasks.set(task.id, task);
@@ -141,6 +172,8 @@ export class SiegeTaskManager {
 
     if (newStatus === 'completed') {
       this.deps?.eventBus.emit(SIEGE_TASK_EVENTS.COMPLETED, { task });
+      // Release siege lock on completion
+      this.releaseSiegeLock(task.targetId);
     }
 
     return task;
@@ -208,6 +241,274 @@ export class SiegeTaskManager {
     return this.getActiveTasks().length;
   }
 
+  // ── 攻城中断处理 ─────────────────────────────────
+
+  /**
+   * 暂停攻城任务
+   *
+   * 仅允许从 'sieging' 状态暂停。保存当前攻城进度快照
+   * (defenseRatio, elapsedBattleTime) 用于后续恢复。
+   *
+   * @param taskId - 任务ID
+   * @param snapshot - 暂停时的进度快照（可选，默认 defenseRatio=1, elapsedBattleTime=0）
+   * @returns true 表示暂停成功，false 表示任务不存在或状态不允许
+   */
+  pauseSiege(taskId: string, snapshot?: Partial<SiegePauseSnapshot>): boolean {
+    const task = this.tasks.get(taskId);
+    if (!task || task.status !== 'sieging') return false;
+
+    if (!this.isValidTransition(task.status, 'paused')) return false;
+
+    const now = Date.now();
+
+    // Save pause snapshot
+    const pauseSnapshot: SiegePauseSnapshot = {
+      defenseRatio: snapshot?.defenseRatio ?? 1,
+      elapsedBattleTime: snapshot?.elapsedBattleTime ?? 0,
+    };
+
+    const oldStatus = task.status;
+    task.status = 'paused';
+    task.pausedAt = now;
+    task.pauseSnapshot = pauseSnapshot;
+
+    this.deps?.eventBus.emit(SIEGE_TASK_EVENTS.STATUS_CHANGED, {
+      taskId,
+      from: oldStatus,
+      to: 'paused',
+      task,
+    } satisfies SiegeTaskStatusChangedEvent);
+
+    this.deps?.eventBus.emit(SIEGE_TASK_EVENTS.PAUSED, {
+      taskId,
+      pauseSnapshot,
+    });
+
+    return true;
+  }
+
+  /**
+   * 恢复暂停的攻城任务
+   *
+   * 将任务从 'paused' 恢复到 'sieging' 状态。
+   * 调用方可通过 task.pauseSnapshot 获取保存的进度数据。
+   *
+   * @param taskId - 任务ID
+   * @returns true 表示恢复成功，false 表示任务不存在或状态不允许
+   */
+  resumeSiege(taskId: string): boolean {
+    const task = this.tasks.get(taskId);
+    if (!task || task.status !== 'paused') return false;
+
+    if (!this.isValidTransition(task.status, 'sieging')) return false;
+
+    const oldStatus = task.status;
+    task.status = 'sieging';
+
+    // Clear pause metadata
+    const savedSnapshot = task.pauseSnapshot;
+    task.pausedAt = null;
+    task.pauseSnapshot = null;
+
+    this.deps?.eventBus.emit(SIEGE_TASK_EVENTS.STATUS_CHANGED, {
+      taskId,
+      from: oldStatus,
+      to: 'sieging',
+      task,
+    } satisfies SiegeTaskStatusChangedEvent);
+
+    this.deps?.eventBus.emit(SIEGE_TASK_EVENTS.RESUMED, {
+      taskId,
+      savedSnapshot,
+    });
+
+    return true;
+  }
+
+  /**
+   * 取消攻城任务（从暂停状态）
+   *
+   * 将任务从 'paused' 转为 'returning'，同时通知外部系统
+   * 创建回城行军。释放攻占锁。
+   *
+   * @param taskId - 任务ID
+   * @param marchingSystem - 行军系统引用，用于创建回城行军
+   * @returns true 表示取消成功，false 表示任务不存在或状态不允许
+   */
+  cancelSiege(taskId: string, marchingSystem: {
+    createReturnMarch(params: {
+      fromCityId: string;
+      toCityId: string;
+      troops: number;
+      general: string;
+      faction: string;
+      siegeTaskId?: string;
+    }): unknown;
+  } | null): boolean {
+    const task = this.tasks.get(taskId);
+    if (!task || task.status !== 'paused') return false;
+
+    if (!this.isValidTransition(task.status, 'returning')) return false;
+
+    const oldStatus = task.status;
+    task.status = 'returning';
+    task.siegeCompletedAt = Date.now();
+
+    // Clear pause metadata
+    task.pausedAt = null;
+    task.pauseSnapshot = null;
+
+    // Create return march via MarchingSystem if provided
+    if (marchingSystem) {
+      marchingSystem.createReturnMarch({
+        fromCityId: task.targetId,
+        toCityId: task.sourceId,
+        troops: task.expedition.troops,
+        general: task.expedition.heroName,
+        faction: task.faction,
+        siegeTaskId: task.id,
+      });
+    }
+
+    this.deps?.eventBus.emit(SIEGE_TASK_EVENTS.STATUS_CHANGED, {
+      taskId,
+      from: oldStatus,
+      to: 'returning',
+      task,
+    } satisfies SiegeTaskStatusChangedEvent);
+
+    this.deps?.eventBus.emit(SIEGE_TASK_EVENTS.CANCELLED, {
+      taskId,
+      targetId: task.targetId,
+    });
+
+    return true;
+  }
+
+  // ── 攻占锁管理 ─────────────────────────────────
+
+  /**
+   * 尝试获取攻占锁
+   * @returns true 表示成功获取锁，false 表示目标已被锁定
+   */
+  acquireSiegeLock(targetId: string, taskId: string): boolean {
+    // Inline timeout check: release expired locks on this target before acquiring
+    const existingLock = this.siegeLocks.get(targetId);
+    if (existingLock && Date.now() - existingLock.lockedAt >= SIEGE_LOCK_TIMEOUT_MS) {
+      this.siegeLocks.delete(targetId);
+    }
+
+    if (this.siegeLocks.has(targetId)) {
+      return false; // Still locked (not expired)
+    }
+    this.siegeLocks.set(targetId, { taskId, lockedAt: Date.now() });
+    return true;
+  }
+
+  /**
+   * 释放攻占锁
+   */
+  releaseSiegeLock(targetId: string): void {
+    this.siegeLocks.delete(targetId);
+  }
+
+  /**
+   * 检查目标是否被锁定
+   */
+  isSiegeLocked(targetId: string): boolean {
+    return this.siegeLocks.has(targetId);
+  }
+
+  /**
+   * 检查并释放超时锁（应在 update 循环中调用）
+   */
+  checkLockTimeout(): void {
+    const now = Date.now();
+    for (const [targetId, lock] of this.siegeLocks) {
+      if (now - lock.lockedAt >= SIEGE_LOCK_TIMEOUT_MS) {
+        this.siegeLocks.delete(targetId);
+      }
+    }
+  }
+
+  // ── 任务摘要与奖励 ─────────────────────────────
+
+  /**
+   * 获取任务摘要（UI面板展示用）
+   *
+   * 包含进度百分比、结果、奖励信息等派生数据
+   */
+  getTaskSummary(taskId: string): SiegeTaskSummary | null {
+    const task = this.tasks.get(taskId);
+    if (!task) return null;
+
+    let marchProgress: number | null = null;
+    let siegeProgress: number | null = null;
+
+    if (task.status === 'marching') {
+      if (task.marchStartedAt && task.estimatedArrival) {
+        const total = task.estimatedArrival - task.marchStartedAt;
+        const elapsed = Date.now() - task.marchStartedAt;
+        marchProgress = total > 0 ? Math.min(100, Math.max(0, Math.round((elapsed / total) * 100))) : 0;
+      } else {
+        marchProgress = 50; // placeholder
+      }
+    }
+
+    if (task.status === 'sieging' || task.status === 'paused') {
+      // Siege progress is externally provided via defenseRatios; default to 50% placeholder
+      siegeProgress = 50;
+    }
+
+    let result: 'victory' | 'defeat' | null = null;
+    let rewards: SiegeTaskSummary['rewards'] = null;
+
+    if (task.status === 'completed' && task.result) {
+      result = task.result.victory ? 'victory' : 'defeat';
+      if (task.result.victory) {
+        rewards = {
+          rewardMultiplier: task.result.rewardMultiplier,
+          territoryCaptured: !!task.result.capture,
+        };
+      }
+    }
+
+    return {
+      taskId: task.id,
+      targetName: task.targetName,
+      status: task.status,
+      strategy: task.strategy,
+      marchProgress,
+      siegeProgress,
+      result,
+      rewards,
+      rewardClaimed: this.claimedRewards.has(task.id),
+    };
+  }
+
+  /**
+   * 标记任务奖励为已领取
+   * @returns true if successfully claimed, false if already claimed or task not found/completed
+   */
+  claimReward(taskId: string): boolean {
+    const task = this.tasks.get(taskId);
+    if (!task || !task.result?.victory || this.claimedRewards.has(taskId)) return false;
+    this.claimedRewards.add(taskId);
+    this.deps?.eventBus.emit(SIEGE_TASK_EVENTS.STATUS_CHANGED, {
+      taskId,
+      from: 'completed',
+      to: 'completed',
+      task,
+      rewardClaimed: true,
+    });
+    return true;
+  }
+
+  /** Public getter for claimed reward task IDs */
+  getClaimedRewards(): Set<string> {
+    return new Set(this.claimedRewards);
+  }
+
   // ── 清理 ─────────────────────────────────────
 
   /** 移除已完成的任务（历史记录清理） */
@@ -215,6 +516,8 @@ export class SiegeTaskManager {
     let removed = 0;
     for (const [id, task] of this.tasks) {
       if (isTerminalStatus(task.status)) {
+        // Ensure lock is released for completed tasks
+        this.releaseSiegeLock(task.targetId);
         this.tasks.delete(id);
         removed++;
       }
@@ -235,6 +538,7 @@ export class SiegeTaskManager {
   /** 从保存数据恢复 */
   deserialize(data: SiegeTaskSaveData): void {
     this.tasks.clear();
+    this.siegeLocks.clear();
     if (data?.tasks) {
       for (const task of data.tasks) {
         this.tasks.set(task.id, task);
@@ -258,10 +562,11 @@ export class SiegeTaskManager {
     const transitions: Record<SiegeTaskStatus, SiegeTaskStatus[]> = {
       preparing: ['marching'],
       marching: ['sieging'],
-      sieging: ['settling'],
+      sieging: ['settling', 'paused'],
       settling: ['returning'],
       returning: ['completed'],
       completed: [],
+      paused: ['sieging', 'returning'],
     };
     return transitions[from]?.includes(to) ?? false;
   }

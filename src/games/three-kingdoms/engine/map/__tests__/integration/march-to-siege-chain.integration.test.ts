@@ -266,6 +266,7 @@ describe('March-to-Siege Chain E2E Integration', () => {
         expedition: defaultExpedition(5000),
         cost: { troops: 500, grain: 200 },
         marchPath: SHORT_PATH,
+        faction: 'wei' as const,
       });
 
       expect(task.status).toBe('preparing');
@@ -307,6 +308,7 @@ describe('March-to-Siege Chain E2E Integration', () => {
         expedition: defaultExpedition(5000),
         cost: { troops: 500, grain: 200 },
         marchPath: SHORT_PATH,
+        faction: 'wei' as const,
       });
       taskManager.advanceStatus(task.id, 'marching');
       taskManager.advanceStatus(task.id, 'sieging');
@@ -349,6 +351,7 @@ describe('March-to-Siege Chain E2E Integration', () => {
         expedition: defaultExpedition(5000),
         cost: { troops: 500, grain: 200 },
         marchPath: STANDARD_PATH,
+        faction: 'wei' as const,
       });
 
       taskManager.advanceStatus(task.id, 'marching');
@@ -479,6 +482,7 @@ describe('March-to-Siege Chain E2E Integration', () => {
         expedition: defaultExpedition(5000),
         cost: { troops: 500, grain: 200 },
         marchPath: SHORT_PATH,
+        faction: 'wei' as const,
       });
       taskManager.advanceStatus(task1.id, 'marching');
       taskManager.advanceStatus(task1.id, 'sieging');
@@ -540,6 +544,7 @@ describe('March-to-Siege Chain E2E Integration', () => {
           { x: 100, y: 50 },
           { x: 200, y: 50 },
         ],
+        faction: 'wei' as const,
       });
 
       // 2b. 验证 task2 不会影响 task1
@@ -623,6 +628,7 @@ describe('March-to-Siege Chain E2E Integration', () => {
         expedition: defaultExpedition(3000),
         cost: { troops: 300, grain: 100 },
         marchPath: STANDARD_PATH,
+        faction: 'wei' as const,
       });
       taskManager.advanceStatus(task.id, 'marching');
 
@@ -669,6 +675,7 @@ describe('March-to-Siege Chain E2E Integration', () => {
         expedition: defaultExpedition(4000),
         cost: { troops: 400, grain: 200 },
         marchPath: STANDARD_PATH,
+        faction: 'wei' as const,
       });
 
       // 2. 推进状态并记录
@@ -762,6 +769,7 @@ describe('March-to-Siege Chain E2E Integration', () => {
         expedition: defaultExpedition(5000),
         cost: { troops: 500, grain: 200 },
         marchPath: SHORT_PATH,
+        faction: 'wei' as const,
       });
 
       // 2. 推进全部状态

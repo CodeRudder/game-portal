@@ -22,6 +22,7 @@ function createDefaultTaskParams(overrides: Partial<Parameters<SiegeTaskManager[
     expedition: { forceId: 'force-1', heroId: 'hero-guanyu', heroName: '关羽', troops: 3000 },
     cost: { troops: 2000, grain: 500 },
     marchPath: [{ x: 10, y: 20 }, { x: 15, y: 25 }],
+    faction: 'wei' as const,
     ...overrides,
   };
 }

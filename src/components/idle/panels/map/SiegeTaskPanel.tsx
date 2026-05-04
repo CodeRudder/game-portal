@@ -33,6 +33,16 @@ export interface SiegeTaskPanelProps {
   returnETAs?: Record<string, number>;
   /** 点击任务项后聚焦到地图上的行军路线 */
   onFocusMarchRoute?: (taskId: string) => void;
+  /** 领取奖励回调（taskId） */
+  onClaimReward?: (taskId: string) => void;
+  /** 已领取奖励的任务ID集合 */
+  claimedRewardTaskIds?: Set<string>;
+  /** 暂停攻城回调 */
+  onPauseSiege?: (taskId: string) => void;
+  /** 继续攻城回调 */
+  onResumeSiege?: (taskId: string) => void;
+  /** 取消攻城回调 */
+  onCancelSiege?: (taskId: string) => void;
 }
 
 // ─────────────────────────────────────────────
@@ -46,6 +56,7 @@ const STATUS_LABELS: Record<ExtendedStatus, string> = {
   preparing: '准备中',
   marching: '行军中',
   sieging: '攻城中',
+  paused: '已暂停',
   settling: '结算中',
   returning: '回城中',
   completed: '已完成',
@@ -56,6 +67,7 @@ const STATUS_COLORS: Record<ExtendedStatus, string> = {
   preparing: '#888',
   marching: '#4a9eff',
   sieging: '#4a9eff',
+  paused: '#ff9800',
   settling: '#ffc107',
   returning: '#9c27b0',
   completed: '#4caf50',
@@ -103,6 +115,7 @@ function getStatusIcon(status: ExtendedStatus): string {
     case 'preparing': return '⏳';
     case 'marching': return '→';
     case 'sieging': return '⚔';
+    case 'paused': return '⏸';
     case 'settling': return '📋';
     case 'returning': return '←';
     case 'completed': return '✓';
@@ -159,6 +172,13 @@ function getProgressPercent(
       }
       return 50;
     }
+    case 'paused': {
+      const snapshot = task.pauseSnapshot;
+      if (snapshot) {
+        return Math.min(100, Math.max(0, Math.round((1 - snapshot.defenseRatio) * 100)));
+      }
+      return 50;
+    }
     case 'returning': {
       const eta = returnETAs?.[task.id];
       if (eta && task.returnCompletedAt === null) {
@@ -191,6 +211,11 @@ const SiegeTaskPanel: React.FC<SiegeTaskPanelProps> = ({
   defenseRatios,
   returnETAs,
   onFocusMarchRoute,
+  onClaimReward,
+  claimedRewardTaskIds,
+  onPauseSiege,
+  onResumeSiege,
+  onCancelSiege,
 }) => {
   const [completedExpanded, setCompletedExpanded] = useState(false);
 
@@ -329,8 +354,8 @@ const SiegeTaskPanel: React.FC<SiegeTaskPanelProps> = ({
                 );
               })()}
 
-              {/* 进度条（行军中 / 攻城中 / 回城中 / 结算中） */}
-              {(task.status === 'marching' || task.status === 'sieging' || task.status === 'returning' || task.status === 'settling') && (
+              {/* 进度条（行军中 / 攻城中 / 已暂停 / 回城中 / 结算中） */}
+              {(task.status === 'marching' || task.status === 'sieging' || task.status === 'paused' || task.status === 'returning' || task.status === 'settling') && (
                 <div className="siege-task-panel__progress">
                   <div
                     className="siege-task-panel__progress-bar"
@@ -366,6 +391,50 @@ const SiegeTaskPanel: React.FC<SiegeTaskPanelProps> = ({
                 >
                   聚焦路线
                 </button>
+              )}
+
+              {/* 暂停攻城按钮 */}
+              {task.status === 'sieging' && onPauseSiege && (
+                <button
+                  className="siege-task-panel__pause-btn"
+                  data-testid={`pause-siege-${task.id}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPauseSiege(task.id);
+                  }}
+                >
+                  暂停
+                </button>
+              )}
+
+              {/* 继续/取消攻城按钮 */}
+              {task.status === 'paused' && (
+                <>
+                  {onResumeSiege && (
+                    <button
+                      className="siege-task-panel__resume-btn"
+                      data-testid={`resume-siege-${task.id}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onResumeSiege(task.id);
+                      }}
+                    >
+                      继续
+                    </button>
+                  )}
+                  {onCancelSiege && (
+                    <button
+                      className="siege-task-panel__cancel-btn"
+                      data-testid={`cancel-siege-${task.id}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCancelSiege(task.id);
+                      }}
+                    >
+                      取消攻城
+                    </button>
+                  )}
+                </>
               )}
             </div>
           );
@@ -447,6 +516,43 @@ const SiegeTaskPanel: React.FC<SiegeTaskPanelProps> = ({
                     >
                       {formatElapsedTime(task.createdAt)}
                     </div>
+
+                    {/* R17-I10: 奖励领取按钮（胜利且未领取时显示） */}
+                    {task.result?.victory && onClaimReward && !claimedRewardTaskIds?.has(task.id) && (
+                      <button
+                        className="siege-task-panel__claim-reward"
+                        data-testid={`claim-reward-${task.id}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onClaimReward(task.id);
+                        }}
+                        style={{
+                          marginTop: 4,
+                          padding: '4px 12px',
+                          border: '1px solid rgba(212,165,116,0.5)',
+                          borderRadius: 4,
+                          background: 'rgba(212,165,116,0.15)',
+                          color: '#d4a574',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        领取奖励
+                      </button>
+                    )}
+
+                    {/* R17-I10: 已领取标记 */}
+                    {task.result?.victory && claimedRewardTaskIds?.has(task.id) && (
+                      <span
+                        className="siege-task-panel__reward-claimed"
+                        data-testid={`reward-claimed-${task.id}`}
+                        style={{ color: '#7EC850', fontSize: 11, fontWeight: 600 }}
+                      >
+                        奖励已领取
+                      </span>
+                    )}
                   </div>
                 );
               })}

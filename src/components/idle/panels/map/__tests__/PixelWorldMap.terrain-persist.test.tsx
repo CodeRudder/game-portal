@@ -628,3 +628,96 @@ describe('R16 Task1: Terrain only redraws on transition frames', () => {
     expect(transition3FillCount).toBeGreaterThan(0);
   });
 });
+
+// ─────────────────────────────────────────────
+// R17 Task5: Non-transition zero-redraw assertions
+// ─────────────────────────────────────────────
+
+describe('Non-transition zero-redraw assertions', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setupCanvasMock();
+  });
+
+  afterEach(() => {
+    teardownCanvasMock();
+  });
+
+  // ── Test: terrain canvas is NOT redrawn when sprites dirty flag stays unchanged ──
+
+  it('terrain is NOT redrawn when sprites dirty flag stays true across frames', () => {
+    const march = makeMarchUnit({ state: 'marching' });
+
+    // Render with active march — sprites dirty transitions false→true on first frame
+    const { rerender } = render(
+      <PixelWorldMap territories={territories} activeMarches={[march]} />,
+    );
+    flushRAF(); // initial render — transition frame, terrain redraws
+    const firstFrameFillCount = mockCtx.fillRect.mock.calls.length;
+    expect(firstFrameFillCount).toBeGreaterThan(0); // terrain rendered on transition
+
+    // Frame 2: Same march still active — sprites dirty stays true (no transition)
+    mockCtx.fillRect.mockClear();
+    flushRAF();
+    const secondFrameFillCount = mockCtx.fillRect.mock.calls.length;
+
+    // Frame 3: Same march still active — still no transition
+    mockCtx.fillRect.mockClear();
+    flushRAF();
+    const thirdFrameFillCount = mockCtx.fillRect.mock.calls.length;
+
+    // Frame 4: Rerender with same march — props unchanged, sprites dirty stays true
+    mockCtx.fillRect.mockClear();
+    rerender(
+      <PixelWorldMap territories={territories} activeMarches={[march]} />,
+    );
+    flushRAF();
+    const fourthFrameFillCount = mockCtx.fillRect.mock.calls.length;
+
+    // Frames 2-4 should have fewer fillRect calls than frame 1 because
+    // terrain layer is NOT redrawn (no transition). Only sprite rendering may occur.
+    // The terrain fillRect count (which dominates) should be absent.
+    // All three non-transition frames should show consistent (low) fillRect counts.
+    expect(secondFrameFillCount).toBeLessThan(firstFrameFillCount);
+    expect(thirdFrameFillCount).toBeLessThan(firstFrameFillCount);
+    expect(fourthFrameFillCount).toBeLessThan(firstFrameFillCount);
+  });
+
+  // ── Test: terrain canvas is NOT redrawn when effects dirty flag stays unchanged ──
+
+  it('terrain is NOT redrawn when effects dirty flag stays true across frames', () => {
+    const siegeAnim = makeSiegeAnim({ phase: 'battle' });
+
+    // Render with active siege animation — effects dirty transitions false→true
+    const { rerender } = render(
+      <PixelWorldMap territories={territories} activeSiegeAnims={[siegeAnim]} />,
+    );
+    flushRAF(); // initial render — transition frame, terrain redraws
+    const firstFrameFillCount = mockCtx.fillRect.mock.calls.length;
+    expect(firstFrameFillCount).toBeGreaterThan(0); // terrain rendered on transition
+
+    // Frame 2: Same siege still active — effects dirty stays true (no transition)
+    mockCtx.fillRect.mockClear();
+    flushRAF();
+    const secondFrameFillCount = mockCtx.fillRect.mock.calls.length;
+
+    // Frame 3: Same siege still active — still no transition
+    mockCtx.fillRect.mockClear();
+    flushRAF();
+    const thirdFrameFillCount = mockCtx.fillRect.mock.calls.length;
+
+    // Frame 4: Rerender with same siege — effects dirty stays true
+    mockCtx.fillRect.mockClear();
+    rerender(
+      <PixelWorldMap territories={territories} activeSiegeAnims={[siegeAnim]} />,
+    );
+    flushRAF();
+    const fourthFrameFillCount = mockCtx.fillRect.mock.calls.length;
+
+    // Non-transition frames should have fewer fillRect calls because
+    // terrain layer is NOT redrawn. Only effects rendering may occur.
+    expect(secondFrameFillCount).toBeLessThan(firstFrameFillCount);
+    expect(thirdFrameFillCount).toBeLessThan(firstFrameFillCount);
+    expect(fourthFrameFillCount).toBeLessThan(firstFrameFillCount);
+  });
+});
