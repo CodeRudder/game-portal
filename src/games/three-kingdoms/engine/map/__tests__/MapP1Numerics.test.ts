@@ -234,21 +234,29 @@ describe('GAP-05：声望加成产出测试（MAP-3 §3.5）', () => {
 
 describe('GAP-06：城防恢复测试（MAP-4 §4.6）', () => {
   describe('§4.6.1 城防受损后每小时恢复5%上限', () => {
-    it('城防值按 defenseValue = 1000 × level 公式生成', () => {
+    it('城防值按 defenseValue = 1000 × typeFactor × level 公式生成', () => {
       const { territory } = createSiegeSystems();
       const all = territory.getAllTerritories();
 
+      const DEFENSE_TYPE_FACTOR: Record<string, number> = {
+        city: 0.5,
+        pass: 1.0,
+        resource: 0.3,
+      };
+
       for (const t of all) {
-        expect(t.defenseValue).toBe(1000 * t.level);
+        const factor = DEFENSE_TYPE_FACTOR[t.id.startsWith('res-') ? 'resource' : t.id.startsWith('pass-') ? 'pass' : 'city'] ?? 0.5;
+        expect(t.defenseValue).toBe(1000 * factor * t.level);
       }
     });
 
-    it('不同等级城池城防值与等级正相关', () => {
+    it('不同等级城池城防值与等级正相关（同类型内）', () => {
       const { territory } = createSiegeSystems();
       const all = territory.getAllTerritories();
 
-      // 按等级排序，验证防御值单调递增
-      const sorted = [...all].sort((a, b) => a.level - b.level);
+      // 按类型分组后，验证同类型内防御值随等级递增
+      const cities = all.filter(t => t.id.startsWith('city-'));
+      const sorted = [...cities].sort((a, b) => a.level - b.level);
       for (let i = 1; i < sorted.length; i++) {
         if (sorted[i].level > sorted[i - 1].level) {
           expect(sorted[i].defenseValue).toBeGreaterThanOrEqual(sorted[i - 1].defenseValue);
@@ -308,21 +316,27 @@ describe('GAP-06：城防恢复测试（MAP-4 §4.6）', () => {
       }
     });
 
-    it('城防值为1000的整数倍（与等级成正比）', () => {
+    it('城防值按类型系数×等级生成（city=500/级, pass=1000/级, resource=300/级）', () => {
       const { territory } = createSiegeSystems();
       const all = territory.getAllTerritories();
 
+      const DEFENSE_TYPE_FACTOR: Record<string, number> = {
+        city: 0.5,
+        pass: 1.0,
+        resource: 0.3,
+      };
+
       for (const t of all) {
-        expect(t.defenseValue % 1000).toBe(0);
-        expect(t.defenseValue / 1000).toBe(t.level);
+        const factor = DEFENSE_TYPE_FACTOR[t.id.startsWith('res-') ? 'resource' : t.id.startsWith('pass-') ? 'pass' : 'city'] ?? 0.5;
+        expect(t.defenseValue).toBe(Math.round(1000 * factor * t.level));
       }
     });
 
-    it('洛阳(level=5)城防值为5000', () => {
+    it('洛阳(level=5)城防值为2500（city类型系数0.5）', () => {
       const { territory } = createSiegeSystems();
       const luoyang = territory.getTerritoryById('city-luoyang');
       expect(luoyang).not.toBeNull();
-      expect(luoyang!.defenseValue).toBe(5000);
+      expect(luoyang!.defenseValue).toBe(2500); // 1000 * 0.5 * 5
     });
 
     it('虎牢关(level=3)城防值为3000', () => {
@@ -660,15 +674,15 @@ describe('GAP-08：战斗统计数据聚合测试（MAP-6 §6.3）', () => {
       expect(highCost.troops).toBeGreaterThan(lowCost.troops);
     });
 
-    it('攻城消耗公式: troops = ceil(100 × (defenseValue/100))', () => {
+    it('攻城消耗公式: troops = ceil(100 × (defenseValue/100) × typeFactor)', () => {
       const { siege, territory } = createSiegeSystems();
 
       // 验证几个具体领土
       const luoyang = territory.getTerritoryById('city-luoyang')!;
-      expect(luoyang.defenseValue).toBe(5000);
+      expect(luoyang.defenseValue).toBe(2500); // 1000 * 0.5 * 5
       const cost = siege.calculateSiegeCost(luoyang);
-      expect(cost.troops).toBe(Math.ceil(100 * (5000 / 100)));
-      expect(cost.troops).toBe(5000);
+      // city typeFactor = 0.8, so: ceil(100 * 2500/100 * 0.8) = ceil(2000) = 2000
+      expect(cost.troops).toBe(Math.ceil(100 * (luoyang.defenseValue / 100) * 0.8));
     });
 
     it('粮草消耗固定为500', () => {

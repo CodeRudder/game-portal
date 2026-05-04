@@ -31,6 +31,8 @@ export interface CooldownEntry {
   endAt: number;
   /** 状态 */
   status: CooldownStatus;
+  /** 剩余时间(ms) */
+  remaining?: number;
 }
 
 /** 冷却状态变化事件 */
@@ -109,7 +111,7 @@ export class CooldownManager {
       return null;
     }
 
-    return { ...entry };
+    return { ...entry, remaining };
   }
 
   /**

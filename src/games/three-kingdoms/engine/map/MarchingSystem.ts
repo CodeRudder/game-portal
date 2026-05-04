@@ -24,7 +24,7 @@ import {
 // ─────────────────────────────────────────────
 
 /** 行军状态 */
-export type MarchState = 'preparing' | 'marching' | 'arrived' | 'intercepted' | 'retreating';
+export type MarchState = 'preparing' | 'marching' | 'arrived' | 'intercepted' | 'retreating' | 'cancelled';
 
 /** 行军单位 */
 export interface MarchUnit {
@@ -59,6 +59,8 @@ export interface MarchUnit {
   eta: number;
   /** 动画帧 */
   animFrame: number;
+  /** 关联的攻占任务ID（用于行军→攻城联动） */
+  siegeTaskId?: string;
 }
 
 /** 行军预览信息 */
@@ -85,6 +87,40 @@ export interface MarchingSaveData {
   version: number;
 }
 
+/** march:created 事件payload */
+export interface MarchCreatedPayload {
+  marchId: string;
+  fromCityId: string;
+  toCityId: string;
+  troops: number;
+  general: string;
+  estimatedTime: number;
+}
+
+/** march:started 事件payload */
+export interface MarchStartedPayload {
+  marchId: string;
+  fromCityId: string;
+  toCityId: string;
+}
+
+/** march:arrived 事件payload */
+export interface MarchArrivedPayload {
+  marchId: string;
+  cityId: string;
+  troops: number;
+  general: string;
+  /** 关联的攻占任务ID（与march:cancelled一致，用于行军→攻城联动） */
+  siegeTaskId?: string;
+}
+
+/** march:cancelled 事件payload */
+export interface MarchCancelledPayload {
+  marchId: string;
+  troops: number;
+  siegeTaskId?: string;
+}
+
 /** 行军路线信息 */
 export interface MarchRoute {
   /** 完整网格路径 */
@@ -102,6 +138,12 @@ export interface MarchRoute {
 // ─────────────────────────────────────────────
 // 常量
 // ─────────────────────────────────────────────
+
+/** 行军精灵动画最短持续时间 (ms) */
+export const MIN_MARCH_DURATION_MS = 10_000; // 10 seconds
+
+/** 行军精灵动画最长持续时间 (ms) */
+export const MAX_MARCH_DURATION_MS = 60_000; // 60 seconds
 
 /** 基础行军速度(像素/秒) */
 const BASE_SPEED = 30;
@@ -162,11 +204,12 @@ export class MarchingSystem implements ISubsystem {
         march.x = march.path[march.path.length - 1].x;
         march.y = march.path[march.path.length - 1].y;
 
-        this.deps.eventBus.emit('march:arrived', {
+        this.deps.eventBus.emit<MarchArrivedPayload>('march:arrived', {
           marchId: id,
           cityId: march.toCityId,
           troops: march.troops,
           general: march.general,
+          siegeTaskId: march.siegeTaskId,
         });
       }
     }
@@ -200,7 +243,8 @@ export class MarchingSystem implements ISubsystem {
     const id = `march_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     const distance = this.calculatePathDistance(path);
     const speed = BASE_SPEED;
-    const estimatedTime = distance / speed;
+    const rawEstimatedTime = (distance / speed) * 1000; // convert to ms
+    const estimatedTime = Math.max(MIN_MARCH_DURATION_MS, Math.min(MAX_MARCH_DURATION_MS, rawEstimatedTime)) / 1000; // back to seconds
 
     const march: MarchUnit = {
       id,
@@ -223,7 +267,7 @@ export class MarchingSystem implements ISubsystem {
 
     this.activeMarches.set(id, march);
 
-    this.deps.eventBus.emit('march:created', {
+    this.deps.eventBus.emit<MarchCreatedPayload>('march:created', {
       marchId: id,
       fromCityId,
       toCityId,
@@ -244,7 +288,7 @@ export class MarchingSystem implements ISubsystem {
       march.state = 'marching';
       march.startTime = Date.now();
 
-      this.deps.eventBus.emit('march:started', {
+      this.deps.eventBus.emit<MarchStartedPayload>('march:started', {
         marchId,
         fromCityId: march.fromCityId,
         toCityId: march.toCityId,
@@ -258,12 +302,13 @@ export class MarchingSystem implements ISubsystem {
   cancelMarch(marchId: string): void {
     const march = this.activeMarches.get(marchId);
     if (march) {
-      march.state = 'retreating';
+      march.state = 'cancelled';
       this.activeMarches.delete(marchId);
 
-      this.deps.eventBus.emit('march:cancelled', {
+      this.deps.eventBus.emit<MarchCancelledPayload>('march:cancelled', {
         marchId,
         troops: march.troops,
+        siegeTaskId: march.siegeTaskId,
       });
     }
   }
@@ -289,6 +334,46 @@ export class MarchingSystem implements ISubsystem {
     this.activeMarches.delete(marchId);
   }
 
+  // ── 回城行军 ─────────────────────────────────
+
+  /**
+   * 创建回城行军
+   *
+   * 从目标城市创建回城行军，速度为出发速度的 80%。
+   * 路径通过 calculateMarchRoute (A*) 重新计算，而非原路反转。
+   *
+   * @param params - 回城行军参数
+   * @returns 回城行军单位，不可达返回 null
+   */
+  createReturnMarch(params: {
+    fromCityId: string;
+    toCityId: string;
+    troops: number;
+    general: string;
+    faction: MarchUnit['faction'];
+    siegeTaskId?: string;
+  }): MarchUnit | null {
+    const route = this.calculateMarchRoute(params.fromCityId, params.toCityId);
+    if (!route) return null;
+
+    // 计算路线并提取路径点
+    const path = route.path.map(p => ({ x: p.x, y: p.y }));
+    const march = this.createMarch(
+      params.fromCityId,
+      params.toCityId,
+      params.troops,
+      params.general,
+      params.faction,
+      path,
+    );
+    march.siegeTaskId = params.siegeTaskId;
+
+    // 速度 x 0.8 (回城行军)
+    march.speed = BASE_SPEED * 0.8;
+
+    return march;
+  }
+
   // ── 路线预览 ─────────────────────────────────
 
   /**
@@ -297,7 +382,8 @@ export class MarchingSystem implements ISubsystem {
   generatePreview(path: Array<{ x: number; y: number }>): MarchPreview {
     const distance = this.calculatePathDistance(path);
     const speed = BASE_SPEED;
-    const estimatedTime = distance / speed;
+    const rawEstimatedTime = (distance / speed) * 1000; // convert to ms
+    const estimatedTime = Math.max(MIN_MARCH_DURATION_MS, Math.min(MAX_MARCH_DURATION_MS, rawEstimatedTime)) / 1000; // back to seconds
 
     // 计算地形摘要
     const terrainSummary = this.calculateTerrainSummary(path);

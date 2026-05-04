@@ -311,6 +311,117 @@ export class ExpeditionSystem implements ISubsystem {
   }
 
   /**
+   * 获取受伤等级对应的战力系数
+   *
+   * 纯函数，根据受伤等级返回对应的战力衰减系数。
+   *
+   * @param injuryLevel - 受伤等级
+   * @returns 战力系数 (0.2 ~ 1.0)
+   */
+  getInjuryPowerModifier(injuryLevel: InjuryLevel): number {
+    return INJURY_POWER_MULTIPLIER[injuryLevel];
+  }
+
+  /**
+   * 编队实际战力的统一入口（Facade 方法）
+   *
+   * 当前实现直接委托给 calculateRemainingPower，未做额外处理。
+   * 架构意图：为 SiegeSystem 等外部调用方提供稳定的战力查询接口，
+   * 内部计算逻辑（士兵折损、将领受伤衰减等）可在此方法内扩展，
+   * 而无需改动调用方代码。
+   *
+   * @param force - 编队对象
+   * @returns 实际战力值
+   */
+  calculateEffectivePower(force: ExpeditionForce): number {
+    const basePower = this.calculateRemainingPower(force.id);
+    return basePower;
+  }
+
+  /**
+   * 应用战斗伤亡到编队
+   *
+   * 更新编队士兵数量（扣除伤亡）并处理将领受伤。
+   * 用于攻城结算后更新编队状态。
+   *
+   * @param forceId - 编队ID
+   * @param troopsLost - 损失的士兵数量
+   * @param heroInjured - 将领是否受伤
+   * @param injuryLevel - 受伤等级
+   * @returns 更新后的编队，不存在返回 null
+   */
+  applyCasualties(
+    forceId: string,
+    troopsLost: number,
+    heroInjured: boolean,
+    injuryLevel: InjuryLevel,
+  ): ExpeditionForce | null {
+    const force = this.forces.get(forceId);
+    if (!force) return null;
+
+    // 扣除伤亡士兵
+    force.troops = Math.max(0, force.troops - troopsLost);
+
+    // 应用将领受伤
+    if (heroInjured && injuryLevel !== 'none') {
+      this.applyHeroInjury(force.heroId, injuryLevel);
+    }
+
+    // 更新状态
+    force.status = 'returning';
+
+    return { ...force };
+  }
+
+  /**
+   * 计算编队剩余战力
+   *
+   * 战力 = 基础战力(= troops) × 存活比例 × 将领受伤减益
+   * 基础战力按编队剩余兵力计算，将领受伤降低战力。
+   *
+   * @param forceId - 编队ID
+   * @returns 剩余战力值，编队不存在返回 0
+   */
+  calculateRemainingPower(forceId: number | string): number {
+    const force = this.forces.get(String(forceId));
+    if (!force) return 0;
+
+    const basePower = force.troops;
+    const heroMultiplier = this.getHeroPowerMultiplier(force.heroId);
+    return basePower * heroMultiplier;
+  }
+
+  /**
+   * 获取编队血条颜色
+   *
+   * 根据伤亡百分比判定血条颜色：
+   * - < 30% 损失: 绿色 (healthy)
+   * - 30-60% 损失: 黄色 (damaged)
+   * - > 60% 损失: 红色 (critical)
+   *
+   * @param troopsLostPercent - 伤亡百分比 (0~1)
+   * @returns 颜色标识
+   */
+  getForceHealthColor(troopsLostPercent: number): 'healthy' | 'damaged' | 'critical' {
+    if (troopsLostPercent > 0.6) return 'critical';
+    if (troopsLostPercent > 0.3) return 'damaged';
+    return 'healthy';
+  }
+
+  /**
+   * 移除编队
+   *
+   * 无条件移除指定编队（不检查状态）。
+   * 用于回城到达后编队销毁。
+   *
+   * @param forceId - 编队ID
+   * @returns 是否成功移除
+   */
+  removeForce(forceId: string): boolean {
+    return this.forces.delete(forceId);
+  }
+
+  /**
    * 应用将领受伤
    */
   private applyHeroInjury(heroId: string, level: InjuryLevel): void {

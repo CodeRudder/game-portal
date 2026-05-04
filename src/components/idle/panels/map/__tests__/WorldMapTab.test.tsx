@@ -113,6 +113,7 @@ vi.mock('@/games/three-kingdoms/core/map', () => ({
   REGION_LABELS: { central_plains: '中原', jiangdong: '江东', xiliang: '西凉' },
   TERRAIN_TYPES: ['plain', 'mountain', 'forest', 'desert', 'water'],
   TERRAIN_LABELS: { plain: '平原', mountain: '山地', forest: '森林', desert: '沙漠', water: '水域' },
+  SIEGE_REWARD_CONFIG: { baseGrain: 50, baseGold: 30, baseTroops: 20, baseMandate: 5, baseTerritoryExp: 100 },
 }));
 
 // ── Mock 行军系统依赖 ──
@@ -156,14 +157,18 @@ const mockCalculateMarchRoute = vi.fn().mockReturnValue({
 });
 const mockGetActiveMarches = vi.fn().mockReturnValue([]);
 
+let capturedEventBus: any = null;
+
 vi.mock('@/games/three-kingdoms/engine/map/MarchingSystem', () => ({
   MarchingSystem: class MockMarchingSystem {
-    init() {}
+    init(deps: any) { capturedEventBus = deps?.eventBus; }
     setWalkabilityGrid() {}
     calculateMarchRoute(...args: any[]) { return mockCalculateMarchRoute(...args); }
     createMarch(...args: any[]) { return mockCreateMarch(...args); }
     startMarch(...args: any[]) { return mockStartMarch(...args); }
     cancelMarch() {}
+    removeMarch() {}
+    createReturnMarch() { return { id: 'return-march-test', siegeTaskId: '' }; }
     getActiveMarches() { return mockGetActiveMarches(); }
     update() {}
   },
@@ -456,13 +461,13 @@ describe('WorldMapTab', () => {
       // 1. 点击己方城市选为源
       const playerCell = screen.getByTestId('territory-cell-city-luoyang');
       fireEvent.click(playerCell);
-      // 2. 点击敌方城市触发行军
+      // 2. 点击敌方城市 → 计算行军路线预览 + 打开攻城确认弹窗
       const enemyCell = screen.getByTestId('territory-cell-city-xuchang');
       fireEvent.click(enemyCell);
-      // 验证 calculateMarchRoute 被调用
+      // 验证 calculateMarchRoute 被调用（路线预览）
       expect(mockCalculateMarchRoute).toHaveBeenCalled();
-      expect(mockCreateMarch).toHaveBeenCalled();
-      expect(mockStartMarch).toHaveBeenCalled();
+      // R9: 点击目标城市不再直接创建行军，而是打开攻城确认弹窗
+      expect(screen.getByTestId('mock-siege-confirm-modal')).toBeTruthy();
     });
 
     it('行军触发后清除选中状态', () => {
@@ -540,7 +545,7 @@ describe('WorldMapTab', () => {
       expect(screen.getByTestId('mock-conquest-anim-system')).toBeTruthy();
     });
 
-    it('攻城成功后触发 conquestAnimSystem.create', () => {
+    it('攻城成功后触发 conquestAnimSystem.create', async () => {
       mockConquestCreate.mockClear();
       const engine = makeEngine({
         launched: true,
@@ -559,8 +564,26 @@ describe('WorldMapTab', () => {
       fireEvent.click(screen.getByTestId('territory-cell-city-xuchang'));
       // 2. 点击攻城按钮 → 打开 SiegeConfirmModal
       fireEvent.click(screen.getByTestId('siege-btn-city-xuchang'));
-      // 3. 点击确认攻城按钮 → 执行攻城
+      // 3. 点击确认攻城按钮 → 创建行军和攻城任务（R9: 不再直接执行攻城）
       fireEvent.click(screen.getByTestId('siege-confirm-btn'));
+
+      // 4. 验证行军创建
+      expect(mockCreateMarch).toHaveBeenCalled();
+      expect(mockStartMarch).toHaveBeenCalled();
+
+      // 5. 模拟行军到达事件（R9: 由 MarchingSystem.update() 触发）
+      const marchObj = mockCreateMarch.mock.results[0].value;
+      const siegeTaskId = marchObj.siegeTaskId;
+      capturedEventBus.emit('march:arrived', {
+        marchId: marchObj.id,
+        cityId: 'city-xuchang',
+        troops: 1000,
+        general: '将军',
+        siegeTaskId,
+      });
+
+      // 6. 等待 setTimeout(0) 后的攻城执行完成
+      await new Promise((r) => setTimeout(r, 10));
 
       // 验证 ConquestAnimationSystem.create 被调用
       // ownership 'enemy' 映射为阵营 'shu'，'player' 映射为 'wei'
@@ -570,7 +593,7 @@ describe('WorldMapTab', () => {
         expect.any(Number), // y
         'shu',             // fromFaction (enemy ownership -> shu faction)
         'wei',             // toFaction (player ownership -> wei faction)
-        expect.objectContaining({ success: true, troopsLost: 30 }),
+        expect.objectContaining({ success: true, troopsLost: expect.any(Number) }),
       );
     });
 

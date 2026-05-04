@@ -33,8 +33,14 @@ import type {
 import { ASCIIMapParser } from '@/games/three-kingdoms/core/map/ASCIIMapParser';
 import { buildWalkabilityGrid } from '@/games/three-kingdoms/engine/map/PathfindingSystem';
 import { MarchingSystem } from '@/games/three-kingdoms/engine/map/MarchingSystem';
-import type { MarchRoute, MarchUnit } from '@/games/three-kingdoms/engine/map/MarchingSystem';
+import type { MarchRoute, MarchUnit, MarchArrivedPayload, MarchCancelledPayload } from '@/games/three-kingdoms/engine/map/MarchingSystem';
 import { ConquestAnimationSystem } from '@/games/three-kingdoms/engine/map/ConquestAnimation';
+import { SiegeBattleAnimationSystem } from '@/games/three-kingdoms/engine/map/SiegeBattleAnimationSystem';
+import type { SiegeAnimationState } from '@/games/three-kingdoms/engine/map/SiegeBattleAnimationSystem';
+import { SiegeBattleSystem } from '@/games/three-kingdoms/engine/map/SiegeBattleSystem';
+import type { BattleCompletedEvent } from '@/games/three-kingdoms/engine/map/SiegeBattleSystem';
+import { SettlementPipeline } from '@/games/three-kingdoms/engine/map/SettlementPipeline';
+import type { SettlementContext } from '@/games/three-kingdoms/engine/map/SettlementPipeline';
 import worldMapText from '@/games/three-kingdoms/core/map/maps/world-map.txt?raw';
 import TerritoryInfoPanel from './TerritoryInfoPanel';
 import SiegeConfirmModal from './SiegeConfirmModal';
@@ -42,10 +48,69 @@ import SiegeResultModal from './SiegeResultModal';
 import type { SiegeResultData } from './SiegeResultModal';
 import OfflineRewardModal from './OfflineRewardModal';
 import ProductionPanel from './ProductionPanel';
+import SiegeTaskPanel from './SiegeTaskPanel';
 import type { OfflineEvent } from '@/games/three-kingdoms/engine/map/OfflineEventSystem';
+import type { HeroInfo, ExpeditionForceSelection } from './ExpeditionForcePanel';
+import type { CasualtyResult } from '@/games/three-kingdoms/engine/map/expedition-types';
+import {
+  mapInjuryLevel,
+  INJURY_RECOVERY_HOURS,
+} from '@/games/three-kingdoms/engine/map/expedition-types';
+import type { UIInjuryLevel } from '@/games/three-kingdoms/engine/map/expedition-types';
+import type { SiegeStrategyType } from '@/games/three-kingdoms/core/map/siege-enhancer.types';
+import type { IEventBus } from '@/games/three-kingdoms/core/types/events';
+import { SiegeTaskManager } from '@/games/three-kingdoms/engine/map/SiegeTaskManager';
+import type { SiegeTask } from '@/games/three-kingdoms/core/map/siege-task.types';
+import { type SiegeItemType } from '@/games/three-kingdoms/engine/map/SiegeItemSystem';
 import { formatNumber } from '@/components/idle/utils/formatNumber';
 import { PixelWorldMap } from './PixelWorldMap';
 import './WorldMapTab.css';
+
+// ─────────────────────────────────────────────
+// R14→R16: Engine InjuryLevel → UI injuryLevel 映射
+// 映射函数和恢复时间已移至 expedition-types.ts 共享配置
+// Re-export for backward compatibility with existing tests
+// ─────────────────────────────────────────────
+export { mapInjuryLevel } from '@/games/three-kingdoms/engine/map/expedition-types';
+
+/**
+ * 将引擎 CasualtyResult 转换为 UI injuryData
+ *
+ * @param casualties - 引擎伤亡结果
+ * @param generalName - 将领名称
+ * @returns injuryData 对象，无伤时返回 undefined
+ */
+export function mapInjuryData(
+  casualties: CasualtyResult | undefined,
+  generalName: string,
+): { generalName: string; injuryLevel: UIInjuryLevel; recoveryHours: number } | undefined {
+  if (!casualties || !casualties.heroInjured || casualties.injuryLevel === 'none') {
+    return undefined;
+  }
+  const uiLevel = mapInjuryLevel(casualties.injuryLevel);
+  return {
+    generalName,
+    injuryLevel: uiLevel,
+    recoveryHours: INJURY_RECOVERY_HOURS[uiLevel],
+  };
+}
+
+/**
+ * 将引擎 CasualtyResult 转换为 UI troopLoss
+ *
+ * @param casualties - 引擎伤亡结果
+ * @param totalTroops - 出征总兵力
+ * @returns troopLoss 对象，无伤亡时返回 undefined
+ */
+export function mapTroopLoss(
+  casualties: CasualtyResult | undefined,
+  totalTroops: number,
+): { lost: number; total: number } | undefined {
+  if (!casualties || casualties.troopsLost <= 0 || totalTroops <= 0) {
+    return undefined;
+  }
+  return { lost: casualties.troopsLost, total: totalTroops };
+}
 
 // ─────────────────────────────────────────────
 // Props
@@ -134,6 +199,12 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
   // ── P1-1: 兵力部署滑块状态 ──
   const [selectedTroops, setSelectedTroops] = useState<number>(0);
 
+  // ── J-01: 编队选择状态 ──
+  const [expeditionSelection, setExpeditionSelection] = useState<ExpeditionForceSelection | null>(null);
+
+  // ── MAP-F06-02: 攻城策略选择状态 ──
+  const [selectedStrategy, setSelectedStrategy] = useState<SiegeStrategyType | null>(null);
+
   // ── 离线奖励弹窗状态 ──
   const [offlineVisible, setOfflineVisible] = useState(false);
   const [offlineDuration, setOfflineDuration] = useState(0);
@@ -147,13 +218,26 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
   const marchingSystemRef = useRef<MarchingSystem | null>(null);
   const [marchRoute, setMarchRoute] = useState<MarchRoute | null>(null);
   const [activeMarches, setActiveMarches] = useState<MarchUnit[]>([]);
+  // ── 攻城战斗动画系统 (I12) ──
+  const siegeBattleAnimRef = useRef<SiegeBattleAnimationSystem | null>(null);
+  // ── 攻城战斗回合制引擎 ──
+  const siegeBattleSystemRef = useRef<SiegeBattleSystem | null>(null);
+  const [activeSiegeAnims, setActiveSiegeAnims] = useState<SiegeAnimationState[]>([]);
+  // ── 攻占任务管理 ──
+  const siegeTaskManagerRef = useRef<SiegeTaskManager>(new SiegeTaskManager());
+  const [activeSiegeTasks, setActiveSiegeTasks] = useState<SiegeTask[]>([]);
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
+  // ── R9 Task5: 行军路线高亮 ──
+  const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
   const marchAnimRef = useRef<number>(0);
   const [marchNotification, setMarchNotification] = useState<string | null>(null);
   const territoriesRef = useRef<TerritoryData[]>(territories);
   territoriesRef.current = territories;
   const engineRef = useRef(engine);
   engineRef.current = engine;
+  // ── 攻城动画→结果弹窗时序控制 ──
+  const pendingSiegeResultRef = useRef<any>(null);
+  const siegeAnimTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── 攻城动画系统 ──
   const conquestAnimSystem = useMemo(() => new ConquestAnimationSystem(), []);
@@ -329,7 +413,7 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
     // 使用功能性的 eventBus 以支持 march:arrived 事件监听
     const listeners = new Map<string, Set<(payload: any) => void>>();
     const eventBus = {
-      emit: (event: string, payload?: any) => {
+      emit: (event: string, payload: any) => {
         const handlers = listeners.get(event);
         if (handlers) {
           for (const handler of handlers) {
@@ -356,6 +440,7 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
           listeners.set(event, new Set());
         }
         listeners.get(event)!.add(wrapper);
+        return () => listeners.get(event)?.delete(wrapper);
       },
       removeAllListeners: (event?: string) => {
         if (event) {
@@ -364,13 +449,23 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
           listeners.clear();
         }
       },
-    } as any;
+    } as IEventBus;
     const mockDeps = {
       eventBus,
       config: {} as any,
       registry: { get: () => null } as any,
     };
     marchingSystem.init(mockDeps);
+
+    // ── 初始化攻城战斗动画系统 (I12) ──
+    const siegeBattleAnimSystem = new SiegeBattleAnimationSystem();
+    siegeBattleAnimSystem.init(mockDeps);
+    siegeBattleAnimRef.current = siegeBattleAnimSystem;
+
+    // ── 初始化攻城战斗回合制引擎 ──
+    const siegeBattleSystem = new SiegeBattleSystem();
+    siegeBattleSystem.init(mockDeps);
+    siegeBattleSystemRef.current = siegeBattleSystem;
 
     // 构建可行走网格
     try {
@@ -384,8 +479,12 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
 
     marchingSystemRef.current = marchingSystem;
 
+    // ── 初始化 SettlementPipeline（统一结算流水线） ──
+    const settlementPipeline = new SettlementPipeline();
+    settlementPipeline.setDependencies({ eventBus });
+
     // 监听行军到达事件
-    const handleArrived = (data: any) => {
+    const handleArrived = (data: MarchArrivedPayload) => {
       const { marchId, cityId, troops, general } = data ?? {};
       console.log('行军到达:', cityId);
 
@@ -399,19 +498,249 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
       // 显示到达通知
       setMarchNotification(`${general ?? '部队'}率${troops ?? 0}兵到达${targetName}`);
 
-      // 到达敌方/中立城市时自动触发攻城
-      if (targetTerritory && targetTerritory.ownership !== 'player') {
-        // 延迟触发攻城UI，让玩家先看到行军到达动画
+      // 检查是否有关联的攻占任务
+      const siegeTaskManager = siegeTaskManagerRef.current;
+      const siegeTaskId = data.siegeTaskId;
+      const associatedTask = siegeTaskId ? siegeTaskManager.getTask(siegeTaskId) : null;
+
+      if (associatedTask && !associatedTask.result) {
+        // 自动执行攻城（P5→P8→P9 阶段）
+        // 将攻城执行延迟到下一个宏任务，避免在 rAF 回调中同步执行重计算阻塞渲染
+        const taskId = associatedTask.id;
         setTimeout(() => {
+          // 防重复处理守卫：再次检查任务状态是否仍有效
+          const currentTask = siegeTaskManager.getTask(taskId);
+          if (!currentTask || currentTask.result) return;
+
           const eng = engineRef.current;
-          if (!eng) return;
-          // 使用攻城回调打开攻城确认弹窗
-          setSelectedId(cityId);
-          setSiegeTarget(targetTerritory);
-          setSiegeVisible(true);
-          const engTroops = eng.getResourceAmount?.('troops') ?? 0;
-          setSelectedTroops(engTroops);
-        }, 1500);
+          if (eng) {
+            const siegeSystem = eng.getSiegeSystem?.() ?? eng?.siege;
+            if (siegeSystem?.executeSiege) {
+              // 推进: sieging
+              siegeTaskManager.advanceStatus(currentTask.id, 'sieging');
+
+              // 启动攻城战斗回合制引擎（emit battle:started → SiegeBattleAnimationSystem 自动启动动画）
+              const targetTerritory = territoriesRef.current.find((t) => t.id === currentTask.targetId);
+              const battleSystem = siegeBattleSystemRef.current;
+              if (battleSystem) {
+                battleSystem.createBattle({
+                  taskId: currentTask.id,
+                  targetId: currentTask.targetId,
+                  troops: currentTask.expedition.troops,
+                  strategy: currentTask.strategy ?? 'forceAttack',
+                  targetDefenseLevel: 1,
+                  targetX: targetTerritory?.position.x ?? 0,
+                  targetY: targetTerritory?.position.y ?? 0,
+                  faction: 'wei',
+                });
+              }
+
+              // 执行攻城（使用旧 siegeSystem 确定胜负，因为 SettlementPipeline 不负责战斗判定）
+              const siegeResult = siegeSystem.executeSiege(
+                currentTask.targetId,
+                'player',
+                currentTask.expedition.troops,
+                eng.getResourceAmount?.('grain') ?? 0,
+              );
+
+              // ── 使用 SettlementPipeline 统一结算（R14 修复：消除双路径架构） ──
+              //
+              // [R15-Task3 架构说明：SettlementPipeline 的唯一调用路径]
+              // 这是 SettlementPipeline 在攻城流程中的**唯一执行入口**。
+              // 攻城结算完全由 handleArrived 的 setTimeout(0) 回调同步完成，
+              // 而非依赖 SiegeBattleSystem.update() 自然完成后的 battle:completed 事件。
+              //
+              // 原因：SiegeBattleSystem 在每帧 animate() 中被 update(dt) 驱动，
+              // 但 handleArrived 在结算完成后会立即调用 cancelBattle() 从活跃列表中
+              // 移除该战斗会话，因此 SiegeBattleSystem 永远不会为其发出 battle:completed。
+              // 即使 battle:completed 被发出，也不存在对应的监听器来处理它。
+              // 这种单路径设计确保了结算只执行一次，避免了双路径竞态问题。
+              //
+              // 从攻城结果构造 BattleCompletedEvent（pipeline 的 calculate 阶段需要）
+              const battleEvent: BattleCompletedEvent = {
+                taskId: currentTask.id,
+                targetId: currentTask.targetId,
+                victory: siegeResult.victory,
+                strategy: currentTask.strategy ?? 'forceAttack',
+                troops: currentTask.expedition.troops,
+                elapsedMs: 0,
+                remainingDefense: siegeResult.victory ? 0 : 100,
+              };
+
+              const returnMarchInfo = {
+                fromCityId: currentTask.targetId,
+                toCityId: currentTask.sourceId,
+                troops: currentTask.expedition.troops,
+                general: currentTask.expedition.heroName,
+              };
+
+              const isFirstCapture = targetTerritory?.ownership === 'neutral' || targetTerritory?.ownership === 'enemy';
+
+              const settlementCtx: SettlementContext = siegeResult.victory
+                ? settlementPipeline.createVictoryContext({
+                    taskId: currentTask.id,
+                    battleEvent,
+                    sourceId: currentTask.sourceId,
+                    returnMarch: returnMarchInfo,
+                    troops: currentTask.expedition.troops,
+                    targetLevel: targetTerritory?.level ?? 1,
+                    isFirstCapture,
+                  })
+                : settlementPipeline.createDefeatContext({
+                    taskId: currentTask.id,
+                    battleEvent,
+                    sourceId: currentTask.sourceId,
+                    returnMarch: returnMarchInfo,
+                    troops: currentTask.expedition.troops,
+                    targetLevel: targetTerritory?.level ?? 1,
+                  });
+
+              const settlementResult = settlementPipeline.execute(settlementCtx);
+              if (!settlementResult.success) {
+                // Pipeline validation failed — skip settlement
+                return;
+              }
+
+              const settlement = settlementResult.context;
+
+              // 推进: settling
+              siegeTaskManager.advanceStatus(currentTask.id, 'settling');
+
+              // 从 SettlementPipeline 获取伤亡数据（包含真实的 heroInjured 和 injuryLevel）
+              const casualties: CasualtyResult = {
+                troopsLost: settlement.casualties?.troopsLost ?? 0,
+                troopsLostPercent: settlement.casualties?.troopsLostPercent ?? 0,
+                heroInjured: settlement.casualties?.heroInjured ?? false,
+                injuryLevel: settlement.casualties?.injuryLevel ?? 'none',
+                battleResult: siegeResult.victory ? 'victory' : 'defeat',
+              };
+
+              const effectiveTroopsLost = casualties.troopsLost;
+
+              // 设置攻城结果
+              siegeTaskManager.setResult(currentTask.id, {
+                victory: siegeResult.victory,
+                capture: siegeResult.capture,
+                casualties,
+                actualCost: siegeResult.cost,
+                rewardMultiplier: settlement.rewards?.rewardMultiplier ?? 0,
+                specialEffectTriggered: false,
+                failureReason: siegeResult.failureReason,
+              });
+
+              // 推进: returning（编队回城）
+              siegeTaskManager.advanceStatus(currentTask.id, 'returning');
+
+              // 停止战斗引擎空转（结算已完成，避免 SiegeBattleSystem 继续衰减城防）
+              // [R15-Task3] cancelBattle() 将战斗从活跃列表中移除且不触发 battle:completed，
+              // 这确保了 SettlementPipeline 只在上方执行一次，不会在后续帧中被重复调用。
+              if (battleSystem) {
+                battleSystem.cancelBattle(currentTask.id);
+              }
+
+              // 创建回城行军（速度 x0.8，使用 createReturnMarch）
+              const marchingSys = marchingSystemRef.current;
+              if (marchingSys) {
+                const returnMarch = marchingSys.createReturnMarch({
+                  fromCityId: currentTask.targetId,
+                  toCityId: currentTask.sourceId,
+                  troops: currentTask.expedition.troops - effectiveTroopsLost,
+                  general: currentTask.expedition.heroName,
+                  faction: 'wei',
+                  siegeTaskId: currentTask.id,
+                });
+                if (returnMarch) {
+                  marchingSys.startMarch(returnMarch.id);
+                } else {
+                  // 回城路线不可达时直接完成任务
+                  siegeTaskManager.advanceStatus(currentTask.id, 'completed');
+                  siegeTaskManager.removeCompletedTasks();
+                }
+              }
+
+              // 显示攻城结果弹窗
+              // R14: 从 SettlementPipeline.distribute() 获取道具掉落（pipeline 已处理 shouldDropInsiderLetter）
+              const droppedItems = settlement.rewards?.items ?? [];
+
+              const siegeResultData: SiegeResultData = {
+                launched: siegeResult.launched,
+                victory: siegeResult.victory,
+                targetId: siegeResult.targetId,
+                targetName: siegeResult.targetName,
+                cost: siegeResult.cost,
+                capture: siegeResult.capture,
+                failureReason: siegeResult.failureReason,
+                defeatTroopLoss: siegeResult.defeatTroopLoss,
+                casualties,
+                // R14: 道具掉落数据来自 SettlementPipeline
+                itemDrops: droppedItems.length > 0 ? droppedItems as Array<{ type: SiegeItemType; count: number }> : undefined,
+                // R14: 奖励倍率来自 SettlementPipeline
+                rewardMultiplier: settlement.rewards?.rewardMultiplier,
+              };
+
+              // Store result but don't show modal yet — wait for animation to complete
+              pendingSiegeResultRef.current = siegeResultData;
+              setSiegeResultData(siegeResultData);
+
+              // Listen for animation completion before showing modal
+              const animHandler = (animData: { taskId: string; targetCityId: string; victory: boolean }) => {
+                if (animData.taskId === currentTask.id) {
+                  if (siegeAnimTimeoutRef.current) {
+                    clearTimeout(siegeAnimTimeoutRef.current);
+                    siegeAnimTimeoutRef.current = null;
+                  }
+                  setSiegeResultVisible(true);
+                }
+              };
+
+              eventBus.once('siegeAnim:completed', animHandler);
+
+              // Safety fallback: show modal after 5s even if animation event never fires
+              siegeAnimTimeoutRef.current = setTimeout(() => {
+                eventBus.off('siegeAnim:completed', animHandler);
+                siegeAnimTimeoutRef.current = null;
+                setSiegeResultVisible(true);
+              }, 5000);
+
+              // 完成攻城动画：cancelBattle 不会触发 battle:completed，
+              // 所以需要手动完成动画以触发 siegeAnim:completed 事件。
+              // 必须在 eventBus.once 注册之后调用，否则事件会在监听器注册前就已发出。
+              const siegeAnimSystem = siegeBattleAnimRef.current;
+              if (siegeAnimSystem) {
+                siegeAnimSystem.completeSiegeAnimation(currentTask.id, siegeResult.victory);
+              }
+
+              // 攻城成功时触发攻城动画
+              if (siegeResult.victory && targetTerritory) {
+                const ownershipToFaction = (ownership: string): string => {
+                  switch (ownership) {
+                    case 'player': return 'wei';
+                    case 'enemy': return 'shu';
+                    case 'neutral': return 'neutral';
+                    default: return 'neutral';
+                  }
+                };
+                conquestAnimSystem.create(
+                  targetTerritory.id,
+                  targetTerritory.position.x,
+                  targetTerritory.position.y,
+                  ownershipToFaction(targetTerritory.ownership),
+                  'wei',
+                  { success: true, troopsLost: effectiveTroopsLost, general: currentTask.expedition.heroName },
+                );
+              }
+            }
+          }
+          // 更新攻占任务列表
+          setActiveSiegeTasks(siegeTaskManager.getActiveTasks());
+        }, 0);
+      }
+
+      // 检查是否为回城行军（到达己方城市）
+      if (targetTerritory && targetTerritory.ownership === 'player' && associatedTask?.status === 'returning') {
+        siegeTaskManager.advanceStatus(associatedTask.id, 'completed');
+        siegeTaskManager.removeCompletedTasks();
+        setActiveSiegeTasks(siegeTaskManager.getActiveTasks());
       }
 
       // 3秒后自动清除到达的行军并隐藏通知
@@ -423,6 +752,31 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
     };
     eventBus.on('march:arrived', handleArrived);
 
+    // 监听行军取消事件：清理关联的攻占任务
+    // 注意：cancelMarch 在 emit 前已删除 march，所以 siegeTaskId 通过事件 payload 传递
+    const handleCancelled = (data: MarchCancelledPayload) => {
+      const { siegeTaskId } = data ?? {};
+      if (siegeTaskId) {
+        const siegeTaskManager = siegeTaskManagerRef.current;
+        const task = siegeTaskManager.getTask(siegeTaskId);
+        if (task && task.status !== 'completed') {
+          // 任务未完成时，推进到 completed 并清理
+          siegeTaskManager.setResult(siegeTaskId, {
+            victory: false,
+            casualties: null,
+            actualCost: task.cost,
+            rewardMultiplier: 0,
+            specialEffectTriggered: false,
+            failureReason: '行军被取消',
+          });
+          siegeTaskManager.advanceStatus(siegeTaskId, 'completed');
+          siegeTaskManager.removeCompletedTasks();
+          setActiveSiegeTasks(siegeTaskManager.getActiveTasks());
+        }
+      }
+    };
+    eventBus.on('march:cancelled', handleCancelled);
+
     // 行军动画循环
     let lastTime = Date.now();
     const animate = () => {
@@ -431,6 +785,26 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
       lastTime = now;
 
       marchingSystem.update(dt);
+
+      // 更新攻城战斗回合制引擎（驱动城防衰减，自然完成时 emit battle:completed）
+      // [R15-Task3] 注意：对于攻城任务，cancelBattle() 在结算后已被调用，
+      // 所以 battle:completed 不会被发出。此 update() 仅用于驱动城防衰减动画。
+      siegeBattleSystem.update(dt);
+
+      // Bridge: sync defenseValue from SiegeBattleSystem to SiegeBattleAnimationSystem
+      // so the HP bar reflects the actual defense ratio each frame
+      const activeBattles = siegeBattleSystem.getState().activeBattles;
+      for (const battle of activeBattles) {
+        if (battle.maxDefense > 0) {
+          siegeBattleAnimSystem.updateBattleProgress(
+            battle.taskId,
+            battle.defenseValue / battle.maxDefense,
+          );
+        }
+      }
+
+      // 更新攻城战斗动画系统 (I12)
+      siegeBattleAnimSystem.update(dt);
 
       // 同步活跃行军到 state（仅在有变化时更新）
       const current = marchingSystem.getActiveMarches();
@@ -441,13 +815,31 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
         return prev;
       });
 
+      // 同步攻城战斗动画到 state (I12)
+      const siegeAnims = siegeBattleAnimSystem.getActiveAnimations();
+      setActiveSiegeAnims((prev) => {
+        if (prev.length !== siegeAnims.length) return [...siegeAnims];
+        if (siegeAnims.length > 0) return [...siegeAnims];
+        return prev;
+      });
+
       marchAnimRef.current = requestAnimationFrame(animate);
     };
     marchAnimRef.current = requestAnimationFrame(animate);
 
     return () => {
       cancelAnimationFrame(marchAnimRef.current);
+      // Cleanup pending siege animation listeners
+      if (siegeAnimTimeoutRef.current) {
+        clearTimeout(siegeAnimTimeoutRef.current);
+        siegeAnimTimeoutRef.current = null;
+      }
+      siegeBattleSystem.destroy();
+      siegeBattleSystemRef.current = null;
+      siegeBattleAnimSystem.destroy();
+      siegeBattleAnimRef.current = null;
       eventBus.off('march:arrived', handleArrived);
+      eventBus.off('march:cancelled', handleCancelled);
     };
   }, []);
 
@@ -520,50 +912,6 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
     offlineRewardClaimedRef.current = true;
   }, [engine, offlineEvents, territories]);
 
-  // ── 行军触发逻辑 ──
-  const handleStartMarch = useCallback(
-    (sourceId: string, targetId: string) => {
-      const marchingSystem = marchingSystemRef.current;
-      if (!marchingSystem) return;
-
-      // 1. A* 寻路计算行军路线
-      const route = marchingSystem.calculateMarchRoute(sourceId, targetId);
-      if (!route) {
-        // 不可达时清除路线
-        setMarchRoute(null);
-        setSelectedSourceId(null);
-        return;
-      }
-
-      // 2. 在地图上显示路线
-      setMarchRoute(route);
-
-      // 3. 查找己方领土获取兵力和阵营信息
-      const sourceTerritory = territories.find((t) => t.id === sourceId);
-      const troops = engine?.getResourceAmount?.('troops') ?? 100;
-      const faction: MarchUnit['faction'] = 'wei'; // 默认阵营
-
-      // 4. 创建行军单位并开始行军
-      const pathWithPixels = route.path.map((p) => ({ x: p.x, y: p.y }));
-      const march = marchingSystem.createMarch(
-        sourceId,
-        targetId,
-        troops,
-        '行军',
-        faction,
-        pathWithPixels,
-      );
-      marchingSystem.startMarch(march.id);
-
-      // 5. 清除选中源城市和路线（行军精灵将由 activeMarches 驱动显示）
-      setSelectedSourceId(null);
-      setSelectedId(null);
-      // 稍后清除路线预览，让行军精灵接管
-      setTimeout(() => setMarchRoute(null), 2000);
-    },
-    [territories, engine],
-  );
-
   // ── 事件处理 ──
   const handleSelectTerritory = useCallback(
     (id: string) => {
@@ -583,10 +931,22 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
         return;
       }
 
-      // 行军触发逻辑：己方城市选为目标时触发行军
+      // 已选中己方源城市，点击目标城市 → 打开攻城确认弹窗（统一走 SiegeTaskManager 异步流程）
       if (selectedSourceId && selectedSourceId !== id) {
-        // 已选中己方源城市，点击目标城市 → 触发行军
-        handleStartMarch(selectedSourceId, id);
+        // 计算并显示行军路线预览
+        const marchingSystem = marchingSystemRef.current;
+        if (marchingSystem) {
+          const route = marchingSystem.calculateMarchRoute(selectedSourceId, id);
+          if (route) {
+            setMarchRoute(route);
+          }
+        }
+        // 打开攻城确认弹窗（而非旧行军路径）
+        setSiegeTarget(clickedTerritory);
+        setSiegeVisible(true);
+        const troops = engine?.getResourceAmount?.('troops') ?? 0;
+        setSelectedTroops(troops);
+        setSelectedId(id);
         onSelectTerritory?.(id);
         return;
       }
@@ -609,7 +969,7 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
 
       onSelectTerritory?.(id);
     },
-    [selectedSourceId, territories, onSelectTerritory, handleStartMarch],
+    [selectedSourceId, territories, onSelectTerritory, engine],
   );
 
   const handleSiege = useCallback(
@@ -680,68 +1040,198 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
     return siegeSystem?.getCooldownRemaining?.() ?? 0;
   }, [engine, snapshotVersion]);
 
-  // ── 确认攻城执行 ──
+  // ── J-01: 编队系统检测和将领数据 ──
+  const expeditionSystem = useMemo(() => {
+    if (!engine) return null;
+    return engine.getExpeditionSystem?.() ?? engine?.expedition ?? null;
+  }, [engine]);
+
+  /** 从引擎获取可用将领列表 */
+  const heroes = useMemo<HeroInfo[]>(() => {
+    if (!engine) return [];
+    // 尝试从引擎获取将领数据（多种可能的接口）
+    const heroList = engine.getHeroes?.() ?? engine.heroes ?? [];
+    if (!Array.isArray(heroList) || heroList.length === 0) return [];
+    return heroList.map((hero: any) => {
+      const injuryLevel = expeditionSystem?.getHeroInjury?.(hero.id) ?? 'none';
+      const isInjured = injuryLevel !== 'none';
+      const isBusy = expeditionSystem?.isHeroBusy?.(hero.id) ?? false;
+      return {
+        id: hero.id,
+        name: hero.name,
+        level: hero.level ?? 1,
+        injured: isInjured,
+        injuryLevel: isInjured ? injuryLevel : undefined,
+        injuryRecoveryTime: undefined,
+        busy: isBusy,
+      };
+    });
+  }, [engine, expeditionSystem, snapshotVersion]);
+
+  // ── MAP-F06-07: 内应信/夜袭令道具数量 ──
+  const insiderLetterCount = useMemo(() => {
+    if (!engine) return 0;
+    const inventory = engine.getInventory?.() ?? engine.inventory;
+    if (!inventory) return 0;
+    const item = inventory['item-insider-letter'] ?? inventory['insiderLetter'];
+    return typeof item === 'number' ? item : item?.quantity ?? 0;
+  }, [engine, snapshotVersion]);
+
+  const nightRaidTokenCount = useMemo(() => {
+    if (!engine) return 0;
+    const inventory = engine.getInventory?.() ?? engine.inventory;
+    if (!inventory) return 0;
+    const item = inventory['item-night-raid-token'] ?? inventory['nightRaidToken'];
+    return typeof item === 'number' ? item : item?.quantity ?? 0;
+  }, [engine, snapshotVersion]);
+
+  // ── MAP-F06-07: 目标城池内应暴露状态 ──
+  const insiderExposed = useMemo(() => {
+    if (!siegeTarget || !engine) return false;
+    const siegeSystem = engine.getSiegeSystem?.() ?? engine?.siege;
+    return siegeSystem?.isInsiderExposed?.(siegeTarget.id) ?? false;
+  }, [siegeTarget, engine, snapshotVersion]);
+
+  const insiderCooldownMs = useMemo(() => {
+    if (!siegeTarget || !engine) return 0;
+    const siegeSystem = engine.getSiegeSystem?.() ?? engine?.siege;
+    return siegeSystem?.getInsiderCooldownRemaining?.(siegeTarget.id) ?? 0;
+  }, [siegeTarget, engine, snapshotVersion]);
+
+  // ── MAP-F08: 是否首次攻城该领土 ──
+  const isFirstCapture = useMemo(() => {
+    if (!siegeTarget || !engine) return false;
+    const siegeSystem = engine.getSiegeSystem?.() ?? engine?.siege;
+    return siegeSystem?.isFirstCapture?.(siegeTarget.id) ?? true;
+  }, [siegeTarget, engine]);
+
+  // ── 攻城执行入口（同步触发异步流程：创建任务→行军→到达时自动攻城） ──
   const handleSiegeConfirm = useCallback(() => {
     if (!siegeTarget || !engine) return;
 
-    // P0-2 修复：正确获取攻城系统并执行攻城
-    const siegeSystem = engine.getSiegeSystem?.() ?? engine?.siege;
-    if (siegeSystem?.executeSiege) {
-      // 使用滑块选择的兵力（而非全部可用兵力）
-      const deployTroops = selectedTroops > 0 ? selectedTroops : availableTroops;
-      // 粮草始终从引擎获取最新值
-      const currentGrain = engine.getResourceAmount?.('grain') ?? availableGrain;
+    const marchingSystem = marchingSystemRef.current;
+    if (!marchingSystem) return;
 
-      const result = siegeSystem.executeSiege(siegeTarget.id, 'player', deployTroops, currentGrain);
+    // 1. 确定出发城市：优先使用已选源城市，否则找最近的己方城市
+    const sourceTerritory = selectedSourceId
+      ? territories.find((t) => t.id === selectedSourceId)
+      : territories.find((t) => t.ownership === 'player');
 
-      // 将 SiegeResult 转换为 SiegeResultData 格式
-      const siegeResultData: SiegeResultData = {
-        launched: result.launched,
-        victory: result.victory,
-        targetId: result.targetId,
-        targetName: result.targetName,
-        cost: result.cost,
-        capture: result.capture,
-        failureReason: result.failureReason,
-        defeatTroopLoss: result.defeatTroopLoss,
-      };
-
-      // P0-3: 显示攻城结果弹窗
-      setSiegeResultData(siegeResultData);
-      setSiegeResultVisible(true);
-
-      // 攻城成功时触发攻城动画
-      if (result.victory && siegeTarget) {
-        // 将 ownership 映射为 ConquestAnimationSystem 使用的阵营名称
-        const ownershipToFaction = (ownership: string): string => {
-          switch (ownership) {
-            case 'player': return 'wei';    // 玩家默认魏阵营
-            case 'enemy': return 'shu';     // 敌方默认蜀阵营
-            case 'neutral': return 'neutral';
-            default: return 'neutral';
-          }
-        };
-        conquestAnimSystem.create(
-          siegeTarget.id,
-          siegeTarget.position.x,
-          siegeTarget.position.y,
-          ownershipToFaction(siegeTarget.ownership),
-          'wei', // 玩家阵营
-          { success: true, troopsLost: result.defeatTroopLoss ?? 0, general: '将军' },
-        );
-      }
-
-      // 攻城后清除选中状态，避免残留旧数据
-      setSelectedId(null);
+    if (!sourceTerritory) {
+      setSiegeVisible(false);
+      setSiegeTarget(null);
+      return;
     }
+
+    // 2. 计算行军路线
+    const route = marchingSystem.calculateMarchRoute(sourceTerritory.id, siegeTarget.id);
+    if (!route) {
+      setSiegeVisible(false);
+      setSiegeTarget(null);
+      return;
+    }
+
+    // 3. 创建攻占任务（状态: preparing）
+    const siegeTaskManager = siegeTaskManagerRef.current;
+    const deployTroops = selectedTroops > 0 ? selectedTroops : availableTroops;
+    const currentGrain = engine.getResourceAmount?.('grain') ?? availableGrain;
+
+    // 获取攻城系统预估消耗
+    const siegeSystem = engine.getSiegeSystem?.() ?? engine?.siege;
+    const costEstimate = siegeSystem?.calculateSiegeCost?.(siegeTarget.id) ??
+      siegeSystem?.getSiegeCostById?.(siegeTarget.id) ?? { troops: deployTroops, grain: 100 };
+
+    const task = siegeTaskManager.createTask({
+      targetId: siegeTarget.id,
+      targetName: siegeTarget.name,
+      sourceId: sourceTerritory.id,
+      sourceName: sourceTerritory.name,
+      strategy: selectedStrategy,
+      expedition: expeditionSelection
+        ? {
+            forceId: `force-${Date.now()}`,
+            heroId: expeditionSelection.heroId,
+            heroName: heroes.find((h) => h.id === expeditionSelection.heroId)?.name ?? '将军',
+            troops: expeditionSelection.troops,
+          }
+        : {
+            forceId: `force-${Date.now()}`,
+            heroId: 'default-hero',
+            heroName: '将军',
+            troops: deployTroops,
+          },
+      cost: costEstimate,
+      marchPath: route.path.map((p) => ({ x: p.x, y: p.y })),
+    });
+
+    // 4. 创建行军单位并开始行军
+    const pathWithPixels = route.path.map((p) => ({ x: p.x, y: p.y }));
+    const march = marchingSystem.createMarch(
+      sourceTerritory.id,
+      siegeTarget.id,
+      deployTroops,
+      heroes.find((h) => h.id === expeditionSelection?.heroId)?.name ?? '将军',
+      'wei',
+      pathWithPixels,
+    );
+
+    // 5. 关联任务ID到行军单位（用于到达时匹配）
+    march.siegeTaskId = task.id;
+
+    marchingSystem.startMarch(march.id);
+
+    // 6. 推进任务状态到 marching
+    siegeTaskManager.advanceStatus(task.id, 'marching');
+    const estimatedDuration = 10; // 秒（简化估算）
+    siegeTaskManager.setEstimatedArrival(task.id, Date.now() + estimatedDuration * 1000);
+
+    // 7. 更新UI状态
+    setActiveSiegeTasks(siegeTaskManager.getActiveTasks());
+    setMarchRoute(route);
     setSiegeVisible(false);
     setSiegeTarget(null);
-  }, [siegeTarget, engine, selectedTroops, availableTroops, availableGrain]);
+    setSelectedId(null);
+    setExpeditionSelection(null);
+    setSelectedSourceId(null);
+
+    // 稍后清除路线预览，让行军精灵接管
+    setTimeout(() => setMarchRoute(null), 2000);
+  }, [siegeTarget, engine, selectedTroops, availableTroops, availableGrain, expeditionSelection, territories, selectedStrategy, selectedSourceId, heroes]);
 
   // ── 取消攻城弹窗 ──
   const handleSiegeCancel = useCallback(() => {
     setSiegeVisible(false);
     setSiegeTarget(null);
+    // J-01: 清除编队选择
+    setExpeditionSelection(null);
+  }, []);
+
+  // ── R9 Task5: 聚焦行军路线 ──
+  const handleFocusMarchRoute = useCallback((taskId: string) => {
+    const task = siegeTaskManagerRef.current?.getTask(taskId);
+    if (!task) return;
+
+    // 1. 平移视窗到目标城池中心 — 通过 setSelectedId 实现
+    setSelectedId(task.targetId);
+
+    // 2. 如果有活跃行军，高亮路线
+    if (task.status === 'marching' || task.status === 'returning') {
+      setHighlightedTaskId(taskId);
+
+      // 3. 触发像素地图居中到目标城池
+      const targetTerritory = territoriesRef.current.find((t) => t.id === task.targetId);
+      if (targetTerritory) {
+        const event = new CustomEvent('map-center', { detail: { territoryId: task.targetId } });
+        window.dispatchEvent(event);
+      }
+    } else {
+      // 非行军状态也居中到目标城池
+      const targetTerritory = territoriesRef.current.find((t) => t.id === task.targetId);
+      if (targetTerritory) {
+        const event = new CustomEvent('map-center', { detail: { territoryId: task.targetId } });
+        window.dispatchEvent(event);
+      }
+    }
   }, []);
 
   const handleUpgrade = useCallback(
@@ -768,6 +1258,31 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
     const totalGold = productionSummary?.totalProduction.gold ?? 0;
     return { playerCount, totalCount, totalGrain, totalGold };
   }, [territories, productionSummary]);
+
+  // ── R9 Task5: 从攻城动画系统提取 defenseRatios ──
+  const defenseRatiosMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    if (!siegeBattleAnimRef.current) return map;
+    const anims = siegeBattleAnimRef.current.getActiveAnimations();
+    for (const anim of anims) {
+      map[anim.taskId] = anim.defenseRatio;
+    }
+    return map;
+  }, [activeSiegeAnims]);
+
+  // ── R9 Task5: 从行军系统提取 returnETAs ──
+  const returnETAsMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    const marchingSystem = marchingSystemRef.current;
+    if (!marchingSystem) return map;
+    const marches = marchingSystem.getActiveMarches();
+    for (const march of marches) {
+      if (march.siegeTaskId && march.eta) {
+        map[march.siegeTaskId] = march.eta;
+      }
+    }
+    return map;
+  }, [activeMarches]);
 
   // ── 攻城每日次数和冷却信息 ──
   const siegeInfo = useMemo(() => {
@@ -879,6 +1394,8 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
               marchRoute={marchRoute}
               activeMarches={activeMarches}
               conquestAnimationSystem={conquestAnimSystem}
+              activeSiegeAnims={activeSiegeAnims}
+              highlightedTaskId={highlightedTaskId}
             />
           ) : filteredTerritories.length === 0 ? (
             <div className="tk-worldmap-empty" data-testid="worldmap-empty">
@@ -1086,6 +1603,16 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
         cooldownRemainingMs={cooldownRemainingMs}
         selectedTroops={selectedTroops}
         onTroopsChange={setSelectedTroops}
+        heroes={heroes}
+        expeditionSelection={expeditionSelection}
+        onExpeditionChange={setExpeditionSelection}
+        selectedStrategy={selectedStrategy ?? undefined}
+        onStrategyChange={setSelectedStrategy}
+        insiderLetterCount={insiderLetterCount}
+        insiderExposed={insiderExposed}
+        insiderCooldownMs={insiderCooldownMs}
+        nightRaidTokenCount={nightRaidTokenCount}
+        isFirstCapture={isFirstCapture}
         onConfirm={handleSiegeConfirm}
         onCancel={handleSiegeCancel}
       />
@@ -1094,10 +1621,34 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
       <SiegeResultModal
         visible={siegeResultVisible}
         result={siegeResultData}
+        injuryData={(() => {
+          if (!siegeResultData?.casualties) return undefined;
+          // 从 result.heroInjured 或 result.casualties 推断将领名称
+          const generalName = siegeResultData.heroInjured?.heroId
+            ? (heroes.find(h => h.id === siegeResultData.heroInjured!.heroId)?.name ?? '将军')
+            : '将军';
+          return mapInjuryData(siegeResultData.casualties, generalName);
+        })()}
+        troopLoss={(() => {
+          if (!siegeResultData?.casualties) return undefined;
+          const totalTroops = siegeResultData.cost?.troops ?? 0;
+          return mapTroopLoss(siegeResultData.casualties, totalTroops);
+        })()}
         onClose={() => {
           setSiegeResultVisible(false);
           setSiegeResultData(null);
         }}
+      />
+
+      {/* ── 攻占任务面板 ── */}
+      <SiegeTaskPanel
+        tasks={activeSiegeTasks}
+        onSelectTask={(task) => {
+          setSelectedId(task.targetId);
+        }}
+        onFocusMarchRoute={handleFocusMarchRoute}
+        defenseRatios={defenseRatiosMap}
+        returnETAs={returnETAsMap}
       />
 
       {/* ── 离线奖励弹窗 ── */}

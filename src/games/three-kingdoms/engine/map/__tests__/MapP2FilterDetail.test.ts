@@ -473,10 +473,16 @@ describe('GAP-16：产出详情展开面板（MAP-2-1 UI）', () => {
     ts.captureTerritory('city-luoyang', 'player');
     ts.captureTerritory('pass-hulao', 'player');
     const s = ts.getPlayerProductionSummary();
-    const l = ts.getTerritoryById('city-luoyang')!;
-    const h = ts.getTerritoryById('pass-hulao')!;
-    expect(s.totalProduction.grain).toBeCloseTo(l.currentProduction.grain + h.currentProduction.grain, 1);
-    expect(s.totalProduction.gold).toBeCloseTo(l.currentProduction.gold + h.currentProduction.gold, 1);
+    // 验证汇总值等于所有玩家领土产出之和
+    const playerTerritories = ts.getTerritoriesByOwnership('player');
+    let totalGrain = 0;
+    let totalGold = 0;
+    for (const t of playerTerritories) {
+      totalGrain += t.currentProduction.grain;
+      totalGold += t.currentProduction.gold;
+    }
+    expect(s.totalProduction.grain).toBeCloseTo(totalGrain, 1);
+    expect(s.totalProduction.gold).toBeCloseTo(totalGold, 1);
   });
 
   it('GAP-16-9: 不同类型领土基础产出不同', () => {

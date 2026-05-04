@@ -784,9 +784,9 @@ export class SiegeSystem implements ISubsystem {
     // 计算消耗
     const cost = strategy ? this.calculateStrategySiegeCost(territory, strategy) : this.calculateSiegeCost(territory);
 
-    // 应用将领战力加成（考虑受伤）
-    const heroPowerMultiplier = expeditionSys.getHeroPowerMultiplier(force.heroId);
-    const effectiveTroops = Math.floor(force.troops * heroPowerMultiplier);
+    // 应用将领战力加成（考虑受伤）— 使用 calculateEffectivePower
+    const effectivePower = expeditionSys.calculateEffectivePower(force);
+    const effectiveTroops = Math.floor(effectivePower);
 
     // 战斗模拟
     const victory = strategy

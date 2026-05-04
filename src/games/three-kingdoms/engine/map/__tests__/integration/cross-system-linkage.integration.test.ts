@@ -147,6 +147,7 @@ describe('集成测试: 跨子系统串联流程 (Play §10.1-10.9)', () => {
     it('升星后战力提升 → 可挑战更高战力关卡（HeroStarSystem + CampaignSystem 集成）', () => {
       const sim = createSim();
       sim.engine.resource.setCap('grain', 10_000_000);
+      sim.engine.resource.setCap('gold', 10_000_000);
       sim.addResources({ gold: 1_000_000, grain: 1_000_000, troops: 100_000 });
 
       // 添加武将并编队
@@ -232,6 +233,7 @@ describe('集成测试: 跨子系统串联流程 (Play §10.1-10.9)', () => {
     it('扫荡产出碎片 → 集中用于核心武将升星（HeroStarSystem 集成）', () => {
       const sim = createSim();
       sim.engine.resource.setCap('grain', 1_000_000);
+      sim.engine.resource.setCap('gold', 1_000_000);
       sim.engine.resource.setCap('troops', 1_000_000);
       sim.addResources(SUFFICIENT_RESOURCES);
       const heroIds = ['liubei', 'guanyu', 'zhangfei', 'zhugeliang', 'zhaoyun', 'caocao'];

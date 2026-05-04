@@ -132,9 +132,9 @@ export const HERO_INJURY_RATES = {
 /** 受伤等级对战力的影响 */
 export const INJURY_POWER_MULTIPLIER: Record<InjuryLevel, number> = {
   none: 1.0,
-  minor: 0.9,    // 轻伤: 战力-10%
-  moderate: 0.7, // 中伤: 战力-30%
-  severe: 0.5,   // 重伤: 战力-50%
+  minor: 0.8,    // 轻伤: 战力-20%
+  moderate: 0.5, // 中伤: 战力-50%
+  severe: 0.2,   // 重伤: 战力-80%
 };
 
 /** 受伤恢复时间（毫秒） */
@@ -143,4 +143,37 @@ export const INJURY_RECOVERY_TIME: Record<InjuryLevel, number> = {
   minor: 30 * 60 * 1000,      // 30分钟
   moderate: 2 * 60 * 60 * 1000, // 2小时
   severe: 6 * 60 * 60 * 1000,   // 6小时
+};
+
+// ─────────────────────────────────────────────
+// UI 受伤等级映射
+// ─────────────────────────────────────────────
+
+/** UI 受伤等级（引擎 InjuryLevel 的 UI 展示层映射） */
+export type UIInjuryLevel = 'none' | 'light' | 'medium' | 'severe';
+
+/**
+ * 将引擎 InjuryLevel 映射为 UI UIInjuryLevel
+ *
+ * 引擎使用 minor/moderate/severe，UI 使用 light/medium/severe。
+ * 此函数是唯一的转换入口，确保映射一致性。
+ *
+ * @param engine - 引擎输出的受伤等级
+ * @returns UI 组件期望的受伤等级
+ */
+export function mapInjuryLevel(engine: InjuryLevel): UIInjuryLevel {
+  switch (engine) {
+    case 'minor': return 'light';
+    case 'moderate': return 'medium';
+    case 'severe': return 'severe';
+    default: return 'none';
+  }
+}
+
+/** UI 受伤等级恢复时间（小时），从引擎 INJURY_RECOVERY_TIME 派生 */
+export const INJURY_RECOVERY_HOURS: Record<UIInjuryLevel, number> = {
+  none: 0,
+  light: INJURY_RECOVERY_TIME.minor / (60 * 60 * 1000),
+  medium: INJURY_RECOVERY_TIME.moderate / (60 * 60 * 1000),
+  severe: INJURY_RECOVERY_TIME.severe / (60 * 60 * 1000),
 };

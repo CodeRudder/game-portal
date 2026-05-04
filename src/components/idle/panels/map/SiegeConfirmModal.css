@@ -168,6 +168,132 @@
   transition: opacity 0.1s;
 }
 
+/* ── MAP-F06-02: 攻城策略选择 ── */
+.tk-siege-strategies {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tk-siege-strategy-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.tk-siege-strategy-card {
+  padding: 10px;
+  border: 1px solid rgba(200, 168, 76, 0.15);
+  border-radius: 8px;
+  background: rgba(200, 168, 76, 0.04);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tk-siege-strategy-card:hover {
+  border-color: rgba(200, 168, 76, 0.4);
+  background: rgba(200, 168, 76, 0.08);
+}
+
+.tk-siege-strategy-card--selected {
+  border-color: rgba(212, 165, 116, 0.7);
+  background: rgba(212, 165, 116, 0.12);
+  box-shadow: 0 0 0 1px rgba(212, 165, 116, 0.3);
+}
+
+.tk-siege-strategy-card--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.tk-siege-strategy-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tk-siege-strategy-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tk-text-primary, #f0e6d3);
+}
+
+.tk-siege-strategy-positioning {
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(200, 168, 76, 0.15);
+  color: var(--tk-gold-light, #e8d48b);
+}
+
+.tk-siege-strategy-desc {
+  font-size: 10px;
+  color: var(--tk-text-secondary, #a0a0a0);
+  line-height: 1.4;
+}
+
+.tk-siege-strategy-stats {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.tk-siege-strategy-stat {
+  font-size: 10px;
+  color: var(--tk-text-secondary, #a0a0a0);
+  white-space: nowrap;
+}
+
+.tk-siege-strategy-effect {
+  font-size: 9px;
+  color: #7EC850;
+  margin-top: 2px;
+}
+
+.tk-siege-strategy-locked {
+  font-size: 9px;
+  color: #e8a0a0;
+  margin-top: 2px;
+}
+
+.tk-siege-strategy-item {
+  font-size: 9px;
+  color: #d4a574;
+  margin-top: 2px;
+}
+
+/* ── MAP-F08: 首次攻城奖励预览 ── */
+.tk-siege-first-capture {
+  padding: 8px 12px;
+  background: rgba(212, 165, 116, 0.08);
+  border: 1px solid rgba(212, 165, 116, 0.25);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tk-siege-first-capture-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e8d48b;
+}
+
+.tk-siege-first-capture-rewards {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tk-siege-first-capture-rewards span {
+  font-size: 11px;
+  color: var(--tk-text-primary, #f0e6d3);
+}
+
 /* 移动端 */
 @media (max-width: 767px) {
   .tk-siege-target-info {
@@ -202,6 +328,20 @@
   .tk-siege-error {
     font-size: 11px;
     padding: 6px 10px;
+  }
+
+  .tk-siege-strategy-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .tk-siege-strategy-card {
+    padding: 8px;
+  }
+
+  .tk-siege-first-capture-rewards {
+    flex-direction: column;
+    gap: 2px;
   }
 }
 

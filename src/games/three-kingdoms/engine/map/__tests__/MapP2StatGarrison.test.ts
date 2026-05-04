@@ -155,9 +155,11 @@ describe('GAP-17：统计面板完整交互测试（MAP-5 UI）', () => {
     });
 
     it('敌方领土不计入玩家势力分布', () => {
+      const initialCount = env.territory.getPlayerTerritoryCount();
       env.territory.captureTerritory('city-xuchang', 'enemy');
       const summary = env.territory.getPlayerProductionSummary();
-      expect(summary.totalTerritories).toBe(1);
+      // 敌方领土不影响玩家领土数量
+      expect(summary.totalTerritories).toBe(initialCount);
     });
 
     it('全部领土设为player时覆盖所有区域', () => {
@@ -274,12 +276,13 @@ describe('GAP-17：统计面板完整交互测试（MAP-5 UI）', () => {
 
   describe('GAP-17-5：统计数据自动更新', () => {
     it('占领/失去/再占领后 summary 始终反映当前状态', () => {
+      const initialCount = env.territory.getPlayerTerritoryCount();
       env.territory.captureTerritory('city-xuchang', 'player');
-      expect(env.territory.getPlayerProductionSummary().totalTerritories).toBe(2);
+      expect(env.territory.getPlayerProductionSummary().totalTerritories).toBe(initialCount + 1);
       env.territory.captureTerritory('city-xuchang', 'neutral');
-      expect(env.territory.getPlayerProductionSummary().totalTerritories).toBe(1);
+      expect(env.territory.getPlayerProductionSummary().totalTerritories).toBe(initialCount);
       env.territory.captureTerritory('city-xuchang', 'player');
-      expect(env.territory.getPlayerProductionSummary().totalTerritories).toBe(2);
+      expect(env.territory.getPlayerProductionSummary().totalTerritories).toBe(initialCount + 1);
     });
 
     it('getState().productionSummary 与直接调用一致', () => {
@@ -429,23 +432,23 @@ describe('GAP-19：自动驻防比例测试（MAP-3 §3.15）', () => {
   });
 
   describe('GAP-19-2：不同等级领土驻防数量', () => {
-    it('level 5 defenseValue=5000 → 消耗5000 → 驻防2500', () => {
+    it('level 5 city defenseValue=2500 → 消耗2000 → 驻防1000', () => {
       const t = env.territory.getTerritoryById('city-luoyang')!;
-      expect(t.defenseValue).toBe(5000);
-      expect(env.siege.calculateSiegeCost(t).troops).toBe(5000);
-      expect(Math.floor(5000 * 0.5)).toBe(2500);
+      expect(t.defenseValue).toBe(2500); // 1000 * 0.5 * 5
+      expect(env.siege.calculateSiegeCost(t).troops).toBe(2000); // ceil(100 * 25 * 0.8)
+      expect(Math.floor(2000 * 0.5)).toBe(1000);
     });
 
-    it('level 3 defenseValue=3000 → 消耗3000 → 驻防1500', () => {
+    it('level 3 city defenseValue=1500 → 消耗1200 → 驻防600', () => {
       const t = env.territory.getTerritoryById('city-puyang')!;
-      expect(t.defenseValue).toBe(3000);
-      expect(Math.floor(env.siege.calculateSiegeCost(t).troops * 0.5)).toBe(1500);
+      expect(t.defenseValue).toBe(1500); // 1000 * 0.5 * 3
+      expect(Math.floor(env.siege.calculateSiegeCost(t).troops * 0.5)).toBe(600);
     });
 
-    it('level 2 defenseValue=2000 → 消耗2000 → 驻防1000', () => {
+    it('level 2 resource defenseValue=600 → 消耗480 → 驻防240', () => {
       const t = env.territory.getTerritoryById('res-grain1')!;
-      expect(t.defenseValue).toBe(2000);
-      expect(Math.floor(env.siege.calculateSiegeCost(t).troops * 0.5)).toBe(1000);
+      expect(t.defenseValue).toBe(600); // 1000 * 0.3 * 2
+      expect(Math.floor(env.siege.calculateSiegeCost(t).troops * 0.5)).toBe(240);
     });
 
     it('等级越高驻防越多（递增）', () => {

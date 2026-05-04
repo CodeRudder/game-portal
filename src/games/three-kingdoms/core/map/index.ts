@@ -111,3 +111,18 @@ export {
   SIEGE_REWARD_CONFIG,
   SIEGE_ENHANCER_SAVE_VERSION,
 } from './siege-enhancer.types';
+
+// 攻占任务类型
+export type {
+  SiegeTaskStatus,
+  SiegeTaskExpedition,
+  SiegeTask,
+  SiegeTaskResult,
+  SiegeTaskStatusChangedEvent,
+  SiegeTaskSaveData,
+} from './siege-task.types';
+
+export {
+  isTerminalStatus,
+  SIEGE_TASK_SAVE_VERSION,
+} from './siege-task.types';

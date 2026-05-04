@@ -80,11 +80,20 @@ export class EventBus implements IEventBus {
     // 1. 精确匹配 — 持久监听器
     this.invokeSet(this.handlers.get(event), p);
 
-    // 2. 精确匹配 — 一次性监听器（触发后清空）
+    // 2. 精确匹配 — 一次性监听器（快照后清空，防止 handler 中注册新 once 被误删）
     const onceSet = this.onceHandlers.get(event);
     if (onceSet) {
-      this.invokeSet(onceSet, p);
+      const snapshot = Array.from(onceSet);
       this.onceHandlers.delete(event);
+      for (const handler of snapshot) {
+        try {
+          handler(p);
+        } catch (err) {
+          if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
+            console.error('[EventBus] handler error:', err);
+          }
+        }
+      }
     }
 
     // 3. 通配符匹配 — 持久监听器
@@ -92,11 +101,20 @@ export class EventBus implements IEventBus {
       if (event.startsWith(prefix)) this.invokeSet(set, p);
     }
 
-    // 4. 通配符匹配 — 一次性监听器（触发后移除匹配前缀）
+    // 4. 通配符匹配 — 一次性监听器（快照后清空，防止 handler 中注册新 once 被误删）
     for (const [prefix, set] of this.wildcardOnceHandlers) {
       if (event.startsWith(prefix)) {
-        this.invokeSet(set, p);
+        const snapshot = Array.from(set);
         this.wildcardOnceHandlers.delete(prefix);
+        for (const handler of snapshot) {
+          try {
+            handler(p);
+          } catch (err) {
+            if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
+              console.error('[EventBus] handler error:', err);
+            }
+          }
+        }
       }
     }
   }

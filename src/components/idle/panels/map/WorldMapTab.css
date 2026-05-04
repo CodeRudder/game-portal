@@ -415,3 +415,126 @@
     transition: transform 0.1s;
   }
 }
+
+/* ── 攻占任务面板 ── */
+.siege-task-panel {
+  position: absolute;
+  top: 48px;
+  right: 8px;
+  width: 240px;
+  max-height: 320px;
+  background: rgba(26, 35, 50, 0.95);
+  border: 1px solid rgba(200, 168, 76, 0.25);
+  border-radius: 8px;
+  overflow: hidden;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.siege-task-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(200, 168, 76, 0.08);
+  border-bottom: 1px solid rgba(200, 168, 76, 0.15);
+}
+
+.siege-task-panel__title {
+  font-size: 13px;
+  color: rgba(224, 200, 136, 0.9);
+  font-weight: 500;
+}
+
+.siege-task-panel__close {
+  background: none;
+  border: none;
+  color: rgba(200, 168, 76, 0.6);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.siege-task-panel__close:hover {
+  color: rgba(224, 200, 136, 0.9);
+}
+
+.siege-task-panel__list {
+  overflow-y: auto;
+  max-height: 272px;
+  padding: 4px;
+}
+
+.siege-task-panel__item {
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-bottom: 4px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.siege-task-panel__item:hover {
+  background: rgba(200, 168, 76, 0.08);
+}
+
+.siege-task-panel__status {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.siege-task-panel__target {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.siege-task-panel__target-name {
+  font-size: 13px;
+  color: rgba(224, 200, 136, 0.85);
+}
+
+.siege-task-panel__strategy {
+  font-size: 10px;
+  color: rgba(255, 193, 7, 0.7);
+  background: rgba(255, 193, 7, 0.1);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.siege-task-panel__expedition {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: rgba(180, 190, 200, 0.7);
+  margin-bottom: 2px;
+}
+
+.siege-task-panel__troops {
+  color: rgba(100, 180, 255, 0.7);
+}
+
+.siege-task-panel__eta {
+  font-size: 10px;
+  color: rgba(74, 158, 255, 0.7);
+  margin-bottom: 4px;
+}
+
+.siege-task-panel__progress {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  margin-bottom: 4px;
+  overflow: hidden;
+}
+
+.siege-task-panel__progress-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.siege-task-panel__route {
+  font-size: 10px;
+  color: rgba(180, 190, 200, 0.45);
+}

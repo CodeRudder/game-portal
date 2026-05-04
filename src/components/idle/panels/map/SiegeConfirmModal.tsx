@@ -6,14 +6,26 @@
  * - 显示攻城条件校验结果（相邻/兵力/粮草）
  * - 显示预估消耗（兵力/粮草）
  * - 显示预估胜率
+ * - **攻城策略选择（强攻/围困/夜袭/内应）** MAP-F06-02
+ * - **内应信三态卡片** MAP-F06-07
+ * - **首次/重复攻城奖励预览** MAP-F08
  * - 确认/取消按钮
  *
  * @module components/idle/panels/map/SiegeConfirmModal
+ * @see flows.md MAP-F06 攻城战
+ * @see flows.md MAP-F06-02 攻城策略选项
+ * @see flows.md MAP-F06-07 内应信消费流程
  */
 
 import React, { useMemo, useState, useEffect } from 'react';
 import Modal from '../../common/Modal';
 import type { TerritoryData } from '@/games/three-kingdoms/core/map';
+import { ExpeditionForcePanel, type HeroInfo, type ExpeditionForceSelection } from './ExpeditionForcePanel';
+import {
+  SIEGE_STRATEGY_CONFIGS,
+  type SiegeStrategyType,
+  type SiegeStrategyConfig,
+} from '@/games/three-kingdoms/core/map/siege-enhancer.types';
 import './SiegeConfirmModal.css';
 
 // ─────────────────────────────────────────────
@@ -44,6 +56,26 @@ export interface SiegeConfirmModalProps {
   selectedTroops?: number;
   /** 出征兵力变更回调 */
   onTroopsChange?: (troops: number) => void;
+  /** 可用将领列表（用于编队选择） */
+  heroes?: HeroInfo[];
+  /** 编队选择结果 */
+  expeditionSelection?: ExpeditionForceSelection | null;
+  /** 编队选择变更回调 */
+  onExpeditionChange?: (selection: ExpeditionForceSelection | null) => void;
+  /** MAP-F06-02: 选中的攻城策略 */
+  selectedStrategy?: SiegeStrategyType;
+  /** MAP-F06-02: 策略变更回调 */
+  onStrategyChange?: (strategy: SiegeStrategyType | null) => void;
+  /** MAP-F06-07: 内应信持有数量 */
+  insiderLetterCount?: number;
+  /** MAP-F06-07: 目标城池内应是否暴露 */
+  insiderExposed?: boolean;
+  /** MAP-F06-07: 内应暴露冷却剩余时间(ms) */
+  insiderCooldownMs?: number;
+  /** MAP-F06-03: 夜袭令持有数量 */
+  nightRaidTokenCount?: number;
+  /** MAP-F08: 是否首次攻城该领土 */
+  isFirstCapture?: boolean;
   /** 确认攻城 */
   onConfirm: () => void;
   /** 取消 */
@@ -139,6 +171,16 @@ const SiegeConfirmModal: React.FC<SiegeConfirmModalProps> = ({
   cooldownRemainingMs = 0,
   selectedTroops,
   onTroopsChange,
+  heroes,
+  expeditionSelection,
+  onExpeditionChange,
+  selectedStrategy,
+  onStrategyChange,
+  insiderLetterCount = 0,
+  insiderExposed = false,
+  insiderCooldownMs = 0,
+  nightRaidTokenCount = 0,
+  isFirstCapture,
   onConfirm,
   onCancel,
 }) => {
@@ -176,6 +218,62 @@ const SiegeConfirmModal: React.FC<SiegeConfirmModalProps> = ({
 
   const allPassed = conditions.every((c) => c.passed);
 
+  // 如果提供了将领列表，则编队选择是必须步骤
+  const hasHeroes = heroes && heroes.length > 0;
+  const expeditionValid = !hasHeroes || (expeditionSelection !== null && expeditionSelection !== undefined);
+  const canConfirm = allPassed && expeditionValid;
+
+  // ── MAP-F06-02: 策略可用性判定 ──
+  const strategyAvailability = useMemo(() => {
+    const configs = Object.values(SIEGE_STRATEGY_CONFIGS) as SiegeStrategyConfig[];
+    return configs.map((config) => {
+      let available = true;
+      let reason = '';
+
+      if (config.requiredItem === 'item-insider-letter') {
+        // 内应信三态判定 (MAP-F06-07)
+        if (insiderExposed) {
+          available = false;
+          reason = '内应已暴露';
+        } else if (insiderLetterCount <= 0) {
+          available = false;
+          reason = '需要内应信×1';
+        }
+      } else if (config.requiredItem === 'item-night-raid-token') {
+        if (nightRaidTokenCount <= 0) {
+          available = false;
+          reason = '需要夜袭令×1';
+        }
+      }
+
+      return { config, available, reason };
+    });
+  }, [insiderLetterCount, insiderExposed, nightRaidTokenCount]);
+
+  // ── MAP-F06-07: 内应信冷却倒计时文本 ──
+  const [insiderCooldownText, setInsiderCooldownText] = useState('');
+  useEffect(() => {
+    if (!visible || !insiderExposed || insiderCooldownMs <= 0) {
+      setInsiderCooldownText('');
+      return;
+    }
+    const startTimestamp = Date.now();
+    const update = () => {
+      const elapsed = Date.now() - startTimestamp;
+      const remaining = Math.max(0, insiderCooldownMs - elapsed);
+      if (remaining <= 0) {
+        setInsiderCooldownText('');
+        return;
+      }
+      const hours = Math.floor(remaining / 3600000);
+      const minutes = Math.floor((remaining % 3600000) / 60000);
+      setInsiderCooldownText(`${hours}时${minutes}分`);
+    };
+    update();
+    const timer = setInterval(update, 60000);
+    return () => clearInterval(timer);
+  }, [visible, insiderExposed, insiderCooldownMs]);
+
   if (!target) return null;
 
   return (
@@ -185,9 +283,9 @@ const SiegeConfirmModal: React.FC<SiegeConfirmModalProps> = ({
       title={`⚔️ 攻城确认 — ${target.name}`}
       confirmText="发动攻城"
       cancelText="取消"
-      onConfirm={allPassed ? onConfirm : undefined}
+      onConfirm={canConfirm ? onConfirm : undefined}
       onCancel={onCancel}
-      confirmDisabled={!allPassed}
+      confirmDisabled={!canConfirm}
       dangerConfirm
       width="480px"
     >
@@ -287,6 +385,92 @@ const SiegeConfirmModal: React.FC<SiegeConfirmModalProps> = ({
         {conditionResult?.errorMessage && !allPassed && (
           <div className="tk-siege-error" data-testid="siege-error">
             ⚠️ {conditionResult.errorMessage}
+          </div>
+        )}
+
+        {/* ── MAP-F06-02: 攻城策略选择 ── */}
+        {onStrategyChange && allPassed && (
+          <div className="tk-siege-strategies" data-testid="siege-strategies">
+            <h4 className="tk-siege-section-title">攻城策略</h4>
+            <div className="tk-siege-strategy-grid">
+              {strategyAvailability.map(({ config, available, reason }) => {
+                const isSelected = selectedStrategy === config.type;
+                return (
+                  <div
+                    key={config.type}
+                    className={[
+                      'tk-siege-strategy-card',
+                      isSelected ? 'tk-siege-strategy-card--selected' : '',
+                      !available ? 'tk-siege-strategy-card--disabled' : '',
+                    ].filter(Boolean).join(' ')}
+                    data-testid={`siege-strategy-${config.type}`}
+                    onClick={() => available && onStrategyChange(isSelected ? null : config.type)}
+                    role="button"
+                    tabIndex={available ? 0 : -1}
+                    aria-label={`${config.name}: ${config.description}`}
+                  >
+                    <div className="tk-siege-strategy-header">
+                      <span className="tk-siege-strategy-name">{config.name}</span>
+                      <span className="tk-siege-strategy-positioning">{config.positioning}</span>
+                    </div>
+                    <div className="tk-siege-strategy-desc">{config.description}</div>
+                    <div className="tk-siege-strategy-stats">
+                      <span className="tk-siege-strategy-stat" title="时间">
+                        ⏱ {config.timeMultiplier}x
+                      </span>
+                      <span className="tk-siege-strategy-stat" title="损耗">
+                        ⚔️ {config.troopCostMultiplier}x
+                      </span>
+                      <span className="tk-siege-strategy-stat" title="奖励">
+                        🏆 {config.rewardMultiplier}x
+                      </span>
+                    </div>
+                    <div className="tk-siege-strategy-effect">{config.specialEffect}</div>
+                    {!available && reason && (
+                      <div className="tk-siege-strategy-locked">
+                        {config.type === 'insider' && insiderExposed
+                          ? `🔒 ${reason} ${insiderCooldownText ? `(${insiderCooldownText})` : ''}`
+                          : `🔒 ${reason}`}
+                      </div>
+                    )}
+                    {available && config.requiredItem && (
+                      <div className="tk-siege-strategy-item">
+                        {config.type === 'insider'
+                          ? `📜 持有内应信×${insiderLetterCount}`
+                          : config.type === 'nightRaid'
+                          ? `🌙 持有夜袭令×${nightRaidTokenCount}`
+                          : null}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── MAP-F08: 首次攻城奖励预览 ── */}
+        {isFirstCapture && allPassed && (
+          <div className="tk-siege-first-capture" data-testid="siege-first-capture">
+            <div className="tk-siege-first-capture-badge">🌟 首次攻城</div>
+            <div className="tk-siege-first-capture-rewards">
+              <span>💎 元宝×100</span>
+              <span>📜 声望+50</span>
+              <span>🎖️ 专属称号</span>
+            </div>
+          </div>
+        )}
+
+        {/* ── 编队选择（当有可用将领时显示） ── */}
+        {hasHeroes && onExpeditionChange && (
+          <div style={{ marginTop: 12 }} data-testid="siege-expedition-panel">
+            <ExpeditionForcePanel
+              heroes={heroes!}
+              maxTroops={availableTroops}
+              selection={expeditionSelection ?? undefined}
+              onChange={onExpeditionChange}
+              disabled={!allPassed}
+            />
           </div>
         )}
       </div>
