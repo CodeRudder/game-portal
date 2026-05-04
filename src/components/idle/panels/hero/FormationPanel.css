@@ -73,7 +73,7 @@
 
 .tk-formation-card--active {
   border-color: var(--tk-gold);
-  box-shadow: 0 0 8px rgba(200, 168, 76, 0.15);
+  box-shadow: none;
 }
 
 /* 卡片头部 */

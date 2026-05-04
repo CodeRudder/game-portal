@@ -19,6 +19,11 @@ import type { Chapter, Stage, StageStatus, CampaignProgress } from '@/games/thre
 
 // ── Mock CSS ──
 vi.mock('../CampaignTab.css', () => ({}));
+vi.mock('../ChapterSelectPanel.module.css', () => ({
+  default: new Proxy({}, {
+    get(_target, prop: string) { return prop; },
+  }),
+}));
 vi.mock('../BattleFormationModal.css', () => ({}));
 vi.mock('../BattleFormationModal', () => ({
   default: function MockFormationModal({ onClose }: { onClose: () => void }) {
@@ -135,9 +140,10 @@ describe('CampaignTab', () => {
     expect(container.querySelector('.tk-campaign-tab')).toBeInTheDocument();
   });
 
-  it('应渲染章节选择器，显示当前章节序号', () => {
+  it('应渲染章节选择面板，显示章节卡片', () => {
     render(<CampaignTab {...defaultProps} />);
-    expect(screen.getByText(/第1章/)).toBeInTheDocument();
+    expect(screen.getByTestId('chapter-select-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('chapter-card-chapter1')).toBeInTheDocument();
   });
 
   it('应渲染所有关卡节点名称', () => {
@@ -184,25 +190,26 @@ describe('CampaignTab', () => {
   // 3. 章节切换
   // ═══════════════════════════════════════════
 
-  it('点击右箭头应切换到下一章', () => {
+  it('点击章节卡片应切换到对应章节', () => {
     render(<CampaignTab {...defaultProps} />);
-    const rightBtn = screen.getByLabelText('下一章');
-    fireEvent.click(rightBtn);
-    expect(screen.getByText(/第2章/)).toBeInTheDocument();
-    expect(screen.getByText(/讨伐董卓/)).toBeInTheDocument();
+    const chapter2Card = screen.getByTestId('chapter-card-chapter2');
+    fireEvent.click(chapter2Card);
+    // 切换后地图应显示第2章关卡
+    expect(screen.getByLabelText(/汜水关.*可挑战/)).toBeInTheDocument();
   });
 
-  it('第一章时左箭头应禁用', () => {
+  it('未解锁章节卡片应禁用', () => {
     render(<CampaignTab {...defaultProps} />);
-    const leftBtn = screen.getByLabelText('上一章');
-    expect(leftBtn).toBeDisabled();
+    // 第2章第1关 s4 是 available（mock），所以 chapter2 是解锁的
+    // 验证当前章节卡片可点击
+    const chapter1Card = screen.getByTestId('chapter-card-chapter1');
+    expect(chapter1Card).not.toBeDisabled();
   });
 
-  it('最后一章时右箭头应禁用', () => {
+  it('章节选择面板应显示所有章节', () => {
     render(<CampaignTab {...defaultProps} />);
-    const rightBtn = screen.getByLabelText('下一章');
-    fireEvent.click(rightBtn);
-    expect(rightBtn).toBeDisabled();
+    expect(screen.getByTestId('chapter-card-chapter1')).toBeInTheDocument();
+    expect(screen.getByTestId('chapter-card-chapter2')).toBeInTheDocument();
   });
 
   // ═══════════════════════════════════════════

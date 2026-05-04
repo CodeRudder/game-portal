@@ -47,21 +47,33 @@ function createSystems(mandate = 1000, academyLevel = 5) {
   };
   const getAcademyLevel = () => academyLevel;
 
+  let currentGold = 100000;
+  const getGold = () => currentGold;
+  const spendGold = (amount: number) => {
+    if (currentGold < amount) return false;
+    currentGold -= amount;
+    return true;
+  };
+
   const researchSystem = new TechResearchSystem(
     treeSystem,
     pointSystem,
     getAcademyLevel,
     getMandate,
     spendMandate,
+    getGold,
+    spendGold,
   );
 
   return { treeSystem, pointSystem, researchSystem, getCurrentMandate: () => currentMandate };
 }
 
-/** 给科技点系统充值 */
+/** 给科技点系统充值（amount 为名义点数，实际充值 × MULTIPLIER） */
 function fundPoints(pointSystem: TechPointSystem, amount: number) {
-  (pointSystem as any).techPoints.current = amount;
-  (pointSystem as any).techPoints.totalEarned += amount;
+  const RESEARCH_START_TECH_POINT_MULTIPLIER = 10;
+  const actual = amount * RESEARCH_START_TECH_POINT_MULTIPLIER;
+  (pointSystem as any).techPoints.current = actual;
+  (pointSystem as any).techPoints.totalEarned += actual;
 }
 
 /** 获取第一个可研究的 Tier 1 科技 ID */
@@ -198,6 +210,8 @@ describe('TechAcceleration — 加速叠加公式完整验证', () => {
         () => 5,
         () => 100,
         () => false, // spendMandate 始终失败
+        () => 100000,
+        (amt: number) => { return true; },
       );
       fundPoints(localPointSystem, 1000);
       localResearchSystem.startResearch(techId);
@@ -348,13 +362,16 @@ describe('TechAcceleration — 加速叠加公式完整验证', () => {
       const slot0 = researchSystem.getQueue().find(s => s.techId === 'mil_t2_charge');
       const endTime0 = slot0!.endTime;
 
-      // 连续3次天命加速
+      // 连续3次天命加速（总计 3 * 60 = 180 秒）
+      // academy level 5 → mil_t2_charge 实际时间 = 300/1.5 = 200s
+      // 180s < 200s，不会完成
       researchSystem.speedUp('mil_t2_charge', 'mandate', 1); // 60s
-      researchSystem.speedUp('mil_t2_charge', 'mandate', 2); // 120s
+      researchSystem.speedUp('mil_t2_charge', 'mandate', 1); // 60s
       researchSystem.speedUp('mil_t2_charge', 'mandate', 1); // 60s
 
       const slotFinal = researchSystem.getQueue().find(s => s.techId === 'mil_t2_charge');
-      const totalReduced = (1 + 2 + 1) * MANDATE_SPEEDUP_SECONDS_PER_POINT * 1000;
+      const totalReduced = 3 * MANDATE_SPEEDUP_SECONDS_PER_POINT * 1000;
+      expect(slotFinal).toBeDefined();
       expect(slotFinal!.endTime).toBe(endTime0 - totalReduced);
     });
   });
@@ -368,21 +385,22 @@ describe('TechAcceleration — 加速叠加公式完整验证', () => {
       const techId = getFirstAvailableTechId();
       const baseTime = getTechResearchTime(techId);
 
-      // 无加成
+      // 无额外研究速度加成（但 academy level 5 → speed 1.5）
       fundPoints(pointSystem, 1000);
       researchSystem.startResearch(techId);
       const queue1 = researchSystem.getQueue();
       const actualTime1 = (queue1[0]!.endTime - queue1[0]!.startTime) / 1000;
-      expect(actualTime1).toBe(baseTime);
+      // academy level 5 → academySpeedMultiplier = 1.5
+      expect(actualTime1).toBeCloseTo(baseTime / 1.5, 1);
 
-      // 有加成
+      // 有额外 50% 加成：total = 1.5 × 1.5 = 2.25
       const systems2 = createSystems(1000, 5);
       systems2.pointSystem.syncResearchSpeedBonus(50); // 50% 加成
       fundPoints(systems2.pointSystem, 1000);
       systems2.researchSystem.startResearch(techId);
       const queue2 = systems2.researchSystem.getQueue();
       const actualTime2 = (queue2[0]!.endTime - queue2[0]!.startTime) / 1000;
-      expect(actualTime2).toBeCloseTo(baseTime / 1.5, 1);
+      expect(actualTime2).toBeCloseTo(baseTime / 2.25, 1);
     });
 
     it('100% 加成时研究时间减半', () => {
@@ -396,17 +414,22 @@ describe('TechAcceleration — 加速叠加公式完整验证', () => {
 
       const queue = systems.researchSystem.getQueue();
       const actualTime = (queue[0]!.endTime - queue[0]!.startTime) / 1000;
-      expect(actualTime).toBeCloseTo(baseTime / 2, 1);
+      // academy level 5 → 1.5, research bonus 100% → 2.0
+      // total = 1.5 × 2.0 = 3.0
+      expect(actualTime).toBeCloseTo(baseTime / 3.0, 1);
     });
 
     it('研究速度加成 + 天命加速叠加公式', () => {
-      const techId = getFirstAvailableTechId();
-      const baseTime = getTechResearchTime(techId);
-
-      // 50% 加成 → 实际研究时间 = baseTime / 1.5
+      // 使用 mil_t2_charge (300s) 确保加速后不会完成
+      // 先完成前置科技
       const systems = createSystems(1000, 5);
       systems.pointSystem.syncResearchSpeedBonus(50);
-      fundPoints(systems.pointSystem, 1000);
+      completeTechQuick(systems.researchSystem, systems.pointSystem, 'mil_t1_attack');
+      const techId = 'mil_t2_charge';
+
+      // academy level 5 → speed 1.5, 50% bonus → 1.5, total = 2.25
+      // mil_t2_charge actualTime = 300/2.25 ≈ 133.3s，60s加速不会完成
+      fundPoints(systems.pointSystem, 5000);
       systems.researchSystem.startResearch(techId);
 
       const queue = systems.researchSystem.getQueue();
@@ -416,6 +439,7 @@ describe('TechAcceleration — 加速叠加公式完整验证', () => {
       systems.researchSystem.speedUp(techId, 'mandate', 1);
 
       const slotAfter = systems.researchSystem.getQueue().find(s => s.techId === techId);
+      expect(slotAfter).toBeDefined();
       expect(slotAfter!.endTime).toBe(endTime0 - 60000);
     });
 
@@ -527,6 +551,8 @@ describe('TechAcceleration — 加速叠加公式完整验证', () => {
   describe('7. 加速后的剩余时间和进度', () => {
     const techId = getFirstAvailableTechId();
     const researchTime = getTechResearchTime(techId);
+    // academy level 5 → academySpeedMultiplier = 1.5
+    const actualResearchTime = researchTime / 1.5;
 
     beforeEach(() => {
       fundPoints(pointSystem, 1000);
@@ -535,7 +561,7 @@ describe('TechAcceleration — 加速叠加公式完整验证', () => {
 
     it('加速前剩余时间应约等于研究时间', () => {
       const remaining = researchSystem.getRemainingTime(techId);
-      expect(remaining).toBeCloseTo(researchTime, 0);
+      expect(remaining).toBeCloseTo(actualResearchTime, 0);
     });
 
     it('天命加速后剩余时间应减少', () => {
@@ -656,6 +682,8 @@ describe('TechAcceleration — 加速叠加公式完整验证', () => {
     it('取消研究应返还科技点', () => {
       const techId = getFirstAvailableTechId();
       const cost = getTechCost(techId);
+      const RESEARCH_START_TECH_POINT_MULTIPLIER = 10;
+      const actualCost = cost * RESEARCH_START_TECH_POINT_MULTIPLIER;
       fundPoints(pointSystem, cost);
 
       researchSystem.startResearch(techId);
@@ -663,8 +691,8 @@ describe('TechAcceleration — 加速叠加公式完整验证', () => {
 
       const result = researchSystem.cancelResearch(techId);
       expect(result.success).toBe(true);
-      expect(result.refundPoints).toBe(cost);
-      expect(pointSystem.getCurrentPoints()).toBe(pointsBefore + cost);
+      expect(result.refundPoints).toBe(actualCost);
+      expect(pointSystem.getCurrentPoints()).toBeCloseTo(pointsBefore + actualCost, 0);
     });
 
     it('取消不存在的研究应失败', () => {

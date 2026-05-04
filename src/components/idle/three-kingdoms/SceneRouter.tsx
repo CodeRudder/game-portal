@@ -23,6 +23,7 @@ import PrestigePanel from '@/components/idle/panels/prestige/PrestigePanel';
 import NPCTab from '@/components/idle/panels/npc/NPCTab';
 import NPCInfoModal from '@/components/idle/panels/npc/NPCInfoModal';
 import type { NPCData } from '@/games/three-kingdoms/core/npc';
+import { isNPCSubsystem, isTerritorySubsystem } from '@/components/idle/shared/engine-type-guards';
 import type { TabId, FeaturePanelId } from './TabBar';
 
 // ── 样式 ──
@@ -76,7 +77,7 @@ const SceneRouter: React.FC<SceneRouterProps> = ({
   const npcData: NPCData[] = React.useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const npcSys = engine?.getSubsystemRegistry?.()?.get?.('npc') as any;
-    if (npcSys && typeof npcSys.getAllNPCs === 'function') {
+    if (isNPCSubsystem(npcSys)) {
       return (npcSys.getAllNPCs() as NPCData[]) ?? [];
     }
     return [];
@@ -157,7 +158,7 @@ const SceneRouter: React.FC<SceneRouterProps> = ({
                 onUpgradeTerritory={(territoryId: string) => {
                   try {
                     const territorySys = engine.getTerritorySystem();
-                    if (territorySys && typeof territorySys.upgradeTerritory === 'function') {
+                    if (isTerritorySubsystem(territorySys)) {
                       territorySys.upgradeTerritory(territoryId);
                       Toast.success(`领土升级成功`);
                     } else {

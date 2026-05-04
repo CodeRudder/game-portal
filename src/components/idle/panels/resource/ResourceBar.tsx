@@ -321,14 +321,17 @@ export default function ResourceBar({ resources, rates, caps, pendingGains, buil
               {/* 净收入 */}
               <div className="tk-res-detail-section tk-res-detail-net">
                 <h4>净收入</h4>
-                {RESOURCE_ORDER.map(type => (
+                {RESOURCE_ORDER.map(type => {
+                  const rate = rates[type] ?? 0;
+                  return (
                   <div key={type} className="tk-res-detail-row">
                     <span className="tk-res-detail-label">{RESOURCE_ICONS[type]} {RESOURCE_LABELS[type]}</span>
-                    <span className={`tk-res-detail-value ${rates[type] >= 0 ? 'tk-res-detail-positive' : 'tk-res-detail-negative'}`}>
-                      {rates[type] >= 0 ? '+' : ''}{rates[type].toFixed(1)}/秒
+                    <span className={`tk-res-detail-value ${rate >= 0 ? 'tk-res-detail-positive' : 'tk-res-detail-negative'}`}>
+                      {rate >= 0 ? '+' : ''}{rate.toFixed(1)}/秒
                     </span>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

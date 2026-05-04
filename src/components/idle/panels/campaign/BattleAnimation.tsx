@@ -32,8 +32,8 @@ export interface BattleAnimationState {
   damageFloats: DamageFloat[];
   logs: LogEntry[];
   logAreaRef: React.RefObject<HTMLDivElement>;
-  speed: 1 | 2 | 4;
-  setSpeed: (speed: 1 | 2 | 4) => void;
+  speed: 1 | 2 | 3 | 8;
+  setSpeed: (speed: 1 | 2 | 3 | 8) => void;
   toggleSpeed: () => void;
   skip: () => void;
 }
@@ -42,6 +42,9 @@ export interface BattleAnimationState {
 const BASE_TURN_DELAY = 800;
 const ACTION_DELAY = 300;
 const END_DELAY = 1200;
+
+/** 速度档位列表 */
+const SPEED_TIERS: (1 | 2 | 3 | 8)[] = [1, 2, 3, 8];
 
 // ── 辅助函数 ──
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -73,7 +76,7 @@ export function useBattleAnimation(
   enemyTeam: { units: BattleUnit[] },
   onBattleEnd: (result: BattleResult) => void,
 ): BattleAnimationState {
-  const [speed, setSpeed] = useState<1 | 2 | 4>(1);
+  const [speed, setSpeed] = useState<1 | 2 | 3 | 8>(1);
   const [battleState, setBattleState] = useState<BattleState | null>(null);
   const [battleResult, setBattleResult] = useState<BattleResult | null>(null);
   const [isFinished, setIsFinished] = useState(false);
@@ -91,6 +94,18 @@ export function useBattleAnimation(
   const cancelledRef = useRef(false);
   const logAreaRef = useRef<HTMLDivElement>(null!) as React.RefObject<HTMLDivElement>;
 
+  // ── P2: 追踪所有 setTimeout ID，组件卸载时统一清理 ──
+  const timerRefs = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+
+  /** 安全 setTimeout：自动追踪，卸载后不再 setState */
+  const safeTimeout = useCallback((fn: () => void, ms: number) => {
+    const id = setTimeout(() => {
+      timerRefs.current.delete(id);
+      if (!cancelledRef.current) fn();
+    }, ms);
+    timerRefs.current.add(id);
+  }, []);
+
   // 跟踪已死亡的单位（避免重复触发死亡动画）
   const deadUnitsRef = useRef<Set<string>>(new Set());
 
@@ -102,8 +117,8 @@ export function useBattleAnimation(
   const addDamageFloat = useCallback((unitId: string, value: number, isCritical: boolean, isHeal: boolean) => {
     const id = ++floatIdRef.current;
     setDamageFloats((prev) => [...prev, { id, unitId, value, isCritical, isHeal }]);
-    setTimeout(() => setDamageFloats((prev) => prev.filter((f) => f.id !== id)), 1000);
-  }, []);
+    safeTimeout(() => setDamageFloats((prev) => prev.filter((f) => f.id !== id)), 1000);
+  }, [safeTimeout]);
 
   useEffect(() => { if (logAreaRef.current) logAreaRef.current.scrollTop = logAreaRef.current.scrollHeight; }, [logs]);
 
@@ -174,18 +189,18 @@ export function useBattleAnimation(
 
           // 受击闪烁
           setHitUnitIds(new Set(newHitIds));
-          setTimeout(() => setHitUnitIds(new Set()), 400);
+          safeTimeout(() => setHitUnitIds(new Set()), 400);
 
           // 暴击屏幕震动
           if (hasCrit) {
             setCritShake(true);
-            setTimeout(() => setCritShake(false), 450);
+            safeTimeout(() => setCritShake(false), 450);
           }
 
           // 死亡动画
           if (newDeadIds.length > 0) {
             setDyingUnitIds(new Set(newDeadIds));
-            setTimeout(() => setDyingUnitIds(new Set()), 900);
+            safeTimeout(() => setDyingUnitIds(new Set()), 900);
           }
 
           setBattleState({ ...cur });
@@ -216,13 +231,21 @@ export function useBattleAnimation(
     };
 
     playBattle();
-    return () => { cancelledRef.current = true; };
+    return () => {
+      cancelledRef.current = true;
+      // P2: 清理所有未完成的 setTimeout
+      for (const id of timerRefs.current) clearTimeout(id);
+      timerRefs.current.clear();
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     battleState, battleResult, isFinished, actingUnitId, actingUnitSide,
     hitUnitIds, dyingUnitIds, skillActiveUnitId, critShake, damageFloats,
-    logs, logAreaRef, speed, setSpeed: setSpeed as (s: 1 | 2 | 4) => void, toggleSpeed: useCallback(() => setSpeed((p) => (p === 1 ? 2 : p === 2 ? 4 : 1)), []),
+    logs, logAreaRef, speed, setSpeed: setSpeed as (s: 1 | 2 | 3 | 8) => void, toggleSpeed: useCallback(() => setSpeed((p) => {
+      const idx = SPEED_TIERS.indexOf(p);
+      return SPEED_TIERS[(idx + 1) % SPEED_TIERS.length];
+    }), []),
     skip: useCallback(() => { skipRef.current = true; }, []),
   };
 }

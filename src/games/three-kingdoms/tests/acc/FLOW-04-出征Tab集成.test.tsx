@@ -128,11 +128,11 @@ describe('FLOW-04 出征Tab集成测试', () => {
     const tab = screen.getByTestId('campaign-tab');
     assertInDOM(tab, 'FLOW-04-01', '出征Tab容器');
 
-    const chapterSelector = screen.getByTestId('chapter-selector');
+    const chapterSelector = screen.getByTestId('chapter-select-panel');
     assertInDOM(chapterSelector, 'FLOW-04-01', '章节选择器');
 
-    // 验证章节标题显示
-    const chapterTitle = screen.getByText(/第1章/);
+    // 验证章节标题显示（ChapterSelectPanel使用aria-label）
+    const chapterTitle = screen.getByLabelText(/第1章/);
     assertInDOM(chapterTitle, 'FLOW-04-01', '章节标题');
   });
 
@@ -741,42 +741,53 @@ describe('FLOW-04 出征Tab集成测试', () => {
   // 8. 章节切换（FLOW-04-33 ~ FLOW-04-35）
   // ─────────────────────────────────────────
 
-  it(accTest('FLOW-04-33', '章节切换 — 点击右箭头切换到下一章'), async () => {
-    const sim = createSimWithFormation();
+  it(accTest('FLOW-04-33', '章节切换 — 点击章节卡片切换到下一章'), async () => {
+    // 通关第1章全部关卡，使第2章解锁可点击
+    const sim = createSimWithProgress(5);
     render(<CampaignTab engine={sim.engine} snapshotVersion={0} />);
-
-    const rightBtn = screen.getByLabelText('下一章');
-    await userEvent.click(rightBtn);
 
     const chapters = sim.engine.getChapters();
     if (chapters.length > 1) {
-      const chapter2Title = screen.getByText(new RegExp(`第${chapters[1].order}章`));
-      assertInDOM(chapter2Title, 'FLOW-04-33', '第2章标题');
+      // 点击第2章卡片（已解锁，可点击）
+      const chapter2Card = screen.getByTestId(`chapter-card-${chapters[1].id}`);
+      assertStrict(!chapter2Card.hasAttribute('disabled'), 'FLOW-04-33', '第2章卡片应可点击');
+      await userEvent.click(chapter2Card);
+
+      // 验证第2章成为当前章节（aria-label包含"当前"）
+      const chapter2Title = screen.getByLabelText(new RegExp(`第${chapters[1].order}章.*当前`));
+      assertInDOM(chapter2Title, 'FLOW-04-33', '第2章标题（当前选中）');
     }
   });
 
-  it(accTest('FLOW-04-34', '章节切换 — 第1章时左箭头禁用'), async () => {
-    const sim = createSimWithFormation();
-    render(<CampaignTab engine={sim.engine} snapshotVersion={0} />);
-
-    const leftBtn = screen.getByLabelText('上一章');
-    assertStrict(leftBtn.hasAttribute('disabled'), 'FLOW-04-34', '第1章时左箭头应禁用');
-  });
-
-  it(accTest('FLOW-04-35', '章节切换 — 最后一章时右箭头禁用'), async () => {
+  it(accTest('FLOW-04-34', '章节切换 — 第1章卡片当前高亮'), async () => {
     const sim = createSimWithFormation();
     render(<CampaignTab engine={sim.engine} snapshotVersion={0} />);
 
     const chapters = sim.engine.getChapters();
+    // 第1章卡片应有aria-label包含"当前"
+    const chapter1Card = screen.getByTestId(`chapter-card-${chapters[0].id}`);
+    const ariaLabel = chapter1Card.getAttribute('aria-label') ?? '';
+    assertStrict(ariaLabel.includes('当前'), 'FLOW-04-34', `第1章卡片aria-label应包含"当前"，实际: ${ariaLabel}`);
+  });
 
-    // 切换到最后一章
-    for (let i = 1; i < chapters.length; i++) {
-      const rightBtn = screen.getByLabelText('下一章');
-      await userEvent.click(rightBtn);
-    }
+  it(accTest('FLOW-04-35', '章节切换 — 最后一章卡片存在且状态正确'), async () => {
+    const sim = createSimWithFormation();
+    render(<CampaignTab engine={sim.engine} snapshotVersion={0} />);
 
-    const rightBtn = screen.getByLabelText('下一章');
-    assertStrict(rightBtn.hasAttribute('disabled'), 'FLOW-04-35', '最后一章时右箭头应禁用');
+    const chapters = sim.engine.getChapters();
+    const lastChapter = chapters[chapters.length - 1];
+
+    // 最后一章卡片应存在
+    const lastCard = screen.getByTestId(`chapter-card-${lastChapter.id}`);
+    assertInDOM(lastCard, 'FLOW-04-35', '最后一章卡片');
+
+    // 无进度时最后一章应锁定（disabled）
+    const isLocked = lastCard.hasAttribute('disabled');
+    assertStrict(isLocked, 'FLOW-04-35', '无进度时最后一章应锁定');
+
+    // aria-label应包含"未解锁"
+    const ariaLabel = lastCard.getAttribute('aria-label') ?? '';
+    assertStrict(ariaLabel.includes('未解锁'), 'FLOW-04-35', `最后一章aria-label应包含"未解锁"，实际: ${ariaLabel}`);
   });
 
   // ─────────────────────────────────────────

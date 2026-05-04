@@ -10,6 +10,20 @@
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine/ThreeKingdomsEngine';
 import { TutorialStateMachine, TutorialStepManager } from '@/games/three-kingdoms/engine';
 
+/** 检查对象是否实现 TutorialStateMachine 接口 */
+function isTutorialStateMachine(obj: unknown): obj is TutorialStateMachine {
+  if (obj == null || typeof obj !== 'object') return false;
+  const o = obj as Record<string, unknown>;
+  return typeof o.getCurrentPhase === 'function' && typeof o.getCompletedStepCount === 'function';
+}
+
+/** 检查对象是否实现 TutorialStepManager 接口 */
+function isTutorialStepManager(obj: unknown): obj is TutorialStepManager {
+  if (obj == null || typeof obj !== 'object') return false;
+  const o = obj as Record<string, unknown>;
+  return typeof o.getNextStep === 'function' && typeof o.getStepDefinition === 'function';
+}
+
 // ─────────────────────────────────────────────
 // localStorage Key
 // ─────────────────────────────────────────────
@@ -35,13 +49,14 @@ export function getTutorialSM(engine?: ThreeKingdomsEngine | null): TutorialStat
   try {
     // ThreeKingdomsEngine 有 getTutorialStateMachine getter
     if (typeof engine.getTutorialStateMachine === 'function') {
-      return engine.getTutorialStateMachine();
+      const sm = engine.getTutorialStateMachine();
+      if (isTutorialStateMachine(sm)) return sm;
     }
     // 回退：通过 registry 获取
     const registry = engine.getSubsystemRegistry();
     if (!registry) return null;
-    const sm = registry.get('tutorialStateMachine') as TutorialStateMachine | undefined;
-    return sm && typeof sm.getCurrentPhase === 'function' ? sm : null;
+    const sm = registry.get('tutorialStateMachine') as unknown;
+    return isTutorialStateMachine(sm) ? sm : null;
   } catch {
     return null;
   }
@@ -58,13 +73,13 @@ export function getTutorialStepMgr(engine?: ThreeKingdomsEngine | null): Tutoria
   try {
     if (typeof engine.getTutorialStepManager === 'function') {
       const mgr = engine.getTutorialStepManager();
-      return mgr && typeof mgr.getNextStep === 'function' ? mgr : null;
+      if (isTutorialStepManager(mgr)) return mgr;
     }
     // 回退：通过 registry 获取
     const registry = engine.getSubsystemRegistry();
     if (!registry) return null;
-    const mgr = registry.get('tutorialStepManager') as TutorialStepManager | undefined;
-    return mgr && typeof mgr.getNextStep === 'function' ? mgr : null;
+    const mgr = registry.get('tutorialStepManager') as unknown;
+    return isTutorialStepManager(mgr) ? mgr : null;
   } catch {
     return null;
   }

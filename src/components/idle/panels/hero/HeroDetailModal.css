@@ -590,15 +590,12 @@
   color: #ff9800;
   font-weight: 600;
   text-align: center;
-  animation: tk-awakened-shimmer 2s ease-in-out infinite;
+  animation: none;
   position: relative;
   overflow: hidden;
 }
 
-@keyframes tk-awakened-shimmer {
-  0%, 100% { box-shadow: 0 0 4px rgba(255, 152, 0, 0.15); }
-  50% { box-shadow: 0 0 12px rgba(255, 152, 0, 0.3); }
-}
+/* Static subtle accent — no animated glow */
 
 /* ── 已觉醒状态中的终极技能展示 ── */
 .tk-hero-detail-awakening-awakened-skill {

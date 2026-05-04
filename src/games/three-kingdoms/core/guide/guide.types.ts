@@ -144,7 +144,10 @@ export type StoryEventId =
   | 'e5_red_cliff'         // 赤壁之战
   | 'e6_single_sword'      // 单刀赴会
   | 'e7_seven_captures'    // 七擒孟获
-  | 'e8_unification';      // 三国归一
+  | 'e8_unification'       // 三国归一
+  | 'e9_maicheng'          // 走麦城
+  | 'e10_burning_camps'    // 火烧连营
+  | 'e11_wuzhang_plains';  // 五丈原
 
 /** 剧情对话行 */
 export interface StoryDialogueLine {

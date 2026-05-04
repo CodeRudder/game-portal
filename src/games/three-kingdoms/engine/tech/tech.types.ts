@@ -147,7 +147,7 @@ export interface TechPointState {
 // ─────────────────────────────────────────────
 
 /** 加速方式 */
-export type SpeedUpMethod = 'mandate' | 'ingot';
+export type SpeedUpMethod = 'mandate' | 'ingot' | 'copper';
 
 /** 加速结果 */
 export interface SpeedUpResult {

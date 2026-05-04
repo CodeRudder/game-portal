@@ -150,7 +150,7 @@
   background: rgba(200, 168, 76, 0.2);
   border-color: rgba(200, 168, 76, 0.5);
   color: var(--tk-gold-light, #F5D98C);
-  box-shadow: 0 0 8px rgba(200, 168, 76, 0.15);
+  box-shadow: none;
 }
 
 /* ═══════════════════════════════════════════

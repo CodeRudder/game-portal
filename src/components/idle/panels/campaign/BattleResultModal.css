@@ -115,12 +115,12 @@
 
 .tk-brm-result-title--victory {
   color: var(--tk-gold-light);
-  text-shadow: 0 0 20px rgba(200, 168, 76, 0.4);
+  text-shadow: none;
 }
 
 .tk-brm-result-title--defeat {
   color: #e88;
-  text-shadow: 0 0 20px rgba(200, 50, 50, 0.3);
+  text-shadow: none;
 }
 
 .tk-brm-result-stage {
@@ -153,7 +153,7 @@
 
 .tk-brm-star--filled {
   color: var(--tk-gold);
-  text-shadow: 0 0 12px rgba(200, 168, 76, 0.6);
+  text-shadow: none;
   animation: tk-brm-star-pop 0.4s ease-out backwards;
 }
 
@@ -468,6 +468,107 @@
 }
 
 /* ═══════════════════════════════════════════
+   v3.0 P1：碎片掉落提示
+   ═══════════════════════════════════════════ */
+.tk-brm-fragment-section {
+  padding: 12px 0;
+  border-top: 1px solid rgba(200, 168, 76, 0.1);
+}
+
+.tk-brm-fragment-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tk-gold-light, #d4a853);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.tk-brm-fragment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tk-brm-fragment-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(100, 180, 255, 0.06);
+  border-radius: 6px;
+  border-left: 3px solid rgba(100, 180, 255, 0.3);
+  transition: background 0.15s ease;
+}
+
+.tk-brm-fragment-item:hover {
+  background: rgba(100, 180, 255, 0.1);
+}
+
+.tk-brm-fragment-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3a5a8c, #2a4060);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #c4ddf8;
+  border: 1px solid rgba(100, 180, 255, 0.3);
+  flex-shrink: 0;
+}
+
+.tk-brm-fragment-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tk-brm-fragment-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--tk-text-primary, #f0e6d3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tk-brm-fragment-rate {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.tk-brm-fragment-rate--guaranteed {
+  color: #4ecdc4;
+  background: rgba(78, 205, 196, 0.1);
+  padding: 1px 6px;
+  border-radius: 3px;
+  display: inline-block;
+  width: fit-content;
+}
+
+.tk-brm-fragment-rate--random {
+  color: var(--tk-text-muted, #888);
+  background: rgba(136, 136, 136, 0.08);
+  padding: 1px 6px;
+  border-radius: 3px;
+  display: inline-block;
+  width: fit-content;
+}
+
+.tk-brm-fragment-count {
+  font-size: 15px;
+  font-weight: 700;
+  color: #7ec850;
+  font-family: var(--tk-font-title);
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════
    P1-3 修复：重新挑战按钮
    ═══════════════════════════════════════════ */
 .tk-brm-confirm-btn--retry {
@@ -478,7 +579,7 @@
 
 .tk-brm-confirm-btn--retry:hover {
   background: linear-gradient(135deg, #f09030, #f5b030) !important;
-  box-shadow: 0 0 12px rgba(243, 156, 18, 0.4);
+  box-shadow: none;
 }
 
 .tk-brm-actions {

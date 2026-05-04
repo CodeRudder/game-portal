@@ -57,10 +57,10 @@ export function createSimForResourceUpgrade(): GameEventSimulator {
 
 // ── 建筑类型常量 ──
 
-/** 所有 8 种建筑类型 */
+/** 所有 12 种建筑类型 */
 export const ALL_BUILDING_TYPES: BuildingType[] = [
-  'castle', 'farmland', 'market', 'barracks',
-  'workshop', 'academy', 'clinic', 'wall',
+  'castle', 'farmland', 'market', 'mine', 'lumberMill', 'barracks',
+  'workshop', 'academy', 'clinic', 'wall', 'tavern', 'port',
 ];
 
 // ── 资源常量 ──
@@ -85,6 +85,7 @@ export function createSimWithMarketLevel5(): GameEventSimulator {
 
   // 提高上限避免资源被截断
   sim.engine.resource.setCap('grain', 50_000_000);
+  sim.engine.resource.setCap('gold', 100_000_000);
   sim.engine.resource.setCap('troops', 10_000_000);
 
   // 交错升级到 castle Lv5 + market Lv5
@@ -92,18 +93,22 @@ export function createSimWithMarketLevel5(): GameEventSimulator {
   sim.addResources({ grain: 10000000, gold: 20000000, troops: 5000000 });
   sim.upgradeBuildingTo('castle', 4);
   sim.engine.resource.setCap('grain', 50_000_000);
+  sim.engine.resource.setCap('gold', 100_000_000);
   sim.engine.resource.setCap('troops', 10_000_000);
   sim.addResources({ grain: 10000000, gold: 20000000, troops: 5000000 });
   sim.upgradeBuildingTo('farmland', 4);
   sim.engine.resource.setCap('grain', 50_000_000);
+  sim.engine.resource.setCap('gold', 100_000_000);
   sim.engine.resource.setCap('troops', 10_000_000);
   sim.addResources({ grain: 10000000, gold: 20000000, troops: 5000000 });
   sim.upgradeBuildingTo('castle', 5);
   sim.engine.resource.setCap('grain', 50_000_000);
+  sim.engine.resource.setCap('gold', 100_000_000);
   sim.engine.resource.setCap('troops', 10_000_000);
   sim.addResources({ grain: 10000000, gold: 20000000, troops: 5000000 });
   sim.upgradeBuildingTo('market', 5);
   sim.engine.resource.setCap('grain', 50_000_000);
+  sim.engine.resource.setCap('gold', 100_000_000);
   sim.engine.resource.setCap('troops', 10_000_000);
 
   return sim;

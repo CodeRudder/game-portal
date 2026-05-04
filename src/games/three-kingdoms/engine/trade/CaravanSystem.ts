@@ -91,6 +91,9 @@ export class CaravanSystem implements ISubsystem {
   /** 商路信息提供者 */
   private routeProvider: RouteInfoProvider | null = null;
 
+  /** 市舶司最大商队数回调 */
+  private maxCaravansCallback: (() => number) | null = null;
+
   constructor() {
     this.caravans = new Map();
     this.guardAssignments = new Map();
@@ -105,6 +108,20 @@ export class CaravanSystem implements ISubsystem {
 
   init(deps: ISystemDeps): void {
     this.deps = deps;
+  }
+
+  /**
+   * 注入市舶司最大商队数回调
+   * 回调返回最大商队数量（由市舶司等级决定）
+   */
+  setMaxCaravansCallback(cb: () => number): void {
+    this.maxCaravansCallback = cb;
+  }
+
+  /** 获取当前最大商队数（市舶司回调优先，否则使用默认值） */
+  getMaxCaravans(): number {
+    if (this.maxCaravansCallback) return this.maxCaravansCallback();
+    return MAX_CARAVAN_COUNT;
   }
 
   update(dt: number): void {
@@ -176,7 +193,7 @@ export class CaravanSystem implements ISubsystem {
 
   /** 是否可以新增商队 */
   canAddCaravan(): boolean {
-    return this.caravans.size < MAX_CARAVAN_COUNT;
+    return this.caravans.size < this.getMaxCaravans();
   }
 
   // ─────────────────────────────────────────────
@@ -340,7 +357,7 @@ export class CaravanSystem implements ISubsystem {
   /** 新增商队 */
   addCaravan(): { success: boolean; caravan?: Caravan; reason?: string } {
     if (!this.canAddCaravan()) {
-      return { success: false, reason: `商队数量已达上限${MAX_CARAVAN_COUNT}` };
+      return { success: false, reason: `商队数量已达上限${this.getMaxCaravans()}` };
     }
     const caravan = createCaravan(this.caravans.size);
     this.caravans.set(caravan.id, caravan);

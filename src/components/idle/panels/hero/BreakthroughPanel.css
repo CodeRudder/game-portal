@@ -35,16 +35,16 @@
 }
 .bp-node--current .bp-node__dot {
   background: var(--tk-hero-gold-30, rgba(200,168,76,0.3));
-  color: var(--tk-gold, #ffd700); border-color: var(--tk-gold, #c8a84c); box-shadow: 0 0 8px rgba(200,168,76,0.4);
+  color: var(--tk-gold, #ffd700); border-color: var(--tk-gold, #c8a84c); box-shadow: none;
 }
 /* 节点点亮动画（缩放+发光，不用明暗变化） */
 .bp-node--animating .bp-node__dot {
   animation: bp-node-light 0.6s ease-out;
 }
 @keyframes bp-node-light {
-  0% { transform: scale(1); box-shadow: 0 0 0 rgba(200,168,76,0); }
-  50% { transform: scale(1.4); box-shadow: 0 0 20px rgba(200,168,76,0.8); }
-  100% { transform: scale(1); box-shadow: 0 0 8px rgba(200,168,76,0.4); }
+  0% { transform: scale(1); }
+  50% { transform: scale(1.4); }
+  100% { transform: scale(1); }
 }
 .bp-node__label { font-size: 11px; color: var(--tk-text-secondary, rgba(240,230,211,0.6)); }
 .bp-node__cap { font-size: 11px; font-family: var(--tk-font-num, monospace); color: var(--tk-text-muted, rgba(240,230,211,0.35)); }

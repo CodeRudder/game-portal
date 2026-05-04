@@ -30,7 +30,12 @@ function mockDeps(): ISystemDeps {
 function createTestEnv() {
   const treeSys = new TechTreeSystem();
   const pointSys = new TechPointSystem();
-  const researchSys = new TechResearchSystem(treeSys, pointSys, () => 3, () => 100, () => true);
+  let goldAmount = 1000000;
+  const researchSys = new TechResearchSystem(
+    treeSys, pointSys, () => 3,
+    () => 100, () => true,
+    () => goldAmount, (a: number) => { if (goldAmount >= a) { goldAmount -= a; return true; } return false; },
+  );
   const offlineSys = new TechOfflineSystem(treeSys, researchSys);
   const deps = mockDeps();
   treeSys.init(deps); pointSys.init(deps); researchSys.init(deps); offlineSys.init(deps);
@@ -38,8 +43,11 @@ function createTestEnv() {
 }
 
 function grantPoints(pointSys: TechPointSystem, amount: number): void {
+  // Sprint 3: 研究消耗 = costPoints × RESEARCH_START_TECH_POINT_MULTIPLIER
+  const RESEARCH_START_TECH_POINT_MULTIPLIER = 10;
+  const needed = amount * RESEARCH_START_TECH_POINT_MULTIPLIER;
   pointSys.syncAcademyLevel(20);
-  pointSys.update(Math.ceil(amount / 1.76) + 10);
+  pointSys.update(Math.ceil(needed / 1.76) + 10);
 }
 
 const H = (h: number) => h * 3600;

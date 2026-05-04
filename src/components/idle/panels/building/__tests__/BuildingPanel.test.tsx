@@ -21,22 +21,26 @@ vi.mock('../BuildingUpgradeModal.css', () => ({}));
 
 // ── Mock 引擎模块 — 使用 vi.hoisted 避免提升时变量引用问题 ──
 const { mockBuildingTypes, mockBuildingLabels, mockBuildingIcons, mockBuildingZones, mockBuildingUnlockLevels, mockToast } = vi.hoisted(() => {
-  const BUILDING_TYPES = ['castle', 'farmland', 'market', 'barracks', 'smithy', 'academy', 'clinic', 'wall'] as const;
+  const BUILDING_TYPES = ['castle', 'farmland', 'market', 'mine', 'lumberMill', 'barracks', 'workshop', 'academy', 'clinic', 'wall', 'tavern'] as const;
   const BUILDING_LABELS = {
-    castle: '主城', farmland: '农田', market: '市集', barracks: '兵营',
-    smithy: '铁匠铺', academy: '书院', clinic: '医馆', wall: '城墙',
+    castle: '主城', farmland: '农田', market: '市集', mine: '矿场',
+    lumberMill: '伐木场', barracks: '兵营', workshop: '工坊',
+    academy: '书院', clinic: '医馆', wall: '城墙', tavern: '酒馆',
   };
   const BUILDING_ICONS = {
-    castle: '🏛️', farmland: '🌾', market: '💰', barracks: '⚔️',
-    smithy: '🔨', academy: '📚', clinic: '🏥', wall: '🏯',
+    castle: '🏛️', farmland: '🌾', market: '💰', mine: '⛏️',
+    lumberMill: '🪓', barracks: '⚔️', workshop: '⚒️',
+    academy: '📚', clinic: '🏥', wall: '🏯', tavern: '🍺',
   };
   const BUILDING_ZONES = {
-    castle: 'core', farmland: 'civilian', market: 'civilian', barracks: 'military',
-    smithy: 'military', academy: 'cultural', clinic: 'cultural', wall: 'defense',
+    castle: 'core', farmland: 'resource', market: 'resource', mine: 'resource',
+    lumberMill: 'resource', barracks: 'military', workshop: 'military',
+    academy: 'cultural', clinic: 'cultural', wall: 'defense', tavern: 'core',
   };
   const BUILDING_UNLOCK_LEVELS = {
-    castle: 0, farmland: 0, market: 2, barracks: 2,
-    smithy: 3, academy: 3, clinic: 4, wall: 5,
+    castle: 0, farmland: 0, market: 0, mine: 0,
+    lumberMill: 0, barracks: 2, workshop: 3,
+    academy: 3, clinic: 4, wall: 5, tavern: 5,
   };
   const mockToast = {
     show: vi.fn(),
@@ -86,7 +90,7 @@ vi.mock('../BuildingUpgradeModal', () => ({
 import BuildingPanel from '../BuildingPanel';
 
 // ── 类型 ──
-type BuildingType = 'castle' | 'farmland' | 'market' | 'barracks' | 'smithy' | 'academy' | 'clinic' | 'wall';
+type BuildingType = 'castle' | 'farmland' | 'market' | 'mine' | 'lumberMill' | 'barracks' | 'workshop' | 'academy' | 'clinic' | 'wall' | 'tavern';
 
 interface BuildingState {
   type: BuildingType;
@@ -166,7 +170,7 @@ describe('BuildingPanel', () => {
     vi.clearAllMocks();
   });
 
-  it('应渲染8个建筑标记（地图布局）', () => {
+  it('应渲染11个建筑标记（地图布局）', () => {
     const engine = createMockEngine();
     const buildings = createMockBuildings();
 
@@ -205,9 +209,9 @@ describe('BuildingPanel', () => {
     const map = document.querySelector('.tk-bld-map');
     expect(map).toBeTruthy();
 
-    // 地图内应有8个建筑标记
+    // 地图内应有11个建筑标记
     const pins = document.querySelectorAll('.tk-bld-pin');
-    expect(pins.length).toBe(8);
+    expect(pins.length).toBe(11);
   });
 
   it('每个建筑标记应显示名称和等级', () => {
@@ -226,14 +230,14 @@ describe('BuildingPanel', () => {
 
     // 检查等级徽章（每个非锁定建筑都有等级badge显示 "Lv.1"）
     const badges = screen.getAllByText('Lv.1');
-    expect(badges.length).toBe(8); // 8个建筑都是 Lv.1
+    expect(badges.length).toBe(11); // 11个建筑都是 Lv.1
 
     // 检查 aria-label 包含名称和等级
     const pins = screen.getAllByRole('button', { hidden: true });
     const pinsWithLabels = pins.filter(pin =>
       pin.getAttribute('aria-label')?.includes('Lv.1'),
     );
-    expect(pinsWithLabels.length).toBe(8);
+    expect(pinsWithLabels.length).toBe(11);
   });
 
   it('点击建筑标记应打开升级弹窗', () => {
@@ -312,7 +316,7 @@ describe('BuildingPanel', () => {
     const buildings = createMockBuildings({
       castle: { status: 'idle', level: 3 },
       farmland: { status: 'upgrading', level: 2 },
-      market: { status: 'locked', level: 0 },
+      workshop: { status: 'locked', level: 0 },
     });
 
     render(
@@ -382,7 +386,7 @@ describe('BuildingPanel', () => {
 
     // 检查建筑标记使用绝对定位
     const pins = document.querySelectorAll('.tk-bld-pin');
-    expect(pins.length).toBe(8);
+    expect(pins.length).toBe(11);
 
     // 每个标记应有 top 和 left 内联样式
     pins.forEach(pin => {
@@ -398,8 +402,8 @@ describe('BuildingPanel', () => {
   it('点击锁定建筑应显示Toast提示解锁条件', () => {
     const engine = createMockEngine();
     const buildings = createMockBuildings();
-    // 将 market 设为锁定状态
-    buildings.market.status = 'locked';
+    // 将 barracks 设为锁定状态（需要主城Lv2）
+    buildings.barracks.status = 'locked';
 
     render(
       <BuildingPanel
@@ -411,17 +415,17 @@ describe('BuildingPanel', () => {
       />,
     );
 
-    // 找到锁定的市集建筑（地图版）
-    const lockedMarket = screen.getByTestId('building-panel-item-market');
-    expect(lockedMarket).toBeTruthy();
+    // 找到锁定的兵营建筑（地图版）
+    const lockedBarracks = screen.getByTestId('building-panel-item-barracks');
+    expect(lockedBarracks).toBeTruthy();
 
     // 点击锁定建筑
-    fireEvent.click(lockedMarket);
+    fireEvent.click(lockedBarracks);
 
     // 应显示Toast提示解锁条件
     expect(mockToast.warning).toHaveBeenCalledTimes(1);
     expect(mockToast.warning).toHaveBeenCalledWith(
-      expect.stringContaining('主城达到Lv2后解锁市集'),
+      expect.stringContaining('主城达到Lv2后解锁兵营'),
       3000,
     );
   });
@@ -429,8 +433,8 @@ describe('BuildingPanel', () => {
   it('点击锁定建筑（列表版）应显示Toast提示解锁条件', () => {
     const engine = createMockEngine();
     const buildings = createMockBuildings();
-    // 将 smithy 设为锁定状态（需要主城Lv3）
-    buildings.smithy.status = 'locked';
+    // 将 workshop 设为锁定状态（需要主城Lv3）
+    buildings.workshop.status = 'locked';
 
     render(
       <BuildingPanel
@@ -443,16 +447,16 @@ describe('BuildingPanel', () => {
     );
 
     // 找到列表版锁定建筑
-    const lockedSmithy = screen.getByTestId('building-panel-list-item-smithy');
-    expect(lockedSmithy).toBeTruthy();
+    const lockedWorkshop = screen.getByTestId('building-panel-list-item-workshop');
+    expect(lockedWorkshop).toBeTruthy();
 
     // 点击锁定建筑
-    fireEvent.click(lockedSmithy);
+    fireEvent.click(lockedWorkshop);
 
     // 应显示Toast提示解锁条件
     expect(mockToast.warning).toHaveBeenCalledTimes(1);
     expect(mockToast.warning).toHaveBeenCalledWith(
-      expect.stringContaining('主城达到Lv3后解锁铁匠铺'),
+      expect.stringContaining('主城达到Lv3后解锁工坊'),
       3000,
     );
   });

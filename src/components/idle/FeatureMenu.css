@@ -43,7 +43,7 @@
 .tk-feature-menu--open .tk-feature-menu-trigger {
   background: rgba(200, 168, 76, 0.22);
   border-color: rgba(200, 168, 76, 0.5);
-  box-shadow: 0 0 8px rgba(200, 168, 76, 0.15);
+  box-shadow: none;
 }
 
 .tk-feature-menu-icon {

@@ -446,9 +446,9 @@ describe('建筑便捷功能 — 一键收取（P1补充）', () => {
   });
 
   it('一键收取：getProduction 对未解锁建筑返回0', () => {
-    // market 初始锁定
-    expect(system.isUnlocked('market')).toBe(false);
-    expect(system.getProduction('market')).toBe(0);
+    // barracks 初始锁定
+    expect(system.isUnlocked('barracks')).toBe(false);
+    expect(system.getProduction('barracks')).toBe(0);
   });
 
   it('一键收取：getProduction 对锁定建筑指定等级仍可查询', () => {
@@ -587,7 +587,7 @@ describe('建筑便捷功能 — 序列化与状态恢复', () => {
     // 所有建筑应回到初始状态
     for (const type of BUILDING_TYPES) {
       const state = system.getBuilding(type);
-      if (type === 'castle' || type === 'farmland') {
+      if (type === 'castle' || type === 'farmland' || type === 'market' || type === 'mine' || type === 'lumberMill') {
         expect(state.level).toBe(1);
         expect(state.status).toBe('idle');
       } else {

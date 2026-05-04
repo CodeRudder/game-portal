@@ -1,0 +1,459 @@
+/**
+ * OfflinePushPanel — 离线推图面板样式
+ *
+ * 设计风格：水墨江山·铜纹霸业
+ */
+
+/* ═══════════════════════════════════════════
+   遮罩层
+   ═══════════════════════════════════════════ */
+.tk-offline-push-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--tk-z-modal-detail, 1000);
+}
+
+/* ═══════════════════════════════════════════
+   面板主体
+   ═══════════════════════════════════════════ */
+.tk-offline-push {
+  background: var(--tk-bg-panel, #1e1a14);
+  border: 1px solid var(--tk-border-default, #8b7355);
+  border-radius: 12px;
+  width: 480px;
+  max-width: 92vw;
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 20px;
+  color: var(--tk-text-primary, #f0e6d3);
+}
+
+.tk-offline-push::-webkit-scrollbar { width: 4px; }
+.tk-offline-push::-webkit-scrollbar-track { background: rgba(200,168,76,0.05); border-radius: 2px; }
+.tk-offline-push::-webkit-scrollbar-thumb { background: rgba(200,168,76,0.2); border-radius: 2px; }
+
+/* ═══════════════════════════════════════════
+   头部
+   ═══════════════════════════════════════════ */
+.tk-offline-push-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(200,168,76,0.15);
+}
+
+.tk-offline-push-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--tk-accent-gold, #d4a853);
+  margin: 0;
+  letter-spacing: 2px;
+  font-family: var(--tk-font-title, inherit);
+  flex: 1;
+}
+
+.tk-offline-push-close {
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(200,168,76,0.2);
+  border-radius: 6px;
+  background: rgba(200,168,76,0.08);
+  color: var(--tk-text-secondary, #b0a898);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.tk-offline-push-close:hover {
+  background: rgba(200,168,76,0.2);
+  color: var(--tk-text-primary, #f0e6d3);
+  border-color: rgba(200,168,76,0.4);
+}
+
+/* ═══════════════════════════════════════════
+   分区
+   ═══════════════════════════════════════════ */
+.tk-offline-push-section {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(200,168,76,0.08);
+}
+
+.tk-offline-push-section:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.tk-offline-push-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tk-gold-light, #e8c96a);
+  margin-bottom: 12px;
+  letter-spacing: 1px;
+}
+
+/* ═══════════════════════════════════════════
+   挂机收益区
+   ═══════════════════════════════════════════ */
+
+/* 累积时间 */
+.tk-offline-push-timer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.tk-offline-push-timer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tk-offline-push-timer-label {
+  font-size: 10px;
+  color: var(--tk-text-muted, #888);
+}
+
+.tk-offline-push-timer-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--tk-gold-light, #e8c96a);
+  font-family: var(--tk-font-num, monospace);
+}
+
+.tk-offline-push-timer-limit {
+  font-size: 13px;
+  color: var(--tk-text-secondary, #b0a898);
+}
+
+/* 进度条 */
+.tk-offline-push-progress {
+  width: 100%;
+  height: 24px;
+  background: rgba(200,168,76,0.08);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 12px;
+  border: 1px solid rgba(200,168,76,0.1);
+}
+
+.tk-offline-push-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--tk-green, #7ec850), var(--tk-gold, #C9A84C));
+  border-radius: 12px;
+  transition: width 0.4s ease-out;
+  min-width: 0;
+}
+
+.tk-offline-push-progress-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--tk-text-primary, #f0e6d3);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  font-family: var(--tk-font-num, monospace);
+}
+
+/* 预计收益 */
+.tk-offline-push-estimated {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: rgba(200,168,76,0.06);
+  border-radius: 8px;
+  border: 1px solid rgba(200,168,76,0.1);
+}
+
+.tk-offline-push-estimated-title {
+  font-size: 11px;
+  color: var(--tk-text-secondary, #b0a898);
+  margin-bottom: 8px;
+}
+
+.tk-offline-push-estimated-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px 12px;
+}
+
+.tk-offline-push-estimated-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.tk-offline-push-estimated-type {
+  color: var(--tk-text-secondary, #b0a898);
+}
+
+.tk-offline-push-estimated-amount {
+  color: var(--tk-gold-light, #e8c96a);
+  font-weight: 600;
+  font-family: var(--tk-font-num, monospace);
+}
+
+/* 操作按钮 */
+.tk-offline-push-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tk-offline-push-btn {
+  flex: 1;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  letter-spacing: 1px;
+  border: 1px solid transparent;
+}
+
+.tk-offline-push-btn--primary {
+  color: #1a1a1a;
+  background: linear-gradient(135deg, var(--tk-gold-soft, #C4956A), var(--tk-gold-bright, #d4a87a));
+  border-color: rgba(200,168,76,0.5);
+}
+
+.tk-offline-push-btn--primary:hover:not(:disabled) {
+  filter: brightness(1.1);
+  border-color: var(--tk-gold, #C9A84C);
+}
+
+.tk-offline-push-btn--primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tk-offline-push-btn--claimed {
+  background: var(--tk-green, #7ec850);
+  border-color: rgba(126,200,80,0.5);
+}
+
+.tk-offline-push-btn--secondary {
+  color: var(--tk-gold-light, #e8c96a);
+  background: rgba(200,168,76,0.1);
+  border-color: rgba(200,168,76,0.25);
+}
+
+.tk-offline-push-btn--secondary:hover {
+  background: rgba(200,168,76,0.2);
+  border-color: rgba(200,168,76,0.4);
+}
+
+.tk-offline-push-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* ═══════════════════════════════════════════
+   推图设置
+   ═══════════════════════════════════════════ */
+.tk-offline-push-setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.tk-offline-push-setting-label {
+  font-size: 13px;
+  color: var(--tk-text-primary, #f0e6d3);
+}
+
+/* 开关 */
+.tk-offline-push-toggle {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  background: rgba(100,100,100,0.3);
+  border: 1px solid rgba(100,100,100,0.3);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+  padding: 0;
+  font-family: inherit;
+}
+
+.tk-offline-push-toggle--on {
+  background: rgba(126,200,80,0.3);
+  border-color: var(--tk-green, #7ec850);
+}
+
+.tk-offline-push-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--tk-text-secondary, #b0a898);
+  transition: all 0.2s;
+}
+
+.tk-offline-push-toggle--on .tk-offline-push-toggle-knob {
+  left: 22px;
+  background: var(--tk-green, #7ec850);
+}
+
+/* 战力阈值 */
+.tk-offline-push-threshold {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tk-offline-push-threshold-input {
+  width: 100px;
+  padding: 4px 8px;
+  font-size: 13px;
+  color: var(--tk-gold-light, #e8c96a);
+  background: rgba(200,168,76,0.08);
+  border: 1px solid rgba(200,168,76,0.2);
+  border-radius: 4px;
+  text-align: right;
+  font-family: var(--tk-font-num, monospace);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.tk-offline-push-threshold-input:focus {
+  border-color: rgba(200,168,76,0.5);
+}
+
+.tk-offline-push-threshold-hint {
+  font-size: 10px;
+  color: var(--tk-text-muted, #888);
+}
+
+/* 自动推图状态 */
+.tk-offline-push-autopush-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-top: 8px;
+  background: rgba(126,200,80,0.08);
+  border-radius: 6px;
+  border: 1px solid rgba(126,200,80,0.15);
+}
+
+.tk-offline-push-autopush-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tk-green, #7ec850);
+}
+
+.tk-offline-push-autopush-detail {
+  font-size: 11px;
+  color: var(--tk-text-secondary, #b0a898);
+  font-family: var(--tk-font-num, monospace);
+}
+
+/* ═══════════════════════════════════════════
+   战报列表
+   ═══════════════════════════════════════════ */
+.tk-offline-push-empty {
+  text-align: center;
+  padding: 20px;
+  font-size: 12px;
+  color: var(--tk-text-muted, #888);
+}
+
+.tk-offline-push-logs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.tk-offline-push-log {
+  padding: 10px 12px;
+  background: rgba(200,168,76,0.04);
+  border-radius: 6px;
+  border: 1px solid rgba(200,168,76,0.08);
+}
+
+.tk-offline-push-log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.tk-offline-push-log-time {
+  font-size: 11px;
+  color: var(--tk-text-muted, #888);
+  font-family: var(--tk-font-num, monospace);
+}
+
+.tk-offline-push-log-result {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tk-text-secondary, #b0a898);
+}
+
+.tk-offline-push-log-result--win {
+  color: var(--tk-green, #7ec850);
+}
+
+.tk-offline-push-log-detail {
+  font-size: 11px;
+  color: var(--tk-text-secondary, #b0a898);
+  margin-bottom: 4px;
+}
+
+.tk-offline-push-log-rewards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tk-offline-push-log-reward {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(200,168,76,0.1);
+  color: var(--tk-gold-light, #e8c96a);
+}
+
+/* ═══════════════════════════════════════════
+   平板适配 (481px~768px)
+   ═══════════════════════════════════════════ */
+@media (min-width: 481px) and (max-width: 768px) {
+  .tk-offline-push { width: 440px; padding: 16px; }
+}
+
+/* ═══════════════════════════════════════════
+   手机端适配 (≤480px)
+   ═══════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .tk-offline-push {
+    width: 100%;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+    padding: 12px;
+  }
+  .tk-offline-push-title { font-size: 16px; }
+  .tk-offline-push-estimated-grid { grid-template-columns: 1fr; }
+  .tk-offline-push-actions { flex-direction: column; }
+}

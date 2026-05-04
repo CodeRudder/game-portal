@@ -84,6 +84,11 @@ describe('派驻 → 编队 → 战斗 联动集成测试', () => {
       // 派驻第一个武将
       dispatch.dispatchHero(heroIds[0], 'barracks' as BuildingType);
 
+      // 先从 initMidGameState 创建的 main 编队中移除这些武将（FIX-303 唯一性约束）
+      for (const gid of heroIds) {
+        sim.engine.removeFromFormation('main', gid);
+      }
+
       // 编队包含派驻武将
       sim.engine.createFormation('combat_test');
       const formation = sim.engine.setFormation('combat_test', heroIds);
@@ -95,6 +100,11 @@ describe('派驻 → 编队 → 战斗 联动集成测试', () => {
       const dispatch = sim.engine.getHeroDispatchSystem();
       const generals = sim.getGenerals();
       const heroIds = generals.slice(0, 3).map(g => g.id);
+
+      // 先从 main 编队移除（FIX-303 唯一性约束）
+      for (const gid of heroIds) {
+        sim.engine.removeFromFormation('main', gid);
+      }
 
       // 派驻 + 编队
       dispatch.dispatchHero(heroIds[0], 'barracks' as BuildingType);
@@ -161,6 +171,11 @@ describe('派驻 → 编队 → 战斗 联动集成测试', () => {
       const heroIds = generals.slice(0, 3).map(g => g.id);
       const heroId = heroIds[0];
 
+      // 先从 main 编队移除（FIX-303 唯一性约束）
+      for (const gid of heroIds) {
+        sim.engine.removeFromFormation('main', gid);
+      }
+
       // 派驻 + 编队
       dispatch.dispatchHero(heroId, 'barracks' as BuildingType);
       sim.engine.createFormation('upgrade_test');
@@ -204,6 +219,11 @@ describe('派驻 → 编队 → 战斗 联动集成测试', () => {
       const generals = sim.getGenerals();
       const heroIds = generals.slice(0, 3).map(g => g.id);
       const heroId = heroIds[0];
+
+      // 先从 main 编队移除（FIX-303 唯一性约束）
+      for (const gid of heroIds) {
+        sim.engine.removeFromFormation('main', gid);
+      }
 
       // 派驻 + 编队
       dispatch.dispatchHero(heroId, 'academy' as BuildingType);
@@ -289,6 +309,10 @@ describe('派驻 → 编队 → 战斗 联动集成测试', () => {
       if (!teamIds.includes(recruitedId)) {
         teamIds[teamIds.length - 1] = recruitedId;
       }
+      // 先从 main 编队移除（FIX-303 唯一性约束）
+      for (const gid of teamIds) {
+        sim.engine.removeFromFormation('main', gid);
+      }
       sim.engine.createFormation('cycle_test');
       const formation = sim.engine.setFormation('cycle_test', teamIds);
       expect(formation).not.toBeNull();
@@ -331,6 +355,10 @@ describe('派驻 → 编队 → 战斗 联动集成测试', () => {
       }
 
       // 编队
+      // 先从 main 编队移除（FIX-303 唯一性约束）
+      for (const gid of heroIds) {
+        sim.engine.removeFromFormation('main', gid);
+      }
       sim.engine.createFormation('multi_test');
       sim.engine.setFormation('multi_test', heroIds);
 

@@ -406,8 +406,8 @@ describe('V1 TRD-FLOW 资源交易系统', () => {
         amount: 0,
       });
 
-      // amount=0 时 from===to 的逻辑不适用，但应该不会出错
-      expect(result.success).toBe(true);
+      // amount=0 视为无效数量，返回失败
+      expect(result.success).toBe(false);
     });
 
     // ── PRD 定义的资源保护线（通过 ResourceTradeEngine 实现）──

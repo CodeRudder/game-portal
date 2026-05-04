@@ -5,6 +5,7 @@
  * - 胜利分支：星级评定动画、获得奖励列表、首通标记
  * - 失败分支：失败原因、推荐提升方向
  * - 确认按钮
+ * - v3.0 P1：碎片掉落提示（首通必掉标记 + 重复概率标记）
  *
  * @module components/idle/panels/campaign/BattleResultModal
  */
@@ -14,6 +15,8 @@ import { BattleOutcome, StarRating } from '@/games/three-kingdoms/engine';
 import type { BattleResult } from '@/games/three-kingdoms/engine';
 import type { Stage } from '@/games/three-kingdoms/engine';
 import { STAGE_TYPE_LABELS, MAX_STARS } from '@/games/three-kingdoms/engine';
+import { buildFragmentDrops } from './utils';
+import type { FragmentDropItem } from './utils';
 import SharedPanel from '../../components/SharedPanel';
 import './BattleResultModal.css';
 
@@ -29,6 +32,10 @@ interface BattleResultModalProps {
   onConfirm: () => void;
   /** 重新挑战回调（P1-3修复：失败时提供重试入口） */
   onRetry?: () => void;
+  /** 是否首通（用于碎片掉落提示标记） */
+  isFirstClear?: boolean;
+  /** 武将名称查找表（generalId → 武将名），用于碎片掉落显示 */
+  generalNames?: Record<string, string>;
 }
 
 // ─────────────────────────────────────────────
@@ -40,6 +47,14 @@ const RESOURCE_LABELS: Record<string, string> = {
   troops: '兵力',
   mandate: '天命',
 };
+
+// ─────────────────────────────────────────────
+// 碎片掉落信息（FragmentDropItem / buildFragmentDrops 已抽取至 utils.ts）
+// ─────────────────────────────────────────────
+
+// Re-export for backward compatibility
+export type { FragmentDropItem } from './utils';
+export { buildFragmentDrops } from './utils';
 
 // ─────────────────────────────────────────────
 // 失败推荐提升方向
@@ -75,10 +90,18 @@ const BattleResultModal: React.FC<BattleResultModalProps> = ({
   stage,
   onConfirm,
   onRetry,
+  isFirstClear = false,
+  generalNames = {},
 }) => {
   const isVictory = result.outcome === BattleOutcome.VICTORY;
   const isDraw = result.outcome === BattleOutcome.DRAW;
   const stars = result.stars as number;
+
+  // ── v3.0 P1：碎片掉落数据构建 ──
+  const fragmentDrops = useMemo(() => {
+    if (!isVictory || !result.fragmentRewards) return [];
+    return buildFragmentDrops(result.fragmentRewards, isFirstClear, generalNames);
+  }, [isVictory, result.fragmentRewards, isFirstClear, generalNames]);
 
   // ── 计算奖励预览 ──
   const rewards = useMemo(() => {
@@ -235,15 +258,25 @@ const BattleResultModal: React.FC<BattleResultModalProps> = ({
               </div>
             )}
 
-            {/* 碎片奖励（扫荡结果） */}
-            {isVictory && result.fragmentRewards && Object.keys(result.fragmentRewards).length > 0 && (
-              <div className="tk-brm-rewards-section">
-                <div className="tk-brm-rewards-title">💎 碎片奖励</div>
-                <div className="tk-brm-rewards-list">
-                  {Object.entries(result.fragmentRewards).map(([key, amount]) => (
-                    <div key={key} className="tk-brm-reward-item">
-                      <span className="tk-brm-reward-label">{key}</span>
-                      <span className="tk-brm-reward-value">+{typeof amount === 'number' ? amount.toLocaleString() : amount}</span>
+            {/* v3.0 P1：碎片掉落提示（增强版） */}
+            {isVictory && fragmentDrops.length > 0 && (
+              <div className="tk-brm-fragment-section" data-testid="fragment-drop-section">
+                <div className="tk-brm-fragment-title">💎 武将碎片掉落</div>
+                <div className="tk-brm-fragment-list">
+                  {fragmentDrops.map((drop) => (
+                    <div key={drop.generalId} className="tk-brm-fragment-item" data-testid={`fragment-drop-${drop.generalId}`}>
+                      <div className="tk-brm-fragment-icon" data-testid={`fragment-icon-${drop.generalId}`}>
+                        {drop.generalName.charAt(0)}
+                      </div>
+                      <div className="tk-brm-fragment-info">
+                        <span className="tk-brm-fragment-name">{drop.generalName}</span>
+                        <span className={`tk-brm-fragment-rate ${drop.isFirstClearGuaranteed ? 'tk-brm-fragment-rate--guaranteed' : 'tk-brm-fragment-rate--random'}`}>
+                          {drop.dropRateLabel}
+                        </span>
+                      </div>
+                      <div className="tk-brm-fragment-count" data-testid={`fragment-count-${drop.generalId}`}>
+                        ×{drop.count}
+                      </div>
                     </div>
                   ))}
                 </div>

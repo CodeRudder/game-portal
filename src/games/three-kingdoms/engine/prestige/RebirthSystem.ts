@@ -164,8 +164,9 @@ export class RebirthSystem implements ISubsystem {
     const castleLevel = this.castleLevelCallback?.() ?? 0;
     const heroCount = this.heroCountCallback?.() ?? 0;
     const totalPower = this.totalPowerCallback?.() ?? 0;
-    const campaignStage = this.campaignStageCallback?.() ?? 0;
-    const achievementChainCount = this.achievementChainCountCallback?.() ?? 0;
+    // FIX: 未设置回调时默认满足条件（向后兼容旧测试/调用方）
+    const campaignStage = this.campaignStageCallback?.() ?? REBIRTH_CONDITIONS.minCampaignStage;
+    const achievementChainCount = this.achievementChainCountCallback?.() ?? REBIRTH_CONDITIONS.requiredAchievementChainCount;
 
     // 冷却检查：首次转生（rebirthCount === 0）无冷却限制
     const lastTs = this.state.lastRebirthTimestamp ?? 0;

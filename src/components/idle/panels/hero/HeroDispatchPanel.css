@@ -94,7 +94,7 @@
 .tk-dispatch-hero-item--selected {
   border-color: var(--tk-gold);
   background: rgba(200, 168, 76, 0.12);
-  box-shadow: 0 0 6px rgba(200, 168, 76, 0.15);
+  box-shadow: none;
 }
 
 .tk-dispatch-hero-item--dispatched {
@@ -136,7 +136,7 @@
 
 .tk-dispatch-building-item--selected {
   border-color: var(--tk-gold);
-  box-shadow: 0 0 6px rgba(200, 168, 76, 0.15);
+  box-shadow: none;
 }
 
 .tk-dispatch-building-header {

@@ -315,6 +315,47 @@ export const STORY_EVENT_DEFINITIONS: StoryEventDefinition[] = [
       { type: 'item', rewardId: 'recruit_ticket', name: '招贤令', amount: 2 },
     ],
   },
+  {
+    eventId: 'e9_maicheng',
+    title: '走麦城',
+    dialogues: [
+      { speaker: '', text: '关羽大意失荆州，退守麦城，腹背受敌。' },
+      { speaker: '关羽', text: '吾一生纵横天下，不料今日竟陷此绝境！' },
+      { speaker: '', text: '英雄末路，壮志未酬。关将军忠义千秋，令后人扼腕叹息。' },
+    ],
+    estimatedDurationMs: 35000,
+    triggerCondition: { type: 'battle_count', value: 3 },
+    rewards: [{ type: 'currency', rewardId: 'copper', name: '铜钱', amount: 400 }],
+  },
+  {
+    eventId: 'e10_burning_camps',
+    title: '火烧连营',
+    dialogues: [
+      { speaker: '', text: '刘备为报关羽之仇，兴兵伐吴，连营七百里。' },
+      { speaker: '陆逊', text: '蜀军连营于林中，天干物燥，正可火攻！' },
+      { speaker: '', text: '火烧连营七百里，蜀军大败，刘备退守白帝城。' },
+      { speaker: '刘备', text: '悔不听丞相之言，致有此败……' },
+    ],
+    estimatedDurationMs: 40000,
+    triggerCondition: { type: 'castle_level', value: 8 },
+    rewards: [{ type: 'currency', rewardId: 'copper', name: '铜钱', amount: 500 }],
+  },
+  {
+    eventId: 'e11_wuzhang_plains',
+    title: '五丈原',
+    dialogues: [
+      { speaker: '', text: '诸葛亮六出祁山，北伐中原，驻军五丈原。' },
+      { speaker: '诸葛亮', text: '鞠躬尽瘁，死而后已。此乃亮之本分。' },
+      { speaker: '', text: '秋风五丈原，一代贤相星落。然其精神永存，激励后人。' },
+      { speaker: '', text: '主公，前人的遗志将由您来继承。统一天下，指日可待！' },
+    ],
+    estimatedDurationMs: 45000,
+    triggerCondition: { type: 'after_step', value: 'step6_tech_research' },
+    rewards: [
+      { type: 'currency', rewardId: 'copper', name: '铜钱', amount: 600 },
+      { type: 'item', rewardId: 'recruit_ticket', name: '招贤令', amount: 1 },
+    ],
+  },
 ];
 
 // ─────────────────────────────────────────────

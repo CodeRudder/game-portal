@@ -1,0 +1,402 @@
+/**
+ * ChallengeStagePanel — 挑战关卡面板样式
+ *
+ * 设计风格：水墨江山·铜纹霸业
+ * 4×2 烽火台网格布局
+ */
+
+/* ═══════════════════════════════════════════
+   遮罩层
+   ═══════════════════════════════════════════ */
+.tk-challenge-panel-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--tk-z-modal-detail, 1000);
+}
+
+/* ═══════════════════════════════════════════
+   面板主体
+   ═══════════════════════════════════════════ */
+.tk-challenge-panel {
+  background: var(--tk-bg-panel, #1e1a14);
+  border: 1px solid var(--tk-border-default, #8b7355);
+  border-radius: 12px;
+  width: 560px;
+  max-width: 92vw;
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 20px;
+  color: var(--tk-text-primary, #f0e6d3);
+}
+
+.tk-challenge-panel::-webkit-scrollbar { width: 4px; }
+.tk-challenge-panel::-webkit-scrollbar-track { background: rgba(200,168,76,0.05); border-radius: 2px; }
+.tk-challenge-panel::-webkit-scrollbar-thumb { background: rgba(200,168,76,0.2); border-radius: 2px; }
+
+/* ═══════════════════════════════════════════
+   头部
+   ═══════════════════════════════════════════ */
+.tk-challenge-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(200,168,76,0.15);
+}
+
+.tk-challenge-panel-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--tk-accent-gold, #d4a853);
+  margin: 0;
+  letter-spacing: 2px;
+  font-family: var(--tk-font-title, inherit);
+  flex: 1;
+}
+
+.tk-challenge-panel-reset {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.tk-challenge-panel-reset-label {
+  font-size: 10px;
+  color: var(--tk-text-muted, #888);
+}
+
+.tk-challenge-panel-reset-countdown {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tk-gold-light, #e8c96a);
+  font-family: var(--tk-font-num, monospace);
+  letter-spacing: 1px;
+}
+
+.tk-challenge-panel-close {
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(200,168,76,0.2);
+  border-radius: 6px;
+  background: rgba(200,168,76,0.08);
+  color: var(--tk-text-secondary, #b0a898);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.tk-challenge-panel-close:hover {
+  background: rgba(200,168,76,0.2);
+  color: var(--tk-text-primary, #f0e6d3);
+  border-color: rgba(200,168,76,0.4);
+}
+
+/* ═══════════════════════════════════════════
+   说明文字
+   ═══════════════════════════════════════════ */
+.tk-challenge-panel-desc {
+  font-size: 12px;
+  color: var(--tk-text-secondary, #b0a898);
+  margin-bottom: 16px;
+  line-height: 1.5;
+  padding: 8px 12px;
+  background: rgba(200,168,76,0.06);
+  border-radius: 6px;
+  border: 1px solid rgba(200,168,76,0.08);
+}
+
+/* ═══════════════════════════════════════════
+   烽火台网格 (4×2)
+   ═══════════════════════════════════════════ */
+.tk-challenge-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+/* ═══════════════════════════════════════════
+   挑战关卡卡片
+   ═══════════════════════════════════════════ */
+.tk-challenge-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px;
+  background: rgba(200,168,76,0.06);
+  border: 1px solid rgba(200,168,76,0.15);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+
+.tk-challenge-card:hover:not(.tk-challenge-card--disabled) {
+  background: rgba(200,168,76,0.12);
+  border-color: rgba(200,168,76,0.35);
+  transform: translateY(-2px);
+}
+
+.tk-challenge-card:active:not(.tk-challenge-card--disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s;
+}
+
+.tk-challenge-card--disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.tk-challenge-card--cleared {
+  border-color: rgba(126,200,80,0.25);
+}
+
+.tk-challenge-card--cleared .tk-challenge-card-beacon {
+  filter: brightness(1.1);
+}
+
+/* 烽火台图标 */
+.tk-challenge-card-icon {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(200,168,76,0.1);
+  border: 2px solid rgba(200,168,76,0.25);
+  margin-bottom: 8px;
+}
+
+.tk-challenge-card--disabled .tk-challenge-card-icon {
+  border-color: rgba(100,100,100,0.2);
+  background: rgba(40,40,50,0.6);
+}
+
+.tk-challenge-card-beacon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+/* 首通徽章 */
+.tk-challenge-card-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--tk-green, #7ec850);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0,0,0,0.3);
+}
+
+/* 关卡名称 */
+.tk-challenge-card-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tk-text-primary, #f0e6d3);
+  margin-bottom: 4px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* 每日次数 */
+.tk-challenge-card-attempts {
+  font-size: 11px;
+  color: var(--tk-gold-light, #e8c96a);
+  font-weight: 500;
+  margin-bottom: 4px;
+  font-family: var(--tk-font-num, monospace);
+}
+
+.tk-challenge-card-attempts--exhausted {
+  color: var(--tk-text-muted, #888);
+}
+
+/* 消耗信息 */
+.tk-challenge-card-cost {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--tk-text-muted, #888);
+  margin-bottom: 6px;
+}
+
+.tk-challenge-card-cost-sep {
+  color: rgba(200,168,76,0.2);
+}
+
+/* 奖励预览 */
+.tk-challenge-card-rewards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  justify-content: center;
+}
+
+.tk-challenge-card-reward-tag {
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(200,168,76,0.1);
+  color: var(--tk-text-secondary, #b0a898);
+  white-space: nowrap;
+}
+
+/* 不可挑战原因 */
+.tk-challenge-card-reason {
+  font-size: 9px;
+  color: var(--tk-accent-red, #c44);
+  margin-top: 4px;
+  text-align: center;
+  line-height: 1.3;
+}
+
+/* ═══════════════════════════════════════════
+   底部说明
+   ═══════════════════════════════════════════ */
+.tk-challenge-panel-footer {
+  text-align: center;
+  font-size: 11px;
+  color: var(--tk-text-muted, #888);
+  padding-top: 8px;
+  border-top: 1px solid rgba(200,168,76,0.1);
+}
+
+/* ═══════════════════════════════════════════
+   挑战结果弹窗
+   ═══════════════════════════════════════════ */
+.tk-challenge-result-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--tk-z-modal-detail, 1000);
+}
+
+.tk-challenge-result {
+  background: var(--tk-bg-panel, #1e1a14);
+  border: 1px solid var(--tk-border-default, #8b7355);
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 320px;
+  max-width: 90vw;
+  text-align: center;
+  color: var(--tk-text-primary, #f0e6d3);
+}
+
+.tk-challenge-result-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--tk-accent-gold, #d4a853);
+  margin: 0 0 8px;
+  font-family: var(--tk-font-title, inherit);
+}
+
+.tk-challenge-result-stage {
+  font-size: 14px;
+  color: var(--tk-text-secondary, #b0a898);
+  margin-bottom: 12px;
+}
+
+.tk-challenge-result-first-clear {
+  font-size: 14px;
+  color: var(--tk-gold-light, #e8c96a);
+  font-weight: 600;
+  margin-bottom: 12px;
+  padding: 6px 12px;
+  background: rgba(200,168,76,0.12);
+  border-radius: 6px;
+  border: 1px solid rgba(200,168,76,0.25);
+}
+
+.tk-challenge-result-rewards {
+  margin-bottom: 16px;
+}
+
+.tk-challenge-result-rewards-title {
+  font-size: 12px;
+  color: var(--tk-text-secondary, #b0a898);
+  margin-bottom: 8px;
+}
+
+.tk-challenge-result-reward-item {
+  font-size: 13px;
+  color: var(--tk-gold-light, #e8c96a);
+  padding: 4px 0;
+}
+
+.tk-challenge-result-confirm {
+  padding: 8px 32px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  background: linear-gradient(135deg, var(--tk-gold-soft, #C4956A), var(--tk-gold-bright, #d4a87a));
+  border: 1px solid rgba(200,168,76,0.5);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  letter-spacing: 1px;
+}
+
+.tk-challenge-result-confirm:hover {
+  filter: brightness(1.1);
+  border-color: var(--tk-gold, #C9A84C);
+}
+
+.tk-challenge-result-confirm:active {
+  transform: scale(0.97);
+}
+
+/* ═══════════════════════════════════════════
+   平板适配 (481px~768px)
+   ═══════════════════════════════════════════ */
+@media (min-width: 481px) and (max-width: 768px) {
+  .tk-challenge-panel { width: 480px; padding: 16px; }
+  .tk-challenge-grid { gap: 8px; }
+}
+
+/* ═══════════════════════════════════════════
+   手机端适配 (≤480px)
+   ═══════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .tk-challenge-panel {
+    width: 100%;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+    padding: 12px;
+  }
+  .tk-challenge-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .tk-challenge-panel-title { font-size: 16px; }
+  .tk-challenge-card { padding: 10px 6px; }
+  .tk-challenge-card-icon { width: 38px; height: 38px; }
+  .tk-challenge-card-beacon { font-size: 18px; }
+}

@@ -105,7 +105,7 @@
 .tk-more-card--alliance {
   background: rgba(212, 165, 116, 0.12);
   border: 1px solid rgba(212, 165, 116, 0.35);
-  box-shadow: 0 0 12px rgba(212, 165, 116, 0.15);
+  box-shadow: none;
   position: relative;
 }
 
@@ -119,18 +119,12 @@
   border-radius: inherit;
   background: linear-gradient(135deg, rgba(212, 165, 116, 0.2), transparent, rgba(212, 165, 116, 0.1));
   pointer-events: none;
-  animation: alliance-glow 3s ease-in-out infinite;
-}
-
-@keyframes alliance-glow {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
 }
 
 .tk-more-card--alliance:hover {
   background: rgba(212, 165, 116, 0.22);
   border-color: rgba(212, 165, 116, 0.5);
-  box-shadow: 0 0 16px rgba(212, 165, 116, 0.25);
+  box-shadow: none;
 }
 
 .tk-more-card--alliance .tk-more-card-icon {
@@ -203,13 +197,13 @@
   .tk-more-card--alliance {
     background: rgba(212, 165, 116, 0.12);
     border: 1px solid rgba(212, 165, 116, 0.35);
-    box-shadow: 0 0 12px rgba(212, 165, 116, 0.15);
+    box-shadow: none;
   }
 
   .tk-more-card--alliance:hover {
     background: rgba(212, 165, 116, 0.22);
     border-color: rgba(212, 165, 116, 0.5);
-    box-shadow: 0 0 16px rgba(212, 165, 116, 0.25);
+    box-shadow: none;
   }
 
   .tk-more-card--alliance .tk-more-card-icon {

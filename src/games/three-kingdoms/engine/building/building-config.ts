@@ -29,6 +29,7 @@ export const BUILDING_MAX_LEVELS: Record<BuildingType, number> = {
   clinic: 20,
   wall: 20,
   tavern: 20,
+  port: 20,
 };
 
 /** 各建筑解锁所需主城等级（0 = 初始解锁） */
@@ -44,6 +45,7 @@ export const BUILDING_UNLOCK_LEVELS: Record<BuildingType, number> = {
   clinic: 4,
   wall: 5,
   tavern: 5,
+  port: 8,
 };
 
 // ─────────────────────────────────────────────
@@ -359,6 +361,44 @@ const TAVERN_LEVEL_TABLE: LevelData[] = [
 ];
 
 // ─────────────────────────────────────────────
+// 11. 市舶司等级数据表（1~20级）
+// ─────────────────────────────────────────────
+// 产出：贸易折扣百分比（1~20%）
+// specialValue：繁荣度产出加成（/小时）
+// 来源：Sprint 5 — 市舶司↔贸易桥接
+
+const PORT_LEVEL_TABLE: LevelData[] = [
+  // Lv1
+  { production: 1, specialValue: 50, upgradeCost: { grain: 400, gold: 300, troops: 0, timeSeconds: 30, ore: 0, wood: 0 } },
+  // Lv2
+  { production: 2, specialValue: 75, upgradeCost: { grain: 400, gold: 300, troops: 0, timeSeconds: 30, ore: 0, wood: 0 } },
+  // Lv3
+  { production: 3, specialValue: 100, upgradeCost: { grain: 1000, gold: 750, troops: 0, timeSeconds: 60, ore: 0, wood: 0 } },
+  // Lv4
+  { production: 4, specialValue: 125, upgradeCost: { grain: 2000, gold: 1500, troops: 0, timeSeconds: 108, ore: 0, wood: 0 } },
+  // Lv5
+  { production: 5, specialValue: 150, upgradeCost: { grain: 4000, gold: 3000, troops: 0, timeSeconds: 194, ore: 0, wood: 0 } },
+  // Lv6~10: 每级 ×1.8 费用, ×1.6 时间, 折扣 6~10%, 繁荣 175~250
+  { production: 6, specialValue: 175, upgradeCost: { grain: 6800, gold: 5100, troops: 0, timeSeconds: 291, ore: 0, wood: 0 } },
+  { production: 7, specialValue: 190, upgradeCost: { grain: 11560, gold: 8670, troops: 0, timeSeconds: 436, ore: 0, wood: 0 } },
+  { production: 8, specialValue: 205, upgradeCost: { grain: 19652, gold: 14739, troops: 0, timeSeconds: 655, ore: 0, wood: 0 } },
+  { production: 9, specialValue: 220, upgradeCost: { grain: 33409, gold: 25056, troops: 0, timeSeconds: 982, ore: 0, wood: 0 } },
+  { production: 10, specialValue: 250, upgradeCost: { grain: 56795, gold: 42596, troops: 0, timeSeconds: 1473, ore: 0, wood: 0 } },
+  // Lv11~15: 每级 ×1.6 费用, ×1.5 时间, 折扣 11~15%, 繁荣 275~350
+  { production: 11, specialValue: 275, upgradeCost: { grain: 72414, gold: 54310, troops: 0, timeSeconds: 1907, ore: 0, wood: 0 } },
+  { production: 12, specialValue: 290, upgradeCost: { grain: 115862, gold: 86897, troops: 0, timeSeconds: 2861, ore: 0, wood: 0 } },
+  { production: 13, specialValue: 305, upgradeCost: { grain: 185379, gold: 139034, troops: 0, timeSeconds: 4291, ore: 0, wood: 0 } },
+  { production: 14, specialValue: 320, upgradeCost: { grain: 296607, gold: 222455, troops: 0, timeSeconds: 6437, ore: 0, wood: 0 } },
+  { production: 15, specialValue: 350, upgradeCost: { grain: 474571, gold: 355928, troops: 0, timeSeconds: 9655, ore: 0, wood: 0 } },
+  // Lv16~20: 每级 ×1.5 费用, ×1.4 时间, 折扣 16~20%, 繁荣 375~500
+  { production: 16, specialValue: 375, upgradeCost: { grain: 714316, gold: 535737, troops: 0, timeSeconds: 13517, ore: 0, wood: 0 } },
+  { production: 17, specialValue: 400, upgradeCost: { grain: 1071474, gold: 803605, troops: 0, timeSeconds: 18924, ore: 0, wood: 0 } },
+  { production: 18, specialValue: 425, upgradeCost: { grain: 1607211, gold: 1205408, troops: 0, timeSeconds: 26494, ore: 0, wood: 0 } },
+  { production: 19, specialValue: 450, upgradeCost: { grain: 2410817, gold: 1808112, troops: 0, timeSeconds: 37091, ore: 0, wood: 0 } },
+  { production: 20, specialValue: 500, upgradeCost: { grain: 3616225, gold: 2712168, troops: 0, timeSeconds: 51928, ore: 0, wood: 0 } },
+];
+
+// ─────────────────────────────────────────────
 // 8. 书院等级数据表（1~20级）
 // ─────────────────────────────────────────────
 // 产出：科技点/秒
@@ -552,6 +592,18 @@ export const BUILDING_DEFS: Record<BuildingType, BuildingDef> = {
     unlockCastleLevel: 5,
     levelTable: TAVERN_LEVEL_TABLE,
   },
+  port: {
+    type: 'port',
+    maxLevel: 20,
+    unlockCastleLevel: 8,
+    // 市舶司产出为贸易折扣(production)和繁荣度加成(specialValue)
+    specialAttribute: {
+      name: '繁荣度产出',
+      baseValue: 50,
+      perLevel: 25,
+    },
+    levelTable: PORT_LEVEL_TABLE,
+  },
 };
 
 // ─────────────────────────────────────────────
@@ -579,3 +631,67 @@ export const CANCEL_REFUND_RATIO = 0.8;
 
 /** 建筑存档数据版本号 */
 export const BUILDING_SAVE_VERSION = 1;
+
+// ─────────────────────────────────────────────
+// 15. 升级消耗梯度规则（Sprint 1 BLD-F02）
+// ─────────────────────────────────────────────
+// Lv1~5: 仅粮草+铜钱
+// Lv6+:  引入矿石（= grain × 20%）
+// Lv10+: 引入木材（= grain × 15%）
+// 适用建筑：farmland, market, mine, lumberMill, barracks, academy, clinic, tavern
+
+/** 矿石消耗占粮草消耗的比例（Lv6+生效） */
+export const ORE_COST_RATIO = 0.20;
+
+/** 木材消耗占粮草消耗的比例（Lv10+生效） */
+export const WOOD_COST_RATIO = 0.15;
+
+/**
+ * 为等级数据表中的升级消耗添加矿石/木材
+ * 规则：Lv6+ 添加矿石，Lv10+ 添加木材
+ *
+ * @param table 等级数据表（会被就地修改）
+ * @returns 修改后的等级数据表（同一引用）
+ */
+function enrichUpgradeCosts(table: LevelData[]): LevelData[] {
+  for (let i = 0; i < table.length; i++) {
+    const lv = i + 1; // levelTable 索引 0 = Lv1
+    const cost = table[i].upgradeCost;
+    // Lv6+ 引入矿石
+    if (lv >= 6 && cost.ore === 0) {
+      cost.ore = Math.floor(cost.grain * ORE_COST_RATIO);
+    }
+    // Lv10+ 引入木材
+    if (lv >= 10 && cost.wood === 0) {
+      cost.wood = Math.floor(cost.grain * WOOD_COST_RATIO);
+    }
+  }
+  return table;
+}
+
+// 应用矿石/木材升级消耗梯度
+enrichUpgradeCosts(FARMLAND_LEVEL_TABLE);
+enrichUpgradeCosts(MARKET_LEVEL_TABLE);
+enrichUpgradeCosts(MINE_LEVEL_TABLE);
+enrichUpgradeCosts(LUMBER_MILL_LEVEL_TABLE);
+enrichUpgradeCosts(BARRACKS_LEVEL_TABLE);
+enrichUpgradeCosts(ACADEMY_LEVEL_TABLE);
+enrichUpgradeCosts(CLINIC_LEVEL_TABLE);
+enrichUpgradeCosts(TAVERN_LEVEL_TABLE);
+enrichUpgradeCosts(PORT_LEVEL_TABLE);
+// 注意：castle（主城）使用 troops 而非 ore/wood，保持不变
+// 注意：workshop（工坊）已有 ore 消耗，保持不变
+// 注意：wall（城墙）由 PRD 单独配置，保持不变
+
+// ─────────────────────────────────────────────
+// 16. 建筑库存配置（Sprint 1 BLD-F26/BLD-F10/BLD-F15）
+// ─────────────────────────────────────────────
+
+/** 建筑库存溢出降速比例（50%） */
+export const STORAGE_OVERFLOW_SLOWDOWN = 0.5;
+
+/** 默认缓冲时间（秒）— 库存容量 = 产出速率 × 缓冲时间 */
+export const DEFAULT_BUFFER_SECONDS = 7200; // 2小时
+
+/** 新手缓冲时间（秒）— Lv1~5 建筑使用更长的缓冲时间 */
+export const NEWBIE_BUFFER_SECONDS = 2700; // 45分钟

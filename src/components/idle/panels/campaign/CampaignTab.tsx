@@ -23,10 +23,14 @@ import {
   MAX_STARS,
 } from '@/games/three-kingdoms/engine';
 import type { BattleResult } from '@/games/three-kingdoms/engine';
-import { BattleOutcome } from '@/games/three-kingdoms/engine';
+import { BattleOutcome, StarRating } from '@/games/three-kingdoms/engine';
+import type { SweepBatchResult } from '@/games/three-kingdoms/engine';
 import BattleFormationModal from './BattleFormationModal';
 import BattleResultModal from './BattleResultModal';
 import SweepModal from './SweepModal';
+import ChallengeStagePanel from './ChallengeStagePanel';
+import OfflinePushPanel from './OfflinePushPanel';
+import ChapterSelectPanel from './ChapterSelectPanel';
 import './CampaignTab.css';
 
 // ─────────────────────────────────────────────
@@ -74,6 +78,12 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
   // ── 扫荡结算弹窗 ──
   const [sweepResult, setSweepResult] = useState<BattleResult | null>(null);
   const [sweepStage, setSweepStage] = useState<Stage | null>(null);
+
+  // ── 挑战关卡面板 ──
+  const [showChallengePanel, setShowChallengePanel] = useState(false);
+
+  // ── 离线推图面板 ──
+  const [showOfflinePushPanel, setShowOfflinePushPanel] = useState(false);
 
   // ── 地图滚动容器 ──
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -154,7 +164,7 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
           // 将 SweepBatchResult 转换为 BattleResult 格式以复用弹窗
           const result: BattleResult = {
             outcome: BattleOutcome.VICTORY,
-            stars: 3 as any,
+            stars: StarRating.THREE,
             totalTurns: batchResult.executedCount ?? count,
             allySurvivors: 0,
             enemySurvivors: 0,
@@ -180,12 +190,34 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
           const stage = sweepTarget;
           if (stage) setSweepStage(stage);
           setSweepTarget(null);
-          return null as any;
+          return {
+            success: false,
+            stageId,
+            requestedCount: count,
+            executedCount: 0,
+            results: [],
+            totalResources: {},
+            totalExp: 0,
+            totalFragments: {},
+            ticketsUsed: 0,
+            failureReason: '降级为普通战斗',
+          } satisfies SweepBatchResult;
         }
       } catch (e) {
         console.error('扫荡失败:', e);
         setSweepTarget(null);
-        return null as any;
+        return {
+          success: false,
+          stageId,
+          requestedCount: count,
+          executedCount: 0,
+          results: [],
+          totalResources: {},
+          totalExp: 0,
+          totalFragments: {},
+          ticketsUsed: 0,
+          failureReason: e instanceof Error ? e.message : '未知错误',
+        } satisfies SweepBatchResult;
       }
     },
     [engine, sweepTarget],
@@ -304,36 +336,15 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
     );
   };
 
-  // ── 渲染章节选择器 ──
+  // ── 渲染章节选择面板 ──
   const renderChapterSelector = () => (
-    <div className="tk-chapter-selector" data-testid="chapter-selector">
-      <button
-        className="tk-chapter-arrow tk-chapter-arrow--left"
-        onClick={() => handleChapterChange(selectedChapterIdx - 1)}
-        disabled={selectedChapterIdx <= 0}
-        aria-label="上一章"
-      >
-        ◀
-      </button>
-
-      <div className="tk-chapter-info">
-        <span className="tk-chapter-title">
-          第{currentChapter?.order || ''}章: {currentChapter?.name || ''}
-        </span>
-        {currentChapter?.subtitle && (
-          <span className="tk-chapter-subtitle">{currentChapter.subtitle}</span>
-        )}
-      </div>
-
-      <button
-        className="tk-chapter-arrow tk-chapter-arrow--right"
-        onClick={() => handleChapterChange(selectedChapterIdx + 1)}
-        disabled={selectedChapterIdx >= chapters.length - 1}
-        aria-label="下一章"
-      >
-        ▶
-      </button>
-    </div>
+    <ChapterSelectPanel
+      chapters={chapters}
+      selectedIdx={selectedChapterIdx}
+      onSelect={handleChapterChange}
+      getStageStatus={getStageStatus}
+      getStageStars={getStageStars}
+    />
   );
 
   // ── 渲染进度条 ──
@@ -396,6 +407,24 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
       {/* 底部进度 */}
       {renderProgressBar()}
 
+      {/* 底部功能入口 */}
+      <div className="tk-campaign-bottom-actions">
+        <button
+          className="tk-campaign-action-btn tk-campaign-action-btn--challenge"
+          onClick={() => setShowChallengePanel(true)}
+          data-testid="btn-open-challenge-panel"
+        >
+          🔥 烽火台
+        </button>
+        <button
+          className="tk-campaign-action-btn tk-campaign-action-btn--offline"
+          onClick={() => setShowOfflinePushPanel(true)}
+          data-testid="btn-open-offline-push"
+        >
+          ⏳ 离线推图
+        </button>
+      </div>
+
       {/* 战前布阵弹窗 */}
       {battleSetupStage && (
         <BattleFormationModal
@@ -431,6 +460,24 @@ const CampaignTab: React.FC<CampaignTabProps> = ({ engine, snapshotVersion }) =>
           canSweep={getStageStars(sweepTarget.id) >= 3}
           onClose={handleCloseSweepModal}
           onSweep={handleSweepExecute}
+        />
+      )}
+
+      {/* 挑战关卡面板 */}
+      {showChallengePanel && (
+        <ChallengeStagePanel
+          engine={engine}
+          snapshotVersion={snapshotVersion}
+          onClose={() => setShowChallengePanel(false)}
+        />
+      )}
+
+      {/* 离线推图面板 */}
+      {showOfflinePushPanel && (
+        <OfflinePushPanel
+          engine={engine}
+          snapshotVersion={snapshotVersion}
+          onClose={() => setShowOfflinePushPanel(false)}
         />
       )}
     </div>

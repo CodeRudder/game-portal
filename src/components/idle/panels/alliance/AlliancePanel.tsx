@@ -343,8 +343,8 @@ export default function AlliancePanel({ engine, visible = true, onClose }: Allia
         )}
         {/* P1-04: 排行榜Tab */}
         {tab === 'ranking' && (
-          <div style={s.block}>
-            <div style={s.label}>联盟贡献排行榜</div>
+          <div style={s.block} data-testid="alliance-panel-ranking">
+            <div style={s.label}>🏅 联盟成员贡献排行</div>
             <div style={{ fontSize: 11, color: '#888', marginBottom: 12 }}>按成员累计贡献排名</div>
             {renderRankingTab()}
           </div>

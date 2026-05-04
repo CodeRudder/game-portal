@@ -208,16 +208,19 @@ describe('招募武将集成', () => {
     const before = resource.getAmount('recruitToken');
     engine.recruit('normal', 1);
     const after = resource.getAmount('recruitToken');
-    // 普通招募消耗 5 recruitToken
-    expect(before - after).toBeGreaterThanOrEqual(5);
+    // 普通招募消耗 1 recruitToken（v2: 从5降为1）
+    expect(before - after).toBeGreaterThanOrEqual(1);
   });
 
   it('资源不足时招募返回 null', () => {
-    // 初始 recruitToken = 10，普通招募消耗 5
-    // 2 次招募后耗尽
-    engine.recruit('normal', 1);
-    engine.recruit('normal', 1);
-    // 第3次应失败
+    // 初始 recruitToken = 30，普通招募消耗 1
+    // 消耗全部 recruitToken
+    const resource = engine.resource;
+    const initial = resource.getAmount('recruitToken');
+    for (let i = 0; i < initial; i++) {
+      engine.recruit('normal', 1);
+    }
+    // recruitToken 耗尽后应失败
     const result = engine.recruit('normal', 1);
     expect(result).toBeNull();
   });

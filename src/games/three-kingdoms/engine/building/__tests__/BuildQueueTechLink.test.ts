@@ -51,6 +51,8 @@ function makeUnlockedSave(
     academy: { level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null },
     clinic: { level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null },
     wall: { level: 1, status: 'idle', upgradeStartTime: null, upgradeEndTime: null },
+    // port 需主城 Lv8 解锁，此处主城 Lv5，应锁定
+    port: { level: 0, status: 'locked', upgradeStartTime: null, upgradeEndTime: null },
     ...overrides,
   });
 }
@@ -78,7 +80,6 @@ describe('P0-1: 建造选择弹窗逻辑', () => {
       );
       expect(available).toContain('castle');
       expect(available).toContain('farmland');
-      expect(available).not.toContain('market');
       expect(available).not.toContain('barracks');
       expect(available).not.toContain('wall');
     });
@@ -92,10 +93,12 @@ describe('P0-1: 建造选择弹窗逻辑', () => {
       expect(available).toContain('barracks');
     });
 
-    it('主城 Lv5 时所有建筑均已解锁', () => {
+    it('主城 Lv5 时所有Lv5及以下建筑均已解锁', () => {
       sys.deserialize(makeUnlockedSave());
       const unlockedTypes = BUILDING_TYPES.filter((t) => sys.isUnlocked(t));
-      expect(unlockedTypes).toHaveLength(8);
+      // 主城Lv5解锁tavern(需Lv5)，port需主城Lv8所以未解锁 → 11个解锁
+      expect(unlockedTypes).toHaveLength(11);
+      expect(unlockedTypes).not.toContain('port');
     });
 
     it('弹窗中已解锁建筑显示正确的图标和名称', () => {
@@ -110,7 +113,7 @@ describe('P0-1: 建造选择弹窗逻辑', () => {
   // ── 1.2 前置条件检查 ──
   describe('1.2 建筑前置条件检查', () => {
     it('锁定建筑不可升级', () => {
-      const r = sys.checkUpgrade('market', RICH);
+      const r = sys.checkUpgrade('barracks', RICH);
       expect(r.canUpgrade).toBe(false);
       expect(r.reasons).toContain('建筑尚未解锁');
     });

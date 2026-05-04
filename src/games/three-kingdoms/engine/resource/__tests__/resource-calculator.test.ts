@@ -126,7 +126,7 @@ describe('resource-calculator', () => {
     it('无上限资源不应生成警告', () => {
       const resources: Resources = { grain: 0, gold: 0, troops: 0, mandate: 999, techPoint: 0, recruitToken: 0, skillBook: 0, ore: 0, wood: 0 };
       const caps = {
-        grain: null, gold: 2000, troops: null, mandate: null, techPoint: null, recruitToken: null, skillBook: null,
+        grain: null, gold: null, troops: null, mandate: null, techPoint: null, recruitToken: null, skillBook: null, ore: null, wood: null,
       };
       const warnings = calculateCapWarnings(resources, caps as Record<string, number | null>);
       expect(warnings.length).toBe(0);

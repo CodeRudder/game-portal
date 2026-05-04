@@ -27,6 +27,7 @@ import {
   WELCOME_DISMISSED_KEY,
 } from './guide-utils';
 import type { GuideStep, GuideActionType, GuideAction, HighlightRect } from './guide-utils';
+import { hasTutorialRewards } from '@/components/idle/shared/engine-type-guards';
 // 拆分组件：StrategyGuidePanel + GuideReplayButton 移至独立文件
 export { StrategyGuidePanel } from './StrategyGuidePanel';
 export type { StrategyGuidePanelProps } from './StrategyGuidePanel';
@@ -78,7 +79,7 @@ const GuideOverlay: React.FC<GuideOverlayProps> = ({
 
   /** 引导完成奖励发放：调用引擎 grantTutorialRewards 将奖励写入玩家资源 */
   const grantStepRewards = useCallback((overlayStepId: string) => {
-    if (!engine || typeof engine.grantTutorialRewards !== 'function') return;
+    if (!engine || !hasTutorialRewards(engine)) return;
     const engineStepId = OVERLAY_TO_ENGINE_STEP[overlayStepId];
     if (!engineStepId) return;
     // 从引擎 StepManager 获取步骤定义中的奖励

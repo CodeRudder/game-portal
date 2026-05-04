@@ -354,9 +354,9 @@ describe('建筑便捷功能 — 一键满级', () => {
 
   it('一键满级锁定建筑应无法升级', () => {
     const resources = makeAbundantResources();
-    const result = simulateUpgradeToMax(system, 'market', resources);
+    const result = simulateUpgradeToMax(system, 'barracks', resources);
 
-    // market 需要 castle Lv2 才解锁
+    // barracks 需要 castle Lv2 才解锁
     expect(result.levelsGained).toBe(0);
     expect(result.finalLevel).toBe(0);
   });

@@ -8,6 +8,7 @@ import { HeroRecruitSystem } from '../HeroRecruitSystem';
 import type { RecruitDeps } from '../HeroRecruitSystem';
 import { HeroSystem } from '../HeroSystem';
 import { Quality } from '../hero.types';
+import { RECRUIT_COSTS } from '../hero-recruit-config';
 
 // ── 辅助 ──
 
@@ -72,11 +73,11 @@ describe('HeroRecruitSystem — 招募历史', () => {
     });
 
     it('历史记录包含正确的消耗', () => {
-      // R3修正后：普通招募 recruitToken×5
+      // v2修正后：普通招募 recruitToken×1
       recruit.recruitSingle('normal');
       const history = recruit.getRecruitHistory();
       expect(history[0].cost.resourceType).toBe('recruitToken');
-      expect(history[0].cost.amount).toBe(5);
+      expect(history[0].cost.amount).toBe(RECRUIT_COSTS.normal.amount);
     });
   });
 

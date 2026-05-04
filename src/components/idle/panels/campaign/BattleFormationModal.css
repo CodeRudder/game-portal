@@ -37,7 +37,7 @@
   border-radius: 12px;
   overflow-y: auto;
   animation: tk-bfm-slide-up 0.25s ease-out;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 1px rgba(200, 168, 76, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
 @keyframes tk-bfm-slide-up {

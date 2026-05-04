@@ -29,12 +29,21 @@ describe('对抗式测试: 序列化与加速对抗', () => {
 
     treeSys = new TechTreeSystem();
     pointSys = new TechPointSystem();
+    let goldAmount = 100000;
     researchSys = new TechResearchSystem(
       treeSys, pointSys, () => 20,
       () => mandateAmount,
       (amt: number) => {
         if (mandateAmount >= amt) {
           mandateAmount -= amt;
+          return true;
+        }
+        return false;
+      },
+      () => goldAmount,
+      (amt: number) => {
+        if (goldAmount >= amt) {
+          goldAmount -= amt;
           return true;
         }
         return false;
@@ -54,7 +63,10 @@ describe('对抗式测试: 序列化与加速对抗', () => {
 
   function grantPoints(amount: number) {
     pointSys.syncAcademyLevel(20);
-    pointSys.update(Math.ceil(amount / 1.76) + 10);
+    // actual cost = costPoints * RESEARCH_START_TECH_POINT_MULTIPLIER (10)
+    // so we need to generate amount * 10 tech points
+    const needed = amount * 10;
+    pointSys.update(Math.ceil(needed / 1.76) + 10);
   }
 
   function advanceTime(ms: number) {
@@ -116,6 +128,7 @@ describe('对抗式测试: 序列化与加速对抗', () => {
 
       const newSys = new TechResearchSystem(
         treeSys, pointSys, () => 20, () => 0, () => false,
+        () => 100000, () => true,
       );
       newSys.init(createRealDeps());
       // 旧存档没有 researchQueue 字段
@@ -132,6 +145,7 @@ describe('对抗式测试: 序列化与加速对抗', () => {
 
       const newSys = new TechResearchSystem(
         treeSys, pointSys, () => 20, () => 0, () => false,
+        () => 100000, () => true,
       );
       newSys.init(createRealDeps());
       newSys.deserialize(data);
@@ -173,25 +187,26 @@ describe('对抗式测试: 序列化与加速对抗', () => {
       grantPoints(100);
       researchSys.startResearch('mil_t1_attack');
       const result = researchSys.speedUp('mil_t1_attack', 'mandate', 0);
-      // 0 * 60 = 0秒减少
-      expect(result.success).toBe(true);
-      expect(result.timeReduced).toBe(0);
+      // amount=0 被视为无效，返回失败
+      expect(result.success).toBe(false);
+      expect(result.reason).toContain('无效');
     });
 
     it('天命加速 amount=负数', () => {
       grantPoints(100);
       researchSys.startResearch('mil_t1_attack');
-      // 负数 * 60 = 负数时间减少
+      // 负数被视为无效加速数量
       const result = researchSys.speedUp('mil_t1_attack', 'mandate', -1);
-      // 负数天命: getMandate()=100 >= -1 → true, spendMandate(-1)
-      // 实际行为取决于 spendMandate 实现
+      expect(result.success).toBe(false);
+      expect(result.reason).toContain('无效');
     });
 
     it('天命加速刚好完成', () => {
       grantPoints(100);
       researchSys.startResearch('mil_t1_attack');
       advanceTime(10 * 1000);
-      // 剩余约110秒，需要 ceil(110/60) = 2 点天命
+      // academyLevel=20 → speedMultiplier=3.0 → actualTime=120/3=40s
+      // advanceTime(10s) → remaining=30s → ceil(30/60)=1 点天命
       const cost = researchSys.calculateMandateCost('mil_t1_attack');
       const result = researchSys.speedUp('mil_t1_attack', 'mandate', cost);
       expect(result.success).toBe(true);
@@ -211,7 +226,8 @@ describe('对抗式测试: 序列化与加速对抗', () => {
       grantPoints(100);
       researchSys.startResearch('mil_t1_attack');
       advanceTime(10 * 1000);
-      const result = researchSys.speedUp('mil_t1_attack', 'ingot', 0);
+      // ingot 模式忽略 amount，但需要 amount > 0 通过前置校验
+      const result = researchSys.speedUp('mil_t1_attack', 'ingot', 1);
       expect(result.success).toBe(true);
       expect(result.completed).toBe(true);
     });
@@ -222,7 +238,8 @@ describe('对抗式测试: 序列化与加速对抗', () => {
       advanceTime(200 * 1000);
       // 不调用 update，队列中仍有但 endTime 已过
       const result = researchSys.speedUp('mil_t1_attack', 'mandate', 1);
-      // remaining <= 0 → 触发 checkCompleted
+      // remaining <= 0 → success=false, completed=true
+      expect(result.success).toBe(false);
       expect(result.completed).toBe(true);
     });
 
@@ -247,6 +264,7 @@ describe('对抗式测试: 序列化与加速对抗', () => {
         treeSys, pointSys, () => 20,
         () => 100,
         () => false, // 总是失败
+        () => 100000, () => true,
       );
       failSys.init(createRealDeps());
       failSys.startResearch('mil_t1_attack');

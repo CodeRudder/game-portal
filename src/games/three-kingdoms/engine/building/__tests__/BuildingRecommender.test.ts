@@ -31,7 +31,7 @@ function makeState(type: BuildingType, overrides: Partial<BuildingState> = {}): 
 
 /** 创建全部建筑快照（所有建筑初始解锁，Lv1） */
 function makeAllBuildings(overrides: Partial<Record<BuildingType, Partial<BuildingState>>> = {}): BuildingSnapshot {
-  const allTypes: BuildingType[] = ['castle', 'farmland', 'market', 'barracks', 'workshop', 'academy', 'clinic', 'wall'];
+  const allTypes: BuildingType[] = ['castle', 'farmland', 'market', 'mine', 'lumberMill', 'barracks', 'workshop', 'academy', 'clinic', 'wall', 'tavern', 'port'];
   const result = {} as BuildingSnapshot;
   for (const t of allTypes) {
     result[t] = makeState(t, overrides[t]);

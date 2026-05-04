@@ -199,10 +199,10 @@ describe('资源一致性测试', () => {
       expect(rs.getResources()).toEqual(before);
     });
 
-    it('无上限资源（gold）不截断，可以无限增加', () => {
-      const before = rs.getAmount('gold');
-      rs.addResource('gold', 999999);
-      expect(rs.getAmount('gold')).toBe(before + 999999);
+    it('无上限资源（mandate）不截断，可以无限增加', () => {
+      const before = rs.getAmount('mandate');
+      rs.addResource('mandate', 999999);
+      expect(rs.getAmount('mandate')).toBe(before + 999999);
     });
 
     it('updateCaps 降低上限后，已有资源被截断', () => {

@@ -68,6 +68,7 @@ export function recommendUpgradePath(
     clinic: '医馆提升恢复速率，减少战损',
     wall: '城墙提升城防值，增强防御能力',
     tavern: '酒馆提升招募概率，获取强力武将',
+    port: '市舶司提升贸易折扣，增加繁荣度产出',
   };
 
   const result: Recommendation[] = [];
@@ -143,7 +144,12 @@ export function getUpgradeRouteRecommendation(
 
     if (resources) {
       const cost = getUpgradeCost(t);
-      if (cost && (resources.grain < cost.grain || resources.gold < cost.gold)) {
+      if (cost && (
+        resources.grain < cost.grain ||
+        resources.gold < cost.gold ||
+        (cost.ore > 0 && (resources.ore ?? 0) < cost.ore) ||
+        (cost.wood > 0 && (resources.wood ?? 0) < cost.wood)
+      )) {
         priority -= 20;
       }
     }

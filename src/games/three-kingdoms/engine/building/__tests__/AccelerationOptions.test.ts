@@ -41,7 +41,7 @@ import { EventBus } from '../../../core/events/EventBus';
 // ─────────────────────────────────────────────
 
 /** 充足资源 */
-const RICH: Resources = { grain: 1e9, gold: 1e9, troops: 1e9, mandate: 0 };
+const RICH: Resources = { grain: 1e9, gold: 1e9, ore: 1e9, wood: 1e9, troops: 1e9, mandate: 0, techPoint: 0, recruitToken: 0, skillBook: 0 };
 
 /** 创建依赖注入对象 */
 function createDeps() {
@@ -200,9 +200,11 @@ describe('P1: 加速选项（铜钱/天命/元宝）', () => {
     let researchSys: TechResearchSystem;
     let pointSys: TechPointSystem;
     let mandateAmount: number;
+    let goldAmount: number;
 
     beforeEach(() => {
       mandateAmount = 100;
+      goldAmount = 1000000;
       const deps = createDeps();
       const treeSystem = new TechTreeSystem();
       treeSystem.init(deps);
@@ -221,14 +223,24 @@ describe('P1: 加速选项（铜钱/天命/元宝）', () => {
           }
           return false;
         },
+        () => goldAmount,
+        (amt: number) => {
+          if (goldAmount >= amt) {
+            goldAmount -= amt;
+            return true;
+          }
+          return false;
+        },
       );
       researchSys.init(deps);
     });
 
     /** 给科技点系统充入足够的点数 */
     function grantPoints(amount: number): void {
+      // Sprint 3: 研究消耗 = costPoints × RESEARCH_START_TECH_POINT_MULTIPLIER
+      const needed = amount * 10;
       pointSys.syncAcademyLevel(20);
-      const seconds = Math.ceil(amount / 1.76) + 10;
+      const seconds = Math.ceil(needed / 1.76) + 10;
       pointSys.update(seconds);
     }
 
@@ -569,13 +581,12 @@ describe('P1: 加速选项（铜钱/天命/元宝）', () => {
     });
 
     it('加速完成主城后新建筑解锁', () => {
-      // 主城Lv1 → 需要升级到Lv2解锁市集和兵营
-      expect(building.isUnlocked('market')).toBe(false);
+      // 主城Lv1 → 需要升级到Lv2解锁兵营
+      expect(building.isUnlocked('barracks')).toBe(false);
 
       building.startUpgrade('castle', RICH);
       building.forceCompleteUpgrades();
 
-      expect(building.isUnlocked('market')).toBe(true);
       expect(building.isUnlocked('barracks')).toBe(true);
     });
 

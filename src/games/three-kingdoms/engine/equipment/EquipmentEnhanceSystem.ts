@@ -210,7 +210,7 @@ export class EquipmentEnhanceSystem implements ISubsystem {
     const transferLevel = Math.max(0, source.enhanceLevel - TRANSFER_LEVEL_LOSS);
     const cost = source.enhanceLevel * TRANSFER_COST_FACTOR;
 
-    // FIX-610: 强化转移需扣除资源，防止免费转移
+    // FIX-610: 强化转移需扣除资源，注入了回调时才校验
     if (this.deductResources && cost > 0) {
       const deducted = this.deductResources(cost, 0);
       if (!deducted) {

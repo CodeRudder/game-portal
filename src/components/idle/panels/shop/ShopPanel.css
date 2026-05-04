@@ -10,17 +10,11 @@
  * - 确认弹窗余额对比样式
  */
 
-/* ── 骨架屏闪烁动画 ── */
-@keyframes shop-skeleton-pulse {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.6; }
-}
-
 /* ── 购买成功动画 ── */
 @keyframes shop-buy-success {
-  0% { transform: scale(1); box-shadow: 0 0 0 rgba(126, 200, 80, 0); }
-  30% { transform: scale(1.02); box-shadow: 0 0 12px rgba(126, 200, 80, 0.3); }
-  100% { transform: scale(1); box-shadow: 0 0 0 rgba(126, 200, 80, 0); }
+  0% { transform: scale(1); }
+  30% { transform: scale(1.02); }
+  100% { transform: scale(1); }
 }
 
 /* ═══════════════════════════════════════════
@@ -185,14 +179,9 @@
   letter-spacing: 0.5px;
 }
 
-/* ── 刷新冷却动画 ── */
-@keyframes shop-cooldown-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-}
-
+/* ── 刷新冷却 ── */
 .tk-shop-refresh-btn[disabled]:not(.tk-shop-refresh-btn--disabled) {
-  animation: shop-cooldown-pulse 1s ease-in-out infinite;
+  opacity: 0.6;
 }
 
 /* ═══════════════════════════════════════════
@@ -568,7 +557,7 @@
 .tk-shop-buy-btn:hover:not(:disabled) {
   background: rgba(212, 165, 116, 0.25);
   border-color: rgba(212, 165, 116, 0.5);
-  box-shadow: 0 0 8px rgba(212, 165, 116, 0.15);
+  box-shadow: none;
 }
 
 .tk-shop-buy-btn:active:not(:disabled) {
@@ -696,7 +685,6 @@
    ═══════════════════════════════════════════ */
 .tk-shop-skeleton-block {
   background: rgba(212, 165, 116, 0.12);
-  animation: shop-skeleton-pulse 1.5s ease-in-out infinite;
 }
 
 .tk-shop-skeleton-card {

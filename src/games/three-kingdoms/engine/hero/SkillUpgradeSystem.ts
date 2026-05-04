@@ -364,16 +364,23 @@ export class SkillUpgradeSystem implements ISubsystem {
   getExtraEffect(heroId: string, skillIndex: number): ExtraEffect | null {
     if (!this.hasExtraEffect(heroId, skillIndex)) return null;
     if (!this.deps) return null;
-    const general = this.deps.heroSystem.getGeneral(heroId);
-    if (!general || skillIndex < 0 || skillIndex >= general.skills.length) return null;
 
-    const skill = general.skills[skillIndex];
+    const heroSkillState = this.heroSkills.get(heroId);
+    if (!heroSkillState || skillIndex < 0 || skillIndex >= heroSkillState.skills.length) return null;
+
+    const skill = heroSkillState.skills[skillIndex];
     const level = skill.level;
     const bonus = EXTRA_EFFECT_BONUS * (level - EXTRA_EFFECT_MIN_LEVEL + 1);
 
+    // 尝试从 general 获取技能名称，回退到通用名称
+    const general = this.deps.heroSystem.getGeneral(heroId);
+    const skillName = general && skillIndex < general.skills.length
+      ? general.skills[skillIndex].name
+      : `技能${skillIndex + 1}`;
+
     return {
       skillIndex,
-      name: `${skill.name}·额外效果`,
+      name: `${skillName}·额外效果`,
       description: `技能等级${level}时解锁，额外提升${Math.round(bonus * 100)}%效果`,
       bonus,
     };

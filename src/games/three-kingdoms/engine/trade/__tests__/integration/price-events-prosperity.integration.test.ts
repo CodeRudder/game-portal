@@ -208,7 +208,7 @@ describe('§4.1~5.3 价格波动 + 贸易事件 + 繁荣度', () => {
     beforeEach(() => { trade = createTrade(); });
 
     it('§5.1.1 8种贸易事件全部定义', () => {
-      expect(TRADE_EVENT_DEFS.length).toBe(11);
+      expect(TRADE_EVENT_DEFS.length).toBe(8);
       const types = TRADE_EVENT_DEFS.map(d => d.type);
       expect(types).toEqual(expect.arrayContaining([
         'bandit', 'storm', 'tax', 'good_news',

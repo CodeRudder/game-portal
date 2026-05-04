@@ -28,8 +28,11 @@ describe('对抗式测试: 离线研究边界', () => {
 
     treeSys = new TechTreeSystem();
     pointSys = new TechPointSystem();
+    let goldAmount = 1000000;
     researchSys = new TechResearchSystem(
       treeSys, pointSys, () => 20, () => 100, () => true,
+      () => goldAmount,
+      (amt: number) => { goldAmount -= amt; return true; },
     );
     offlineSys = new TechOfflineSystem(treeSys, researchSys);
 
@@ -43,8 +46,10 @@ describe('对抗式测试: 离线研究边界', () => {
   afterEach(() => vi.restoreAllMocks());
 
   function grantPoints(amount: number) {
+    // Sprint 3: 研究消耗 = costPoints × RESEARCH_START_TECH_POINT_MULTIPLIER
+    const needed = amount * 10;
     pointSys.syncAcademyLevel(20);
-    pointSys.update(Math.ceil(amount / 1.76) + 10);
+    pointSys.update(Math.ceil(needed / 1.76) + 10);
   }
 
   function advanceTime(ms: number) {
@@ -177,9 +182,10 @@ describe('对抗式测试: 离线研究边界', () => {
   describe('离线进度计算', () => {
     it('短时间离线不完成研究', () => {
       grantPoints(100);
-      researchSys.startResearch('mil_t1_attack'); // 120秒
+      researchSys.startResearch('mil_t1_attack');
+      // academyLevel=20 → speed=3.0, 实际研究时间 = 120/3 = 40秒
       offlineSys.onGoOffline(baseTime);
-      const panel = offlineSys.onComeBackOnline(baseTime + 60 * 1000); // 60秒
+      const panel = offlineSys.onComeBackOnline(baseTime + 20 * 1000); // 20秒 < 40秒
       expect(panel).not.toBeNull();
       expect(panel!.techProgressList[0].completed).toBe(false);
       expect(panel!.techProgressList[0].progressAfter).toBeGreaterThan(0);

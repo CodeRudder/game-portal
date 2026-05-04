@@ -370,7 +370,7 @@
 
 .tk-tech-detail-btn--primary:hover:not(:disabled) {
   background: rgba(200, 168, 76, 0.35);
-  box-shadow: 0 0 12px rgba(200, 168, 76, 0.2);
+  box-shadow: none;
 }
 
 /* 次按钮（描边） */

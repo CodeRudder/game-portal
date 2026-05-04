@@ -8,27 +8,37 @@
  * - 回合数显示、战斗速度控制（1x/2x）、跳过按钮
  * - 战斗结束自动关闭，触发结算
  * - 完整战斗动画：攻击前冲、受击闪烁、伤害飘字、暴击震动、死亡倒下、技能发光
+ * - v3.0：战斗模式选择（全自动/半自动/全手动）
+ * - v3.0：大招时停UI（半自动/手动模式下大招就绪时暂停）
  *
  * 动画逻辑拆分至 BattleAnimation.tsx（useBattleAnimation hook）。
  *
  * @module components/idle/panels/campaign/BattleScene
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import type { ThreeKingdomsEngine } from '@/games/three-kingdoms/engine';
 import type {
   BattleResult,
   BattleUnit,
   BattleTeam,
 } from '@/games/three-kingdoms/engine';
-import { BattleOutcome } from '@/games/three-kingdoms/engine';
+import { BattleMode, BattleOutcome, StarRating } from '@/games/three-kingdoms/engine';
 import type { Stage } from '@/games/three-kingdoms/engine';
 import { STAGE_TYPE_LABELS } from '@/games/three-kingdoms/engine';
 import { useBattleAnimation } from './BattleAnimation';
 import type { LogEntry, LogPart } from './BattleAnimation';
 import { getHpLevel, formatHp } from './battle-scene-utils';
+import { isBattleEngineV4 } from '@/components/idle/shared/engine-type-guards';
+import { createDefaultBattleResult, filterDamageFloats as filterDamageFloatsUtil } from './utils';
 import BattleSpeedControl from './BattleSpeedControl';
 import type { BattleSpeedLevel } from './BattleSpeedControl';
+import BattleModeSelector from './BattleModeSelector';
+import UltimateTimeStopOverlay from './UltimateTimeStopOverlay';
+import type { ReadyUltimateItem } from './UltimateTimeStopOverlay';
+import BattlePauseMenu from './BattlePauseMenu';
+import BattleEnterExitAnimation from './BattleEnterExitAnimation';
+import type { AnimationPhase, ExitResult } from './BattleEnterExitAnimation';
 import './BattleScene.css';
 
 // ─────────────────────────────────────────────
@@ -139,12 +149,26 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
   const battleEngine = engine.getBattleEngine();
   const { allyTeam, enemyTeam } = useMemo(() => engine.buildTeamsForStage(stage), [engine, stage]);
 
+  // ── v3.0：战斗模式状态 ──
+  const [battleMode, setBattleMode] = useState<BattleMode>(BattleMode.AUTO);
+
+  // ── v3.0：大招时停状态 ──
+  const [ultimateVisible, setUltimateVisible] = useState(false);
+  const [ultimateReadyItems, setUltimateReadyItems] = useState<ReadyUltimateItem[]>([]);
+
+  // ── v3.0：暂停菜单状态 ──
+  const [paused, setPaused] = useState(false);
+
+  // ── v3.0：进入/退出动画状态 ──
+  const [animPhase, setAnimPhase] = useState<AnimationPhase>('entering');
+  const [exitResult, setExitResult] = useState<ExitResult>('victory');
+
   // DEF-026: 空编队时显示提示并返回
   if (!allyTeam) {
     return (
       <div className="tk-bs-overlay">
         <div className="tk-bs-empty-msg">编队为空，请先配置武将</div>
-        <button onClick={() => onBattleEnd(null as any)}>返回</button>
+        <button onClick={() => onBattleEnd(createDefaultBattleResult())}>返回</button>
       </div>
     );
   }
@@ -156,13 +180,111 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
     logs, logAreaRef, speed, setSpeed, toggleSpeed, skip,
   } = useBattleAnimation(battleEngine, allyTeam, enemyTeam, onBattleEnd);
 
+  // ── v3.0：战斗模式切换处理 ──
+  const handleModeChange = useCallback(
+    (mode: BattleMode) => {
+      setBattleMode(mode);
+      // 通知引擎切换模式
+      if (battleEngine && isBattleEngineV4(battleEngine)) {
+        battleEngine.setBattleMode(mode);
+      }
+    },
+    [battleEngine],
+  );
+
+  // ── v3.0：暂停/恢复切换 ──
+  const handleTogglePause = useCallback(() => {
+    setPaused((p) => !p);
+  }, []);
+
+  // ── v3.0：查看战斗日志（展开日志区域） ──
+  const handleViewLog = useCallback(() => {
+    setPaused(false);
+    // 日志展开由 BattleLog 组件自行管理
+  }, []);
+
+  // ── v3.0：放弃战斗 ──
+  const handleQuitBattle = useCallback(() => {
+    setPaused(false);
+    onBattleEnd(createDefaultBattleResult());
+  }, [onBattleEnd]);
+
+  // ── v3.0：进入动画完成 → 切换到 active ──
+  const handleEnterAnimComplete = useCallback(() => {
+    setAnimPhase('active');
+  }, []);
+
+  // ── v3.0：退出动画完成 → 切换到 done ──
+  const handleExitAnimComplete = useCallback(() => {
+    setAnimPhase('done');
+  }, []);
+
+  // ── v3.0：大招确认处理 ──
+  const handleUltimateConfirm = useCallback(
+    (unitId: string, skillId: string) => {
+      setUltimateVisible(false);
+      setUltimateReadyItems([]);
+      // 通知引擎确认释放大招
+      if (battleEngine && isBattleEngineV4(battleEngine)) {
+        battleEngine.confirmUltimate(unitId, skillId);
+      }
+    },
+    [battleEngine],
+  );
+
+  // ── v3.0：大招取消处理 ──
+  const handleUltimateCancel = useCallback(() => {
+    setUltimateVisible(false);
+    setUltimateReadyItems([]);
+    // 通知引擎取消大招
+    if (battleEngine && isBattleEngineV4(battleEngine)) {
+      battleEngine.cancelUltimate();
+    }
+  }, [battleEngine]);
+
+  // ── v3.0：检测大招就绪（半自动/手动模式下） ──
+  // 当 battleState 变化时，检查是否有大招就绪
+  React.useEffect(() => {
+    if (!battleState || isFinished) return;
+    if (battleMode === BattleMode.AUTO) return;
+
+    // 只在半自动/手动模式下检测
+    const ultimateSystem = battleEngine?.getUltimateSystem?.();
+    if (!ultimateSystem) return;
+
+    // 检测我方队伍大招就绪
+    const allyUnits = battleState.allyTeam.units.filter((u: BattleUnit) => u.isAlive);
+    const result = ultimateSystem.checkTeamUltimateReady(allyUnits);
+
+    if (result.isReady && result.readyUnits.length >= 1) {
+      // 显示大招时停面板
+      setUltimateReadyItems(result.readyUnits);
+      setUltimateVisible(true);
+    }
+  }, [battleState, battleMode, isFinished, battleEngine]);
+
+  // ── v3.0：战斗结束时触发退出动画 ──
+  React.useEffect(() => {
+    if (isFinished && battleResult && animPhase === 'active') {
+      const resultMap: Record<string, ExitResult> = {
+        [BattleOutcome.VICTORY]: 'victory',
+        [BattleOutcome.DEFEAT]: 'defeat',
+        [BattleOutcome.DRAW]: 'draw',
+      };
+      setExitResult(resultMap[battleResult.outcome] || 'draw');
+      setAnimPhase('exiting');
+    }
+  }, [isFinished, battleResult, animPhase]);
+
+  // ── v3.0 P1：高倍速信息简化 — 伤害飘字过滤（抽取至 utils.ts） ──
+
   // ── 渲染武将行 ──
   const renderUnitRow = (units: BattleUnit[], side: 'ally' | 'enemy', position: 'front' | 'back') => {
-    const padded = [...units];
-    while (padded.length < 3) padded.push(null as unknown as BattleUnit);
+    const padded: (BattleUnit | null)[] = [...units];
+    while (padded.length < 3) padded.push(null);
     return padded.map((unit, idx) => {
       if (!unit) return <div key={`empty-${side}-${position}-${idx}`} className="tk-bs-unit-empty" />;
-      const floats = damageFloats.filter((f) => f.unitId === unit.id);
+      const floats = filterDamageFloatsUtil(damageFloats, unit.id, speed);
       return (
         <div key={unit.id} className="tk-bs-unit-wrapper">
           <UnitCard
@@ -226,20 +348,56 @@ const BattleScene: React.FC<BattleSceneProps> = ({ engine, stage, onBattleEnd })
           回合 {battleState.currentTurn}/{battleState.maxTurns}
         </div>
         <div className="tk-bs-controls">
+          {/* v3.0：战斗模式选择器 */}
+          <BattleModeSelector
+            currentMode={battleMode}
+            onModeChange={handleModeChange}
+            disabled={isFinished}
+          />
+          {/* 分隔线 */}
+          <span className="tk-bs-controls-divider" />
           <BattleSpeedControl
             currentSpeed={speed as BattleSpeedLevel}
             onSpeedChange={(newSpeed) => setSpeed(newSpeed)}
             disabled={isFinished}
+            vipLevel={engine.getVIPSystem().getEffectiveLevel()}
           />
           {!isFinished && <button className="tk-bs-skip-btn" onClick={skip} data-testid="battle-skip-btn">跳过</button>}
         </div>
       </div>
+
+      {/* v3.0：暂停菜单 */}
+      <BattlePauseMenu
+        paused={paused}
+        onTogglePause={handleTogglePause}
+        onViewLog={handleViewLog}
+        onQuit={handleQuitBattle}
+        disabled={isFinished}
+      />
 
       {/* 战场主区域 */}
       <div className={`tk-bs-battlefield ${critShake ? 'tk-bs-battlefield--crit-shake' : ''}`} data-testid="battle-scene-battlefield">
         {renderSide(battleState.allyTeam, 'ally')}
         <div className="tk-bs-vs-divider">VS</div>
         {renderSide(battleState.enemyTeam, 'enemy')}
+
+        {/* v3.0：大招时停面板 */}
+        <UltimateTimeStopOverlay
+          visible={ultimateVisible}
+          readyItems={ultimateReadyItems}
+          onConfirm={handleUltimateConfirm}
+          onCancel={handleUltimateCancel}
+        />
+
+        {/* v3.0：进入/退出动画 */}
+        <BattleEnterExitAnimation
+          phase={animPhase}
+          exitResult={exitResult}
+          turnNumber={battleState.currentTurn}
+          allyNames={allyTeam.units.map((u) => u.name)}
+          enemyNames={enemyTeam.units.map((u) => u.name)}
+          onAnimationComplete={animPhase === 'entering' ? handleEnterAnimComplete : handleExitAnimComplete}
+        />
 
         {/* 战斗结束覆盖 */}
         {isFinished && battleResult && (

@@ -43,6 +43,8 @@ function createRecruitSim(options: {
 } = {}): GameEventSimulator {
   const { goldAmount = 50000, tokenAmount = 500 } = options;
   const sim = createSim();
+  // 提高资源上限（初始 gold 上限 2000，测试需要大量铜钱）
+  sim.engine.resource.setCap('gold', 10_000_000);
   sim.addResources({ gold: goldAmount, recruitToken: tokenAmount });
   return sim;
 }

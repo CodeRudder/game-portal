@@ -22,6 +22,13 @@ import {
   getQueueSizeForAcademyLevel,
   MANDATE_SPEEDUP_SECONDS_PER_POINT,
   INGOT_SPEEDUP_SECONDS_PER_UNIT,
+  COPPER_SPEEDUP_COST,
+  COPPER_SPEEDUP_PROGRESS_PERCENT,
+  COPPER_SPEEDUP_MAX_DAILY,
+  RESEARCH_START_COPPER_COST,
+  RESEARCH_START_TECH_POINT_MULTIPLIER,
+  getMaxResearchableTechCount,
+  getAcademyResearchSpeedMultiplier,
 } from './tech-config';
 
 // ─────────────────────────────────────────────
@@ -44,6 +51,14 @@ export class TechResearchSystem implements ISubsystem {
   private getMandate: () => number;
   /** 消耗天命的回调 */
   private spendMandate: (amount: number) => boolean;
+  /** 获取铜钱数量的回调（Sprint 3） */
+  private getGold: () => number;
+  /** 消耗铜钱的回调（Sprint 3） */
+  private spendGold: (amount: number) => boolean;
+  /** 今日铜钱加速已用次数（Sprint 3） */
+  private copperSpeedUpCount: number;
+  /** 上次铜钱加速重置日期（YYYY-MM-DD） */
+  private lastCopperSpeedUpDate: string;
 
   constructor(
     treeSystem: TechTreeSystem,
@@ -51,13 +66,19 @@ export class TechResearchSystem implements ISubsystem {
     getAcademyLevel: () => number,
     getMandate: () => number = () => 0,
     spendMandate: (amount: number) => boolean = () => false,
+    getGold: () => number = () => 0,
+    spendGold: (amount: number) => boolean = () => false,
   ) {
     this.treeSystem = treeSystem;
     this.pointSystem = pointSystem;
     this.getAcademyLevel = getAcademyLevel;
     this.getMandate = getMandate;
     this.spendMandate = spendMandate;
+    this.getGold = getGold;
+    this.spendGold = spendGold;
     this.queue = [];
+    this.copperSpeedUpCount = 0;
+    this.lastCopperSpeedUpDate = '';
   }
 
   // ── ISubsystem 接口 ──
@@ -76,6 +97,8 @@ export class TechResearchSystem implements ISubsystem {
 
   reset(): void {
     this.queue = [];
+    this.copperSpeedUpCount = 0;
+    this.lastCopperSpeedUpDate = '';
   }
 
   // ─────────────────────────────────────────
@@ -107,21 +130,49 @@ export class TechResearchSystem implements ISubsystem {
       return { success: false, reason: '该科技已在研究队列中' };
     }
 
-    // 5. 检查并消耗科技点
-    const spendResult = this.pointSystem.trySpend(def.costPoints);
+    // 5. Sprint 3: 检查可研究科技上限（XI-005）
+    const academyLevel = this.getAcademyLevel();
+    const maxTechCount = getMaxResearchableTechCount(academyLevel);
+    const completedCount = this.treeSystem.getAllNodeDefs().filter(
+      (nd) => this.treeSystem.getNodeState(nd.id)?.status === 'completed'
+    ).length;
+    const researchingCount = this.queue.length;
+    if (completedCount + researchingCount >= maxTechCount) {
+      return { success: false, reason: `可研究科技上限已满（${maxTechCount}），请提升书院等级` };
+    }
+
+    // 6. 检查并消耗科技点（Sprint 3: techPoint × RESEARCH_START_TECH_POINT_MULTIPLIER）
+    const techPointCost = def.costPoints * RESEARCH_START_TECH_POINT_MULTIPLIER;
+    const spendResult = this.pointSystem.trySpend(techPointCost);
     if (!spendResult.success) {
       return { success: false, reason: spendResult.reason };
     }
 
-    // 6. 计算研究时间（应用研究速度加成）
+    // 7. Sprint 3: 消耗铜钱（RESEARCH_START_COPPER_COST）
+    if (this.getGold() < RESEARCH_START_COPPER_COST) {
+      // 返还科技点
+      this.pointSystem.refund(techPointCost);
+      return { success: false, reason: `铜钱不足：需要 ${RESEARCH_START_COPPER_COST}` };
+    }
+    if (!this.spendGold(RESEARCH_START_COPPER_COST)) {
+      // 返还科技点
+      this.pointSystem.refund(techPointCost);
+      return { success: false, reason: '铜钱消耗失败' };
+    }
+
+    // 8. 计算研究时间（应用研究速度加成 + 书院等级加成）
     const speedMultiplier = this.pointSystem.getResearchSpeedMultiplier();
+    const academySpeedMultiplier = getAcademyResearchSpeedMultiplier(academyLevel);
+    const totalSpeedMultiplier = speedMultiplier * academySpeedMultiplier;
     // FIX-501: NaN/除零防护
-    if (!Number.isFinite(speedMultiplier) || speedMultiplier <= 0) {
+    if (!Number.isFinite(totalSpeedMultiplier) || totalSpeedMultiplier <= 0) {
+      // 返还资源
+      this.pointSystem.refund(techPointCost);
       return { success: false, reason: '研究速度异常' };
     }
-    const actualTime = def.researchTime / speedMultiplier;
+    const actualTime = def.researchTime / totalSpeedMultiplier;
 
-    // 7. 创建研究槽位
+    // 9. 创建研究槽位
     const now = Date.now();
     const slot: ResearchSlot = {
       techId,
@@ -129,11 +180,11 @@ export class TechResearchSystem implements ISubsystem {
       endTime: now + actualTime * 1000,
     };
 
-    // 8. 更新节点状态
+    // 10. 更新节点状态
     this.treeSystem.setResearching(techId, now, slot.endTime);
     this.queue.push(slot);
 
-    // 9. 发出事件
+    // 11. 发出事件
     this.deps?.eventBus.emit('economy:techResearched', {
       techId,
       techName: def.name,
@@ -151,7 +202,8 @@ export class TechResearchSystem implements ISubsystem {
     }
 
     const def = TECH_NODE_MAP.get(techId);
-    const refundPoints = def?.costPoints ?? 0;
+    // Sprint 3: 返还科技点按消耗的倍率计算
+    const refundPoints = def ? def.costPoints * RESEARCH_START_TECH_POINT_MULTIPLIER : 0;
 
     // 移除队列
     this.queue.splice(slotIndex, 1);
@@ -271,6 +323,47 @@ export class TechResearchSystem implements ISubsystem {
         break;
       }
 
+      case 'copper': {
+        // Sprint 3: 铜钱加速 — 消耗铜钱×1000，进度+10%
+        // 检查每日次数上限
+        this.resetCopperSpeedUpIfNeeded();
+        if (this.copperSpeedUpCount >= COPPER_SPEEDUP_MAX_DAILY) {
+          return {
+            success: false,
+            cost: 0,
+            timeReduced: 0,
+            completed: false,
+            reason: `今日铜钱加速次数已用完（${COPPER_SPEEDUP_MAX_DAILY}次）`,
+          };
+        }
+        // 检查铜钱是否足够
+        if (this.getGold() < COPPER_SPEEDUP_COST) {
+          return {
+            success: false,
+            cost: 0,
+            timeReduced: 0,
+            completed: false,
+            reason: `铜钱不足：需要 ${COPPER_SPEEDUP_COST}，当前 ${this.getGold()}`,
+          };
+        }
+        // 消耗铜钱
+        if (!this.spendGold(COPPER_SPEEDUP_COST)) {
+          return {
+            success: false,
+            cost: 0,
+            timeReduced: 0,
+            completed: false,
+            reason: '铜钱消耗失败',
+          };
+        }
+        // 计算加速时间：进度+10% = 总时间×10%
+        const totalDuration = slot.endTime - slot.startTime;
+        timeReduced = totalDuration * (COPPER_SPEEDUP_PROGRESS_PERCENT / 100);
+        cost = COPPER_SPEEDUP_COST;
+        this.copperSpeedUpCount++;
+        break;
+      }
+
       default:
         return { success: false, cost: 0, timeReduced: 0, completed: false, reason: '未知加速方式' };
     }
@@ -312,6 +405,55 @@ export class TechResearchSystem implements ISubsystem {
     const remaining = slot.endTime - Date.now();
     if (remaining <= 0) return 0;
     return Math.ceil(remaining / (MANDATE_SPEEDUP_SECONDS_PER_POINT * 1000));
+  }
+
+  // ─────────────────────────────────────────
+  // Sprint 3: 铜钱加速接口
+  // ─────────────────────────────────────────
+
+  /** 获取今日铜钱加速已用次数 */
+  getCopperSpeedUpCount(): number {
+    this.resetCopperSpeedUpIfNeeded();
+    return this.copperSpeedUpCount;
+  }
+
+  /** 获取今日铜钱加速剩余次数 */
+  getCopperSpeedUpRemaining(): number {
+    return COPPER_SPEEDUP_MAX_DAILY - this.getCopperSpeedUpCount();
+  }
+
+  /** 获取铜钱加速每次消耗 */
+  getCopperSpeedUpCost(): number {
+    return COPPER_SPEEDUP_COST;
+  }
+
+  /** 获取铜钱加速每次进度增量百分比 */
+  getCopperSpeedUpProgressPercent(): number {
+    return COPPER_SPEEDUP_PROGRESS_PERCENT;
+  }
+
+  /** 获取铜钱加速每日上限 */
+  getCopperSpeedUpMaxDaily(): number {
+    return COPPER_SPEEDUP_MAX_DAILY;
+  }
+
+  /** 获取可研究科技上限 */
+  getMaxResearchableTechCount(): number {
+    return getMaxResearchableTechCount(this.getAcademyLevel());
+  }
+
+  /** 获取书院研究速度加成倍率 */
+  getAcademyResearchSpeedMultiplier(): number {
+    return getAcademyResearchSpeedMultiplier(this.getAcademyLevel());
+  }
+
+  /** 检查日期并重置铜钱加速次数 */
+  private resetCopperSpeedUpIfNeeded(): void {
+    const today = new Date().toISOString().slice(0, 10);
+    if (this.lastCopperSpeedUpDate !== today) {
+      this.copperSpeedUpCount = 0;
+      this.lastCopperSpeedUpDate = today;
+    }
   }
 
   // ─────────────────────────────────────────

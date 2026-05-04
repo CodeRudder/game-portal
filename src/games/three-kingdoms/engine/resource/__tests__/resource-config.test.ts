@@ -81,7 +81,7 @@ describe('resource-config', () => {
       expect(INITIAL_CAPS.grain).toBe(2000);
     });
 
-    it('铜钱应无上限（null）', () => {
+    it('铜钱上限应为 null（无上限）', () => {
       expect(INITIAL_CAPS.gold).toBeNull();
     });
 

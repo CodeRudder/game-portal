@@ -231,9 +231,9 @@ describe('BuildingPanel 核心交互测试', () => {
   describe('1. 渲染测试', () => {
     it('应正确渲染8座建筑标记', () => {
       renderBuildingPanel();
-      // PC端地图中的标记 — 8个建筑类型都有 role="button"
+      // PC端地图中的标记 — 11个建筑类型都有 role="button"
       const pins = document.querySelectorAll('.tk-bld-pin');
-      expect(pins.length).toBe(8);
+      expect(pins.length).toBe(11);
     });
 
     it('每个卡片应显示建筑名称和等级', () => {
@@ -253,7 +253,7 @@ describe('BuildingPanel 核心交互测试', () => {
 
     it('锁定建筑应显示锁定状态', () => {
       const buildings = createAllBuildings({
-        smithy: { status: 'locked', level: 0 },
+        workshop: { status: 'locked', level: 0 },
         academy: { status: 'locked', level: 0 },
       });
       renderBuildingPanel({ buildings });
@@ -459,7 +459,7 @@ describe('BuildingPanel 核心交互测试', () => {
     it('点击锁定建筑不应打开弹窗', async () => {
       const user = userEvent.setup();
       const buildings = createAllBuildings({
-        smithy: { status: 'locked', level: 0 },
+        workshop: { status: 'locked', level: 0 },
       });
       renderBuildingPanel({ buildings });
 

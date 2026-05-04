@@ -72,7 +72,7 @@ export interface ProductionRate {
 /** 资源上限（null 表示无上限） */
 export interface ResourceCap {
   grain: number;
-  gold: number;
+  gold: null; // gold 无上限
   ore: number;
   wood: number;
   troops: number;
@@ -135,7 +135,7 @@ export interface ResourceSaveData {
 // 0. 建筑域基础类型（唯一真相源，engine/building/building.types.ts re-export）
 // ─────────────────────────────────────────────
 
-/** 11 种建筑类型标识 */
+/** 12 种建筑类型标识 */
 export type BuildingType =
   | 'castle'
   | 'farmland'
@@ -147,7 +147,8 @@ export type BuildingType =
   | 'academy'
   | 'clinic'
   | 'wall'
-  | 'tavern';
+  | 'tavern'
+  | 'port';
 
 /** 建筑升级状态 */
 export type BuildingStatus = 'locked' | 'idle' | 'upgrading';
@@ -180,6 +181,8 @@ export interface UpgradeCheckResult {
 /** 建筑系统存档数据 */
 export interface BuildingSaveData {
   buildings: Record<BuildingType, BuildingState>;
+  /** 建筑库存累积量（Sprint 1 BLD-F26） */
+  storage?: Partial<Record<BuildingType, number>>;
   version: number;
 }
 

@@ -16,13 +16,11 @@
   border-radius: var(--tk-radius-lg); border: 1px solid rgba(200, 168, 76, 0.1);
 }
 .tk-star-display-star { font-size: 24px; line-height: 1; transition: all 0.3s; }
-.tk-star-display-star--filled { color: var(--tk-gold); text-shadow: 0 0 10px rgba(200, 168, 76, 0.5); }
+.tk-star-display-star--filled { color: var(--tk-gold); text-shadow: none; }
 .tk-star-display-star--empty { color: rgba(100, 100, 100, 0.25); }
 .tk-star-display-star--max {
-  color: var(--tk-gold-bright, #e8c468); text-shadow: 0 0 16px rgba(232, 196, 104, 0.6);
-  animation: tk-star-pulse 1.5s ease-in-out infinite;
+  color: var(--tk-gold-bright, #e8c468); text-shadow: none;
 }
-@keyframes tk-star-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 .tk-star-display-level { font-size: 12px; color: var(--tk-text-secondary); margin-left: 8px; }
 
 /* 碎片进度条 */
@@ -47,11 +45,6 @@
 .tk-star-progress-fill--full { background: linear-gradient(90deg, var(--tk-green, #7EC850), var(--tk-green, #A5D6A7)); }
 .tk-star-progress-fill--max {
   background: linear-gradient(90deg, var(--tk-gold), var(--tk-gold-light));
-  animation: tk-progress-glow 1.5s ease-in-out infinite;
-}
-@keyframes tk-progress-glow {
-  0%, 100% { box-shadow: 0 0 4px rgba(200, 168, 76, 0.3); }
-  50% { box-shadow: 0 0 12px rgba(200, 168, 76, 0.6); }
 }
 .tk-star-progress-text { font-size: 11px; color: var(--tk-text-muted); text-align: right; }
 .tk-star-fragment-sources { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }

@@ -68,6 +68,7 @@ const BUILDING_MAP_POSITIONS: Record<BuildingType, MapPosition> = {
   clinic:   { top: 78, left: 42 },  // 底部中央
   wall:     { top: 55, left: 74 },  // 右下
   tavern:   { top: 78, left: 10 },  // 底部左侧
+  port:     { top: 78, left: 74 },  // 底部右侧
 };
 
 // ─────────────────────────────────────────────
@@ -85,6 +86,7 @@ const BUILDING_EFFECTS: Record<BuildingType, string> = {
   clinic: '伤兵恢复',
   wall: '城防值',
   tavern: '武将招募',
+  port: '贸易折扣',
 };
 
 // ─────────────────────────────────────────────
@@ -120,6 +122,7 @@ function getProductionText(type: BuildingType, engine: ThreeKingdomsEngine): str
     }
     case 'castle': return `全资源 +${prod}%`;
     case 'tavern': return `招募 +${prod.toFixed(0)}%`;
+    case 'port': return `贸易折扣 +${prod.toFixed(0)}%`;
     default: return BUILDING_EFFECTS[type];
   }
 }

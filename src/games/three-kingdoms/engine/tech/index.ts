@@ -10,6 +10,19 @@ export { FusionTechSystem } from './FusionTechSystem';
 export { TechLinkSystem } from './TechLinkSystem';
 export { TechDetailProvider } from './TechDetailProvider';
 export { TechOfflineSystem } from './TechOfflineSystem';
+export { AcademyResearchManager } from './AcademyResearchManager';
+export type {
+  TechBonusSnapshot,
+  AcademyStateSnapshot,
+} from './AcademyResearchManager';
+export { AcademyResearchSystem } from './AcademyResearchSystem';
+export type {
+  CopperSpeedUpResult,
+  IngotInstantResult,
+  TechPreviewNode,
+  TechTreePreview,
+  BuildingBonusInjection,
+} from './AcademyResearchSystem';
 
 export type {
   EffectCategory,
@@ -52,11 +65,23 @@ export {
   ACADEMY_TECH_POINT_PRODUCTION,
   MANDATE_SPEEDUP_SECONDS_PER_POINT,
   INGOT_SPEEDUP_SECONDS_PER_UNIT,
+  COPPER_SPEEDUP_COST,
+  COPPER_SPEEDUP_PROGRESS_PERCENT,
+  COPPER_SPEEDUP_MAX_DAILY,
+  RESEARCH_START_COPPER_COST,
+  RESEARCH_START_TECH_POINT_MULTIPLIER,
+  ACADEMY_TECH_CAP_MULTIPLIER,
+  ACADEMY_RESEARCH_SPEED_PER_LEVEL,
+  TECH_BUILDING_PRODUCTION_BONUS_PER_LEVEL,
+  TECH_RESOURCE_PRODUCTION_BONUS_PER_LEVEL,
+  TECH_BATTLE_STAT_BONUS_PER_LEVEL,
   getNodesByPath,
   getNodesByTier,
   getMutexGroups,
   getQueueSizeForAcademyLevel,
   getTechPointProduction,
+  getMaxResearchableTechCount,
+  getAcademyResearchSpeedMultiplier,
 } from './tech-config';
 
 // ── 融合科技类型 ──

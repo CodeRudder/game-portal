@@ -50,9 +50,9 @@ describe('R22-1: 资源系统异常路径', () => {
       expect(actual).toBe(10);
     });
 
-    it('addResource 无上限资源(gold)不截断', () => {
-      rs.addResource('gold', 999999);
-      expect(rs.getAmount('gold')).toBe(300 + 999999); // 初始300 + 添加
+    it('addResource 无上限资源(mandate)不截断', () => {
+      rs.addResource('mandate', 999999);
+      expect(rs.getAmount('mandate')).toBe(0 + 999999); // 初始0 + 添加
     });
 
     it('addResource 溢出时发出 resource:overflow 事件', () => {

@@ -143,18 +143,24 @@ export class GameEventSimulator {
    * 用于 initMidGameState 等需要大量资源的场景，
    * 因为 completePendingUpgrades 会根据建筑等级重置上限。
    */
-  private upgradeBuildingToWithHighCaps(type: BuildingType, targetLevel: number): this {
+  upgradeBuildingToWithHighCaps(type: BuildingType, targetLevel: number): this {
     const currentLevel = this.engine.building.getLevel(type);
     for (let i = currentLevel; i < targetLevel; i++) {
       // 确保资源上限和资源量充足（升级消耗可能很大）
       this.engine.resource.setCap('grain', 50_000_000);
+      this.engine.resource.setCap('gold', 100_000_000);
       this.engine.resource.setCap('troops', 10_000_000);
-      this.addResources({ grain: 10000000, gold: 20000000, troops: 5000000 });
+      this.engine.resource.setCap('ore', 50_000_000);
+      this.engine.resource.setCap('wood', 50_000_000);
+      this.addResources({ grain: 10000000, gold: 20000000, troops: 5000000, ore: 10000000, wood: 10000000 });
       this.engine.upgradeBuilding(type);
       this.completePendingUpgrades();
       // completePendingUpgrades 会重置上限，需要恢复高上限
       this.engine.resource.setCap('grain', 50_000_000);
+      this.engine.resource.setCap('gold', 100_000_000);
       this.engine.resource.setCap('troops', 10_000_000);
+      this.engine.resource.setCap('ore', 50_000_000);
+      this.engine.resource.setCap('wood', 50_000_000);
     }
     this.log('upgradeBuildingTo', `${type} → Lv${targetLevel}`);
     return this;
@@ -322,12 +328,17 @@ export class GameEventSimulator {
     // 直接设置资源值绕过上限限制
     const res = this.engine.resource;
     res.setCap('grain', 50_000_000);
+    res.setCap('gold', 100_000_000);
     res.setCap('troops', 10_000_000);
+    res.setCap('ore', 50_000_000);
+    res.setCap('wood', 50_000_000);
     this.addResources({
       grain: 10000000,
       gold: 20000000,
       troops: 5000000,
       mandate: 1000000,
+      ore: 10000000,
+      wood: 10000000,
     });
     // 交错升级：先升主城到4，再升一个建筑到4，然后主城到5，最后其余建筑到5
     // 城堡 Lv5 需要：至少一座其他建筑达到 Lv4

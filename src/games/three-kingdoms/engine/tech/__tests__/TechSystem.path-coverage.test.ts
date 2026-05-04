@@ -51,12 +51,14 @@ describe('TechSystem 路径覆盖测试', () => {
   let deps: ISystemDeps;
   let baseTime: number;
   let mandateAmount: number;
+  let goldAmount: number;
 
   beforeEach(() => {
     vi.restoreAllMocks();
     baseTime = 1_000_000_000_000;
     vi.spyOn(Date, 'now').mockReturnValue(baseTime);
     mandateAmount = 100;
+    goldAmount = 1000000;
 
     deps = createMockDeps();
     treeSys = new TechTreeSystem();
@@ -71,6 +73,14 @@ describe('TechSystem 路径覆盖测试', () => {
       (amt: number) => {
         if (mandateAmount >= amt) {
           mandateAmount -= amt;
+          return true;
+        }
+        return false;
+      },
+      () => goldAmount,
+      (amt: number) => {
+        if (goldAmount >= amt) {
+          goldAmount -= amt;
           return true;
         }
         return false;
@@ -90,8 +100,10 @@ describe('TechSystem 路径覆盖测试', () => {
 
   // 辅助：给科技点系统充入点数
   function grantPoints(amount: number): void {
+    // Sprint 3: 研究消耗 = costPoints × RESEARCH_START_TECH_POINT_MULTIPLIER
+    const needed = amount * 10;
     pointSys.syncAcademyLevel(20);
-    const seconds = Math.ceil(amount / 1.76) + 10;
+    const seconds = Math.ceil(needed / 1.76) + 10;
     pointSys.update(seconds);
   }
 
@@ -174,10 +186,10 @@ describe('TechSystem 路径覆盖测试', () => {
     });
 
     it('资源刚好够时成功研究（边界值）', () => {
-      // mil_t1_attack 需要 50 科技点
+      // mil_t1_attack 需要 50 科技点 × 10 倍率 = 500 实际消耗
       pointSys.syncAcademyLevel(20);
-      // 精确充入 50 点
-      pointSys.exchangeGoldForTechPoints(50 * 100, 10);
+      // 精确充入 500 点
+      pointSys.exchangeGoldForTechPoints(500 * 100, 10);
 
       const result = researchSys.startResearch('mil_t1_attack');
       expect(result.success).toBe(true);

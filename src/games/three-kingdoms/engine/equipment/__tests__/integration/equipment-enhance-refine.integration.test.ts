@@ -75,6 +75,8 @@ describe('§5 强化系统', () => {
     const systems = createSystems();
     equipment = systems.equipment;
     enhance = systems.enhance;
+    // 注入资源扣除回调（集成测试中始终允许扣除）
+    enhance.setResourceDeductor(() => true);
   });
 
   describe('§5.1 强化成功率', () => {

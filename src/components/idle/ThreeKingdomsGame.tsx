@@ -222,6 +222,7 @@ const ThreeKingdomsGame: React.FC = () => {
           clinic: defaultBuildingState('clinic'),
           wall: defaultBuildingState('wall'),
           tavern: defaultBuildingState('tavern'),
+          port: defaultBuildingState('port'),
         },
         calendar: {
           date: { year: 1, month: 1, day: 1, season: 'spring', eraName: '建安', yearInEra: 1 },
@@ -266,6 +267,7 @@ const ThreeKingdomsGame: React.FC = () => {
           clinic: defaultBuildingState('clinic'),
           wall: defaultBuildingState('wall'),
           tavern: defaultBuildingState('tavern'),
+          port: defaultBuildingState('port'),
         },
         calendar: {
           date: { year: 1, month: 1, day: 1, season: 'spring', eraName: '建安', yearInEra: 1 },

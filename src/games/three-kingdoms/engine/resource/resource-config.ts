@@ -58,7 +58,7 @@ export const INITIAL_PRODUCTION_RATES: Readonly<ProductionRate> = {
 /** 新游戏初始上限（对应建筑 Lv.1） */
 export const INITIAL_CAPS: Readonly<ResourceCap> = {
   grain: 2000,
-  gold: 2000,
+  gold: null,
   ore: 2000,
   wood: 2000,
   troops: 500,
@@ -105,6 +105,48 @@ export const BARRACKS_CAPACITY_TABLE: Readonly<
   20: 12000,
   25: 25000,
   30: 50000,
+};
+
+// ─────────────────────────────────────────────
+// 5b. 矿石/木材容量配置表（Sprint 1 BLD-F15）
+// ─────────────────────────────────────────────
+
+/**
+ * 矿石仓库容量表
+ * 来源：PRD BLD-F15 资源上限适配4资源
+ * 公式：基础值 + 等级 × 每级增量
+ */
+export const ORE_CAPACITY_TABLE: Readonly<
+  Record<number, number>
+> = {
+  1: 2000,
+  2: 2750,
+  3: 3500,
+  4: 4250,
+  5: 5000,
+  10: 12000,
+  15: 25000,
+  20: 50000,
+  25: 100000,
+};
+
+/**
+ * 木材仓库容量表
+ * 来源：PRD BLD-F15 资源上限适配4资源
+ * 公式：基础值 + 等级 × 每级增量
+ */
+export const WOOD_CAPACITY_TABLE: Readonly<
+  Record<number, number>
+> = {
+  1: 2000,
+  2: 2750,
+  3: 3500,
+  4: 4250,
+  5: 5000,
+  10: 12000,
+  15: 25000,
+  20: 50000,
+  25: 100000,
 };
 
 // ─────────────────────────────────────────────

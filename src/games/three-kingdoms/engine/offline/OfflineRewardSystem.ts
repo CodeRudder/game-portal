@@ -288,9 +288,12 @@ export class OfflineRewardSystem implements ISubsystem {
   applyCapAndOverflow(earned: Readonly<Resources>, currentResources: Readonly<Resources>, caps: Readonly<Record<string, number | null>>): { cappedEarned: Resources; overflowResources: Resources } {
     const cappedEarned = zeroRes();
     const overflowResources = zeroRes();
+    // [FIX-v9] 固有无限容量资源集合（与 ResourceCap 类型中 null 字段一致）
+    const inherentlyUncapped = new Set(['gold', 'mandate', 'techPoint', 'recruitToken', 'skillBook']);
     for (const key of ['grain', 'gold', 'troops', 'mandate'] as const) {
       const cap = caps[key]; const current = currentResources[key]; const gain = earned[key];
-      if (cap === null) { cappedEarned[key] = gain; } else {
+      // [FIX-v9] 固有无限容量资源或 cap===null 时全额发放
+      if (cap === null || inherentlyUncapped.has(key)) { cappedEarned[key] = gain; } else {
         const space = Math.max(0, cap - current);
         cappedEarned[key] = Math.min(gain, space);
         overflowResources[key] = gain - cappedEarned[key];
@@ -906,18 +909,18 @@ export class OfflineRewardSystem implements ISubsystem {
     const totalWeight = resourceWeight + buildingWeight + expeditionWeight; // 3.05
 
     // 按权重分配基础收益
-    const resourceEarned = mulRes(baseEarned, resourceWeight / totalWeight);
-    const buildingEarned = mulRes(baseEarned, buildingWeight / totalWeight);
-    const expeditionEarned = mulRes(baseEarned, expeditionWeight / totalWeight);
+    const resourceEarned = floorRes(mulRes(baseEarned, resourceWeight / totalWeight));
+    const buildingEarned = floorRes(mulRes(baseEarned, buildingWeight / totalWeight));
+    const expeditionEarned = floorRes(mulRes(baseEarned, expeditionWeight / totalWeight));
 
-    // 总收益 = 基础快照收益（无膨胀）
-    const totalReward = cloneRes(baseEarned);
+    // [FIX-v9] 总收益 = 三系统各自 floor 后之和（避免 floor(a)+floor(b)+floor(c) ≠ floor(a+b+c)）
+    const totalReward = addRes(resourceEarned, addRes(buildingEarned, expeditionEarned));
 
     return {
-      resourceReward: floorRes(resourceEarned),
-      buildingReward: floorRes(buildingEarned),
-      expeditionReward: floorRes(expeditionEarned),
-      totalReward: floorRes(totalReward),
+      resourceReward: resourceEarned,
+      buildingReward: buildingEarned,
+      expeditionReward: expeditionEarned,
+      totalReward,
       noDuplicates: true,
     };
   }

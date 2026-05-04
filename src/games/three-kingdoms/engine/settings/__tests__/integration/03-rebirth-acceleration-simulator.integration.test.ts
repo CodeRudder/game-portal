@@ -16,6 +16,7 @@ import {
   REBIRTH_INITIAL_GIFT,
   REBIRTH_INSTANT_BUILD,
   REBIRTH_UNLOCK_CONTENTS_V16,
+  REBIRTH_COOLDOWN_MS,
 } from '../../../../core/prestige';
 
 // ─────────────────────────────────────────────
@@ -36,17 +37,20 @@ function mockDeps(): ISystemDeps {
   } as unknown as ISystemDeps;
 }
 
-/** 创建满足转生条件的RebirthSystem */
-function createReadyRebirth(): RebirthSystem {
+/** 创建满足转生条件的RebirthSystem（含可注入的 nowProvider 用于模拟冷却） */
+function createReadyRebirth(): RebirthSystem & { advanceTime: (ms: number) => void } {
   const sys = new RebirthSystem();
   sys.init(mockDeps());
+  let now = Date.now();
+  const advanceTime = (ms: number) => { now += ms; };
   sys.setCallbacks({
     castleLevel: () => REBIRTH_CONDITIONS.minCastleLevel,
     heroCount: () => REBIRTH_CONDITIONS.minHeroCount,
     totalPower: () => REBIRTH_CONDITIONS.minTotalPower,
+    nowProvider: () => now,
   });
   sys.updatePrestigeLevel(REBIRTH_CONDITIONS.minPrestigeLevel);
-  return sys;
+  return Object.assign(sys, { advanceTime });
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -65,17 +69,21 @@ describe('§6 转生×加速×模拟器 集成测试', () => {
     expect(check.canRebirth).toBe(true);
   });
 
-  it('条件详情包含4项检查', () => {
+  it('条件详情包含7项检查（含通关/成就链/冷却）', () => {
     const check = rebirth.checkRebirthConditions();
-    expect(Object.keys(check.conditions)).toHaveLength(4);
+    expect(Object.keys(check.conditions)).toHaveLength(7);
   });
 
-  it('每项条件有required/current/met字段', () => {
+  it('每项条件有required/current/met字段（cooldown除外）', () => {
     const check = rebirth.checkRebirthConditions();
-    for (const cond of Object.values(check.conditions)) {
-      expect(cond).toHaveProperty('required');
-      expect(cond).toHaveProperty('current');
-      expect(cond).toHaveProperty('met');
+    for (const [key, cond] of Object.entries(check.conditions)) {
+      if (key === 'cooldown') {
+        expect(cond).toHaveProperty('met');
+      } else {
+        expect(cond).toHaveProperty('required');
+        expect(cond).toHaveProperty('current');
+        expect(cond).toHaveProperty('met');
+      }
     }
   });
 
@@ -147,6 +155,7 @@ describe('§6 转生×加速×模拟器 集成测试', () => {
 
   it('连续转生次数递增', () => {
     rebirth.executeRebirth();
+    rebirth.advanceTime(REBIRTH_COOLDOWN_MS + 1);
     rebirth.executeRebirth();
     expect(rebirth.getState().rebirthCount).toBe(2);
     expect(rebirth.getRebirthRecords().length).toBe(2);
@@ -243,7 +252,7 @@ describe('§6 转生×加速×模拟器 集成测试', () => {
       dailyOnlineHours: 4,
       simulateDays: 7,
     });
-    expect(result.prestigeGrowthCurve.length).toBe(11); // day0~day7
+    expect(result.prestigeGrowthCurve.length).toBe(8); // day0~day7
   });
 
   it('v16模拟器包含时机对比', () => {
@@ -319,6 +328,7 @@ describe('§6 转生×加速×模拟器 集成测试', () => {
 
   it('转生存档加载后解锁内容状态正确', () => {
     rebirth.executeRebirth();
+    rebirth.advanceTime(REBIRTH_COOLDOWN_MS + 1);
     rebirth.executeRebirth();
     const state = rebirth.getState();
     const newRebirth = new RebirthSystem();
@@ -331,7 +341,9 @@ describe('§6 转生×加速×模拟器 集成测试', () => {
 
   it('多次转生后记录完整保存', () => {
     rebirth.executeRebirth();
+    rebirth.advanceTime(REBIRTH_COOLDOWN_MS + 1);
     rebirth.executeRebirth();
+    rebirth.advanceTime(REBIRTH_COOLDOWN_MS + 1);
     rebirth.executeRebirth();
     const records = rebirth.getRebirthRecords();
     expect(records.length).toBe(3);

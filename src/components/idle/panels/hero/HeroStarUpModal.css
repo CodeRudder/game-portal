@@ -127,18 +127,12 @@
 
 .tk-starup-star--filled {
   color: var(--tk-gold);
-  text-shadow: 0 0 8px var(--tk-starup-star-glow);
+  text-shadow: none;
 }
 
 .tk-starup-star--max {
   color: var(--tk-starup-star-max);
-  text-shadow: 0 0 12px var(--tk-starup-star-max-glow);
-  animation: tk-starup-star-glow 2s ease-in-out infinite;
-}
-
-@keyframes tk-starup-star-glow {
-  0%, 100% { text-shadow: 0 0 8px var(--tk-starup-star-max-glow-dim); }
-  50% { text-shadow: 0 0 16px var(--tk-starup-star-max-glow-bright); }
+  text-shadow: none;
 }
 
 .tk-starup-level {
@@ -416,7 +410,7 @@
 
 .tk-starup-btn--star-up:hover:not(:disabled) {
   background: linear-gradient(135deg, var(--tk-starup-btn-starup-hover-from), var(--tk-starup-btn-starup-hover-to));
-  box-shadow: 0 0 12px var(--tk-starup-btn-starup-glow);
+  box-shadow: none;
 }
 
 .tk-starup-btn--breakthrough {
@@ -427,7 +421,7 @@
 
 .tk-starup-btn--breakthrough:hover:not(:disabled) {
   background: linear-gradient(135deg, var(--tk-starup-btn-bt-hover-from), var(--tk-starup-btn-bt-hover-to));
-  box-shadow: 0 0 12px var(--tk-starup-btn-bt-glow);
+  box-shadow: none;
 }
 
 .tk-starup-btn:disabled {
@@ -448,12 +442,12 @@
   background: linear-gradient(135deg, #9333ea, #6d28d9);
   border: 1px solid #a855f7;
   color: #f3e8ff;
-  text-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
+  text-shadow: none;
 }
 
 .tk-starup-btn--awaken:hover:not(:disabled) {
   background: linear-gradient(135deg, #7c3aed, #5b21b6);
-  box-shadow: 0 0 16px rgba(168, 85, 247, 0.4);
+  box-shadow: none;
 }
 
 /* ── 觉醒条件列表 ── */
@@ -537,18 +531,12 @@
   color: #fff;
   font-weight: 600;
   border: 2px solid rgba(245, 158, 11, 0.6);
-  box-shadow: 0 0 12px rgba(147, 51, 234, 0.4);
-  animation: tk-awaken-pulse 2s ease-in-out infinite;
+  box-shadow: none;
 }
 
 .tk-starup-btn--awaken:hover:not(:disabled) {
-  box-shadow: 0 0 20px rgba(147, 51, 234, 0.6);
+  box-shadow: none;
   transform: scale(1.02);
-}
-
-@keyframes tk-awaken-pulse {
-  0%, 100% { box-shadow: 0 0 8px rgba(147, 51, 234, 0.3); }
-  50% { box-shadow: 0 0 16px rgba(147, 51, 234, 0.5); }
 }
 
 /* ── 觉醒条件列表 ── */

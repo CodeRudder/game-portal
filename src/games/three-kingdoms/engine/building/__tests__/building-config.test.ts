@@ -23,15 +23,15 @@ import {
 } from '../building-config';
 import type { BuildingType } from '../building.types';
 
-const ALL_BUILDING_TYPES: BuildingType[] = ['castle', 'farmland', 'market', 'barracks', 'workshop', 'academy', 'clinic', 'wall'];
+const ALL_BUILDING_TYPES: BuildingType[] = ['castle', 'farmland', 'market', 'mine', 'lumberMill', 'barracks', 'workshop', 'academy', 'clinic', 'wall', 'tavern'];
 
 // ─────────────────────────────────────────────
 // 建筑等级上限
 // ─────────────────────────────────────────────
 
 describe('BUILDING_MAX_LEVELS', () => {
-  it('应包含 8 种建筑', () => {
-    expect(Object.keys(BUILDING_MAX_LEVELS)).toHaveLength(8);
+  it('应包含 12 种建筑', () => {
+    expect(Object.keys(BUILDING_MAX_LEVELS)).toHaveLength(12);
   });
 
   it('所有建筑等级上限 > 0', () => {
@@ -44,17 +44,20 @@ describe('BUILDING_MAX_LEVELS', () => {
     expect(BUILDING_MAX_LEVELS.castle).toBe(30);
   });
 
-  it('农田/市集/兵营等级上限为 25', () => {
+  it('农田/市集/矿场/伐木场/兵营等级上限为 25', () => {
     expect(BUILDING_MAX_LEVELS.farmland).toBe(25);
     expect(BUILDING_MAX_LEVELS.market).toBe(25);
+    expect(BUILDING_MAX_LEVELS.mine).toBe(25);
+    expect(BUILDING_MAX_LEVELS.lumberMill).toBe(25);
     expect(BUILDING_MAX_LEVELS.barracks).toBe(25);
   });
 
-  it('铁匠铺/书院/医馆/城墙等级上限为 20', () => {
+  it('铁匠铺/书院/医馆/城墙/酒馆等级上限为 20', () => {
     expect(BUILDING_MAX_LEVELS.workshop).toBe(20);
     expect(BUILDING_MAX_LEVELS.academy).toBe(20);
     expect(BUILDING_MAX_LEVELS.clinic).toBe(20);
     expect(BUILDING_MAX_LEVELS.wall).toBe(20);
+    expect(BUILDING_MAX_LEVELS.tavern).toBe(20);
   });
 });
 
@@ -63,17 +66,19 @@ describe('BUILDING_MAX_LEVELS', () => {
 // ─────────────────────────────────────────────
 
 describe('BUILDING_UNLOCK_LEVELS', () => {
-  it('应包含 8 种建筑', () => {
-    expect(Object.keys(BUILDING_UNLOCK_LEVELS)).toHaveLength(8);
+  it('应包含 12 种建筑', () => {
+    expect(Object.keys(BUILDING_UNLOCK_LEVELS)).toHaveLength(12);
   });
 
-  it('主城和农田初始解锁（0级）', () => {
+  it('主城、农田、市集、矿场、伐木场初始解锁（0级）', () => {
     expect(BUILDING_UNLOCK_LEVELS.castle).toBe(0);
     expect(BUILDING_UNLOCK_LEVELS.farmland).toBe(0);
+    expect(BUILDING_UNLOCK_LEVELS.market).toBe(0);
+    expect(BUILDING_UNLOCK_LEVELS.mine).toBe(0);
+    expect(BUILDING_UNLOCK_LEVELS.lumberMill).toBe(0);
   });
 
-  it('市集和兵营主城 2 级解锁', () => {
-    expect(BUILDING_UNLOCK_LEVELS.market).toBe(2);
+  it('兵营主城 2 级解锁', () => {
     expect(BUILDING_UNLOCK_LEVELS.barracks).toBe(2);
   });
 
@@ -86,8 +91,9 @@ describe('BUILDING_UNLOCK_LEVELS', () => {
     expect(BUILDING_UNLOCK_LEVELS.clinic).toBe(4);
   });
 
-  it('城墙主城 5 级解锁', () => {
+  it('城墙和酒馆主城 5 级解锁', () => {
     expect(BUILDING_UNLOCK_LEVELS.wall).toBe(5);
+    expect(BUILDING_UNLOCK_LEVELS.tavern).toBe(5);
   });
 
   it('解锁条件非负', () => {
@@ -102,8 +108,8 @@ describe('BUILDING_UNLOCK_LEVELS', () => {
 // ─────────────────────────────────────────────
 
 describe('BUILDING_DEFS', () => {
-  it('应包含 8 种建筑定义', () => {
-    expect(Object.keys(BUILDING_DEFS)).toHaveLength(8);
+  it('应包含 12 种建筑定义', () => {
+    expect(Object.keys(BUILDING_DEFS)).toHaveLength(12);
   });
 
   it('每个建筑定义的 maxLevel 与 BUILDING_MAX_LEVELS 一致', () => {
@@ -125,8 +131,8 @@ describe('BUILDING_DEFS', () => {
     }
   });
 
-  it('产出建筑（农田/市集/兵营/书院）应有 production 配置', () => {
-    const productionTypes: BuildingType[] = ['farmland', 'market', 'barracks', 'academy'];
+  it('产出建筑（农田/市集/矿场/伐木场/兵营/书院）应有 production 配置', () => {
+    const productionTypes: BuildingType[] = ['farmland', 'market', 'mine', 'lumberMill', 'barracks', 'academy'];
     for (const type of productionTypes) {
       expect(BUILDING_DEFS[type].production).toBeDefined();
       expect(BUILDING_DEFS[type].production!.resourceType).toBeTruthy();

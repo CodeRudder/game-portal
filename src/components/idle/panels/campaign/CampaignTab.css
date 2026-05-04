@@ -13,11 +13,10 @@
   background: linear-gradient(180deg, rgba(26,35,50,0.95) 0%, rgba(20,25,35,0.98) 100%);
 }
 
-/* 章节选择器 */
+/* 章节标题栏（显示当前章节名称） */
 .tk-chapter-selector {
   display: flex; align-items: center; justify-content: center;
-  gap: 16px; padding: 8px 0 12px; flex-shrink: 0;
-  border-bottom: 1px solid rgba(200,168,76,0.12);
+  gap: 16px; padding: 4px 0 0; flex-shrink: 0;
 }
 .tk-chapter-arrow {
   width: 32px; height: 32px;
@@ -80,11 +79,10 @@
 }
 .tk-stage-node--available .tk-stage-node-circle {
   border-color: var(--tk-gold);
-  box-shadow: 0 0 12px rgba(200,168,76,0.4), inset 0 0 8px rgba(200,168,76,0.1);
-  animation: tk-pulse-available 2s ease-in-out infinite;
+  box-shadow: none;
 }
-.tk-stage-node--cleared .tk-stage-node-circle { border-color: var(--tk-green); background: rgba(126,200,80,0.15); box-shadow: 0 0 8px rgba(126,200,80,0.3); }
-.tk-stage-node--three-star .tk-stage-node-circle { border-color: var(--tk-gold-light); background: rgba(201,168,76,0.2); box-shadow: 0 0 16px rgba(201,168,76,0.5), 0 0 4px rgba(201,168,76,0.3); }
+.tk-stage-node--cleared .tk-stage-node-circle { border-color: var(--tk-green); background: rgba(126,200,80,0.15); box-shadow: none; }
+.tk-stage-node--three-star .tk-stage-node-circle { border-color: var(--tk-gold-light); background: rgba(201,168,76,0.2); box-shadow: none; }
 .tk-stage-node--locked .tk-stage-node-circle { border-color: rgba(100,100,100,0.3); background: rgba(40,40,50,0.8); }
 
 /* 节点内容 */
@@ -112,7 +110,7 @@
   cursor: pointer; transition: all 0.15s; letter-spacing: 1px;
   font-family: inherit; white-space: nowrap;
 }
-.tk-stage-sweep-btn:hover { background: rgba(200,168,76,0.3); border-color: var(--tk-gold); box-shadow: 0 0 8px rgba(200,168,76,0.3); }
+.tk-stage-sweep-btn:hover { background: rgba(200,168,76,0.3); border-color: var(--tk-gold); box-shadow: none; }
 
 /* 底部进度 */
 .tk-campaign-progress { flex-shrink: 0; padding: 10px 0 4px; border-top: 1px solid rgba(200,168,76,0.12); }
@@ -121,10 +119,55 @@
 .tk-campaign-progress-bar { width: 100%; height: 6px; background: rgba(200,168,76,0.1); border-radius: 3px; overflow: hidden; }
 .tk-campaign-progress-fill { height: 100%; background: linear-gradient(90deg, var(--tk-green), var(--tk-gold)); border-radius: 3px; transition: width 0.4s var(--tk-ease-out); }
 
-/* 动画 */
-@keyframes tk-pulse-available {
-  0%, 100% { box-shadow: 0 0 12px rgba(200,168,76,0.4), inset 0 0 8px rgba(200,168,76,0.1); }
-  50% { box-shadow: 0 0 20px rgba(200,168,76,0.6), inset 0 0 12px rgba(200,168,76,0.2); }
+/* ═══════════════════════════════════════════
+   底部功能入口按钮
+   ═══════════════════════════════════════════ */
+.tk-campaign-bottom-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 8px;
+  flex-shrink: 0;
+}
+
+.tk-campaign-action-btn {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  letter-spacing: 1px;
+  text-align: center;
+  border: 1px solid transparent;
+}
+
+.tk-campaign-action-btn--challenge {
+  color: var(--tk-gold-light, #e8c96a);
+  background: rgba(200,168,76,0.1);
+  border-color: rgba(200,168,76,0.25);
+}
+
+.tk-campaign-action-btn--challenge:hover {
+  background: rgba(200,168,76,0.2);
+  border-color: rgba(200,168,76,0.4);
+}
+
+.tk-campaign-action-btn--offline {
+  color: var(--tk-text-secondary, #b0a898);
+  background: rgba(100,120,180,0.08);
+  border-color: rgba(100,120,180,0.2);
+}
+
+.tk-campaign-action-btn--offline:hover {
+  background: rgba(100,120,180,0.15);
+  border-color: rgba(100,120,180,0.35);
+}
+
+.tk-campaign-action-btn:active {
+  transform: scale(0.97);
+  transition: transform 0.1s;
 }
 
 /* 平板适配（481px~768px） */

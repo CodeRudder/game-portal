@@ -27,6 +27,7 @@ describe('对抗式测试: 状态转换', () => {
     pointSys = new TechPointSystem();
     researchSys = new TechResearchSystem(
       treeSys, pointSys, () => 20, () => 100, () => true,
+      () => 100000, () => true,
     );
     const deps = createRealDeps();
     treeSys.init(deps);
@@ -37,8 +38,11 @@ describe('对抗式测试: 状态转换', () => {
   afterEach(() => vi.restoreAllMocks());
 
   function grantPoints(amount: number) {
+    // Sprint 3: startResearch now costs costPoints × RESEARCH_START_TECH_POINT_MULTIPLIER (10)
+    // amount is the nominal costPoints, so we need amount × 10 actual tech points
+    const actualNeeded = amount * 10;
     pointSys.syncAcademyLevel(20);
-    pointSys.update(Math.ceil(amount / 1.76) + 10);
+    pointSys.update(Math.ceil(actualNeeded / 1.76) + 10);
   }
 
   function advanceTime(ms: number) {
@@ -284,6 +288,7 @@ describe('对抗式测试: 状态转换', () => {
       // 使用大队列
       const bigSys = new TechResearchSystem(
         treeSys, pointSys, () => 20, () => 100, () => true,
+        () => 100000, () => true,
       );
       bigSys.init(createRealDeps());
 
@@ -309,6 +314,7 @@ describe('对抗式测试: 状态转换', () => {
     it('书院Lv1 队列大小=1', () => {
       const sys = new TechResearchSystem(
         treeSys, pointSys, () => 1, () => 100, () => true,
+        () => 100000, () => true,
       );
       sys.init(createRealDeps());
       expect(sys.getMaxQueueSize()).toBe(1);
@@ -317,6 +323,7 @@ describe('对抗式测试: 状态转换', () => {
     it('书院Lv5 队列大小=2', () => {
       const sys = new TechResearchSystem(
         treeSys, pointSys, () => 5, () => 100, () => true,
+        () => 100000, () => true,
       );
       sys.init(createRealDeps());
       expect(sys.getMaxQueueSize()).toBe(2);
@@ -325,6 +332,7 @@ describe('对抗式测试: 状态转换', () => {
     it('书院Lv10 队列大小=3', () => {
       const sys = new TechResearchSystem(
         treeSys, pointSys, () => 10, () => 100, () => true,
+        () => 100000, () => true,
       );
       sys.init(createRealDeps());
       expect(sys.getMaxQueueSize()).toBe(3);
@@ -333,6 +341,7 @@ describe('对抗式测试: 状态转换', () => {
     it('书院Lv15 队列大小=4', () => {
       const sys = new TechResearchSystem(
         treeSys, pointSys, () => 15, () => 100, () => true,
+        () => 100000, () => true,
       );
       sys.init(createRealDeps());
       expect(sys.getMaxQueueSize()).toBe(4);
@@ -341,6 +350,7 @@ describe('对抗式测试: 状态转换', () => {
     it('书院Lv20 队列大小=5', () => {
       const sys = new TechResearchSystem(
         treeSys, pointSys, () => 20, () => 100, () => true,
+        () => 100000, () => true,
       );
       sys.init(createRealDeps());
       expect(sys.getMaxQueueSize()).toBe(5);
@@ -350,6 +360,7 @@ describe('对抗式测试: 状态转换', () => {
       grantPoints(5000);
       const sys = new TechResearchSystem(
         treeSys, pointSys, () => 1, () => 100, () => true,
+        () => 100000, () => true,
       );
       sys.init(createRealDeps());
       sys.startResearch('mil_t1_attack');
@@ -362,6 +373,7 @@ describe('对抗式测试: 状态转换', () => {
       grantPoints(5000);
       const sys = new TechResearchSystem(
         treeSys, pointSys, () => 1, () => 100, () => true,
+        () => 100000, () => true,
       );
       sys.init(createRealDeps());
       sys.startResearch('mil_t1_attack');

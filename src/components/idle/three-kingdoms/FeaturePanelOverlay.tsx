@@ -25,13 +25,14 @@ import NPCTab from '@/components/idle/panels/npc/NPCTab';
 import ExpeditionTab from '@/components/idle/panels/expedition/ExpeditionTab';
 import ArmyTab from '@/components/idle/panels/army/ArmyTab';
 import type { NPCData } from '@/games/three-kingdoms/core/npc';
+import { isNPCSubsystem } from '@/components/idle/shared/engine-type-guards';
 import { Toast } from '@/components/idle/common/Toast';
 
 /** NPCTab包装器 — 适配FeaturePanelOverlay的engine/snapshotVersion/visible/onClose接口 */
 const NPCPanelWrapper: React.FC<any> = ({ engine, visible, onClose }) => {
   const npcData: NPCData[] = React.useMemo(() => {
     const npcSys = engine?.getSubsystemRegistry?.()?.get?.('npc');
-    if (npcSys && typeof npcSys.getAllNPCs === 'function') {
+    if (isNPCSubsystem(npcSys)) {
       return npcSys.getAllNPCs();
     }
     return [];

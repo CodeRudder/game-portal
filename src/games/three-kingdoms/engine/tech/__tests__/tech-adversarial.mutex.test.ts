@@ -27,6 +27,7 @@ describe('对抗式测试: 互斥分支', () => {
     pointSys = new TechPointSystem();
     researchSys = new TechResearchSystem(
       treeSys, pointSys, () => 20, () => 100, () => true,
+      () => 100000, () => true,
     );
     const deps = createRealDeps();
     treeSys.init(deps);
@@ -37,8 +38,9 @@ describe('对抗式测试: 互斥分支', () => {
   afterEach(() => vi.restoreAllMocks());
 
   function grantPoints(amount: number) {
+    const actualNeeded = amount * 10;
     pointSys.syncAcademyLevel(20);
-    pointSys.update(Math.ceil(amount / 1.76) + 10);
+    pointSys.update(Math.ceil(actualNeeded / 1.76) + 10);
   }
 
   function advanceTime(ms: number) {

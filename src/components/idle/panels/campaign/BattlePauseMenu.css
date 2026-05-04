@@ -1,0 +1,206 @@
+/**
+ * BattlePauseMenu — 战斗暂停菜单样式
+ *
+ * 三国古风视觉风格：深色底、铜金边框、无neon/glow
+ * 半透明遮罩 + 居中菜单面板
+ */
+
+/* ═══════════════════════════════════════════
+   暂停按钮（右上角）
+   ═══════════════════════════════════════════ */
+
+.tk-pause-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 40;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(200, 168, 76, 0.25);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--tk-gold-light, #d4a853);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, border-color 0.2s;
+  padding: 0;
+  line-height: 1;
+}
+
+.tk-pause-btn:hover {
+  background: rgba(200, 168, 76, 0.15);
+  border-color: rgba(200, 168, 76, 0.5);
+}
+
+.tk-pause-btn:active {
+  transform: scale(0.95);
+  transition: transform 0.1s;
+}
+
+/* ═══════════════════════════════════════════
+   暂停遮罩
+   ═══════════════════════════════════════════ */
+
+.tk-pause-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: tk-pause-fade-in 0.25s ease-out;
+}
+
+@keyframes tk-pause-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════
+   暂停菜单面板
+   ═══════════════════════════════════════════ */
+
+.tk-pause-panel {
+  width: 280px;
+  background: linear-gradient(180deg, #1a1f28 0%, #141820 100%);
+  border: 1px solid rgba(200, 168, 76, 0.25);
+  border-radius: 10px;
+  padding: 28px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  animation: tk-pause-panel-in 0.3s ease-out;
+}
+
+@keyframes tk-pause-panel-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   标题
+   ═══════════════════════════════════════════ */
+
+.tk-pause-title {
+  font-size: 22px;
+  font-weight: 700;
+  font-family: var(--tk-font-title, serif);
+  color: var(--tk-gold, #c8a84c);
+  letter-spacing: 8px;
+  text-align: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(200, 168, 76, 0.15);
+  width: 100%;
+}
+
+/* ═══════════════════════════════════════════
+   选项列表
+   ═══════════════════════════════════════════ */
+
+.tk-pause-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.tk-pause-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border: 1px solid rgba(200, 168, 76, 0.15);
+  border-radius: 6px;
+  background: rgba(26, 35, 50, 0.5);
+  color: var(--tk-text-primary, #e0d8c8);
+  font-size: 14px;
+  font-family: var(--tk-font-title, serif);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  letter-spacing: 1px;
+}
+
+.tk-pause-option:hover {
+  background: rgba(200, 168, 76, 0.1);
+  border-color: rgba(200, 168, 76, 0.35);
+}
+
+.tk-pause-option:active {
+  transform: scale(0.98);
+  transition: transform 0.1s;
+}
+
+.tk-pause-option--danger {
+  border-color: rgba(180, 60, 60, 0.25);
+}
+
+.tk-pause-option--danger:hover {
+  background: rgba(180, 60, 60, 0.1);
+  border-color: rgba(180, 60, 60, 0.45);
+  color: #e88;
+}
+
+.tk-pause-option-icon {
+  font-size: 16px;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.tk-pause-option-text {
+  flex: 1;
+  text-align: left;
+}
+
+/* ═══════════════════════════════════════════
+   底部提示
+   ═══════════════════════════════════════════ */
+
+.tk-pause-hint {
+  font-size: 11px;
+  color: var(--tk-text-muted, #666);
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+
+/* ═══════════════════════════════════════════
+   移动端适配
+   ═══════════════════════════════════════════ */
+
+@media (max-width: 767px) {
+  .tk-pause-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+    top: 6px;
+    right: 6px;
+  }
+
+  .tk-pause-panel {
+    width: 240px;
+    padding: 20px 16px 16px;
+    gap: 14px;
+  }
+
+  .tk-pause-title {
+    font-size: 18px;
+    letter-spacing: 6px;
+  }
+
+  .tk-pause-option {
+    padding: 8px 12px;
+    font-size: 13px;
+    gap: 10px;
+  }
+}

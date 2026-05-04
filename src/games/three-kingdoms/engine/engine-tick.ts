@@ -58,6 +58,8 @@ export interface TickContext {
   readonly offlineEvent?: OfflineEventSystem;
   /** 攻城系统（P1-4: 每日攻城次数自动重置） */
   readonly siege?: SiegeSystem;
+  /** 武将派驻加成回调（XI-007: 返回所有建筑的武将加成总和百分比） */
+  readonly heroBonusCallback?: () => number;
   readonly bus: EventBus;
   /** 变化检测用的缓存 JSON */
   prevResourcesJson: string;
@@ -114,10 +116,13 @@ export function executeTick(ctx: TickContext, dtSec: number): void {
 
   const techBonus = ctx.techTree.getTechBonusMultiplier();
 
+  // XI-007: 武将派驻→建筑产出加成注入
+  const heroBonus = ctx.heroBonusCallback?.() ?? 0;
+
   const bonuses: Bonuses = {
     castle: castleMultiplier - 1, // v5.0 主城加成
     tech:   techBonus,            // v5.1 科技加成
-    hero:   0,                    // v5.2 武将加成（预留）
+    hero:   heroBonus,            // v5.2 武将加成（Sprint 7: 从HeroDispatchSystem注入）
     rebirth: 0,                   // v5.3 转生加成（预留）
     vip:    0,                    // v5.4 VIP加成（预留）
   };
@@ -159,6 +164,8 @@ export function syncBuildingToResource(ctx: TickContext): void {
   ctx.resource.updateCaps(
     levels['farmland'] ?? 0,
     levels['barracks'] ?? 0,
+    levels['mine'] ?? 0,
+    levels['lumberMill'] ?? 0,
   );
 }
 

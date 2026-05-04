@@ -259,7 +259,6 @@
 .tk-tech-node--researching {
   border-color: #3498db;
   background: rgba(52, 152, 219, 0.10);
-  animation: tk-tech-pulse 2s ease-in-out infinite;
 }
 
 .tk-tech-node--available {
@@ -294,12 +293,6 @@
   );
   border-radius: 6px;
   pointer-events: none;
-}
-
-/* 脉冲动画（研究中） */
-@keyframes tk-tech-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.3); }
-  50% { box-shadow: 0 0 12px 4px rgba(52, 152, 219, 0.15); }
 }
 
 /* 节点图标 */
@@ -394,12 +387,6 @@
   margin-top: 2px;
   font-weight: 600;
   white-space: nowrap;
-  animation: tk-tech-recommend-glow 2s ease-in-out infinite;
-}
-
-@keyframes tk-tech-recommend-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
-  50% { box-shadow: 0 0 6px 2px rgba(251, 191, 36, 0.2); }
 }
 
 /* P1-1: 书院未解锁提示区域 */

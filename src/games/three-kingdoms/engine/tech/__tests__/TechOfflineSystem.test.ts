@@ -31,7 +31,12 @@ function mockDeps(): ISystemDeps {
 function createTestEnv() {
   const treeSys = new TechTreeSystem();
   const pointSys = new TechPointSystem();
-  const researchSys = new TechResearchSystem(treeSys, pointSys, () => 3, () => 100, () => true);
+  let goldAmount = 1000000;
+  const researchSys = new TechResearchSystem(
+    treeSys, pointSys, () => 3,
+    () => 100, () => true,
+    () => goldAmount, (a: number) => { if (goldAmount >= a) { goldAmount -= a; return true; } return false; },
+  );
   const offlineSys = new TechOfflineSystem(treeSys, researchSys);
   const deps = mockDeps();
   treeSys.init(deps); pointSys.init(deps); researchSys.init(deps); offlineSys.init(deps);
@@ -39,8 +44,11 @@ function createTestEnv() {
 }
 
 function grantPoints(pointSys: TechPointSystem, amount: number): void {
+  // Sprint 3: 研究消耗 = costPoints × RESEARCH_START_TECH_POINT_MULTIPLIER
+  const RESEARCH_START_TECH_POINT_MULTIPLIER = 10;
+  const needed = amount * RESEARCH_START_TECH_POINT_MULTIPLIER;
   pointSys.syncAcademyLevel(20);
-  pointSys.update(Math.ceil(amount / 1.76) + 10);
+  pointSys.update(Math.ceil(needed / 1.76) + 10);
 }
 
 const H = (h: number) => h * 3600;
@@ -192,13 +200,16 @@ describe('TechOfflineSystem', () => {
   describe('离线进度计算', () => {
     it('正确计算单科技进度增量', () => {
       grantPoints(env.pointSys, 100);
-      env.researchSys.startResearch('mil_t1_attack'); // 120s
+      env.researchSys.startResearch('mil_t1_attack'); // 120s nominal
+      // academyLevel=3 → academySpeedMultiplier=1.3 → actualTime=120/1.3≈92.3s
+      const queue = env.researchSys.getQueue();
+      const actualDuration = (queue[0]!.endTime - queue[0]!.startTime) / 1000;
       env.offlineSys.onGoOffline(baseTime);
       const result = env.offlineSys.onComeBackOnline(baseTime + 60 * 1000);
       const progress = result!.techProgressList[0];
-      expect(progress.progressDelta).toBeCloseTo(60 / 120, 3);
+      expect(progress.progressDelta).toBeCloseTo(60 / actualDuration, 3);
       expect(progress.completed).toBe(false);
-      expect(progress.remainingSeconds).toBeCloseTo(60, 1);
+      expect(progress.remainingSeconds).toBeCloseTo(actualDuration - 60, 1);
     });
 
     it('离线时间足够长时科技完成', () => {
@@ -249,10 +260,13 @@ describe('TechOfflineSystem', () => {
     it('progressBefore 基于离线开始时间计算', () => {
       grantPoints(env.pointSys, 100);
       env.researchSys.startResearch('mil_t1_attack');
+      // academyLevel=3 → academySpeedMultiplier=1.3 → actualTime=120/1.3≈92.3s
+      const queue = env.researchSys.getQueue();
+      const actualDuration = (queue[0]!.endTime - queue[0]!.startTime) / 1000;
       const offlineStart = baseTime + 30 * 1000;
       env.offlineSys.onGoOffline(offlineStart);
       const result = env.offlineSys.onComeBackOnline(offlineStart + 60 * 1000);
-      expect(result!.techProgressList[0].progressBefore).toBeCloseTo(0.25, 3);
+      expect(result!.techProgressList[0].progressBefore).toBeCloseTo(30 / actualDuration, 3);
     });
   });
 

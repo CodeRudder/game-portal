@@ -62,8 +62,8 @@ describe('BuildingSystem — C19 升级路线推荐', () => {
   it('锁定建筑不出现在推荐中', () => {
     const rec = sys.getUpgradeRouteRecommendation(RICH);
     const types = rec.map((r) => r.type);
-    // market 初始锁定（需要主城Lv2）
-    expect(types).not.toContain('market');
+    // barracks 初始锁定（需要主城Lv2），wall 初始锁定（需要主城Lv5）
+    expect(types).not.toContain('barracks');
     expect(types).not.toContain('wall');
   });
 
@@ -90,8 +90,8 @@ describe('BuildingSystem — C19 升级路线推荐', () => {
     sys.deserialize(makeSave({ castle: { level: 3 } }));
     const rec = sys.getUpgradeRouteRecommendation(RICH);
     const types = rec.map((r) => r.type);
-    expect(types).toContain('market');
-    expect(types).toContain('barracks');
+    expect(types).toContain('workshop');
+    expect(types).toContain('academy');
   });
 });
 
@@ -165,11 +165,11 @@ describe('BuildingSystem — B13 批量升级', () => {
   });
 
   it('跳过不可升级的建筑并记录失败原因', () => {
-    const result = sys.batchUpgrade(['market', 'castle'], RICH);
+    const result = sys.batchUpgrade(['barracks', 'castle'], RICH);
     expect(result.succeeded).toHaveLength(1);
     expect(result.succeeded[0].type).toBe('castle');
     expect(result.failed).toHaveLength(1);
-    expect(result.failed[0].type).toBe('market');
+    expect(result.failed[0].type).toBe('barracks');
     expect(result.failed[0].reason).toBeTruthy();
   });
 

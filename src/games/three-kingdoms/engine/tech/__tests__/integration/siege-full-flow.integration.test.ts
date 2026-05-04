@@ -207,11 +207,12 @@ describe('§4.2 城防计算与胜率预估', () => {
     expect(sys.enhancer.estimateWinRate(5000, 'nonexistent')).toBeNull();
   });
 
-  it('attackerPower=0时winRate=0', () => {
+  it('attackerPower=0时winRate=WIN_RATE_MIN', () => {
     const target = findAttackableTarget(sys);
     if (!target) return;
     const est = sys.enhancer.estimateWinRate(0, target)!;
-    expect(est.winRate).toBe(0);
+    // 系统设定最低胜率 WIN_RATE_MIN=0.05，attackerPower=0 时返回最低胜率
+    expect(est.winRate).toBe(0.05);
   });
 
   it('calculateDefenderPower基于defenseValue', () => {
