@@ -656,9 +656,10 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
                 if (returnMarch) {
                   marchingSys.startMarch(returnMarch.id);
                 } else {
-                  // 回城路线不可达时直接完成任务
+                  // 回城路线不可达时直接完成任务并通知用户
                   siegeTaskManager.advanceStatus(currentTask.id, 'completed');
                   siegeTaskManager.removeCompletedTasks();
+                  setMarchNotification('回城路线不可达，部队就地驻扎');
                 }
                 // PRD: 攻城结束后移除去程行军精灵（精灵在攻城期间保持存活）
                 marchingSys.removeMarch(marchId);

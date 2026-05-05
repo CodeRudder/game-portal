@@ -614,7 +614,7 @@ describe('E1-3 行军→攻占完整链路 E2E', () => {
 
       // 启动回城行军
       marchingSystem.startMarch(result!.id);
-      expect(result!.state).toBe('marching');
+      expect(result!.state).toBe('retreating');
       expect(result!.speed).toBeCloseTo(24); // 80% of 30
 
       // 推进到到达 (100px / 24px/s ≈ 4.17s)

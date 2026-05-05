@@ -419,7 +419,7 @@ describe('March-to-Siege Chain E2E Integration', () => {
       expect(returnMarch!.toCityId).toBe('city-xuchang');
       expect(returnMarch!.troops).toBe(4250);
       expect(returnMarch!.siegeTaskId).toBe(task.id);
-      expect(returnMarch!.state).toBe('preparing');
+      expect(returnMarch!.state).toBe('retreating');
 
       // 6. 启动并模拟回城行军到达
       const marchArrivedEvents = collectEvents<any>(eventBus, 'march:arrived');

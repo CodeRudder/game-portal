@@ -274,6 +274,7 @@ export class SiegeTaskManager {
     this.deps?.eventBus.emit(SIEGE_TASK_EVENTS.CANCELLED, {
       taskId,
       targetId: task.targetId,
+      cancelReason: 'escape_hatch',
     });
 
     this.releaseSiegeLock(task.targetId);
@@ -432,7 +433,7 @@ export class SiegeTaskManager {
         task.returnCompletedAt = Date.now();
         this.releaseSiegeLock(task.targetId);
         this.deps?.eventBus.emit(SIEGE_TASK_EVENTS.COMPLETED, { task });
-        this.deps?.eventBus.emit(SIEGE_TASK_EVENTS.CANCELLED, { taskId, targetId: task.targetId });
+        this.deps?.eventBus.emit(SIEGE_TASK_EVENTS.CANCELLED, { taskId, targetId: task.targetId, cancelReason: 'return_unreachable' });
         return true;
       }
     }
@@ -447,6 +448,7 @@ export class SiegeTaskManager {
     this.deps?.eventBus.emit(SIEGE_TASK_EVENTS.CANCELLED, {
       taskId,
       targetId: task.targetId,
+      cancelReason: 'user_cancel',
     });
 
     // #4 修复: cancelSiege时立即释放攻占锁，允许其他任务锁定该目标

@@ -190,7 +190,7 @@ export class MarchingSystem implements ISubsystem {
     const now = Date.now();
 
     for (const [id, march] of this.activeMarches) {
-      if (march.state !== 'marching') continue;
+      if (march.state !== 'marching' && march.state !== 'retreating') continue;
 
       // 更新位置
       this.updateMarchPosition(march, dt);
@@ -243,8 +243,8 @@ export class MarchingSystem implements ISubsystem {
     const id = `march_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     const distance = this.calculatePathDistance(path);
     const speed = BASE_SPEED;
-    const rawEstimatedTime = (distance / speed) * 1000; // convert to ms
-    const estimatedTime = Math.max(MIN_MARCH_DURATION_MS, Math.min(MAX_MARCH_DURATION_MS, rawEstimatedTime)) / 1000; // back to seconds
+    const rawEstimatedTimeMs = (distance / speed) * 1000;
+    const estimatedTime = Math.max(MIN_MARCH_DURATION_MS, Math.min(MAX_MARCH_DURATION_MS, rawEstimatedTimeMs)) / 1000;
 
     const march: MarchUnit = {
       id,
@@ -284,8 +284,8 @@ export class MarchingSystem implements ISubsystem {
    */
   startMarch(marchId: string): void {
     const march = this.activeMarches.get(marchId);
-    if (march && march.state === 'preparing') {
-      march.state = 'marching';
+    if (march && (march.state === 'preparing' || march.state === 'retreating')) {
+      if (march.state === 'preparing') march.state = 'marching';
       march.startTime = Date.now();
 
       this.deps.eventBus.emit<MarchStartedPayload>('march:started', {
@@ -368,7 +368,8 @@ export class MarchingSystem implements ISubsystem {
     );
     march.siegeTaskId = params.siegeTaskId;
 
-    // 速度 x 0.8 (回城行军)
+    // 回城行军：状态标记为retreating，速度x0.8
+    march.state = 'retreating';
     march.speed = BASE_SPEED * 0.8;
 
     return march;

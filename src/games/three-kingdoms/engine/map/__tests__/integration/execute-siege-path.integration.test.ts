@@ -855,7 +855,7 @@ describe('executeSiege Path A Integration', () => {
       expect(returnMarch!.general).toBe('曹操');
       expect(returnMarch!.faction).toBe('wei');
       expect(returnMarch!.siegeTaskId).toBe(task.id);
-      expect(returnMarch!.state).toBe('preparing');
+      expect(returnMarch!.state).toBe('retreating');
 
       vi.restoreAllMocks();
     });
