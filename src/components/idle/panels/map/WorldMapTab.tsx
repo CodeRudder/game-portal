@@ -1146,8 +1146,15 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
       return;
     }
 
-    // 3. 创建攻占任务（状态: preparing）
+    // 3. 并发限制检查（最多同时3个攻城任务）
     const siegeTaskManager = siegeTaskManagerRef.current;
+    const activeCount = siegeTaskManager.getActiveTasks().length;
+    if (activeCount >= 3) {
+      setMarchNotification('攻城任务已达上限(3个)，请等待当前任务完成');
+      return;
+    }
+
+    // 4. 创建攻占任务（状态: preparing）
     const deployTroops = selectedTroops > 0 ? selectedTroops : availableTroops;
     const currentGrain = engine.getResourceAmount?.('grain') ?? availableGrain;
 
@@ -1155,6 +1162,17 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
     const siegeSystem = engine.getSiegeSystem?.() ?? engine?.siege;
     const costEstimate = siegeSystem?.calculateSiegeCost?.(siegeTarget.id) ??
       siegeSystem?.getSiegeCostById?.(siegeTarget.id) ?? { troops: deployTroops, grain: 100 };
+
+    // 资源预校验
+    const availableTroopsForResource = engine.getResourceAmount?.('troops') ?? Infinity;
+    if (deployTroops > availableTroopsForResource) {
+      setMarchNotification('兵力不足，无法发起攻城');
+      return;
+    }
+    if (currentGrain < costEstimate.grain) {
+      setMarchNotification('粮草不足，无法发起攻城');
+      return;
+    }
 
     const task = siegeTaskManager.createTask({
       targetId: siegeTarget.id,
