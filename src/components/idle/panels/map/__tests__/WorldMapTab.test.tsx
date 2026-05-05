@@ -129,7 +129,7 @@ vi.mock('@/games/three-kingdoms/engine/map/PathfindingSystem', () => ({
   buildWalkabilityGrid: () => Array.from({ length: 60 }, () => Array(100).fill(true)),
 }));
 
-const mockCreateMarch = vi.fn().mockReturnValue({
+const mockCreateMarch = vi.fn().mockImplementation((...args: any[]) => ({
   id: 'march_test',
   fromCityId: '',
   toCityId: '',
@@ -146,7 +146,8 @@ const mockCreateMarch = vi.fn().mockReturnValue({
   startTime: Date.now(),
   eta: Date.now() + 10000,
   animFrame: 0,
-});
+  siegeTaskId: args[6] ?? undefined,
+}));
 const mockStartMarch = vi.fn();
 const mockCalculateMarchRoute = vi.fn().mockReturnValue({
   path: [{ x: 0, y: 0 }, { x: 1, y: 0 }],
@@ -255,7 +256,7 @@ describe('WorldMapTab', () => {
       estimatedTime: 1,
       waypointCities: [],
     });
-    mockCreateMarch.mockReturnValue({
+    mockCreateMarch.mockImplementation((...args: any[]) => ({
       id: 'march_test',
       fromCityId: '',
       toCityId: '',
@@ -272,7 +273,8 @@ describe('WorldMapTab', () => {
       startTime: Date.now(),
       eta: Date.now() + 10000,
       animFrame: 0,
-    });
+      siegeTaskId: args[6] ?? undefined,
+    }));
     mockGetActiveMarches.mockReturnValue([]);
     mockConquestCreate.mockReturnValue({
       id: 'conquest_test',

@@ -239,6 +239,7 @@ export class MarchingSystem implements ISubsystem {
     general: string,
     faction: MarchUnit['faction'],
     path: Array<{ x: number; y: number }>,
+    siegeTaskId?: string,
   ): MarchUnit {
     const id = `march_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     const distance = this.calculatePathDistance(path);
@@ -263,6 +264,7 @@ export class MarchingSystem implements ISubsystem {
       startTime: Date.now(),
       eta: Date.now() + estimatedTime * 1000,
       animFrame: 0,
+      siegeTaskId,
     };
 
     this.activeMarches.set(id, march);

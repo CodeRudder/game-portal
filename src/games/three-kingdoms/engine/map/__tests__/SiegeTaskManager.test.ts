@@ -663,5 +663,42 @@ describe('SiegeTaskManager', () => {
       );
       expect(manager.isSiegeLocked('city-xuchang')).toBe(false);
     });
+
+    it('CANCELLED事件应包含cancelReason字段', () => {
+      const events: Array<{ event: string; data: any }> = [];
+      const mgr = new SiegeTaskManager();
+      mgr.setDependencies({
+        eventBus: { emit: (e: string, d: any) => events.push({ event: e, data: d }), on: () => {}, off: () => {} } as any,
+      } as any);
+
+      // user_cancel: cancelSiege from sieging with no marching system
+      const task1 = mgr.createTask({
+        targetId: 'city-a', targetName: 'A', sourceId: 'city-b', sourceName: 'B',
+        strategy: null, expedition: { forceId: 'f', heroId: 'h', heroName: 'Guan', troops: 1000 },
+        cost: { troops: 500, grain: 100 }, marchPath: [{ x: 0, y: 0 }], faction: 'shu',
+      });
+      mgr.advanceStatus(task1!.id, 'marching');
+      mgr.advanceStatus(task1!.id, 'sieging');
+      events.length = 0;
+      mgr.cancelSiege(task1!.id, null);
+      const evt1 = events.find(e => e.event === 'siegeTask:cancelled');
+      expect(evt1).toBeDefined();
+      expect(evt1!.data.cancelReason).toBe('user_cancel');
+
+      // return_unreachable: cancelSiege with null createReturnMarch
+      const task2 = mgr.createTask({
+        targetId: 'city-c', targetName: 'C', sourceId: 'city-d', sourceName: 'D',
+        strategy: null, expedition: { forceId: 'f', heroId: 'h', heroName: 'Zhang', troops: 2000 },
+        cost: { troops: 1000, grain: 200 }, marchPath: [{ x: 1, y: 1 }], faction: 'shu',
+      });
+      mgr.advanceStatus(task2!.id, 'marching');
+      mgr.advanceStatus(task2!.id, 'sieging');
+      mgr.advanceStatus(task2!.id, 'settling');
+      events.length = 0;
+      mgr.cancelSiege(task2!.id, { createReturnMarch: () => null } as any);
+      const evt2 = events.find(e => e.event === 'siegeTask:cancelled');
+      expect(evt2).toBeDefined();
+      expect(evt2!.data.cancelReason).toBe('return_unreachable');
+    });
   });
 });

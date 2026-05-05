@@ -339,6 +339,7 @@ describe('SiegeTaskManager siege interrupt handling (I4)', () => {
       expect((cancelledEvent as any).data).toMatchObject({
         taskId: task!.id,
         targetId: 'city-xuchang',
+        cancelReason: 'user_cancel',
       });
     });
 

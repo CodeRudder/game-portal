@@ -59,7 +59,7 @@ import {
 import type { UIInjuryLevel } from '@/games/three-kingdoms/engine/map/expedition-types';
 import type { SiegeStrategyType } from '@/games/three-kingdoms/core/map/siege-enhancer.types';
 import type { IEventBus } from '@/games/three-kingdoms/core/types/events';
-import { SiegeTaskManager } from '@/games/three-kingdoms/engine/map/SiegeTaskManager';
+import { SiegeTaskManager, MAX_CONCURRENT_SIEGES } from '@/games/three-kingdoms/engine/map/SiegeTaskManager';
 import type { SiegeTask } from '@/games/three-kingdoms/core/map/siege-task.types';
 import { type SiegeItemType } from '@/games/three-kingdoms/engine/map/SiegeItemSystem';
 import { formatNumber } from '@/components/idle/utils/formatNumber';
@@ -235,9 +235,9 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
   territoriesRef.current = territories;
   const engineRef = useRef(engine);
   engineRef.current = engine;
-  // ── 攻城动画→结果弹窗时序控制 ──
   const pendingSiegeResultRef = useRef<any>(null);
   const siegeAnimTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
 
   // ── 攻城动画系统 ──
   const conquestAnimSystem = useMemo(() => new ConquestAnimationSystem(), []);
@@ -408,6 +408,7 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
 
   // ── 行军系统初始化 ──
   useEffect(() => {
+    mountedRef.current = true;
     const marchingSystem = new MarchingSystem();
     // 创建一个最小化的 ISystemDeps 以满足 MarchingSystem.init 要求
     // 使用功能性的 eventBus 以支持 march:arrived 事件监听
@@ -511,6 +512,7 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
         // 将攻城执行延迟到下一个宏任务，避免在 rAF 回调中同步执行重计算阻塞渲染
         const taskId = associatedTask.id;
         setTimeout(() => {
+          if (!mountedRef.current) return;
           // 防重复处理守卫：再次检查任务状态是否仍有效
           const currentTask = siegeTaskManager.getTask(taskId);
           if (!currentTask || currentTask.result || currentTask.status !== 'marching') return;
@@ -705,6 +707,7 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
 
               // Safety fallback: show modal after 5s even if animation event never fires
               siegeAnimTimeoutRef.current = setTimeout(() => {
+                if (!mountedRef.current) return;
                 eventBus.off('siegeAnim:completed', animHandler);
                 siegeAnimTimeoutRef.current = null;
                 setSiegeResultVisible(true);
@@ -756,12 +759,14 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
       // 攻城行军的精灵在攻城完成/取消时移除（见下方 removeMarch 调用）
       if (!associatedTask || !!associatedTask.result) {
         setTimeout(() => {
+          if (!mountedRef.current) return;
           marchingSystem.removeMarch(marchId);
           setActiveMarches(marchingSystem.getActiveMarches());
         }, 3000);
       }
       // 通知始终3秒后清除
       setTimeout(() => {
+        if (!mountedRef.current) return;
         setMarchNotification(null);
       }, 3000);
     };
@@ -843,6 +848,7 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
     marchAnimRef.current = requestAnimationFrame(animate);
 
     return () => {
+      mountedRef.current = false;
       cancelAnimationFrame(marchAnimRef.current);
       // Cleanup pending siege animation listeners
       if (siegeAnimTimeoutRef.current) {
@@ -1146,11 +1152,11 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
       return;
     }
 
-    // 3. 并发限制检查（最多同时3个攻城任务）
+    // 3. 并发限制检查
     const siegeTaskManager = siegeTaskManagerRef.current;
     const activeCount = siegeTaskManager.getActiveTasks().length;
-    if (activeCount >= 3) {
-      setMarchNotification('攻城任务已达上限(3个)，请等待当前任务完成');
+    if (activeCount >= MAX_CONCURRENT_SIEGES) {
+      setMarchNotification(`攻城任务已达上限(${MAX_CONCURRENT_SIEGES}个)，请等待当前任务完成`);
       return;
     }
 
@@ -1206,27 +1212,33 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
       return;
     }
 
-    // 4. 创建行军单位并开始行军
-    const pathWithPixels = route.path.map((p) => ({ x: p.x, y: p.y }));
-    const march = marchingSystem.createMarch(
-      sourceTerritory.id,
-      siegeTarget.id,
-      deployTroops,
-      heroes.find((h) => h.id === expeditionSelection?.heroId)?.name ?? '将军',
-      'wei',
-      pathWithPixels,
-    );
+    // 4. 创建行军单位并开始行军（异常时释放攻城锁，防止lock泄漏）
+    let march: ReturnType<typeof marchingSystem.createMarch>;
+    try {
+      const pathWithPixels = route.path.map((p) => ({ x: p.x, y: p.y }));
+      march = marchingSystem.createMarch(
+        sourceTerritory.id,
+        siegeTarget.id,
+        deployTroops,
+        heroes.find((h) => h.id === expeditionSelection?.heroId)?.name ?? '将军',
+        'wei',
+        pathWithPixels,
+        task.id,
+      );
 
-    // 5. 关联任务ID到行军单位（用于到达时匹配）
-    march.siegeTaskId = task.id;
+      marchingSystem.startMarch(march.id);
 
-    marchingSystem.startMarch(march.id);
-
-    // 6. 推进任务状态到 marching
-    siegeTaskManager.advanceStatus(task.id, 'marching');
-    const preview = marchingSystem.generatePreview(route.path);
-    const estimatedDuration = preview.estimatedTime; // 秒（基于实际路径，已 clamp 到 [10,60]）
-    siegeTaskManager.setEstimatedArrival(task.id, Date.now() + estimatedDuration * 1000);
+      // 6. 推进任务状态到 marching
+      siegeTaskManager.advanceStatus(task.id, 'marching');
+      const preview = marchingSystem.generatePreview(route.path);
+      const estimatedDuration = preview.estimatedTime;
+      siegeTaskManager.setEstimatedArrival(task.id, Date.now() + estimatedDuration * 1000);
+    } catch (e) {
+      // createMarch/startMarch失败 → 释放攻城锁 + 清理任务
+      siegeTaskManager.cancelTask(task.id);
+      setMarchNotification('行军创建失败，请重试');
+      return;
+    }
 
     // 7. 更新UI状态
     setActiveSiegeTasks(siegeTaskManager.getActiveTasks());
@@ -1238,7 +1250,7 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
     setSelectedSourceId(null);
 
     // 稍后清除路线预览，让行军精灵接管
-    setTimeout(() => setMarchRoute(null), 2000);
+    setTimeout(() => { if (mountedRef.current) setMarchRoute(null); }, 2000);
   }, [siegeTarget, engine, selectedTroops, availableTroops, availableGrain, expeditionSelection, territories, selectedStrategy, selectedSourceId, heroes]);
 
   // ── 取消攻城弹窗 ──

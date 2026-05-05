@@ -1,6 +1,10 @@
 /**
  * siege-animation-sequencing.test.tsx
  *
+ * 分类: 全Mock UI集成测试（非功能测试）
+ * 所有子系统(MarchingSystem/SiegeBattleSystem/SiegeTaskManager等)均被mock，
+ * 仅验证UI组件的事件响应时序，不验证真实引擎行为。
+ *
  * P0 Bug Fix Test: Verify siege result modal appears AFTER animation completes,
  * not immediately when siege execution finishes.
  *
@@ -405,6 +409,8 @@ vi.mock('@/games/three-kingdoms/engine/map/SiegeTaskManager', () => {
         return new Set(this._claimed);
       }
       _claimed: Set<string> = new Set();
+      setDependencies(_deps: any) {}
+      cancelTask(_taskId: string) { return false; }
     },
   };
 });

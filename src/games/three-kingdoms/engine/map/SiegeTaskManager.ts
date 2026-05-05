@@ -64,6 +64,9 @@ export const SIEGE_TASK_EVENTS = {
 /** Siege lock timeout (ms) - auto-release after 5 minutes */
 const SIEGE_LOCK_TIMEOUT_MS = 5 * 60 * 1000;
 
+/** Maximum concurrent siege tasks per player */
+export const MAX_CONCURRENT_SIEGES = 3;
+
 let nextTaskId = 1;
 
 export class SiegeTaskManager {
