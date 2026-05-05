@@ -1248,6 +1248,10 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
     setSelectedId(null);
     setExpeditionSelection(null);
     setSelectedSourceId(null);
+    setHighlightedTaskId(task.id);
+
+    // 行军出发通知
+    setMarchNotification(`部队出发前往${siegeTarget.name}，预计${Math.round(march.eta > 0 ? (march.eta - Date.now()) / 1000 : 0)}秒到达`);
 
     // 稍后清除路线预览，让行军精灵接管
     setTimeout(() => { if (mountedRef.current) setMarchRoute(null); }, 2000);
