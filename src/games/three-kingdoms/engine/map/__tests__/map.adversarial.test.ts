@@ -601,7 +601,7 @@ describe('M3: SiegeSystem — 对抗式测试', () => {
     expect(stack.territorySys.getTerritoryById('city-xuchang')!.ownership).toBe('player');
   });
 
-  it('F-Normal: 攻城失败应损失30%兵力', () => {
+  it('F-Normal: 攻城失败伤亡由SettlementPipeline统一计算', () => {
     const territory = stack.territorySys.getTerritoryById('city-xuchang')!;
     const cost = stack.siegeSys.calculateSiegeCost(territory);
     const result = stack.siegeSys.executeSiegeWithResult(
@@ -609,7 +609,8 @@ describe('M3: SiegeSystem — 对抗式测试', () => {
     );
     expect(result.launched).toBe(true);
     expect(result.victory).toBe(false);
-    expect(result.defeatTroopLoss).toBe(Math.floor(cost.troops * 0.3));
+    // R27修复：SiegeSystem不再扣兵，defeatTroopLoss=0，由SettlementPipeline统一计算
+    expect(result.defeatTroopLoss).toBe(0);
     // 失败不应占领
     expect(stack.territorySys.getTerritoryById('city-xuchang')!.ownership).toBe('neutral');
   });

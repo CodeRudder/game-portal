@@ -189,9 +189,9 @@ describe('SiegeTaskManager siege lock mechanism', () => {
   // ─────────────────────────────────────────────
   // 5. Deserialize clears all locks
   // ─────────────────────────────────────────────
-  describe('deserialize clears all locks', () => {
-    it('should clear all locks after deserialize (fresh start)', () => {
-      // Create tasks with locks on multiple targets
+  describe('deserialize restores locks for active tasks', () => {
+    it('should restore locks for non-terminal tasks after deserialize', () => {
+      // Create tasks with locks on multiple targets (all in 'preparing' status)
       manager.createTask(createTaskParams({ targetId: 'city-a' }));
       manager.createTask(createTaskParams({ targetId: 'city-b' }));
       manager.createTask(createTaskParams({ targetId: 'city-c' }));
@@ -205,24 +205,34 @@ describe('SiegeTaskManager siege lock mechanism', () => {
       const freshManager = new SiegeTaskManager();
       freshManager.deserialize(data);
 
-      // Deserialize clears siegeLocks — verify locks are empty
-      expect(freshManager.isSiegeLocked('city-a')).toBe(false);
-      expect(freshManager.isSiegeLocked('city-b')).toBe(false);
-      expect(freshManager.isSiegeLocked('city-c')).toBe(false);
+      // Deserialize rebuilds siegeLocks for non-terminal tasks
+      expect(freshManager.isSiegeLocked('city-a')).toBe(true);
+      expect(freshManager.isSiegeLocked('city-b')).toBe(true);
+      expect(freshManager.isSiegeLocked('city-c')).toBe(true);
     });
 
-    it('should allow new task on same target after deserialize (lock cleared)', () => {
-      // Create a task with lock
+    it('should not restore locks for terminal tasks after deserialize', () => {
       const task = manager.createTask(createTaskParams({ targetId: 'city-xuchang' }));
       expect(task).not.toBeNull();
-      expect(manager.isSiegeLocked('city-xuchang')).toBe(true);
+
+      // Advance to completed (terminal)
+      manager.advanceStatus(task!.id, 'marching');
+      manager.advanceStatus(task!.id, 'sieging');
+      manager.advanceStatus(task!.id, 'settling');
+      manager.advanceStatus(task!.id, 'returning');
+      manager.advanceStatus(task!.id, 'completed');
+
+      expect(manager.isSiegeLocked('city-xuchang')).toBe(false);
 
       // Serialize, then deserialize onto a fresh manager
       const data = manager.serialize();
       const freshManager = new SiegeTaskManager();
       freshManager.deserialize(data);
 
-      // After deserialize, lock is cleared — new task on same target should succeed
+      // Lock not restored for completed task
+      expect(freshManager.isSiegeLocked('city-xuchang')).toBe(false);
+
+      // New task on same target should succeed
       const newTask = freshManager.createTask(createTaskParams({ targetId: 'city-xuchang' }));
       expect(newTask).not.toBeNull();
       expect(freshManager.isSiegeLocked('city-xuchang')).toBe(true);

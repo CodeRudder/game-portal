@@ -25,7 +25,7 @@ function createMockDeps(): ISystemDeps {
     get<T>(name: string): T | undefined { return subsystems.get(name) as T; },
     getAll: jest.fn(),
   };
-  return { eventBus, registry, configRegistry: {} as any };
+  return { eventBus, registry, config: {} as any };
 }
 
 function createTestSystems() {
@@ -312,6 +312,53 @@ describe('攻城策略系统 (MAP-F06-02)', () => {
       siege2.init(createMockDeps());
       siege2.deserialize(data);
       expect(siege2.isInsiderExposed('city-xuchang')).toBe(true);
+    });
+  });
+
+  // ── insider策略完整E2E验证 ─────────────────────
+
+  describe('insider策略完整E2E验证', () => {
+    it('insider胜利: 城防完整保留 + clearInsiderExposure + specialEffectTriggered', () => {
+      territory.captureTerritory('city-luoyang', 'player');
+      const target = territory.getTerritoryById('city-xuchang')!;
+      const originalDefense = target.defenseValue;
+
+      const result = siege.executeSiege('city-xuchang', 'player', 100000, 10000, 'insider');
+
+      expect(result.launched).toBe(true);
+      expect(result.victory).toBe(true);
+      expect(result.strategy).toBe('insider');
+      expect(result.specialEffectTriggered).toBe(true);
+      expect(result.rewardMultiplier).toBe(1.5);
+
+      // insider胜利后城防完整保留(不像强攻减50%)
+      const afterTerritory = territory.getTerritoryById('city-xuchang')!;
+      expect(afterTerritory.defenseValue).toBe(originalDefense);
+
+      // insider暴露标记已清除
+      expect(siege.isInsiderExposed('city-xuchang')).toBe(false);
+    });
+
+    it('insider失败: 设置暴露标记 + 领土不变 + 城防不变', () => {
+      territory.captureTerritory('city-luoyang', 'player');
+      const target = territory.getTerritoryById('city-xuchang')!;
+      const originalDefense = target.defenseValue;
+      const originalOwner = target.ownership;
+
+      const result = siege.executeSiegeWithResult('city-xuchang', 'player', 100000, 10000, false, 'insider');
+
+      expect(result.launched).toBe(true);
+      expect(result.victory).toBe(false);
+      expect(result.specialEffectTriggered).toBe(true);
+      expect(result.defeatTroopLoss).toBe(0); // R27修复
+
+      // 领土归属不变
+      const afterTerritory = territory.getTerritoryById('city-xuchang')!;
+      expect(afterTerritory.ownership).toBe(originalOwner);
+      expect(afterTerritory.defenseValue).toBe(originalDefense);
+
+      // insider暴露标记已设置
+      expect(siege.isInsiderExposed('city-xuchang')).toBe(true);
     });
   });
 });

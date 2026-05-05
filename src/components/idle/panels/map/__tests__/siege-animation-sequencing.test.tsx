@@ -142,6 +142,7 @@ vi.mock('@/games/three-kingdoms/engine/map/MarchingSystem', () => ({
     startMarch(...args: any[]) { return mockStartMarch(...args); }
     cancelMarch() {}
     removeMarch() {}
+    generatePreview() { return { path: [], distance: 0, estimatedTime: 10, terrainSummary: [] }; }
     createReturnMarch() { return { id: 'return-march-test', siegeTaskId: '' }; }
     getActiveMarches() { return mockGetActiveMarches(); }
     update() {}

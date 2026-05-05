@@ -1,14 +1,17 @@
 /**
- * 攻城战斗回合制引擎
+ * 攻城战斗即时引擎（动画桥接层）
  *
- * 管理攻城战斗的实时回合制过程（10s~60s），城防值按时间衰减。
- * 每个 BattleSession 代表一次攻城战斗的完整生命周期：
+ * 管理攻城战斗的即时城防衰减过程（10s~60s），驱动攻城动画中的城防血条变化。
+ * 每个 BattleSession 代表一次攻城战斗的动画生命周期：
  *   创建(active) → update中衰减城防 → 完成/取消
  *
+ * 注意：本系统仅负责动画桥接（城防衰减显示），不负责战斗判定。
+ * 战斗结果由 SiegeSystem.executeSiege() 决定。
+ *
  * 核心机制：
- * - attackPower = maxDefense / (estimatedDurationMs / 1000)
- *   确保在预估时间内恰好打完全部城防值
- * - 策略修正影响战斗时长，进而影响城防衰减速度
+ * - attackPower = (troops / BASE_TROOPS) * maxDefense / (estimatedDurationMs / 1000)
+ *   兵力越多攻城越快，确保在合理时间内打完全部城防值
+ * - 策略修正使用 SIEGE_STRATEGY_CONFIGS.timeMultiplier 作为唯一时长源
  * - 胜利条件：城防值 <= 0
  *
  * @module engine/map/SiegeBattleSystem
@@ -17,6 +20,7 @@
 
 import type { ISubsystem, ISystemDeps } from '../../core/types';
 import type { SiegeStrategyType } from '../../core/map/siege-enhancer.types';
+import { SIEGE_STRATEGY_CONFIGS } from '../../core/map/siege-enhancer.types';
 
 // ─────────────────────────────────────────────
 // 类型定义
@@ -82,12 +86,18 @@ const DEFAULT_CONFIG: BattleConfig = {
   baseDefenseValue: 100,
 };
 
-/** 策略时长修正(ms) */
+/** 基准兵力：用于计算兵力倍率，1000兵力=1x速度 */
+export const BASE_TROOPS = 1000;
+
+/**
+ * @deprecated 使用 SIEGE_STRATEGY_CONFIGS[strategy].timeMultiplier 替代
+ * 保留仅供序列化兼容性引用
+ */
 export const STRATEGY_DURATION_MODIFIER: Record<SiegeStrategyType, number> = {
-  forceAttack: -5_000,  // 强攻: 更快 -5s
-  siege:       15_000,  // 围困: 更慢 +15s
-  nightRaid:   -3_000,  // 夜袭: 稍快 -3s
-  insider:      5_000,  // 内应: 稍慢 +5s
+  forceAttack: -5_000,
+  siege:       15_000,
+  nightRaid:   -3_000,
+  insider:      5_000,
 };
 
 /** 序列化版本号 */
@@ -217,6 +227,8 @@ export class SiegeBattleSystem implements ISubsystem {
 
       // 4. 检查战斗结束条件
       const defenseDepleted = session.defenseValue <= 0;
+      // NOTE: timeExceeded在当前公式下自然不可达——attackPower下限确保城防在maxDuration内耗尽
+      // 保留此分支作为防御性代码：如果未来公式调整使城防不完全耗尽，timeExceeded仍能正确终止战斗
       const timeExceeded = session.elapsedMs >= session.estimatedDurationMs;
 
       if (defenseDepleted || timeExceeded) {
@@ -305,18 +317,24 @@ export class SiegeBattleSystem implements ISubsystem {
       throw new Error(`[SiegeBattleSystem] Battle already exists for taskId: ${taskId}`);
     }
 
-    // 1. 计算战斗时间 = baseDuration + strategy modifier, clamp(min, max)
-    const strategyModifier = STRATEGY_DURATION_MODIFIER[strategy] ?? 0;
-    const rawDuration = this.config.baseDurationMs + strategyModifier;
+    // 1. 计算战斗时间 = baseDuration × strategy timeMultiplier, clamp(min, max)
+    //    使用 SIEGE_STRATEGY_CONFIGS 的 timeMultiplier 作为唯一策略时长源
+    const timeMultiplier = SIEGE_STRATEGY_CONFIGS[strategy]?.timeMultiplier ?? 1;
+    const rawDuration = this.config.baseDurationMs * timeMultiplier;
     const estimatedDurationMs = clamp(rawDuration, this.config.minDurationMs, this.config.maxDurationMs);
 
     // 2. 计算最大城防值 = targetDefenseLevel * baseDefenseValue
     const maxDefense = targetDefenseLevel * this.config.baseDefenseValue;
 
-    // 3. 计算每秒攻击力 = maxDefense / durationSeconds
-    //    确保恰好在该时间内打完全部城防值
+    // 3. 计算每秒攻击力 = (troops / BASE_TROOPS) * (maxDefense / durationSeconds)
+    //    兵力越多，攻城越快；兵力越少，攻城越慢
     const durationSeconds = estimatedDurationMs / 1000;
-    const attackPower = maxDefense / durationSeconds;
+    const troopsFactor = troops / BASE_TROOPS;
+    const baseAttackPower = maxDefense / durationSeconds;
+    const attackPower = Math.max(
+      maxDefense / (this.config.maxDurationMs / 1000),
+      troopsFactor * baseAttackPower,
+    );
 
     // 4. 创建 BattleSession
     const session: BattleSession = {

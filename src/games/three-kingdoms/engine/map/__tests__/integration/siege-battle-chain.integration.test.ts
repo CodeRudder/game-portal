@@ -59,7 +59,7 @@ function defaultBattleParams(taskId = 'task-001') {
   return {
     taskId,
     targetId: 'city-luoyang',
-    troops: 5000,
+    troops: 1000, // 使用 BASE_TROOPS 保持1x速度，测试可预测
     strategy: 'forceAttack' as const,
     targetDefenseLevel: 1,
     targetX: 25,
@@ -247,7 +247,7 @@ describe('SiegeBattleChain Integration', () => {
 
     const session2 = battleSystem.createBattle({
       ...defaultBattleParams('task-concurrent-2'),
-      strategy: 'siege', // baseDuration(1000)+15000=16000, clamped to min(500)? No: clamp(16000, 500, 60000) = 16000
+      strategy: 'siege', // baseDuration(1000)×timeMultiplier(2.0)=2000ms, clamp(2000, 500, 60000) = 2000
     });
 
     // 验证两个动画都创建了

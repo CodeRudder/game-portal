@@ -39,6 +39,13 @@ function advanceToSieging(manager: SiegeTaskManager, taskId: string): void {
   manager.advanceStatus(taskId, 'sieging');
 }
 
+/** 将任务推进到 settling 状态 */
+function advanceToSettling(manager: SiegeTaskManager, taskId: string): void {
+  manager.advanceStatus(taskId, 'marching');
+  manager.advanceStatus(taskId, 'sieging');
+  manager.advanceStatus(taskId, 'settling');
+}
+
 // ── Mock MarchingSystem ───────────────────────
 
 function createMockMarchingSystem() {
@@ -62,6 +69,26 @@ function createMockMarchingSystem() {
       siegeTaskId?: string;
     }) {
       returnMarches.push(params);
+      return { id: 'return-march-1' }; // non-null = success
+    },
+  };
+}
+
+/** Mock marching system where createReturnMarch returns null (unreachable path) */
+function createUnreachableMockMarchingSystem() {
+  const callCount = { value: 0 };
+  return {
+    callCount,
+    createReturnMarch(_params: {
+      fromCityId: string;
+      toCityId: string;
+      troops: number;
+      general: string;
+      faction: string;
+      siegeTaskId?: string;
+    }): null {
+      callCount.value++;
+      return null; // route unreachable
     },
   };
 }
@@ -315,19 +342,103 @@ describe('SiegeTaskManager siege interrupt handling (I4)', () => {
       });
     });
 
-    it('should reject cancel for non-paused task', () => {
+    it('should allow cancel from sieging state (auto-pause then retreat)', () => {
       const task = manager.createTask(createTaskParams());
       advanceToSieging(manager, task!.id);
 
       const mockMarching = createMockMarchingSystem();
-      expect(manager.cancelSiege(task!.id, mockMarching)).toBe(false);
-      expect(task!.status).toBe('sieging');
-      expect(mockMarching.returnMarches).toHaveLength(0);
+      expect(manager.cancelSiege(task!.id, mockMarching)).toBe(true);
+      expect(task!.status).toBe('returning');
+      expect(mockMarching.returnMarches).toHaveLength(1);
     });
 
     it('should reject cancel for non-existent task', () => {
       const mockMarching = createMockMarchingSystem();
       expect(manager.cancelSiege('nonexistent', mockMarching)).toBe(false);
+    });
+
+    // P1-2: cancelSiege不可达降级 — createReturnMarch返回null时直接completed
+    it('should complete task directly when createReturnMarch returns null (unreachable path)', () => {
+      const task = manager.createTask(createTaskParams());
+      advanceToSieging(manager, task!.id);
+      manager.pauseSiege(task!.id);
+
+      const unreachableMarching = createUnreachableMockMarchingSystem();
+      const result = manager.cancelSiege(task!.id, unreachableMarching);
+
+      expect(result).toBe(true);
+      expect(task!.status).toBe('completed');
+      expect(task!.returnCompletedAt).toBeGreaterThan(0);
+      expect(manager.isSiegeLocked('city-xuchang')).toBe(false);
+      expect(unreachableMarching.callCount.value).toBe(1);
+    });
+
+    // P1-2: 不可达降级应发射 completed 和 cancelled 事件
+    it('should emit completed and cancelled events when return march is unreachable', () => {
+      const events: Array<{ event: string; data: unknown }> = [];
+      manager.setDependencies({
+        eventBus: {
+          emit: (event: string, data: unknown) => events.push({ event, data }),
+          on: () => {},
+          off: () => {},
+        },
+      });
+
+      const task = manager.createTask(createTaskParams());
+      advanceToSieging(manager, task!.id);
+      manager.pauseSiege(task!.id);
+      events.length = 0;
+
+      const unreachableMarching = createUnreachableMockMarchingSystem();
+      manager.cancelSiege(task!.id, unreachableMarching);
+
+      const eventTypes = events.map(e => e.event);
+      expect(eventTypes).toContain('siegeTask:completed');
+      expect(eventTypes).toContain('siegeTask:cancelled');
+
+      const completedEvt = events.find(e => e.event === 'siegeTask:completed');
+      expect((completedEvt as any).data.task.status).toBe('completed');
+
+      const cancelledEvt = events.find(e => e.event === 'siegeTask:cancelled');
+      expect((cancelledEvt as any).data).toMatchObject({
+        taskId: task!.id,
+        targetId: 'city-xuchang',
+      });
+    });
+
+    // P1-3: cancelSiege支持settling状态
+    it('should allow cancel from settling state', () => {
+      const task = manager.createTask(createTaskParams());
+      advanceToSettling(manager, task!.id);
+
+      const mockMarching = createMockMarchingSystem();
+      const result = manager.cancelSiege(task!.id, mockMarching);
+
+      expect(result).toBe(true);
+      expect(task!.status).toBe('returning');
+      expect(task!.siegeCompletedAt).toBeGreaterThan(0);
+      expect(mockMarching.returnMarches).toHaveLength(1);
+      expect(mockMarching.returnMarches[0]).toMatchObject({
+        fromCityId: 'city-xuchang',
+        toCityId: 'city-changsha',
+        troops: 3000,
+        general: '关羽',
+        siegeTaskId: task!.id,
+      });
+    });
+
+    // P1-3: settling状态cancelSiege不可达降级
+    it('should complete task directly when cancel from settling with unreachable return march', () => {
+      const task = manager.createTask(createTaskParams());
+      advanceToSettling(manager, task!.id);
+
+      const unreachableMarching = createUnreachableMockMarchingSystem();
+      const result = manager.cancelSiege(task!.id, unreachableMarching);
+
+      expect(result).toBe(true);
+      expect(task!.status).toBe('completed');
+      expect(task!.returnCompletedAt).toBeGreaterThan(0);
+      expect(manager.isSiegeLocked('city-xuchang')).toBe(false);
     });
   });
 

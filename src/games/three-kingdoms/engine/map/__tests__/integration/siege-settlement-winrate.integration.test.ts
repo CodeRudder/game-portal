@@ -124,7 +124,8 @@ describe('集成测试: 攻城结算 + 胜率预估 (Play §7.5-7.6)', () => {
       expect(result.launched).toBe(true);
       expect(result.victory).toBe(false);
       expect(result.defeatTroopLoss).toBeDefined();
-      expect(result.defeatTroopLoss).toBe(Math.floor(result.cost.troops * 0.3));
+      // R27修复: SiegeSystem不再扣减兵力，defeatTroopLoss=0
+      expect(result.defeatTroopLoss).toBe(0);
 
       // 领土归属不变
       const territory = sys.territory.getTerritoryById('city-xuchang');
@@ -409,7 +410,8 @@ describe('集成测试: 攻城结算 + 胜率预估 (Play §7.5-7.6)', () => {
       const defeatEvent = events.find(e => e.event === 'siege:defeat');
       expect(defeatEvent).toBeDefined();
       const data = defeatEvent!.data as { defeatTroopLoss: number };
-      expect(data.defeatTroopLoss).toBeGreaterThan(0);
+      // R27修复: SiegeSystem不再扣减兵力，defeatTroopLoss=0
+      expect(data.defeatTroopLoss).toBe(0);
     });
   });
 });

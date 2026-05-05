@@ -591,8 +591,8 @@ export class SiegeSystem implements ISubsystem {
         this.consumeItem(strategyConfig.requiredItem);
       }
 
-      // P0-3修复：直接扣减攻城资源（不再依赖事件通知）
-      this.deductSiegeResources(cost);
+      // P1修复：胜利时仅扣减粮草，不扣减兵力（兵力由 SettlementPipeline 统一计算伤亡）
+      this.deductSiegeResources({ troops: 0, grain: cost.grain });
 
       this.deps?.eventBus.emit('siege:victory', {
         territoryId: targetId, territoryName: territory.name,
@@ -601,10 +601,10 @@ export class SiegeSystem implements ISubsystem {
       });
     } else {
       this.defeats++;
-      // ⚠️ MAP PRD v1.1统一声明：攻城失败损失30%出征兵力，粮草不返还
-      const defeatTroopLoss = Math.floor(cost.troops * 0.3);
+      // ⚠️ R27修复：失败路径与胜利路径对齐 — 不扣兵力，伤亡由SettlementPipeline统一计算
+      // 仅扣粮草（攻城消耗），兵力伤亡通过SiegeResultCalculator的5档体系计算
       result.failureReason = '攻城失败，兵力不足以攻破防线';
-      result.defeatTroopLoss = defeatTroopLoss;
+      result.defeatTroopLoss = 0;
 
       // 内应策略失败: 暴露标记(24h冷却)
       if (strategy === 'insider') {
@@ -617,12 +617,12 @@ export class SiegeSystem implements ISubsystem {
         this.consumeItem(strategyConfig.requiredItem);
       }
 
-      // P0-3修复：失败时也直接扣减资源（30%兵力+全部粮草）
-      this.deductSiegeResources({ troops: defeatTroopLoss, grain: cost.grain });
+      // 失败时仅扣粮草，兵力伤亡由SettlementPipeline统一计算
+      this.deductSiegeResources({ troops: 0, grain: cost.grain });
 
       this.deps?.eventBus.emit('siege:defeat', {
         territoryId: targetId, territoryName: territory.name, cost,
-        defeatTroopLoss, strategy,
+        defeatTroopLoss: 0, strategy,
       });
     }
 
@@ -638,8 +638,9 @@ export class SiegeSystem implements ISubsystem {
         if (cost.troops > 0) resourceSys.consume?.('troops', cost.troops);
         if (cost.grain > 0) resourceSys.consume?.('grain', cost.grain);
       }
-    } catch {
-      // 资源系统不可用时静默处理（测试环境）
+    } catch (err) {
+      // 资源系统不可用时发射错误事件（P2-2修复）
+      this.deps?.eventBus.emit('siege:resourceError', { territoryId: 'unknown', error: err, operation: 'deduct' });
     }
   }
 

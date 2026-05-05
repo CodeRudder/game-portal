@@ -1021,4 +1021,85 @@ describe('executeSiege Path A Integration', () => {
       vi.restoreAllMocks();
     });
   });
+
+  describe('Scenario 7: Insider strategy victory path E2E', () => {
+    it('should complete insider victory with clearInsiderExposure and preserved defense', () => {
+      // P2-30: insider策略胜利路径E2E测试
+      const task = createTaskToSieging(taskManager, {
+        troops: 5000,
+        strategy: 'insider',
+        targetId: 'city-xuchang',
+        targetName: '许昌',
+      });
+
+      battleSystem.createBattle({
+        taskId: task.id,
+        targetId: task.targetId,
+        troops: task.expedition.troops,
+        strategy: 'insider',
+        targetDefenseLevel: 3,
+        targetX: 20,
+        targetY: 15,
+        faction: 'wei',
+      });
+
+      // Insider strategy: simulate battle completion
+      battleSystem.update(11);
+      battleSystem.cancelBattle(task.id);
+
+      // Set victory result
+      taskManager.setResult(task.id, buildTaskResult(
+        true, task.targetId, 800, 0.16, false, 'none', 1.5,
+      ));
+      taskManager.advanceStatus(task.id, 'settling');
+      taskManager.advanceStatus(task.id, 'returning');
+
+      // Verify task state
+      expect(taskManager.getTask(task.id)!.status).toBe('returning');
+      expect(taskManager.getTask(task.id)!.result!.victory).toBe(true);
+
+      // Advance to completed
+      taskManager.advanceStatus(task.id, 'completed');
+      expect(taskManager.getTask(task.id)!.status).toBe('completed');
+      expect(taskManager.isSiegeLocked('city-xuchang')).toBe(false);
+    });
+
+    it('should handle insider defeat with exposure flag', () => {
+      // Insider策略失败时设置暴露标记
+      const task = createTaskToSieging(taskManager, {
+        troops: 3000,
+        strategy: 'insider',
+        targetId: 'city-nanzhong',
+        targetName: '南中',
+      });
+
+      battleSystem.createBattle({
+        taskId: task.id,
+        targetId: task.targetId,
+        troops: task.expedition.troops,
+        strategy: 'insider',
+        targetDefenseLevel: 5,
+        targetX: 5,
+        targetY: 30,
+        faction: 'wei',
+      });
+
+      battleSystem.update(11);
+      battleSystem.cancelBattle(task.id);
+
+      // Set defeat result
+      taskManager.setResult(task.id, buildTaskResult(
+        false, task.targetId, 1650, 0.55, true, 'moderate', 0, '内应被识破，攻城失败',
+      ));
+      taskManager.advanceStatus(task.id, 'settling');
+      taskManager.advanceStatus(task.id, 'returning');
+
+      expect(taskManager.getTask(task.id)!.status).toBe('returning');
+      expect(taskManager.getTask(task.id)!.result!.victory).toBe(false);
+      expect(taskManager.getTask(task.id)!.result!.failureReason).toContain('内应');
+
+      taskManager.advanceStatus(task.id, 'completed');
+      expect(taskManager.isSiegeLocked('city-nanzhong')).toBe(false);
+    });
+  });
 });

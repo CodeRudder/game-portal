@@ -649,7 +649,7 @@ describe('GAP-08：战斗统计数据聚合测试（MAP-6 §6.3）', () => {
       expect(result.cost.grain).toBe(500);
     });
 
-    it('攻城失败时损失30%出征兵力', () => {
+    it('攻城失败时损失兵力由SettlementPipeline统一计算', () => {
       const { siege, territory } = createSiegeSystems();
       territory.captureTerritory('city-luoyang', 'player');
 
@@ -658,8 +658,8 @@ describe('GAP-08：战斗统计数据聚合测试（MAP-6 §6.3）', () => {
       expect(result.launched).toBe(true);
       expect(result.victory).toBe(false);
       expect(result.defeatTroopLoss).toBeDefined();
-      // PRD MAP PRD v1.1: 攻城失败损失30%出征兵力
-      expect(result.defeatTroopLoss).toBe(Math.floor(result.cost.troops * 0.3));
+      // R27修复：失败路径由SettlementPipeline统一计算伤亡，SiegeSystem不再扣兵
+      expect(result.defeatTroopLoss).toBe(0);
     });
 
     it('攻城消耗兵力与城防值成正比', () => {
@@ -940,23 +940,25 @@ describe('GAP-08：战斗统计数据聚合测试（MAP-6 §6.3）', () => {
   });
 
   describe('§6.3.7 攻城失败损失统计', () => {
-    it('攻城失败损失兵力=30%×出征兵力', () => {
+    it('攻城失败损失兵力由SettlementPipeline统一计算', () => {
       const { siege, territory } = createSiegeSystems();
       territory.captureTerritory('city-luoyang', 'player');
 
       const result = siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, false);
 
       expect(result.defeatTroopLoss).toBeDefined();
-      expect(result.defeatTroopLoss).toBe(Math.floor(result.cost.troops * 0.3));
+      // R27修复：SiegeSystem不再扣兵，由SettlementPipeline统一处理
+      expect(result.defeatTroopLoss).toBe(0);
     });
 
-    it('攻城失败损失兵力>0', () => {
+    it('攻城失败SiegeSystem不扣兵(由SettlementPipeline处理)', () => {
       const { siege, territory } = createSiegeSystems();
       territory.captureTerritory('city-luoyang', 'player');
 
       const result = siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, false);
 
-      expect(result.defeatTroopLoss).toBeGreaterThan(0);
+      // R27修复：伤亡统一由SettlementPipeline计算，SiegeSystem仅设为0
+      expect(result.defeatTroopLoss).toBe(0);
     });
 
     it('攻城失败损失兵力<出征兵力', () => {

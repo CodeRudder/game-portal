@@ -6,7 +6,7 @@
  *
  * 与 MarchingSystem 协作：
  * - 创建任务时同步创建行军单位
- * - 监听 march:arrived 事件推进状态
+ * - UI层(WorldMapTab)负责监听 march:arrived 事件并调用 advanceStatus 推进状态
  * - 攻城完成后创建回城行军
  *
  * @module engine/map/SiegeTaskManager
@@ -241,6 +241,46 @@ export class SiegeTaskManager {
     return this.getActiveTasks().length;
   }
 
+  // ── 异常终止（escape hatch）─────────────────────
+
+  /**
+   * 强制取消攻占任务（异常终止逃生舱）
+   *
+   * 绕过正常状态转换表，将处于任何活跃状态（marching/sieging/settling/returning/paused）
+   * 的任务强制设为 completed，并释放攻占锁。
+   *
+   * 用于外部异常场景（如行军被取消时任务卡在 marching），正常流程仍应使用
+   * advanceStatus 按状态表推进。
+   *
+   * @param taskId - 任务ID
+   * @returns true 表示成功取消并释放锁，false 表示任务不存在或已是终态
+   */
+  cancelTask(taskId: string): boolean {
+    const task = this.tasks.get(taskId);
+    if (!task || isTerminalStatus(task.status)) return false;
+
+    const oldStatus = task.status;
+    task.status = 'completed';
+    task.returnCompletedAt = Date.now();
+
+    this.deps?.eventBus.emit(SIEGE_TASK_EVENTS.STATUS_CHANGED, {
+      taskId,
+      from: oldStatus,
+      to: 'completed',
+      task,
+    } satisfies SiegeTaskStatusChangedEvent);
+
+    this.deps?.eventBus.emit(SIEGE_TASK_EVENTS.COMPLETED, { task });
+    this.deps?.eventBus.emit(SIEGE_TASK_EVENTS.CANCELLED, {
+      taskId,
+      targetId: task.targetId,
+    });
+
+    this.releaseSiegeLock(task.targetId);
+
+    return true;
+  }
+
   // ── 攻城中断处理 ─────────────────────────────────
 
   /**
@@ -343,10 +383,23 @@ export class SiegeTaskManager {
       general: string;
       faction: string;
       siegeTaskId?: string;
-    }): unknown;
+    }): unknown | null;
   } | null): boolean {
     const task = this.tasks.get(taskId);
-    if (!task || task.status !== 'paused') return false;
+    if (!task || (task.status !== 'paused' && task.status !== 'sieging' && task.status !== 'settling')) return false;
+
+    // 自动暂停活跃攻城以允许撤退
+    if (task.status === 'sieging') {
+      task.status = 'paused';
+      task.pausedAt = Date.now();
+      task.pauseSnapshot = { defenseRatio: 1, elapsedBattleTime: 0 };
+      this.deps?.eventBus.emit(SIEGE_TASK_EVENTS.STATUS_CHANGED, {
+        taskId,
+        from: 'sieging',
+        to: 'paused',
+        task,
+      } satisfies SiegeTaskStatusChangedEvent);
+    }
 
     if (!this.isValidTransition(task.status, 'returning')) return false;
 
@@ -360,14 +413,28 @@ export class SiegeTaskManager {
 
     // Create return march via MarchingSystem if provided
     if (marchingSystem) {
-      marchingSystem.createReturnMarch({
+      // R29修复：考虑已计算的伤亡，扣除损失的兵力
+      const troopsLost = task.result?.casualties?.troopsLost ?? 0;
+      const returnTroops = Math.max(0, task.expedition.troops - troopsLost);
+      const returnMarch = marchingSystem.createReturnMarch({
         fromCityId: task.targetId,
         toCityId: task.sourceId,
-        troops: task.expedition.troops,
+        troops: returnTroops,
         general: task.expedition.heroName,
         faction: task.faction,
         siegeTaskId: task.id,
       });
+      if (returnMarch) {
+        // Return march created — external system will advance to 'completed' via advanceStatus
+      } else {
+        // 回城不可达时直接完成任务
+        task.status = 'completed';
+        task.returnCompletedAt = Date.now();
+        this.releaseSiegeLock(task.targetId);
+        this.deps?.eventBus.emit(SIEGE_TASK_EVENTS.COMPLETED, { task });
+        this.deps?.eventBus.emit(SIEGE_TASK_EVENTS.CANCELLED, { taskId, targetId: task.targetId });
+        return true;
+      }
     }
 
     this.deps?.eventBus.emit(SIEGE_TASK_EVENTS.STATUS_CHANGED, {
@@ -381,6 +448,9 @@ export class SiegeTaskManager {
       taskId,
       targetId: task.targetId,
     });
+
+    // #4 修复: cancelSiege时立即释放攻占锁，允许其他任务锁定该目标
+    this.releaseSiegeLock(task.targetId);
 
     return true;
   }
@@ -542,6 +612,12 @@ export class SiegeTaskManager {
     if (data?.tasks) {
       for (const task of data.tasks) {
         this.tasks.set(task.id, task);
+      }
+    }
+    // 从非终态任务重建攻占锁
+    for (const task of this.tasks.values()) {
+      if (!isTerminalStatus(task.status)) {
+        this.siegeLocks.set(task.targetId, { taskId: task.id, lockedAt: task.createdAt || Date.now() });
       }
     }
     // 更新ID计数器

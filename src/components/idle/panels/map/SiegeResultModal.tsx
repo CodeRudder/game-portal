@@ -14,7 +14,7 @@
  *
  * @module components/idle/panels/map/SiegeResultModal
  */
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import SharedPanel from '@/components/idle/components/SharedPanel';
 import type { CasualtyResult, InjuryLevel } from '@/games/three-kingdoms/engine/map/expedition-types';
 import { INJURY_RECOVERY_TIME, INJURY_RECOVERY_HOURS, mapInjuryLevel } from '@/games/three-kingdoms/engine/map/expedition-types';
@@ -264,6 +264,13 @@ const SiegeResultModal: React.FC<SiegeResultModalProps> = ({
   injuryData,
   troopLoss,
 }) => {
+  // P2-1修复: 5秒自动关闭fallback
+  useEffect(() => {
+    if (!visible) return;
+    const t = setTimeout(onClose, 5000);
+    return () => clearTimeout(t);
+  }, [visible, onClose]);
+
   if (!result) return null;
 
   const isWin = result.launched && result.victory;

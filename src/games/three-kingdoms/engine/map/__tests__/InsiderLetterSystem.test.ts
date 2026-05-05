@@ -12,7 +12,7 @@ function createMockDeps(): ISystemDeps {
   return {
     eventBus,
     registry: { get: jest.fn(), getAll: jest.fn() },
-    configRegistry: {} as any,
+    config: {} as any,
   };
 }
 

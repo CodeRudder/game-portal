@@ -18,6 +18,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import {
   SiegeBattleSystem,
   STRATEGY_DURATION_MODIFIER,
+  BASE_TROOPS,
   type BattleSession,
 } from '../SiegeBattleSystem';
 import type { ISystemDeps } from '../../../core/types';
@@ -90,8 +91,8 @@ describe('SiegeBattleSystem', () => {
 
       // baseDefenseValue=200, level=1 => maxDefense=200
       expect(battle.maxDefense).toBe(200);
-      // baseDurationMs=20000 + forceAttack(-5000) = 15000, clamped to [10000,60000] => 15000
-      expect(battle.estimatedDurationMs).toBe(15000);
+      // baseDurationMs=20000 × forceAttack timeMultiplier(0.5) = 10000, clamped to [10000,60000] => 10000
+      expect(battle.estimatedDurationMs).toBe(10000);
     });
   });
 
@@ -495,7 +496,7 @@ describe('SiegeBattleSystem', () => {
         targetY: 0,
         faction: 'wei',
       });
-      // baseDurationMs(15000) + modifier(-5000) = 10000
+      // baseDurationMs(15000) × timeMultiplier(0.5) = 7500, clamped to [10000,60000] => 10000
       expect(battle.estimatedDurationMs).toBe(10000);
     });
 
@@ -509,7 +510,7 @@ describe('SiegeBattleSystem', () => {
         targetY: 0,
         faction: 'wei',
       });
-      // baseDurationMs(15000) + modifier(15000) = 30000
+      // baseDurationMs(15000) × timeMultiplier(2.0) = 30000
       expect(battle.estimatedDurationMs).toBe(30000);
     });
 
@@ -523,11 +524,11 @@ describe('SiegeBattleSystem', () => {
         targetY: 0,
         faction: 'wei',
       });
-      // baseDurationMs(15000) + modifier(-3000) = 12000
+      // baseDurationMs(15000) × timeMultiplier(0.8) = 12000
       expect(battle.estimatedDurationMs).toBe(12000);
     });
 
-    it('insider策略应延长战斗时间(+5s)', () => {
+    it('insider策略保持基础战斗时间(1.0x)', () => {
       const battle = system.createBattle({
         taskId: 't-insider',
         targetId: 'target-1',
@@ -537,8 +538,8 @@ describe('SiegeBattleSystem', () => {
         targetY: 0,
         faction: 'wei',
       });
-      // baseDurationMs(15000) + modifier(5000) = 20000
-      expect(battle.estimatedDurationMs).toBe(20000);
+      // baseDurationMs(15000) × timeMultiplier(1.0) = 15000
+      expect(battle.estimatedDurationMs).toBe(15000);
     });
   });
 
@@ -727,6 +728,121 @@ describe('SiegeBattleSystem', () => {
       expect(system.getState().activeBattles).toHaveLength(0);
       expect(system.getBattle('t-destroy-1')).toBeNull();
       expect(system.getBattle('t-destroy-2')).toBeNull();
+    });
+  });
+
+  // ────────────────────────────────────────────
+  // 兵力影响攻城速度
+  // ────────────────────────────────────────────
+
+  describe('兵力影响攻城速度', () => {
+    /**
+     * Helper: create a battle with given troops, then simulate updates until
+     * the battle completes. Returns the actual elapsed time (in seconds)
+     * when the battle was marked completed.
+     */
+    function runBattleToCompletion(troops: number): number {
+      const taskId = `t-troops-${troops}`;
+      const battle = system.createBattle({
+        taskId,
+        targetId: 'target-troops',
+        troops,
+        strategy: 'forceAttack', // 15000 - 5000 = 10000ms estimated
+        targetDefenseLevel: 1,
+        targetX: 0,
+        targetY: 0,
+        faction: 'wei',
+      });
+
+      // forceAttack: estimatedDurationMs = 10000ms = 10s
+      // maxDefense = 1 * 100 = 100
+      // attackPower = (troops / BASE_TROOPS) * (100 / 10)
+      const attackPower = battle.attackPower;
+      const maxDefense = battle.maxDefense;
+
+      // Calculate the time to deplete defense: time = maxDefense / attackPower
+      const timeToComplete = maxDefense / attackPower;
+
+      // Advance time in a small step to ensure completion
+      system.update(timeToComplete + 0.1);
+
+      // Battle should have completed; check event for elapsed time
+      const completedCalls = (deps.eventBus.emit as ReturnType<typeof vi.fn>).mock.calls.filter(
+        (call: any[]) => call[0] === 'battle:completed' && call[1].taskId === taskId,
+      );
+      expect(completedCalls).toHaveLength(1);
+      return completedCalls[0][1].elapsedMs;
+    }
+
+    it('基准兵力(1000)时实际耗时与预估时间匹配', () => {
+      const elapsedMs = runBattleToCompletion(1000);
+      // forceAttack estimated = 10000ms; with BASE_TROOPS troops, attackPower = 100/10 = 10
+      // time = 100/10 = 10s = 10000ms
+      // Allow small tolerance for floating-point and the extra 0.1s push
+      expect(elapsedMs).toBeGreaterThanOrEqual(9900);
+      expect(elapsedMs).toBeLessThanOrEqual(10200);
+    });
+
+    it('双倍兵力(2000)时攻城速度约为一半时间', () => {
+      const elapsedMs = runBattleToCompletion(2000);
+      // troopsFactor = 2000/1000 = 2.0, attackPower = 2.0 * 10 = 20
+      // time = 100/20 = 5s = 5000ms
+      expect(elapsedMs).toBeGreaterThanOrEqual(4900);
+      expect(elapsedMs).toBeLessThanOrEqual(5300);
+    });
+
+    it('半数兵力(500)时攻城速度约为两倍时间', () => {
+      const elapsedMs = runBattleToCompletion(500);
+      // troopsFactor = 500/1000 = 0.5, attackPower = 0.5 * 10 = 5
+      // time = 100/5 = 20s = 20000ms
+      expect(elapsedMs).toBeGreaterThanOrEqual(19900);
+      expect(elapsedMs).toBeLessThanOrEqual(20300);
+    });
+
+    it('attackPower应按兵力倍率线性增长', () => {
+      const b1 = system.createBattle({
+        taskId: 't-ap-1',
+        targetId: 'target-1',
+        troops: 1000,
+        strategy: 'forceAttack',
+        targetDefenseLevel: 1,
+        targetX: 0,
+        targetY: 0,
+        faction: 'wei',
+      });
+      const b2 = system.createBattle({
+        taskId: 't-ap-2',
+        targetId: 'target-2',
+        troops: 3000,
+        strategy: 'forceAttack',
+        targetDefenseLevel: 1,
+        targetX: 0,
+        targetY: 0,
+        faction: 'wei',
+      });
+
+      // 3000 troops should have 3x the attackPower of 1000 troops
+      const ratio = b2.attackPower / b1.attackPower;
+      expect(ratio).toBeCloseTo(3.0, 5);
+    });
+
+    it('极少兵力时attackPower应被钳制为最小正值', () => {
+      const battle = system.createBattle({
+        taskId: 't-min-troops',
+        targetId: 'target-1',
+        troops: 1, // very few troops
+        strategy: 'forceAttack',
+        targetDefenseLevel: 1,
+        targetX: 0,
+        targetY: 0,
+        faction: 'wei',
+      });
+
+      // attackPower should be at least maxDefense / (maxDurationMs / 1000)
+      // = 100 / (60000/1000) = 100/60 ≈ 1.6667
+      const minAttackPower = 100 / (DEFAULT_MAX_DURATION_MS / 1000);
+      expect(battle.attackPower).toBeGreaterThanOrEqual(minAttackPower);
+      expect(battle.attackPower).toBeGreaterThan(0);
     });
   });
 });

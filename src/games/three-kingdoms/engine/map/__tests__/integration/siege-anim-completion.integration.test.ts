@@ -53,7 +53,7 @@ function defaultBattleParams(overrides: Record<string, unknown> = {}) {
   return {
     taskId: 'task-test-001',
     targetId: 'city-luoyang',
-    troops: 5000,
+    troops: 1000, // BASE_TROOPS=1x速度，确保战斗时长与estimatedDuration匹配
     strategy: 'forceAttack' as const,
     targetDefenseLevel: 1,
     targetX: 25,
@@ -67,10 +67,10 @@ function defaultBattleParams(overrides: Record<string, unknown> = {}) {
  * Drive both systems' update loops until the battle completes.
  * Returns the number of ticks used.
  *
- * With forceAttack strategy and defenseLevel=1:
- *   estimatedDuration = clamp(15000 - 5000, 10000, 60000) = 10000ms
+ * With forceAttack strategy (timeMultiplier=0.5) and defenseLevel=1:
+ *   estimatedDuration = clamp(15000 * 0.5, 10000, 60000) = 10000ms
  *   maxDefense = 1 * 100 = 100
- *   attackPower = 100 / 10 = 10 per second
+ *   troops=1000(1x): attackPower = (1000/1000) * (100/10) = 10 per second
  *
  * So 10 ticks of 1 second each should exhaust defense.
  */
@@ -123,8 +123,8 @@ describe('R16 Task 2: Siege Animation Completion Integration', () => {
       });
 
       // Create battle with defenseLevel=1 (maxDefense=100)
-      // forceAttack: estimatedDuration = clamp(15000-5000, 10000, 60000) = 10000ms
-      // attackPower = 100/10 = 10 per second
+      // forceAttack: estimatedDuration = clamp(15000*0.5, 10000, 60000) = 10000ms
+      // troops=1000(1x): attackPower = (1000/1000) * (100/10) = 10 per second
       battleSystem.createBattle(
         defaultBattleParams({ taskId: 'task-full-001', targetId: 'city-luoyang' }),
       );

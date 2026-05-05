@@ -806,4 +806,107 @@ describe('March-to-Siege Chain E2E Integration', () => {
       expect(taskManager.getActiveTasks().length).toBe(0);
     });
   });
+
+  // ── Scenario 8: Cancel march → cancelTask → same target can be sieged again ──
+
+  describe('Scenario 8: Cancel march → cancelTask escape hatch → re-siege same target', () => {
+    it('cancelTask should force-complete marching task, release lock, and allow re-siege', () => {
+      // 1. 创建攻占任务并推进到 marching
+      const task = taskManager.createTask({
+        targetId: 'city-changsha',
+        targetName: '长沙',
+        sourceId: 'city-xuchang',
+        sourceName: '许昌',
+        strategy: 'forceAttack',
+        expedition: defaultExpedition(3000),
+        cost: { troops: 300, grain: 100 },
+        marchPath: STANDARD_PATH,
+        faction: 'wei' as const,
+      });
+      taskManager.advanceStatus(task.id, 'marching');
+
+      // Verify lock is held
+      expect(taskManager.isSiegeLocked('city-changsha')).toBe(true);
+      expect(taskManager.getTask(task.id)!.status).toBe('marching');
+
+      // 2. Simulate march cancelled (as would happen in WorldMapTab handleCancelled)
+      //    Previously: advanceStatus(siegeTaskId, 'completed') would FAIL because
+      //    marching → completed is not a valid transition.
+      //    Now: cancelTask bypasses the state transition table.
+      const cancelled = taskManager.cancelTask(task.id);
+
+      // 3. Verify cancelTask succeeded
+      expect(cancelled).toBe(true);
+      expect(taskManager.getTask(task.id)!.status).toBe('completed');
+
+      // 4. Verify siege lock is released
+      expect(taskManager.isSiegeLocked('city-changsha')).toBe(false);
+
+      // 5. Clean up completed tasks
+      taskManager.removeCompletedTasks();
+      expect(taskManager.getAllTasks()).toHaveLength(0);
+
+      // 6. Should be able to create a new siege task on same target
+      const task2 = taskManager.createTask({
+        targetId: 'city-changsha',
+        targetName: '长沙',
+        sourceId: 'city-xuchang',
+        sourceName: '许昌',
+        strategy: 'siege',
+        expedition: defaultExpedition(4000),
+        cost: { troops: 400, grain: 150 },
+        marchPath: STANDARD_PATH,
+        faction: 'wei' as const,
+      });
+
+      expect(task2).not.toBeNull();
+      expect(task2!.status).toBe('preparing');
+      expect(taskManager.isSiegeLocked('city-changsha')).toBe(true);
+
+      // 7. The new task should proceed through normal lifecycle
+      taskManager.advanceStatus(task2!.id, 'marching');
+      taskManager.advanceStatus(task2!.id, 'sieging');
+      expect(taskManager.getTask(task2!.id)!.status).toBe('sieging');
+    });
+
+    it('cancelTask from sieging state should release lock and allow re-siege', () => {
+      // 1. Create task and advance to sieging
+      const task = taskManager.createTask({
+        targetId: 'city-jiangling',
+        targetName: '江陵',
+        sourceId: 'city-xuchang',
+        sourceName: '许昌',
+        strategy: 'forceAttack',
+        expedition: defaultExpedition(5000),
+        cost: { troops: 500, grain: 200 },
+        marchPath: SHORT_PATH,
+        faction: 'wei' as const,
+      });
+      taskManager.advanceStatus(task.id, 'marching');
+      taskManager.advanceStatus(task.id, 'sieging');
+
+      expect(taskManager.isSiegeLocked('city-jiangling')).toBe(true);
+
+      // 2. Cancel from sieging state
+      const cancelled = taskManager.cancelTask(task.id);
+      expect(cancelled).toBe(true);
+      expect(taskManager.getTask(task.id)!.status).toBe('completed');
+      expect(taskManager.isSiegeLocked('city-jiangling')).toBe(false);
+
+      // 3. Re-siege should succeed
+      taskManager.removeCompletedTasks();
+      const task2 = taskManager.createTask({
+        targetId: 'city-jiangling',
+        targetName: '江陵',
+        sourceId: 'city-xuchang',
+        sourceName: '许昌',
+        strategy: 'nightRaid',
+        expedition: defaultExpedition(6000),
+        cost: { troops: 600, grain: 250 },
+        marchPath: SHORT_PATH,
+        faction: 'wei' as const,
+      });
+      expect(task2).not.toBeNull();
+    });
+  });
 });

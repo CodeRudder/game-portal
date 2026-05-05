@@ -483,6 +483,9 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
     const settlementPipeline = new SettlementPipeline();
     settlementPipeline.setDependencies({ eventBus });
 
+    // ── 初始化 SiegeTaskManager 依赖注入 ──
+    siegeTaskManagerRef.current.setDependencies({ eventBus });
+
     // 监听行军到达事件
     const handleArrived = (data: MarchArrivedPayload) => {
       const { marchId, cityId, troops, general } = data ?? {};
@@ -510,7 +513,7 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
         setTimeout(() => {
           // 防重复处理守卫：再次检查任务状态是否仍有效
           const currentTask = siegeTaskManager.getTask(taskId);
-          if (!currentTask || currentTask.result) return;
+          if (!currentTask || currentTask.result || currentTask.status !== 'marching') return;
 
           const eng = engineRef.current;
           if (eng) {
@@ -541,6 +544,7 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
                 'player',
                 currentTask.expedition.troops,
                 eng.getResourceAmount?.('grain') ?? 0,
+                currentTask.strategy,
               );
 
               // ── 使用 SettlementPipeline 统一结算（R14 修复：消除双路径架构） ──
@@ -656,6 +660,9 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
                   siegeTaskManager.advanceStatus(currentTask.id, 'completed');
                   siegeTaskManager.removeCompletedTasks();
                 }
+                // PRD: 攻城结束后移除去程行军精灵（精灵在攻城期间保持存活）
+                marchingSys.removeMarch(marchId);
+                setActiveMarches(marchingSys.getActiveMarches());
               }
 
               // 显示攻城结果弹窗
@@ -670,7 +677,7 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
                 cost: siegeResult.cost,
                 capture: siegeResult.capture,
                 failureReason: siegeResult.failureReason,
-                defeatTroopLoss: siegeResult.defeatTroopLoss,
+                defeatTroopLoss: casualties.troopsLost,
                 casualties,
                 // R14: 道具掉落数据来自 SettlementPipeline
                 itemDrops: droppedItems.length > 0 ? droppedItems as Array<{ type: SiegeItemType; count: number }> : undefined,
@@ -743,10 +750,17 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
         setActiveSiegeTasks(siegeTaskManager.getActiveTasks());
       }
 
-      // 3秒后自动清除到达的行军并隐藏通知
+      // PRD: 行军精灵在攻城期间保持存活，攻城结束后才移除
+      // 只有非攻城行军（无关联任务）才在3秒后自动清除
+      // 攻城行军的精灵在攻城完成/取消时移除（见下方 removeMarch 调用）
+      if (!associatedTask || !!associatedTask.result) {
+        setTimeout(() => {
+          marchingSystem.removeMarch(marchId);
+          setActiveMarches(marchingSystem.getActiveMarches());
+        }, 3000);
+      }
+      // 通知始终3秒后清除
       setTimeout(() => {
-        marchingSystem.removeMarch(marchId);
-        setActiveMarches(marchingSystem.getActiveMarches());
         setMarchNotification(null);
       }, 3000);
     };
@@ -769,7 +783,7 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
             specialEffectTriggered: false,
             failureReason: '行军被取消',
           });
-          siegeTaskManager.advanceStatus(siegeTaskId, 'completed');
+          siegeTaskManager.cancelTask(siegeTaskId);
           siegeTaskManager.removeCompletedTasks();
           setActiveSiegeTasks(siegeTaskManager.getActiveTasks());
         }
@@ -1191,7 +1205,8 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
 
     // 6. 推进任务状态到 marching
     siegeTaskManager.advanceStatus(task.id, 'marching');
-    const estimatedDuration = 10; // 秒（简化估算）
+    const preview = marchingSystem.generatePreview(route.path);
+    const estimatedDuration = preview.estimatedTime; // 秒（基于实际路径，已 clamp 到 [10,60]）
     siegeTaskManager.setEstimatedArrival(task.id, Date.now() + estimatedDuration * 1000);
 
     // 7. 更新UI状态
@@ -1674,7 +1689,16 @@ const WorldMapTab: React.FC<WorldMapTabProps> = ({
           siegeTaskManagerRef.current.resumeSiege(taskId);
         }}
         onCancelSiege={(taskId: string) => {
-          siegeTaskManagerRef.current.cancelSiege(taskId, marchingSystemRef.current);
+          const marchingSys = marchingSystemRef.current;
+          siegeTaskManagerRef.current.cancelSiege(taskId, marchingSys);
+          // PRD: 攻城取消时移除关联的行军精灵
+          if (marchingSys) {
+            const marches = marchingSys.getActiveMarches();
+            const taskMarch = marches.find((m) => m.siegeTaskId === taskId);
+            if (taskMarch) {
+              marchingSys.removeMarch(taskMarch.id);
+            }
+          }
         }}
       />
 

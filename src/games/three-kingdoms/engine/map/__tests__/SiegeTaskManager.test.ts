@@ -387,4 +387,281 @@ describe('SiegeTaskManager', () => {
       expect(manager.activeCount).toBe(1);
     });
   });
+
+  describe('cancelTask (escape hatch)', () => {
+    const makeTask = (targetId = 'city-cancel-target') =>
+      manager.createTask({
+        targetId,
+        targetName: '目标城',
+        sourceId: 'city-source',
+        sourceName: '源城',
+        strategy: null,
+        expedition: { forceId: 'f1', heroId: 'h1', heroName: 'H1', troops: 100 },
+        cost: { troops: 50, grain: 10 },
+        marchPath: [],
+        faction: 'wei' as const,
+      });
+
+    it('should cancel from marching state and release siege lock', () => {
+      const task = makeTask();
+      manager.advanceStatus(task.id, 'marching');
+
+      expect(manager.isSiegeLocked(task.targetId)).toBe(true);
+
+      const result = manager.cancelTask(task.id);
+
+      expect(result).toBe(true);
+      expect(task.status).toBe('completed');
+      expect(manager.isSiegeLocked(task.targetId)).toBe(false);
+      expect(manager.getActiveTasks()).toHaveLength(0);
+    });
+
+    it('should cancel from sieging state and release siege lock', () => {
+      const task = makeTask();
+      manager.advanceStatus(task.id, 'marching');
+      manager.advanceStatus(task.id, 'sieging');
+
+      expect(manager.isSiegeLocked(task.targetId)).toBe(true);
+
+      const result = manager.cancelTask(task.id);
+
+      expect(result).toBe(true);
+      expect(task.status).toBe('completed');
+      expect(manager.isSiegeLocked(task.targetId)).toBe(false);
+    });
+
+    it('should return false for already completed task (no-op)', () => {
+      const task = makeTask();
+      manager.advanceStatus(task.id, 'marching');
+      manager.advanceStatus(task.id, 'sieging');
+      manager.advanceStatus(task.id, 'settling');
+      manager.advanceStatus(task.id, 'returning');
+      manager.advanceStatus(task.id, 'completed');
+
+      const result = manager.cancelTask(task.id);
+
+      expect(result).toBe(false);
+      expect(task.status).toBe('completed');
+    });
+
+    it('should return false for non-existent task', () => {
+      const result = manager.cancelTask('nonexistent-task-id');
+
+      expect(result).toBe(false);
+    });
+
+    it('should allow re-sieging same target after cancelTask', () => {
+      const task = makeTask('city-retry');
+      manager.advanceStatus(task.id, 'marching');
+
+      // Cancel the task
+      manager.cancelTask(task.id);
+
+      // Lock should be released — new task on same target should succeed
+      const task2 = manager.createTask({
+        targetId: 'city-retry',
+        targetName: '目标城',
+        sourceId: 'city-source',
+        sourceName: '源城',
+        strategy: null,
+        expedition: { forceId: 'f2', heroId: 'h2', heroName: 'H2', troops: 200 },
+        cost: { troops: 100, grain: 20 },
+        marchPath: [],
+        faction: 'wei' as const,
+      });
+
+      expect(task2).not.toBeNull();
+      expect(manager.isSiegeLocked('city-retry')).toBe(true);
+    });
+
+    it('should emit statusChanged, completed, and cancelled events', () => {
+      const events: Array<{ event: string; data: unknown }> = [];
+      manager.setDependencies({
+        eventBus: {
+          emit: (event: string, data: unknown) => events.push({ event, data }),
+          on: () => {},
+          off: () => {},
+        },
+      });
+
+      const task = makeTask();
+      manager.advanceStatus(task.id, 'marching');
+
+      // Clear events collected before cancelTask
+      events.length = 0;
+
+      manager.cancelTask(task.id);
+
+      const eventTypes = events.map((e) => e.event);
+      expect(eventTypes).toContain('siegeTask:statusChanged');
+      expect(eventTypes).toContain('siegeTask:completed');
+      expect(eventTypes).toContain('siegeTask:cancelled');
+
+      const statusEvt = events.find((e) => e.event === 'siegeTask:statusChanged');
+      expect((statusEvt as any).data).toMatchObject({
+        taskId: task.id,
+        from: 'marching',
+        to: 'completed',
+      });
+    });
+  });
+
+  describe('cancelSiege from sieging state', () => {
+    it('应允许从sieging状态撤退(自动暂停→回城)', () => {
+      const task = manager.createTask({
+        targetId: 'city-xuchang',
+        targetName: '许昌',
+        sourceId: 'city-changsha',
+        sourceName: '长沙',
+        strategy: 'forceAttack',
+        expedition: { forceId: 'f1', heroId: 'h1', heroName: '关羽', troops: 3000 },
+        cost: { troops: 2000, grain: 500 },
+        marchPath: [{ x: 10, y: 20 }],
+        faction: 'shu',
+      });
+      manager.advanceStatus(task.id, 'marching');
+      manager.advanceStatus(task.id, 'sieging');
+
+      const result = manager.cancelSiege(task.id, null);
+      expect(result).toBe(true);
+      expect(manager.getTask(task.id)!.status).toBe('returning');
+    });
+
+    it('sieging→returning应释放siege lock', () => {
+      const task = manager.createTask({
+        targetId: 'city-xuchang',
+        targetName: '许昌',
+        sourceId: 'city-changsha',
+        sourceName: '长沙',
+        strategy: 'forceAttack',
+        expedition: { forceId: 'f1', heroId: 'h1', heroName: '关羽', troops: 3000 },
+        cost: { troops: 2000, grain: 500 },
+        marchPath: [{ x: 10, y: 20 }],
+        faction: 'shu',
+      });
+      manager.advanceStatus(task.id, 'marching');
+      manager.advanceStatus(task.id, 'sieging');
+
+      // 获取lock状态
+      expect(manager.isSiegeLocked('city-xuchang')).toBe(true);
+
+      manager.cancelSiege(task.id, null);
+
+      // R28修复：cancelSiege returning路径释放siege lock
+      expect(manager.isSiegeLocked('city-xuchang')).toBe(false);
+    });
+
+    it('settling→returning应释放siege lock并创建回城行军', () => {
+      const task = manager.createTask({
+        targetId: 'city-chengdu',
+        targetName: '成都',
+        sourceId: 'city-changsha',
+        sourceName: '长沙',
+        strategy: 'forceAttack',
+        expedition: { forceId: 'f1', heroId: 'h1', heroName: '张飞', troops: 5000 },
+        cost: { troops: 3000, grain: 800 },
+        marchPath: [{ x: 5, y: 10 }],
+        faction: 'shu',
+      });
+      manager.advanceStatus(task.id, 'marching');
+      manager.advanceStatus(task.id, 'sieging');
+      manager.advanceStatus(task.id, 'settling');
+
+      expect(manager.isSiegeLocked('city-chengdu')).toBe(true);
+
+      const mockMarchingSystem = {
+        createReturnMarch: vi.fn().mockReturnValue({ id: 'return-1' }),
+      };
+      manager.cancelSiege(task.id, mockMarchingSystem);
+
+      // settling cancel应释放锁
+      expect(manager.isSiegeLocked('city-chengdu')).toBe(false);
+      // 应创建回城行军，使用原始兵力(R27架构：SiegeSystem不扣兵)
+      expect(mockMarchingSystem.createReturnMarch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fromCityId: 'city-chengdu',
+          toCityId: 'city-changsha',
+          troops: 5000,
+        }),
+      );
+      expect(manager.getTask(task.id)!.status).toBe('returning');
+    });
+
+    it('settling cancel回城不可达时应直接完成', () => {
+      const task = manager.createTask({
+        targetId: 'city-jianye',
+        targetName: '建业',
+        sourceId: 'city-changsha',
+        sourceName: '长沙',
+        strategy: 'siege',
+        expedition: { forceId: 'f1', heroId: 'h1', heroName: '赵云', troops: 4000 },
+        cost: { troops: 2000, grain: 600 },
+        marchPath: [{ x: 15, y: 20 }],
+        faction: 'shu',
+      });
+      manager.advanceStatus(task.id, 'marching');
+      manager.advanceStatus(task.id, 'sieging');
+      manager.advanceStatus(task.id, 'settling');
+
+      // createReturnMarch返回null(回城不可达)
+      const mockMarchingSystem = {
+        createReturnMarch: vi.fn().mockReturnValue(null),
+      };
+      const result = manager.cancelSiege(task.id, mockMarchingSystem);
+
+      expect(result).toBe(true);
+      // 不可达时直接完成并释放锁
+      expect(manager.getTask(task.id)!.status).toBe('completed');
+      expect(manager.isSiegeLocked('city-jianye')).toBe(false);
+    });
+
+    it('settling cancel应扣除伤亡后兵力创建回城行军', () => {
+      // R29: 防御性修复验证 — cancelSiege使用 result.casualties.troopsLost 计算回城兵力
+      const task = manager.createTask({
+        targetId: 'city-xuchang',
+        targetName: '许昌',
+        sourceId: 'city-changsha',
+        sourceName: '长沙',
+        strategy: 'forceAttack',
+        expedition: { forceId: 'f1', heroId: 'h1', heroName: '关羽', troops: 5000 },
+        cost: { troops: 3000, grain: 800 },
+        marchPath: [{ x: 10, y: 20 }],
+        faction: 'shu',
+      });
+      manager.advanceStatus(task.id, 'marching');
+      manager.advanceStatus(task.id, 'sieging');
+      manager.advanceStatus(task.id, 'settling');
+
+      // 设置战斗结果（含伤亡）
+      manager.setResult(task.id, {
+        victory: false,
+        casualties: {
+          troopsLost: 1500,
+          troopsLostPercent: 0.3,
+          heroInjured: false,
+          injuryLevel: 'none',
+          battleResult: 'defeat',
+        },
+        actualCost: { troops: 0, grain: 500 },
+        rewardMultiplier: 0,
+        specialEffectTriggered: false,
+        failureReason: '攻城失败',
+      });
+
+      const mockMarchingSystem = {
+        createReturnMarch: vi.fn().mockReturnValue({ id: 'return-1' }),
+      };
+      manager.cancelSiege(task.id, mockMarchingSystem);
+
+      // 回城兵力 = 5000 - 1500 = 3500（扣除伤亡）
+      expect(mockMarchingSystem.createReturnMarch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fromCityId: 'city-xuchang',
+          toCityId: 'city-changsha',
+          troops: 3500,
+        }),
+      );
+      expect(manager.isSiegeLocked('city-xuchang')).toBe(false);
+    });
+  });
 });

@@ -477,7 +477,8 @@ describe('GAP-02: 攻城奖励链路测试', () => {
       setupAttackPath(s.territory, 'city-xuchang');
       s.siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, false);
       const data = emitSpy.mock.calls.find(c => c[0] === 'siege:defeat')![1];
-      expect(data.defeatTroopLoss).toBeGreaterThan(0);
+      // R27修复：SiegeSystem不再扣兵，defeatTroopLoss=0，由SettlementPipeline统一计算
+      expect(data.defeatTroopLoss).toBe(0);
     });
 
     it('autoGarrison兵力 = 攻城消耗 × 50%', () => {
@@ -540,30 +541,91 @@ describe('GAP-02: 攻城奖励链路测试', () => {
   // ─── 攻城资源扣减 ───
 
   describe('攻城资源扣减', () => {
-    it('胜利扣减全部消耗', () => {
+    it('胜利扣减全部粮草(兵力由SettlementPipeline处理)', () => {
       const sr = createSystemsWithResource();
       setupAttackPath(sr.territory, 'city-xuchang');
       sr.siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
-      const t = sr.territory.getTerritoryById('city-xuchang')!;
-      const expectedCost = sr.siege.calculateSiegeCost(t);
-      expect(sr.resourceSys.consume).toHaveBeenCalledWith('troops', expectedCost.troops);
+      // R27修复：胜利路径不再扣减兵力，仅扣粮草，伤亡由SettlementPipeline统一计算
       expect(sr.resourceSys.consume).toHaveBeenCalledWith('grain', 500);
+      expect(sr.resourceSys.consume).not.toHaveBeenCalledWith('troops', expect.anything());
     });
 
-    it('失败扣减30%兵力+全部粮草', () => {
+    it('失败扣减兵力由SettlementPipeline处理+全部粮草', () => {
       const sr = createSystemsWithResource();
       setupAttackPath(sr.territory, 'city-xuchang');
       const result = sr.siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, false);
-      const t = sr.territory.getTerritoryById('city-xuchang')!;
-      const fullCost = sr.siege.calculateSiegeCost(t);
-      expect(sr.resourceSys.consume).toHaveBeenCalledWith('troops', Math.floor(fullCost.troops * 0.3));
+      // R27修复：SiegeSystem不再扣兵，仅扣粮草，伤亡由SettlementPipeline统一处理
       expect(sr.resourceSys.consume).toHaveBeenCalledWith('grain', 500);
-      expect(result.defeatTroopLoss).toBe(Math.floor(fullCost.troops * 0.3));
+      expect(sr.resourceSys.consume).not.toHaveBeenCalledWith('troops', expect.anything());
+      expect(result.defeatTroopLoss).toBe(0);
     });
 
     it('条件不满足时不扣减', () => {
       s.siege.executeSiegeWithResult('city-xuchang', 'player', 10, 5, true);
       expect(s.resourceMock.consume).not.toHaveBeenCalled();
+    });
+
+    it('资源系统不可用时静默跳过(不崩溃)', () => {
+      // P2-37: deductSiegeResources在无resourceSys时应静默跳过而非崩溃
+      const territory = new TerritorySystem();
+      const siege = new SiegeSystem();
+      const noResDeps: ISystemDeps = {
+        eventBus: {
+          on: vi.fn().mockReturnValue(vi.fn()), once: vi.fn().mockReturnValue(vi.fn()),
+          emit: vi.fn(), off: vi.fn(), removeAllListeners: vi.fn(),
+        },
+        config: { get: vi.fn(), set: vi.fn() },
+        registry: {
+          register: vi.fn(),
+          get: vi.fn().mockImplementation((name: string) => {
+            if (name === 'territory') return territory;
+            if (name === 'siege') return siege;
+            return null; // resource系统返回null
+          }),
+          getAll: vi.fn().mockReturnValue(new Map()),
+          has: vi.fn().mockReturnValue(false),
+          unregister: vi.fn(),
+        } as unknown as ISubsystemRegistry,
+      };
+      territory.init(noResDeps); siege.init(noResDeps);
+
+      setupAttackPath(territory, 'city-xuchang');
+      expect(() => {
+        siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
+      }).not.toThrow();
+    });
+
+    it('资源守恒: 胜利路径仅扣粮草不扣兵', () => {
+      // R26-I07: 资源守恒断言 — 胜利路径
+      const sr = createSystemsWithResource();
+      setupAttackPath(sr.territory, 'city-xuchang');
+      const result = sr.siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, true);
+
+      expect(result.launched).toBe(true);
+      expect(result.victory).toBe(true);
+      // R27修复：胜利路径不扣兵力(troops:0)，仅扣粮草
+      expect(sr.resourceSys.consume).toHaveBeenCalledWith('grain', 500);
+      expect(sr.resourceSys.consume).not.toHaveBeenCalledWith('troops', expect.anything());
+    });
+
+    it('资源守恒: 失败路径仅扣粮草不扣兵', () => {
+      // R26-I07: 资源守恒断言 — 失败路径
+      const sr = createSystemsWithResource();
+      setupAttackPath(sr.territory, 'city-xuchang');
+      const result = sr.siege.executeSiegeWithResult('city-xuchang', 'player', 5000, 500, false);
+
+      expect(result.launched).toBe(true);
+      expect(result.victory).toBe(false);
+      // R27修复：失败路径不扣兵力(troops:0)，仅扣粮草
+      expect(sr.resourceSys.consume).toHaveBeenCalledWith('grain', 500);
+      expect(sr.resourceSys.consume).not.toHaveBeenCalledWith('troops', expect.anything());
+    });
+
+    it('资源守恒: 条件不满足时不扣任何资源', () => {
+      // R26-I07: 资源守恒断言 — 条件不满足路径
+      const sr = createSystemsWithResource();
+      sr.siege.executeSiegeWithResult('city-xuchang', 'player', 10, 5, true);
+      expect(sr.resourceSys.consume).not.toHaveBeenCalled();
     });
   });
 

@@ -186,11 +186,12 @@ describe('集成测试: 攻城战执行 + 领土占领 (Play §7.2-7.4, §10.0B,
       expect(territory!.ownership).toBe('neutral');
     });
 
-    it('攻城失败 → 损失30%出征兵力（PRD统一声明）', () => {
+    it('攻城失败 → 伤亡由SettlementPipeline统一计算（R27修复）', () => {
       setupPlayerBase(sys);
       const result = sys.siege.executeSiegeWithResult('city-xuchang', 'player', 10000, 10000, false);
+      // R27修复: SiegeSystem不再扣减兵力，defeatTroopLoss=0
       expect(result.defeatTroopLoss).toBeDefined();
-      expect(result.defeatTroopLoss).toBe(Math.floor(result.cost.troops * 0.3));
+      expect(result.defeatTroopLoss).toBe(0);
     });
 
     it('攻城消耗: 兵力×100 + 粮草×500（PRD统一声明）', () => {
@@ -367,10 +368,10 @@ describe('集成测试: 攻城战执行 + 领土占领 (Play §7.2-7.4, §10.0B,
       expect(result.capture).toBeDefined();
     });
 
-    it('失败惩罚统一: 损失30%出征兵力', () => {
+    it('失败惩罚统一: 伤亡由SettlementPipeline统一计算（R27修复）', () => {
       setupPlayerBase(sys);
       const result = sys.siege.executeSiegeWithResult('city-xuchang', 'player', 10000, 10000, false);
-      expect(result.defeatTroopLoss).toBe(Math.floor(result.cost.troops * 0.3));
+      expect(result.defeatTroopLoss).toBe(0);
     });
 
     it('9类地图事件定义（4基础+5扩展）', () => {
