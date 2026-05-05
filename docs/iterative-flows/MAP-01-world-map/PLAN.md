@@ -1,6 +1,6 @@
 # 天下地图系统 — 迭代流程补全计划
 
-> **版本**: v1.4 | **创建日期**: 2026-05-05
+> **版本**: v1.5.R4 | **创建日期**: 2026-05-05
 > **功能缩写**: MAP | **编号**: 01
 
 ## 背景
@@ -406,7 +406,7 @@ base_force_power = troops x 1.0 + general.武力 x 10
 force_combat_power = base_force_power x strategy_modifier x terrain_modifier
 ```
 
-**策略修正 (strategy_modifier)**:
+**策略修正 (strategy_modifier)** **[R4-ISS-003/R4-ISS-015]**: 此处策略修正为 `power_strategy_modifier`（编队战力修正），与城防衰减专用的 `decay_strategy_modifier`（见 FL-MAP-09 AC-09-01）是两组独立参数，用途不同，不可混用。
 
 | 策略 | 修正值 | 适用条件 |
 |------|--------|---------|
@@ -440,7 +440,9 @@ win_rate = clamp(5%, 95%, (attacker_power / defender_power x 0.5) + terrain_modi
 - `terrain_modifier_pct`: 地形胜率修正百分比（与 C.2 地形修正一致，转换为小数）
 - `clamp(5%, 95%, ...)`: 胜率范围限制在 5%~95% 之间
 
-### C.4 攻城城防衰减公式（城池，FL-MAP-09）
+### C.4 攻城城防衰减公式（城池，FL-MAP-09）**[R4-ISS-004 已废弃]**
+
+> **[R4-ISS-004] 本节已废弃**: 城防衰减公式以 FL-MAP-09 AC-09-01 为权威来源。废弃原因: (1) 分母结构差异: 本节用 `wall_level x 5 + 100`，AC-09-01 用 `(1.0 + 城墙等级 x 0.05) x 回合数上限`；(2) 策略修正差异: 本节用 `power_strategy_modifier`，AC-09-01 用 `decay_strategy_modifier`。实现时应以 AC-09-01 为准。
 
 ```
 defense_decay_per_tick = attacker_power x strategy_modifier / (wall_level x 5 + 100) x tick_interval

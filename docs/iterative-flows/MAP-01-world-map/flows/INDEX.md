@@ -1,7 +1,7 @@
 # 天下地图系统 — 流程文档索引
 
-> **更新日期**: 2026-05-05 | **版本**: v3.2 (R3完成)
-> **总流程数**: 18 | **状态**: R3完成（零P0/P1，25项P2已修复，10维度100%达标，可实施性98%+）
+> **更新日期**: 2026-05-05 | **版本**: v3.3.R4 (R4修复中)
+> **总流程数**: 18 | **状态**: R4 P0/P1修复完成（8项P0+12项P1全部解决）
 > **达标率**: 180/180 = 100%
 
 ## 按功能模块
@@ -32,7 +32,8 @@
 ### 攻城战系统
 | ID | 流程名称 | 文件 | PRD来源 | 状态 |
 |----|---------|------|---------|:----:|
-| FL-MAP-09 | 攻城战 | [FL-MAP-09-siege-warfare.md](FL-MAP-09-siege-warfare.md) | MAP-4 | v6.3 |
+| FL-MAP-09 | **攻城主流程 (L1)** | [FL-MAP-09-攻城主流程.md](FL-MAP-09-攻城主流程.md) | MAP-4 | v1.1.R4 |
+| FL-MAP-09 | 攻城战 (L2+) | [FL-MAP-09-siege-warfare.md](FL-MAP-09-siege-warfare.md) | MAP-4 | v6.4.R4 |
 | FL-MAP-11 | 攻城奖励领取 | [FL-MAP-11-siege-rewards.md](FL-MAP-11-siege-rewards.md) | MAP-4 | v3.4 |
 | FL-MAP-16 | 编队系统 | [FL-MAP-16-expedition-force.md](FL-MAP-16-expedition-force.md) | MAP-7 | v4.1 |
 | FL-MAP-17 | 伤亡系统 | [FL-MAP-17-casualty-system.md](FL-MAP-17-casualty-system.md) | MAP-8 | v3.1 |
@@ -153,4 +154,4 @@ FL-MAP-18 ──→ (跨切面，影响所有UI流程)
 
 ---
 
-*流程文档索引 v3.2 | 2026-05-05 | R3完成*
+*流程文档索引 v3.3.R4 | 2026-05-05 | R4 P0/P1修复完成*
