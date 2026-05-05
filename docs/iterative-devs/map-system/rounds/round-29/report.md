@@ -52,7 +52,7 @@
 | F-09 | R29-sync | 6个defeatTroopLoss测试同步R27修复 | PASS |
 | F-10 | R29-sync | SiegeRewardProgressive胜利扣减测试同步R27 | PASS |
 | F-11 | R29-sync | SiegeTaskManager lock测试同步R28修复 | PASS |
-| F-12 | P2-#1,#6,#8 | 评估为设计决策(功能待实现/正常业务逻辑/设计选择) | — |
+| F-12 | P2-#1,#6,#8 | 标记为功能待实现(非设计决策) | — |
 | F-13 | P2-#27 | cancelSiege降级路径已有测试覆盖 | — |
 
 ## 3. 内部循环记录
